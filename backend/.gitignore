@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Django-specific
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Testing and Coverage
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Project-specific local settings
+local_settings.py

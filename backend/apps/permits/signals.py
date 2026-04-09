@@ -1,0 +1,31 @@
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from . import models
+from .services import handle_application_status_change
+
+
+@receiver(post_save, sender=models.SubmittedDocument)
+def trigger_ocr_flow(sender, instance, created, **kwargs):
+    """Event: Document Uploaded -> Trigger Status Transition"""
+    if created and instance.application.status == models.PermitApplication.Status.DRAFT:
+        handle_application_status_change(instance.application, models.PermitApplication.Status.SUBMITTED)
+
+@receiver(post_save, sender=models.OPVValidation)
+def trigger_opv_flow(sender, instance, created, **kwargs):
+    """Event: OPV Processed -> Update Status based on OPV result"""
+    new_status = (
+        models.PermitApplication.Status.OPV_VALIDATED 
+        if instance.status == 'VALIDATED' 
+        else models.PermitApplication.Status.OPV_REJECTED
+    )
+    handle_application_status_change(instance.application, new_status, reason=instance.remarks)
+
+@receiver(post_save, sender=models.IssuedPermit)
+def trigger_payment_flow(sender, instance, created, **kwargs):
+    """Event: Permit Issued or Payment Confirmed"""
+    application = instance.application
+    
+    if created:
+        handle_application_status_change(application, models.PermitApplication.Status.PAYMENT_PENDING)
+    elif instance.is_paid and application.status == models.PermitApplication.Status.PAYMENT_PENDING:
+        handle_application_status_change(application, models.PermitApplication.Status.RELEASED)

@@ -16,5 +16,13 @@ class UserViewSets(viewsets.ModelViewSet):
         
 
 class NotificationViewSets(viewsets.ModelViewSet):
+    serializer_class = serializers.NotificationSerializer 
     queryset = models.Notification.objects.all()
-    serializer_class = serializers.NotificationSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == 'Farmer':
+            return models.Notification.objects.filter(recipient=user)
+        else:
+            return models.Notification.objects.all()

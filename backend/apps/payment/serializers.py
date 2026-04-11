@@ -22,11 +22,11 @@ class PaymentListSerializers(serializers.ModelSerializer):
         model = models.PaymentHistory
         fields = [
             'id',
-            'reference_number',
             'method',
             'payment_status',
             'amount',
             'farmer_name',
+            'paymongo_session_id',
             'confirmed_by',
         ]
 

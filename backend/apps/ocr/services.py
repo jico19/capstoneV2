@@ -33,6 +33,7 @@ def check_all_documents_complete(application_id):
         application.save()
 
         api.Notification.objects.create(
+            type = api.Notification.Type.WARNING,
             recipient   = application.farmer,
             title       = 'Application Under Manual Review',
             message     = f'Your application #{application.pk} is currently under manual review. '
@@ -42,6 +43,7 @@ def check_all_documents_complete(application_id):
         agri_officers = api.User.objects.filter(role='Agri')
         api.Notification.objects.bulk_create([
             api.Notification(
+                type = api.Notification.Type.INFO,
                 recipient   = officer,
                 title       = 'Manual Review Required',
                 message     = f'Application #{application.pk} from {application.farmer.get_full_name()} '
@@ -51,13 +53,13 @@ def check_all_documents_complete(application_id):
         ])
 
     else:
-        print("tite")
         # All passed
         application.status  = permits.PermitApplication.Status.OCR_VALIDATED
         application.save()
 
         # Notify farmer
         api.Notification.objects.create(
+            type = api.Notification.Type.SUCCESS,
             recipient   = application.farmer,
             title       = 'Documents Validated Successfully',
             message     = f'All documents for application #{application.pk} have passed validation. '
@@ -66,8 +68,9 @@ def check_all_documents_complete(application_id):
 
         # Notify Agri Officers
         agri_officers =  api.User.objects.filter(role='Agri')
-        permits.Notification.objects.bulk_create([
+        api.Notification.objects.bulk_create([
             permits.Notification(
+                type = api.Notification.Type.INFO,
                 recipient   = officer,
                 title       = 'New Application Ready for Review',
                 message     = f'Application #{application.pk} from {application.farmer.get_full_name()} '

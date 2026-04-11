@@ -11,18 +11,20 @@ from reportlab.lib.utils import ImageReader
 import qrcode
 from django.tasks import task
 from django.shortcuts import get_object_or_404
-from apps.permits.models import IssuedPermit
+from apps.permits.models import PermitApplication, IssuedPermit
+from django.utils import timezone
 from django.db import transaction
 
+
 @task()
-def generate_permit_pdf(permit_id):
+def generate_permit_pdf(permit_application_id):
     try:
         with transaction.atomic():
-            permit = get_object_or_404(
-                IssuedPermit, pk=permit_id
-            )
-
-            application = permit.application
+            application_permit_instance = get_object_or_404(
+                    PermitApplication,
+                    pk=permit_application_id
+                )
+            issued_permit_instance = application_permit_instance.issued_permit
             buffer = BytesIO()
             p = canvas.Canvas(buffer, pagesize=A4)
             width, height = A4
@@ -56,16 +58,16 @@ def generate_permit_pdf(permit_id):
 
             # ── Details ──────────────────────────────────
             details = [
-                ('Permit No',           permit.permit_number),
-                ('Farmer Name',         application.farmer.get_full_name() or "N/A"),
-                ('Origin Barangay',     application.origin_barangay.name),
-                ('Destination',         application.destination),
-                ('Number of Pigs',      str(application.number_of_pigs)),
-                ('Transport Date',      application.transport_date.strftime('%B %d, %Y')),
-                ('Purpose',             application.purpose or '—'),
-                ('Issued By',           permit.issued_by.get_full_name() if permit.issued_by else 'System'),
-                ('Date Issued',         permit.date_issued.strftime('%B %d, %Y')),
-                ('Valid Until',         permit.valid_until.strftime('%B %d, %Y')),
+                ('Permit No',           issued_permit_instance.permit_number),
+                ('Farmer Name',         application_permit_instance.farmer.get_full_name() or "N/A"),
+                ('Origin Barangay',     application_permit_instance.origin_barangay.name),
+                ('Destination',         application_permit_instance.destination),
+                ('Number of Pigs',      str(application_permit_instance.number_of_pigs)),
+                ('Transport Date',      application_permit_instance.transport_date.strftime('%B %d, %Y')),
+                ('Purpose',             application_permit_instance.purpose or '—'),
+                ('Issued By',           issued_permit_instance.issued_by.get_full_name() if issued_permit_instance.issued_by else 'System'),
+                ('Date Issued',         issued_permit_instance.date_issued.strftime('%B %d, %Y')),
+                ('Valid Until',         issued_permit_instance.valid_until.strftime('%B %d, %Y')),
             ]
 
             y = height - 7*cm
@@ -86,7 +88,7 @@ def generate_permit_pdf(permit_id):
                 y -= 1*cm
 
             # ── QR Code ──────────────────────────────────
-            qr_url  = f"{settings.FRONTEND_URL}/verify/{permit.qr_token}"
+            qr_url  = f"{settings.FRONTEND_URL}/verify/{issued_permit_instance.qr_token}"
             qr      = qrcode.QRCode(
                 version  = 1,
                 error_correction = qrcode.constants.ERROR_CORRECT_H,
@@ -129,7 +131,7 @@ def generate_permit_pdf(permit_id):
             p.drawCentredString(width / 2, 2*cm,
                 'This permit is electronically generated and is valid without wet signature.')
             p.drawCentredString(width / 2, 1.6*cm,
-                f'Verify at: {settings.FRONTEND_URL}/verify/{permit.qr_token}')
+                f'Verify at: {settings.FRONTEND_URL}/verify/{issued_permit_instance.qr_token}')
             p.drawCentredString(width / 2, 1.2*cm,
                 'Sariaya Municipal Agriculture Office — Sariaya, Quezon')
 
@@ -139,10 +141,14 @@ def generate_permit_pdf(permit_id):
             buffer.seek(0)
 
             # Save PDF to permit model
-            filename = f"permit_{permit.qr_token}.pdf"
-            permit.permit_pdf.save(filename, File(buffer), save=True)
+            filename = f"PERMIT_{issued_permit_instance.qr_token}.pdf"
+            
+            application_permit_instance.is_issued = True
+            application_permit_instance.issued_at = timezone.now()
+            application_permit_instance.save()
+            
+            issued_permit_instance.permit_pdf.save(filename, File(buffer), save=True)
 
-            return f"Permit PDF generated and saved for ID: {permit.id}"
+            return f"Permit PDF generated and saved for ID: {application_permit_instance.id}"
     except Exception as e:
-        # Handle the case where the permit hasn't hit the DB yet
         raise e

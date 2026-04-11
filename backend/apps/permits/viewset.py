@@ -34,7 +34,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
         # if self.request.user.role == 'Farmer':
         #         return models.PermitApplication.objects.filter(farmer=self.request.user)
         
-        # if self.request.user.role == 'Agri':
+        # elif self.request.user.role == 'Agri':
         #     return models.PermitApplication.objects.all()
         
         # for testing
@@ -58,6 +58,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             return Response('ok!!', status=status.HTTP_200_OK)
 
         except Exception as e:
+            print(e)
             return Response('bad request', status=status.HTTP_400_BAD_REQUEST)
 
     # actions
@@ -249,38 +250,7 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
             return serializers.IssuedPermitWriteSerializer
         else:
             return serializers.IssuedPermitDetailSerializer
-
-    def create(self, request, *args, **kwargs):
-        """ ADD guard here. """
-        try:
-            application = get_object_or_404(
-                models.PermitApplication,
-                pk=request.data.get('application')
-            )
-
-            if application.status != models.PermitApplication.Status.OPV_VALIDATED:
-                return Response("This permit is not ready yet.", status=status.HTTP_400_BAD_REQUEST)
-
-            with transaction.atomic():
-                permit = models.IssuedPermit.objects.create(
-                    permit_number = f"APL-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4].upper()}",
-                    application_id = request.data.get('application'),
-                    issued_by = request.user,
-                )
-                
-                # set validity
-                permit.valid_until = permit.date_issued + timedelta(days=3)
-                permit.save()
-                # generate permit
-                generate_permit_pdf.enqueue(permit.pk)
-
-        except Exception as e:
-            print(e)
-            return Response("error", status=status.HTTP_400_BAD_REQUEST)
-
-        return Response("ok", status=status.HTTP_200_OK)
-
-
+        
 class OCRValidationResultViewSets(viewsets.ModelViewSet):
     queryset = models.OCRValidationResult.objects.all()
 

@@ -41,6 +41,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'recipient_name',
+            'type',
             'title',
             'message',
             'is_read',

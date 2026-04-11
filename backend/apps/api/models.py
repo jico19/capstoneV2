@@ -25,7 +25,13 @@ class User(AbstractUser):
 
 
 class Notification(models.Model):
+    class Type(models.TextChoices):
+        WARNING = 'WARNING', 'Warning'
+        INFO = 'INFO', 'Info'
+        SUCCESS = 'SUCCESS', 'Success'
+
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=20, choices=Type.choices)
     title = models.CharField(max_length=200)
     message = models.TextField()
     is_read = models.BooleanField(default=False)
@@ -33,5 +39,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notif → {self.recipient} | {self.title}"
+
     class Meta:
         ordering = ['-sent_at']

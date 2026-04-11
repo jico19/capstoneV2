@@ -25,6 +25,7 @@ def create_permit(files, application, user):
         
 
     Notification.objects.create(
+        type=Notification.Type.INFO,
         recipient = user,
         title = "Application Submitted",
         message = f"Your application #{application.pk} has been submitted successfully. Please wait for further updates."
@@ -68,35 +69,38 @@ def create_reject_opv_validation(application_id: int, data: dict, staff):
 
 # Status Helper
 def handle_application_status_change(application, new_status, reason=None):
-    """
-    Centralized logic for updating application status and sending notifications.
-    """
     if application.status == new_status:
         return
 
     application.status = new_status
     application.save()
 
-    # Notification Logic Mapping
+    Status = models.PermitApplication.Status
+    app_id = application.application_id
+
     notification_map = {
-        models.PermitApplication.Status.OPV_REJECTED: {
-            'title': 'Application Rejected',
-            'message': f'Your application #{application.application_id} was rejected. Reason: {reason}.'
-        },
-        models.PermitApplication.Status.PAYMENT_PENDING: {
-            'title': 'Permit is Ready',
-            'message': f'Your application #{application.application_id} is ready! Please complete payment.'
-        },
-        models.PermitApplication.Status.RELEASED: {
-            'title': 'Payment Confirmed — Documents Unlocked',
-            'message': f'Your payment for #{application.application_id} has been confirmed!'
-        }
+        Status.OPV_REJECTED: (
+            Notification.Type.WARNING,
+            'Application Rejected',
+            f'Your application #{app_id} was rejected. Reason: {reason}.',
+        ),
+        Status.PAYMENT_PENDING: (
+            Notification.Type.INFO,
+            'Permit is Ready',
+            f'Your application #{app_id} is ready! Please complete payment.',
+        ),
+        Status.RELEASED: (
+            Notification.Type.SUCCESS,
+            'Payment Confirmed — Documents Unlocked',
+            f'Your payment for #{app_id} has been confirmed!',
+        ),
     }
 
     if new_status in notification_map:
-        data = notification_map[new_status]
+        notif_type, title, message = notification_map[new_status]
         Notification.objects.create(
             recipient=application.farmer,
-            title=data['title'],
-            message=data['message']
+            type=notif_type,
+            title=title,
+            message=message,
         )

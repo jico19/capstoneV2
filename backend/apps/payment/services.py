@@ -4,7 +4,7 @@ from django.conf import settings
 from apps.permits import models as permits
 from . import models
 from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from django.tasks import task
 
 
@@ -13,25 +13,21 @@ def get_auth_header():
     encoded = base64.b64encode(f"{key}:".encode()).decode()
     return {"Authorization": f"Basic {encoded}", "Content-Type": "application/json"}
 
-def create_checkout_session(issued_permit_id: int, staff):
-    try:
-        permit = permits.IssuedPermit.objects.select_related(
-            'application',
-            'application__farmer'
-        ).get(id=issued_permit_id)
-    except permits.IssuedPermit.DoesNotExist:
-        raise ValidationError('Permit not found.')
+def create_checkout_session(issued_permit_pk: int):
+    """"
+        TODO: FIX THE USAGE OF ISSUED_PERMIT_ID LOGIC IS OFF USE PERMIT APPLICATION.
+    """
 
-    if permit.application.farmer != staff:
-        raise ValidationError('Unauthorized.')
+    issued_permit = get_object_or_404(
+        models.IssuedPermit,
+        pk=issued_permit_pk
+    )
+    permit_application = issued_permit.application
 
-    if permit.is_paid:
+    if issued_permit.is_paid:
         raise ValidationError('Already paid.')
-
-    if permit.application.status != permits.PermitApplication.Status.PAYMENT_PENDING:
-        raise ValidationError('Application is not ready for payment.')
-
-    farmer = permit.application.farmer
+    
+    farmer = permit_application.farmer
     payload = {
         "data": {
             "attributes": {
@@ -43,17 +39,17 @@ def create_checkout_session(issued_permit_id: int, staff):
                     {
                         "currency": "PHP",
                         "amount": 50000,
-                        "name": f"Livestock Transport Permit — {permit.permit_number}",
+                        "name": f"Livestock Transport Permit — {issued_permit.permit_number}",
                         "quantity": 1,
                     }
                 ],
                 "payment_method_types": ["gcash", "card", "paymaya"],
-                "success_url": f"{settings.FRONTEND_URL}/farmer/payment/success?issed_permit_id={issued_permit_id}",
-                "cancel_url": f"{settings.FRONTEND_URL}/farmer/payment/cancel?issued_permit_id={issued_permit_id}",
-                "description": f"Permit fee for application #{permit.application.application_id}",
+                "success_url": f"{settings.FRONTEND_URL}/farmer/payment/success/{permit_application.pk}",
+                "cancel_url": f"{settings.FRONTEND_URL}/farmer/payment/cancel?issued_permit_id={permit_application.pk}",
+                "description": f"Permit fee for application #{issued_permit.application.application_id}",
                 "metadata": {
-                    "application_id": str(issued_permit_id),
-                    "permit_number": permit.permit_number,
+                    "permit_id": str(issued_permit.pk),
+                    "permit_number": issued_permit.permit_number,
                     "farmer_id": str(farmer.id),
                 }
             }
@@ -71,8 +67,11 @@ def create_checkout_session(issued_permit_id: int, staff):
 
     data = res.json()["data"]
 
+
+    # create one to one relations to  issued id
     models.PaymentHistory.objects.create(
-        issued_permit=permit,
+        issued_permit= issued_permit,
+        status=models.PaymentHistory.Status.PENDING,
         method='ONLINE',
         amount=50000 / 10,
         paymongo_session_id=data["id"],

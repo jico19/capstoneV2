@@ -27,7 +27,7 @@ class PermitApplication(models.Model):
         RELEASED            = 'RELEASED',            'Released' 
 
     application_id  = models.CharField(max_length=12, unique=True, editable=False, default=document_id)
-    farmer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='applications')
+    farmer = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=50, choices=Status.choices, default=Status.DRAFT)
 
     # Transport details
@@ -39,6 +39,7 @@ class PermitApplication(models.Model):
 
     # Tracking
     is_issued = models.BooleanField(default=False)
+    issued_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     submitted_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
@@ -119,20 +120,19 @@ class IssuedPermit(models.Model):
         OFFLINE  = 'OFFLINE',  'Offline'
 
     permit_number = models.CharField(max_length=13, unique=True, null=False, editable=False)
-    application = models.OneToOneField(PermitApplication, on_delete=models.CASCADE)
+    application = models.OneToOneField(PermitApplication, on_delete=models.CASCADE, related_name="issued_permit")
     issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
-    qr_code = models.ImageField(upload_to='qr_codes/', null=True, blank=True)
-    qr_token = models.CharField(max_length=36, editable=False)
+    qr_token = models.CharField(max_length=36, editable=False, unique=True)
 
     is_paid = models.BooleanField(default=False)
     payment_method = models.CharField(max_length=100, default="", blank=True, choices=PaymentMethodChoices)
 
-    permit_pdf = models.FileField(upload_to='issued_docs/vhc/', null=True, blank=True)
+    permit_pdf = models.FileField(upload_to='issued_docs/permits/', null=True, blank=True)
 
     date_issued = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True)
     
     def __str__(self):
-        return f"Issued → {self.application.id} - {self.issued_by.username}"
+        return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {self.issued_by.username}"
 

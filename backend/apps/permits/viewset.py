@@ -37,6 +37,9 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
         # elif self.request.user.role == 'Agri':
         #     return models.PermitApplication.objects.all()
         
+        # elif self.request.user.role == 'Opv':
+        #     return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
+        
         # for testing
         return models.PermitApplication.objects.all()
 
@@ -251,6 +254,45 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
         else:
             return serializers.IssuedPermitDetailSerializer
         
+
+    def create(self, request, *args, **kwargs):
+        application_id = request.data.get('application_id')
+
+        application_instance = get_object_or_404(
+            models.PermitApplication, pk=application_id
+        )
+
+        issued_permit = models.IssuedPermit.objects.create(
+                permit_number=uuid.uuid4().hex[:13],
+                application_id = application_instance.id,
+                issued_by = request.user,
+                qr_token = uuid.uuid4(),
+        )
+
+        application_instance.status = models.PermitApplication.Status.PAYMENT_PENDING
+        application_instance.save()
+
+
+        return Response("issued permit!!", status=status.HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        application_id = self.kwargs.get('pk')
+        applicataion_instance = get_object_or_404(
+            models.PermitApplication, pk=application_id
+        )    
+        opv_docs_instance = applicataion_instance.opv_validation
+        issued_permit_instance = applicataion_instance.issued_permit
+
+        if not issued_permit_instance.is_paid:
+            return Response("not paid.", status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "veterinary_health_certificate": request.build_absolute_uri(opv_docs_instance.veterinary_health_certificate.url),
+            "transportation_pass" : request.build_absolute_uri(opv_docs_instance.transportation_pass.url),
+            "issued_permit_pdf": request.build_absolute_uri(issued_permit_instance.permit_pdf.url),
+        }, status=status.HTTP_200_OK)
+
+
 class OCRValidationResultViewSets(viewsets.ModelViewSet):
     queryset = models.OCRValidationResult.objects.all()
 
@@ -270,7 +312,7 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
         merged = {**ocr_instance.extracted_field, **new_fields}
 
         ocr_instance.extracted_field = merged
-        ocr_instance.status = models.OCRValidationResult.ValidationStatus.PASSED
+        ocr_instance.status = models.OCRValidationResult.ValidationStatus.OVERRIDDEN
         ocr_instance.manually_overridden = True
         ocr_instance.overridden_by = request.user
         ocr_instance.overridden_fields    = new_fields

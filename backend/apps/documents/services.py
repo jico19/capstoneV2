@@ -15,140 +15,132 @@ from apps.permits.models import PermitApplication, IssuedPermit
 from django.utils import timezone
 from django.db import transaction
 
-
 @task()
 def generate_permit_pdf(permit_application_id):
     try:
         with transaction.atomic():
-            application_permit_instance = get_object_or_404(
-                    PermitApplication,
-                    pk=permit_application_id
-                )
-            issued_permit_instance = application_permit_instance.issued_permit
+            application = get_object_or_404(PermitApplication, pk=permit_application_id)
+            issued_permit = application.issued_permit
             buffer = BytesIO()
             p = canvas.Canvas(buffer, pagesize=A4)
             width, height = A4
 
-            # ── Background ──────────────────────────────
-            p.setFillColor(colors.HexColor('#f0fff4'))  # light green tint
+            # --- Primary Color Palette ---
+            PRIMARY_GREEN = colors.HexColor('#166534') # Tailwind Green-800
+            BORDER_GRAY = colors.HexColor('#e5e7eb')  # Tailwind Gray-200
+            TEXT_DARK = colors.HexColor('#111827')    # Tailwind Gray-900
+
+            # 1. Clean Background (No tint for better printing)
+            p.setFillColor(colors.white)
             p.rect(0, 0, width, height, fill=True, stroke=False)
 
-            # ── Border ───────────────────────────────────
-            p.setStrokeColor(colors.HexColor('#2d6a4f'))
-            p.setLineWidth(3)
-            p.rect(1*cm, 1*cm, width - 2*cm, height - 2*cm, fill=False)
+            # 2. Left Accent Border (Official aesthetic)
+            p.setFillColor(PRIMARY_GREEN)
+            p.rect(0, 0, 0.8*cm, height, fill=True, stroke=False)
 
-            # ── Header ───────────────────────────────────
-            p.setFillColor(colors.HexColor('#2d6a4f'))
-            p.setFont('Helvetica-Bold', 11)
-            p.drawCentredString(width / 2, height - 2*cm,   'Republic of the Philippines')
-            p.drawCentredString(width / 2, height - 2.6*cm, 'Province of Quezon — Municipality of Sariaya')
-            p.drawCentredString(width / 2, height - 3.2*cm, 'MUNICIPAL AGRICULTURE OFFICE')
+            # 3. Header Section (Top Right ID)
+            p.setFillColor(TEXT_DARK)
+            p.setFont('Helvetica-Bold', 8)
+            p.drawRightString(width - 1.5*cm, height - 1.5*cm, f"SYSTEM REF: {application.application_id}")
 
-            # ── Title ────────────────────────────────────
-            p.setFont('Helvetica-Bold', 18)
-            p.setFillColor(colors.HexColor('#1b4332'))
-            p.drawCentredString(width / 2, height - 4.5*cm, 'LIVESTOCK TRANSPORT PERMIT')
+            # 4. Main Title Block
+            p.setFont('Helvetica-Bold', 22)
+            p.drawString(2*cm, height - 3.5*cm, "LIVESTOCK TRANSPORT PERMIT")
+            
+            p.setFont('Helvetica', 10)
+            p.setFillColor(colors.grey)
+            p.drawString(2*cm, height - 4.1*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE • QUEZON PROVINCE")
 
-            # ── Divider ──────────────────────────────────
-            p.setStrokeColor(colors.HexColor('#2d6a4f'))
-            p.setLineWidth(1.5)
-            p.line(2*cm, height - 5*cm, width - 2*cm, height - 5*cm)
+            # 5. The "Permit ID" Box (High visibility)
+            p.setFillColor(PRIMARY_GREEN)
+            p.rect(2*cm, height - 6*cm, 7*cm, 1.2*cm, fill=True, stroke=False)
+            p.setFillColor(colors.white)
+            p.setFont('Helvetica-Bold', 14)
+            p.drawString(2.5*cm, height - 5.3*cm, issued_permit.permit_number)
 
-
-            # ── Details ──────────────────────────────────
-            details = [
-                ('Permit No',           issued_permit_instance.permit_number),
-                ('Farmer Name',         application_permit_instance.farmer.get_full_name() or "N/A"),
-                ('Origin Barangay',     application_permit_instance.origin_barangay.name),
-                ('Destination',         application_permit_instance.destination),
-                ('Number of Pigs',      str(application_permit_instance.number_of_pigs)),
-                ('Transport Date',      application_permit_instance.transport_date.strftime('%B %d, %Y')),
-                ('Purpose',             application_permit_instance.purpose or '—'),
-                ('Issued By',           issued_permit_instance.issued_by.get_full_name() if issued_permit_instance.issued_by else 'System'),
-                ('Date Issued',         issued_permit_instance.date_issued.strftime('%B %d, %Y')),
-                ('Valid Until',         issued_permit_instance.valid_until.strftime('%B %d, %Y')),
-            ]
-
-            y = height - 7*cm
-            for label, value in details:
-                # Label box
-                p.setFillColor(colors.HexColor('#d8f3dc'))
-                p.rect(2*cm, y - 0.3*cm, 5*cm, 0.7*cm, fill=True, stroke=False)
-
-                p.setFont('Helvetica-Bold', 9)
-                p.setFillColor(colors.HexColor('#1b4332'))
-                p.drawString(2.2*cm, y, label)
-
+            # 6. Details Grid Structure
+            def draw_data_box(x, y, label, value, w=8*cm):
+                # Flat box
+                p.setStrokeColor(BORDER_GRAY)
+                p.setLineWidth(0.5)
+                p.rect(x, y, w, 1.2*cm, fill=False, stroke=True)
+                # Label
+                p.setFillColor(colors.grey)
+                p.setFont('Helvetica-Bold', 7)
+                p.drawString(x + 0.3*cm, y + 0.8*cm, label.upper())
                 # Value
-                p.setFont('Helvetica', 9)
-                p.setFillColor(colors.black)
-                p.drawString(7.5*cm, y, value)
+                p.setFillColor(TEXT_DARK)
+                p.setFont('Helvetica-Bold', 10)
+                p.drawString(x + 0.3*cm, y + 0.3*cm, str(value))
 
-                y -= 1*cm
+            # Row 1
+            draw_data_box(2*cm, height - 8*cm, "Consignor (Farmer)", application.farmer.get_full_name() or "N/A", w=11*cm)
+            draw_data_box(13.5*cm, height - 8*cm, "Pig Count", application.number_of_pigs, w=5*cm)
 
-            # ── QR Code ──────────────────────────────────
-            qr_url  = f"{settings.FRONTEND_URL}/verify/{issued_permit_instance.qr_token}"
-            qr      = qrcode.QRCode(
-                version  = 1,
-                error_correction = qrcode.constants.ERROR_CORRECT_H,
-                box_size = 8,
-                border = 2,
-            )
+            # Row 2
+            draw_data_box(2*cm, height - 9.5*cm, "Origin Barangay", application.origin_barangay.name, w=8*cm)
+            draw_data_box(10.5*cm, height - 9.5*cm, "Target Destination", application.destination, w=8*cm)
+
+            # Row 3
+            draw_data_box(2*cm, height - 11*cm, "Transport Date", application.transport_date.strftime('%d %B %Y'), w=8*cm)
+            draw_data_box(10.5*cm, height - 11*cm, "Valid Until", issued_permit.valid_until.strftime('%d %B %Y'), w=8*cm)
+
+            # Row 4 (Purpose)
+            draw_data_box(2*cm, height - 12.5*cm, "Authorized Purpose", application.purpose or "LIVESTOCK TRADE/TRANSPORT", w=16.5*cm)
+
+            # 7. Verification Zone (Sidebar Box)
+            p.setFillColor(colors.HexColor('#f9fafb'))
+            p.rect(13*cm, 3*cm, 5.5*cm, 7*cm, fill=True, stroke=True)
+            
+            # QR Generation
+            qr_url = f"{settings.FRONTEND_URL}/verify/{issued_permit.qr_token}"
+            qr = qrcode.QRCode(version=1, box_size=10, border=1)
             qr.add_data(qr_url)
             qr.make(fit=True)
-            qr_img      = qr.make_image(fill_color='black', back_color='white')
-
-            qr_buffer   = BytesIO()
+            qr_img = qr.make_image(fill_color='black', back_color='white')
+            qr_buffer = BytesIO()
             qr_img.save(qr_buffer, format='PNG')
             qr_buffer.seek(0)
 
-            qr_size = 4*cm
-            qr_x    = width - 2*cm - qr_size
-            qr_y    = height - 7*cm - qr_size
+            p.drawImage(ImageReader(qr_buffer), 13.75*cm, 5*cm, width=4*cm, height=4*cm)
+            
+            p.setFillColor(TEXT_DARK)
+            p.setFont('Helvetica-Bold', 8)
+            p.drawCentredString(15.75*cm, 4.5*cm, "SECURE VERIFICATION")
+            p.setFont('Helvetica', 6)
+            p.drawCentredString(15.75*cm, 4.1*cm, "Scan using Inspector App")
 
-            p.drawImage(ImageReader(qr_buffer), qr_x, qr_y, width=qr_size, height=qr_size)
+            # 8. Signature Section
+            p.setFillColor(TEXT_DARK)
+            p.setFont('Helvetica-Bold', 10)
+            p.drawString(2*cm, 5*cm, "APPROVED BY:")
+            p.line(2*cm, 4*cm, 8*cm, 4*cm)
+            p.setFont('Helvetica', 8)
+            p.drawString(2*cm, 3.6*cm, "MUNICIPAL AGRICULTURE OFFICER")
+            p.drawString(2*cm, 3.2*cm, f"Issued on: {issued_permit.date_issued.strftime('%Y-%m-%d')}")
 
-            p.setFont('Helvetica', 7)
+            # 9. Footer Security Note
+            p.setStrokeColor(PRIMARY_GREEN)
+            p.setLineWidth(2)
+            p.line(2*cm, 2*cm, width - 2*cm, 2*cm)
+            
             p.setFillColor(colors.grey)
-            p.drawCentredString(qr_x + qr_size / 2, qr_y - 0.4*cm, 'Scan to verify')
-
-            # ── Divider before footer ────────────────────
-            p.setStrokeColor(colors.HexColor('#2d6a4f'))
-            p.setLineWidth(1)
-            p.line(2*cm, 4.5*cm, width - 2*cm, 4.5*cm)
-
-            # ── Signature Line ───────────────────────────
-            p.setFont('Helvetica', 9)
-            p.setFillColor(colors.black)
-            p.line(2*cm, 3.5*cm, 8*cm, 3.5*cm)
-            p.drawString(2*cm, 3.1*cm, 'Authorized Signature')
-            p.drawString(2*cm, 2.7*cm, 'Municipal Agriculture Officer')
-
-            # ── Footer ───────────────────────────────────
-            p.setFont('Helvetica', 7)
-            p.setFillColor(colors.grey)
-            p.drawCentredString(width / 2, 2*cm,
-                'This permit is electronically generated and is valid without wet signature.')
-            p.drawCentredString(width / 2, 1.6*cm,
-                f'Verify at: {settings.FRONTEND_URL}/verify/{issued_permit_instance.qr_token}')
-            p.drawCentredString(width / 2, 1.2*cm,
-                'Sariaya Municipal Agriculture Office — Sariaya, Quezon')
+            p.setFont('Helvetica-Oblique', 7)
+            p.drawString(2*cm, 1.5*cm, "This is a computer-generated document. Unauthorized alteration is punishable by law.")
+            p.drawRightString(width - 2*cm, 1.5*cm, f"Token: {issued_permit.qr_token[:16]}...")
 
             p.showPage()
             p.save()
 
             buffer.seek(0)
-
-            # Save PDF to permit model
-            filename = f"PERMIT_{issued_permit_instance.qr_token}.pdf"
+            filename = f"PERMIT_{issued_permit.permit_number}.pdf"
             
-            application_permit_instance.is_issued = True
-            application_permit_instance.issued_at = timezone.now()
-            application_permit_instance.save()
+            application.is_issued = True
+            application.issued_at = timezone.now()
+            application.save()
             
-            issued_permit_instance.permit_pdf.save(filename, File(buffer), save=True)
+            issued_permit.permit_pdf.save(filename, File(buffer), save=True)
 
-            return f"Permit PDF generated and saved for ID: {application_permit_instance.id}"
+            return f"PDF Generated: {filename}"
     except Exception as e:
         raise e

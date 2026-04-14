@@ -42,17 +42,11 @@ class PaymentViewSets(viewsets.ModelViewSet):
             return Response({"error": "Application not ready for payment"}, status=400)
 
         with transaction.atomic():
-        # Create Issued instance
-            issued_permit = models.IssuedPermit.objects.create(
-                permit_number=uuid.uuid4().hex[:13],
-                application_id = pk,
-                issued_by = request.user,
-                qr_token = uuid.uuid4(),
-            )
+            # Create Issued instance
             # pass the issued_permit pk
-            data = services.create_checkout_session(
-                issued_permit_pk = issued_permit.pk
-            )
+            issued_permit = get_object_or_404(Permits.IssuedPermit, application=application)
+            data = services.create_checkout_session(application_pk=application.pk)
+
             return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
@@ -103,8 +97,10 @@ class PaymentViewSets(viewsets.ModelViewSet):
                         permit.valid_until = timezone.now() + timedelta(days=3)
                         permit.save()
 
-                        # 3. Trigger the PDF Generation
-                        generate_permit_pdf.enqueue(permit_application_id=application_permit_instance.pk)       
+                        # 3. Trigger the PDF Generation and Reciept Generation
+                        generate_permit_pdf.enqueue(permit_application_id=application_permit_instance.pk)     
+
+                        
                 
                     return Response({
                         "msg": "Payment Verified",

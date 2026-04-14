@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'apps.payment',
     'apps.ocr',
     'apps.documents',
+    'apps.dashboard',
 ]
 
 MIDDLEWARE = [
@@ -155,7 +156,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     # Uncomment for prod
     # 'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',
@@ -181,6 +182,7 @@ OCR_API_KEY = os.environ.get('OCR_API_KEY')
 
 PAYMONGO_SECRET_KEY = os.environ.get('PAYMONGO_TEST_SECRET_KEY')
 PAYMONGI_PUBLICK_KEY = os.environ.get('PAYMONGO_TEST_PUBLIC_KEY')
+PERMIT_AMOUNT = os.environ.get('PERMIT_AMOUNT')
 PAYMONGO_URL = os.environ.get('PAYMONGO_URL')
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
 

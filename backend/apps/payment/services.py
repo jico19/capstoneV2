@@ -13,21 +13,15 @@ def get_auth_header():
     encoded = base64.b64encode(f"{key}:".encode()).decode()
     return {"Authorization": f"Basic {encoded}", "Content-Type": "application/json"}
 
-def create_checkout_session(issued_permit_pk: int):
-    """"
-        TODO: FIX THE USAGE OF ISSUED_PERMIT_ID LOGIC IS OFF USE PERMIT APPLICATION.
-    """
-
-    issued_permit = get_object_or_404(
-        models.IssuedPermit,
-        pk=issued_permit_pk
-    )
-    permit_application = issued_permit.application
+def create_checkout_session(application_pk: int):
+    application = get_object_or_404(permits.PermitApplication, pk=application_pk)
+    issued_permit = get_object_or_404(permits.IssuedPermit, application=application)
 
     if issued_permit.is_paid:
         raise ValidationError('Already paid.')
-    
-    farmer = permit_application.farmer
+
+    farmer = application.farmer
+
     payload = {
         "data": {
             "attributes": {
@@ -38,19 +32,19 @@ def create_checkout_session(issued_permit_pk: int):
                 "line_items": [
                     {
                         "currency": "PHP",
-                        "amount": 50000,
+                        "amount": int(settings.PERMIT_AMOUNT),
                         "name": f"Livestock Transport Permit — {issued_permit.permit_number}",
                         "quantity": 1,
                     }
                 ],
                 "payment_method_types": ["gcash", "card", "paymaya"],
-                "success_url": f"{settings.FRONTEND_URL}/farmer/payment/success/{permit_application.pk}",
-                "cancel_url": f"{settings.FRONTEND_URL}/farmer/payment/cancel?issued_permit_id={permit_application.pk}",
-                "description": f"Permit fee for application #{issued_permit.application.application_id}",
+                "success_url": f"{settings.FRONTEND_URL}/farmer/payment/success/{application.pk}",
+                "cancel_url": f"{settings.FRONTEND_URL}/farmer/payment/cancel?application_id={application.pk}",
+                "description": f"Permit fee for application #{application.application_id}",
                 "metadata": {
                     "permit_id": str(issued_permit.pk),
                     "permit_number": issued_permit.permit_number,
-                    "farmer_id": str(farmer.id),
+                    "farmer_id": str(farmer.pk),
                 }
             }
         }
@@ -67,13 +61,11 @@ def create_checkout_session(issued_permit_pk: int):
 
     data = res.json()["data"]
 
-
-    # create one to one relations to  issued id
     models.PaymentHistory.objects.create(
-        issued_permit= issued_permit,
+        issued_permit=issued_permit,
         status=models.PaymentHistory.Status.PENDING,
         method='ONLINE',
-        amount=50000 / 10,
+        amount=int(settings.PERMIT_AMOUNT) / 100,
         paymongo_session_id=data["id"],
     )
 

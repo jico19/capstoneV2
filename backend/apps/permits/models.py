@@ -80,7 +80,7 @@ class OPVValidation(models.Model):
         VALIDATED   = 'VALIDATED',  'Validated'
         REJECTED    = 'REJECTED',   'Rejected'
     
-    application = models.OneToOneField(PermitApplication, on_delete=models.CASCADE, related_name="permit_application")
+    application = models.OneToOneField(PermitApplication, on_delete=models.CASCADE, related_name="opv_validation")
     opv_staff = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=20, choices=Status, default=Status.PENDING)
     remarks = models.TextField(blank=True)
@@ -97,6 +97,7 @@ class OCRValidationResult(models.Model):
     class ValidationStatus(models.TextChoices):
         PASSED  = 'PASSED',  'Passed'
         MANUAL  = 'MANUAL',  'Needs Manual Review'
+        OVERRIDDEN = 'OVERRIDDEN', 'Overridden'
         
     document = models.OneToOneField(SubmittedDocument, on_delete=models.CASCADE, related_name="ocr")
     status = models.CharField(max_length=20, choices=ValidationStatus)
@@ -104,7 +105,7 @@ class OCRValidationResult(models.Model):
     remarks = models.JSONField(default=dict)
     validated_at = models.DateTimeField(auto_now_add=True)
 
-    manually_overridden     = models.BooleanField(default=False)
+    manually_overridden  = models.BooleanField(default=False)
     overridden_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     overridden_at = models.DateTimeField(null=True, blank=True)
     overridden_fields = models.JSONField(default=dict)

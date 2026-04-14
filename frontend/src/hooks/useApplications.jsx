@@ -1,5 +1,6 @@
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { toast } from "sonner";
 
 export const useApplication = () => {
     return useQuery({
@@ -34,17 +35,46 @@ export const useDocument = (id) => {
     })
 }
 
-export const useOCRUpdate = (id) => {
+export const useOCRUpdate = () => {
     const query = useQueryClient()
     return useMutation({
-        mutationFn: async (data) => {
+        mutationFn: async ({id, data}) => {
             const res = await api.patch(`/ocr-validation/${id}/`, data)
             console.log(res.data)
             return res.data
         }, onSuccess: () => {
-            query.invalidateQueries({ queryKey: ['application']})
+            toast.success('Successfully Updated.')
+            query.invalidateQueries({ queryKey: ['application'] })
+        }, onError: () => {
+            toast.error("There is something wrong...")
         }
     })
 }
 
 
+export const useCreateApplicataion = () => {
+    const query = useQueryClient()
+    return useMutation({
+        mutationFn: async (data) => {
+            const res = await api.post('/application/', data)
+            return res.data
+        }, onSuccess: () => {
+            toast.success('Successfully submitted your application.')
+            query.invalidateQueries({ queryKey: ['application'] })
+        }, onError: (error) => {
+            console.log(error)
+            toast.error("There is something wrong...")
+        }
+    })
+}
+
+export const useGetPermit = (id) => {
+    return useQuery({
+        queryKey: ['docs', id],
+        queryFn: async () => {
+            console.log(typeof(id))
+            const res = await api.get(`/issued-permit/${id}/`)
+            return res.data
+        } 
+    })
+}

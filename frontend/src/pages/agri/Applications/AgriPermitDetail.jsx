@@ -1,26 +1,25 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, data } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from "/src/hooks/useApplications";
-import ApplicationHeader from "./ApplicationHeader";
 import DocumentList from "./DocumentList";
 import OCRModal from "./OCRModal";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import ApprovalControls from "./ApprovalControls";
+import ApprovalControls from "./AGRIApprovalControls";
 import { api } from "/src/lib/api";
 import DocumentViewModal from "./DocumentViewModal";
-
-
+import ApplicationHeader from "/src/components/ApplicationHeader";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const AgriPermitDetail = () => {
-    const [activeModal, setActiveModal] = useState(null) // 'ocr' | 'view' | null
-    const [ocrID, setOcrID] = useState(null)
-    const [docID, setDocID] = useState(null)
+    const [activeModal, setActiveModal] = useState(null)
+    const [ocrID, setOcrID] = useState(0)
+    const [docID, setDocID] = useState(0)
     const { id } = useParams();
     const navigate = useNavigate();
     const { data: application, isLoading, isError } = useApplicationDetail(id);
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
-    const { mutate } = useOCRUpdate(ocrID);
+    const { mutate: updateOCR } = useOCRUpdate();
+    const query = useQueryClient()
 
     if (isLoading) return (
         <div className="flex items-center justify-center min-h-screen">
@@ -52,14 +51,17 @@ const AgriPermitDetail = () => {
     }
 
     const handleUpdateOCR = (data) => {
-        mutate(data)
+        console.log(ocrID)
+        updateOCR({ id: ocrID, data })
         closeModal()
+        toast.success("Successfully fix the data.")
     }
 
     const approveHandler = async (data) => {
         try {
             const res = await api.post(`/application/${id}/approve/`, data)
-            console.log(res.data)
+            query.invalidateQueries({ queryKey: ['application'] })
+            toast.success("Forwarded to the opv.")
         } catch (error) {
             console.log(error.response)
         }
@@ -69,12 +71,21 @@ const AgriPermitDetail = () => {
     const rejectHandler = async (data) => {
         try {
             const res = await api.post(`/application/${id}/reject/`, data)
+            query.invalidateQueries({ queryKey: ['application'] })
             console.log(res.data)
-        } catch(error) {
+            toast.success("Successfully rejected.")
+        } catch (error) {
             console.log(error.response)
         }
     };
 
+    const issue_permit_handler = async (id) => {
+        const res = await api.post('/issued-permit/', {
+            application_id: id
+        })
+        query.invalidateQueries({ queryKey: ['application'] })
+        console.log(res.data)
+    }
 
 
     return (
@@ -93,9 +104,6 @@ const AgriPermitDetail = () => {
                     onClose={closeModal}
                 />
             )}
-
-
-
 
             <div className="max-w-5xl mx-auto p-6 md:p-12 min-h-screen bg-white">
                 {/* Minimal Navigation */}
@@ -116,13 +124,23 @@ const AgriPermitDetail = () => {
                             </h2>
                             <div className="h-[1px] flex-1 bg-slate-100"></div>
                         </div>
-                        <DocumentList documents={application?.documents} fixData={fixDataHandler} documentView={viewDocument}/>
+                        <DocumentList documents={application?.documents} fixData={fixDataHandler} documentView={viewDocument} />
                     </section>
 
-                    <ApprovalControls
-                        onApprove={approveHandler}
-                        onReject={rejectHandler}
-                    />
+                    {application.status === 'MANUAL' || application.status === 'OCR_VALIDATED' ? (
+                        <ApprovalControls
+                            onApprove={approveHandler}
+                            onReject={rejectHandler}
+                        />
+                    ) : null}
+
+                    <button
+                        className="btn btn-success text-white"
+                        onClick={() => issue_permit_handler(application.id)}
+                    >
+                        issued permit
+                    </button>
+
                 </div>
 
             </div>

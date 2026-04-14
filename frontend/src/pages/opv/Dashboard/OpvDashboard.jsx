@@ -1,18 +1,17 @@
-import { useNavigate } from "react-router-dom";
+import { useApplication } from "/src/hooks/useApplications"
+import StatusBadge from "/src/components/StatusBadge";
 import { Eye } from "lucide-react";
 import DateFormatter from "/src/components/DateFormatter";
-import ActionGroup from "../../../components/ActionButton";
-import StatusBadge from "../../../components/StatusBadge";
-import { useApplication } from "/src/hooks/useApplications";
+import ActionGroup from "/src/components/ActionButton";
+import { useNavigate } from "react-router-dom";
 
 
-const ApplicationDashboard = () => {
-    const { data: application, isLoading, isError } = useApplication();
-    const navigate = useNavigate();
+const OpvDashboard = () => {
+    const { data: application, isLoading, isError } = useApplication()
+    const navigate = useNavigate()
 
-    if (isLoading) return <div className="p-10 text-center font-bold opacity-50">Loading Applications...</div>;
+    if (isLoading) return <div className="p-10 text-center font-bold opacity-50">Loading Your Application...</div>;
     if (isError) return <div className="p-10 text-error font-bold">Failed to load data.</div>;
-
 
 
     return (
@@ -48,7 +47,7 @@ const ApplicationDashboard = () => {
                                     {/* Static inline actions: Impossible to overflow because they are part of the row */}
                                     <ActionGroup
                                         buttons={[
-                                            { icon: Eye, label: "View", onclick: () => navigate(`detail/${data.id}`), disable: false},
+                                            { icon: Eye, label: "View", onclick: () => navigate(`application/detail/${data.id}`), disable: false },
                                         ]}
                                     />
                                 </td>
@@ -61,8 +60,10 @@ const ApplicationDashboard = () => {
                     <div className="p-20 text-center opacity-30 italic">No applications found in the registry.</div>
                 )}
             </div>
-        </div>
-    );
-};
 
-export default ApplicationDashboard;
+            
+        </div>
+    )
+}
+
+export default OpvDashboard

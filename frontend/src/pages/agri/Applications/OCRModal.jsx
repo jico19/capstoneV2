@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 
 
 const OCRModal = ({ doc_id, title = "Document Verification", onClose, onSubmit, isSubmitting }) => {
+
     const { data: doc, isLoading, isError } = useDocument(doc_id);
 
     const { register, handleSubmit, formState: { errors } } = useForm();

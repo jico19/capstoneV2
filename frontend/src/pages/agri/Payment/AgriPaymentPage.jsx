@@ -1,164 +1,171 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { usePayment } from "/src/hooks/usePayment";
 import {
-    ArrowLeft,
-    CreditCard,
-    Receipt,
-    User,
+    DollarSign,
+    Download,
     CheckCircle2,
-    Wallet,
-    Banknote
+    Clock,
+    Inbox,
+    AlertCircle,
+    CreditCard,
+    HandCoins
 } from 'lucide-react';
+import KPICard from '/src/components/KPICard';
+
 
 const AgriPaymentPage = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const [paymentMethod, setPaymentMethod] = useState('cash');
-    const [referenceNumber, setReferenceNumber] = useState('');
+    const { data: payments, isLoading, isError } = usePayment();
 
-    // --- DATA NEEDED FROM API ---
-    // application_id: {id}
-    // farmer_name: "Juan Dela Cruz"
-    // total_fee: 250.00
-    // breakdown: { permit: 150, inspection: 100 }
-    // current_status: "APPROVED"
+    // Calculate aggregates for the top row
+    const stats = useMemo(() => {
+        if (!payments) return { total: 0, online: 0, offline: 0 };
+        return {
+            total: payments.reduce((acc, curr) => acc + curr.amount, 0),
+            online: payments.filter(p => p.method === 'ONLINE').length,
+            offline: payments.filter(p => p.method === 'OFFLINE').length
+        };
+    }, [payments]);
 
-    const handleConfirmPayment = () => {
-        // Logic to update status to "PAID" in your backend
-        console.log("Processing payment for:", id, "via", paymentMethod);
-        // On success: navigate(`/permit-generator/${id}`)
-    };
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <span className="loading loading-spinner loading-lg text-green-600"></span>
+                <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest animate-pulse">
+                    Syncing Financial Records...
+                </p>
+            </div>
+        );
+    }
 
-    return (
-        <div className="min-h-screen pb-20">
-            {/* Header Navigation */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-                <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-green-700 transition-colors"
-                    >
-                        <ArrowLeft size={16} /> Back to Detail
-                    </button>
-                    <span className="text-xs font-mono font-bold text-slate-400 uppercase">Payment Module</span>
+    if (isError) {
+        return (
+            <div className="max-w-7xl mx-auto p-8">
+                <div className="bg-red-50 border border-red-200 p-6 text-red-700 flex flex-col items-center gap-2">
+                    <AlertCircle size={24} />
+                    <p className="font-bold uppercase text-xs tracking-tighter">Data Connection Failed</p>
+                    <p className="text-sm">Could not retrieve payment history. Please refresh the browser.</p>
                 </div>
             </div>
+        );
+    }
 
-            <div className="max-w-4xl mx-auto p-6 md:p-12">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    return (
+        <div className="p-8 space-y-8">
 
-                    {/* LEFT: Payment Form */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <section className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                            <h2 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                                <Wallet className="text-green-600" /> Select Payment Method
-                            </h2>
+            {/* 1. Header & Actions */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-200 pb-8">
+                <div>
+                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Payment History</h1>
+                    <p className="text-gray-500 text-sm font-medium mt-1">Audit trail for all municipal livestock permit fees.</p>
+                </div>
+                {/* <div className="flex gap-2 w-full md:w-auto">
+                    <button className="btn btn-outline flex-1 md:flex-none rounded-none normal-case border-gray-200 bg-white hover:bg-gray-50 gap-2 text-xs font-bold uppercase tracking-wider">
+                        <Download size={14} /> Export CSV
+                    </button>
+                    <button className="btn btn-primary flex-1 md:flex-none rounded-none normal-case px-8 font-black uppercase tracking-wider text-xs">
+                        Generate Daily Report
+                    </button>
+                </div> */}
+            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                                {/* Cash Option */}
-                                <div
-                                    onClick={() => setPaymentMethod('cash')}
-                                    className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ${paymentMethod === 'cash' ? 'border-green-600 bg-green-50' : 'border-slate-100 bg-slate-50'
-                                        }`}
-                                >
-                                    <div className={`p-3 rounded-xl ${paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'bg-white text-slate-400'}`}>
-                                        <Banknote size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-slate-800">Cash / Over-counter</p>
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold">Pay at MAO Office</p>
-                                    </div>
-                                </div>
+            {/* 2. KPI Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <KPICard
+                    title="Total collections"
+                    value={`₱${stats.total.toLocaleString()}`}
+                    subtitle="Total payments."
+                    icon={DollarSign}
+                    colorClass="bg-green-50 text-green-600"
+                />
 
-                                {/* Digital Option */}
-                                <div
-                                    onClick={() => setPaymentMethod('digital')}
-                                    className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ${paymentMethod === 'digital' ? 'border-green-600 bg-green-50' : 'border-slate-100 bg-slate-50'
-                                        }`}
-                                >
-                                    <div className={`p-3 rounded-xl ${paymentMethod === 'digital' ? 'bg-green-600 text-white' : 'bg-white text-slate-400'}`}>
-                                        <CreditCard size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-slate-800">Digital Payment</p>
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold">GCash / PayMaya</p>
-                                    </div>
-                                </div>
-                            </div>
+                <KPICard
+                    title="Paymongo (Online)"
+                    value={stats.online}
+                    subtitle="Payments done through paymongo"
+                    icon={CreditCard}
+                    colorClass="bg-blue-50 text-blue-600"
+                />
 
-                            <div className="space-y-4">
-                                <label className="label">
-                                    <span className="label-text font-bold text-slate-600">OR Number / Transaction Reference</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter Official Receipt Number..."
-                                    className="input input-bordered w-full rounded-xl bg-slate-50"
-                                    value={referenceNumber}
-                                    onChange={(e) => setReferenceNumber(e.target.value)}
-                                />
-                                <p className="text-[10px] text-slate-400 italic">
-                                    * Required for auditing and permit generation.
-                                </p>
-                            </div>
-                        </section>
+                <KPICard
+                    title="Cashier (Offline)"
+                    value={stats.offline}
+                    subtitle="Payments done through cashier"
+                    icon={HandCoins}
+                    colorClass="bg-amber-50 text-amber-600"
+                />
 
-                        <button
-                            onClick={handleConfirmPayment}
-                            disabled={!referenceNumber}
-                            className="btn btn-success w-full rounded-2xl h-16 text-white font-black uppercase tracking-widest text-lg shadow-lg shadow-green-200"
-                        >
-                            Confirm Payment & Issue Permit
-                        </button>
-                    </div>
+            </div>
 
-                    {/* RIGHT: Bill Summary (The Receipt Look) */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-                            <div className="bg-slate-800 p-6 text-white text-center">
-                                <Receipt className="mx-auto mb-2 opacity-50" size={32} />
-                                <h3 className="text-xs font-black uppercase tracking-widest">Bill Summary</h3>
-                            </div>
-
-                            <div className="p-6 space-y-6">
-                                {/* Farmer Info */}
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-slate-100 rounded-lg text-slate-400">
-                                        <User size={16} />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase">Applicant</p>
-                                        <p className="text-sm font-bold text-slate-700">Juan Dela Cruz</p>
-                                    </div>
-                                </div>
-
-                                <div className="divider my-0"></div>
-
-                                {/* Breakdown */}
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Permit Fee</span>
-                                        <span className="font-mono font-bold text-slate-700">₱ 150.00</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Inspection Fee</span>
-                                        <span className="font-mono font-bold text-slate-700">₱ 100.00</span>
-                                    </div>
-                                </div>
-
-                                <div className="bg-green-50 p-4 rounded-2xl flex justify-between items-center border border-green-100">
-                                    <span className="text-xs font-black text-green-700 uppercase">Total Amount</span>
-                                    <span className="text-xl font-black text-green-800">₱ 250.00</span>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase justify-center pt-4 border-t border-slate-100">
-                                    <CheckCircle2 size={12} className="text-green-500" />
-                                    Authorized by MAO Sariaya
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+            {/* 4. Main Ledger Table */}
+            <div className="bg-white border border-gray-200">
+                <div className="overflow-x-auto">
+                    <table className="table w-full border-collapse">
+                        <thead>
+                            <tr className="text-[11px] text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100 bg-gray-50">
+                                <th className="p-6 font-bold">Transaction Reference</th>
+                                <th className="p-6 font-bold">Payer (Farmer)</th>
+                                <th className="p-6 font-bold text-center">Gateway</th>
+                                <th className="p-6 font-bold text-right">Amount</th>
+                                <th className="p-6 font-bold text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {(!payments || payments.length === 0) ? (
+                                <tr>
+                                    <td colSpan="6" className="p-24 text-center">
+                                        <Inbox className="mx-auto text-gray-200 mb-4" size={48} />
+                                        <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em]">No records in current period</p>
+                                    </td>s
+                                </tr>
+                            ) : (
+                                payments.map((p) => (
+                                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="p-6">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-mono font-black text-gray-900">#TRX-{p.id}</span>
+                                                {p.paymongo_session_id && (
+                                                    <span className="text-[10px] text-gray-400 font-mono mt-0.5 truncate w-40">
+                                                        {p.paymongo_session_id}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-6">
+                                            <span className="text-sm font-black text-gray-700 uppercase tracking-tight">{p.farmer_name}</span>
+                                        </td>
+                                        <td className="p-6 text-center">
+                                            <span className={`px-2 py-1 text-[10px] font-black uppercase border ${p.method === 'ONLINE'
+                                                ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                                : 'bg-green-50 text-green-700 border-green-100'
+                                                }`}>
+                                                {p.method}
+                                            </span>
+                                        </td>
+                                        <td className="p-6 text-right">
+                                            <span className="text-sm font-black text-gray-900 font-mono">
+                                                ₱{p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                        <td className="p-6">
+                                            <div className="flex items-center justify-center gap-2">
+                                                {p.payment_status === 'success' ? (
+                                                    <>
+                                                        <CheckCircle2 size={14} className="text-green-600" />
+                                                        <span className="text-[10px] font-black uppercase text-green-600">Cleared</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Clock size={14} className="text-yellow-600" />
+                                                        <span className="text-[10px] font-black uppercase text-yellow-600">Processing</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

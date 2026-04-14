@@ -44,10 +44,8 @@ const Sidebar = ({ children }) => {
             case 'Farmer':
                 return (
                     <MenuSection title="Farmer Portal">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" />
-                        <SidebarItem icon={FilesIcon} label="Apply for Permit" />
-                        <SidebarItem icon={History} label="My Applications" />
-                        <SidebarItem icon={Bell} label="Notifications" />
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/farmer/'/>
+                        <SidebarItem icon={Bell} label="Notifications" to="/farmer/notification/"/>
                     </MenuSection>
                 );
             case 'Agri':
@@ -55,9 +53,8 @@ const Sidebar = ({ children }) => {
                     <MenuSection title="Agriculture Office">
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/agri/'/>
                         <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application'/>
-                        <SidebarItem icon={CreditCard} label="Payment Confirmation"to='/agri/payment' />
+                        <SidebarItem icon={CreditCard} label="Payment History"to='/agri/payment' />
                         <SidebarItem icon={Map} label="Geospatial Map" to='/agri/map'/>
-                        <SidebarItem icon={BarChart3} label="System Reports" to='/agri/report'/>
                     </MenuSection>
                 );
             case 'Opv':

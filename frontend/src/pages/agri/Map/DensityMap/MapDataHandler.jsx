@@ -65,7 +65,7 @@ const MapDataHandler = ({ mapData, surveyData }) => {
                         'Medium', '#eab308',    // Yellow
                         'High', '#ef4444',      // Red
                         'Very High', '#ef4444', // Red
-                        '#ffffff'               // Fallback / None (White)
+                        '#808080'               // Fallback / None (White)
                     ]
                 }
             });
@@ -77,15 +77,8 @@ const MapDataHandler = ({ mapData, surveyData }) => {
                 paint: {
                     'line-color': [
                         'case',
-                        ['boolean', ['feature-state', 'hover'], false],
-                        '#111827', 
+                        ['boolean', ['feature-state','hover'], false],
                         '#9ca3af'  
-                    ],
-                    'line-width': [
-                        'case',
-                        ['boolean', ['feature-state', 'hover'], false],
-                        2,
-                        1
                     ]
                 }
             });

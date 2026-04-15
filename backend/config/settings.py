@@ -61,7 +61,9 @@ INSTALLED_APPS = [
     'apps.ocr',
     'apps.documents',
     'apps.dashboard',
+    'apps.inspector',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

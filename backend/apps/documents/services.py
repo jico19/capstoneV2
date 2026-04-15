@@ -93,7 +93,7 @@ def generate_permit_pdf(permit_application_id):
             p.rect(13*cm, 3*cm, 5.5*cm, 7*cm, fill=True, stroke=True)
             
             # QR Generation
-            qr_url = f"{settings.FRONTEND_URL}/verify/{issued_permit.qr_token}"
+            qr_url = f"{settings.FRONTEND_URL}/inspector/verify/{issued_permit.qr_token}"
             qr = qrcode.QRCode(version=1, box_size=10, border=1)
             qr.add_data(qr_url)
             qr.make(fit=True)

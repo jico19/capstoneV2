@@ -22,7 +22,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return serializers.PermitApplicationListSerializer
-        elif self.action == 'retrieve':
+        elif self.action in ['retrieve', 'verify']:
             return serializers.PermitApplicationDetailSerializer
         elif self.action in ['create', 'update', 'partial_update']:
             return serializers.PermitApplicationWriteSerializer
@@ -65,7 +65,6 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             return Response('bad request', status=status.HTTP_400_BAD_REQUEST)
 
     # actions
-
     @action(detail=True, methods=['post'])
     def forward(self, request, pk=None):
         try:
@@ -118,9 +117,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
         application_instance.save()
         return Response("ok", status=status.HTTP_200_OK)
-        
-
-
+    
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         if request.user.role != 'Agri':
@@ -155,6 +152,19 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
         application_instance.save()
         return Response("ok", status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def verify(self, request, pk=None):
+        try:
+            issued_permit_instance = get_object_or_404(
+                models.IssuedPermit, qr_token = pk
+            )
+
+            serializer = self.get_serializer(issued_permit_instance.application)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(str(e))
+            return Response("error", status=status.HTTP_400_BAD_REQUEST)
 
 
 

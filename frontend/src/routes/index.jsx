@@ -30,6 +30,8 @@ import OPVApplicationDetail from "../pages/opv/Application/OPVApplicationDetailV
 
 // Inspector
 import InspectorDashboard from "../pages/inspector/Dashboard/InspectorDashboard";
+import QRScannerPage from "../pages/inspector/QR/QRScannerPage";
+import VerifyApplication from "../pages/inspector/Application/VerifyApplication";
 
 const router = createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -75,7 +77,9 @@ const router = createBrowserRouter([
         path: '/inspector',
         element: <ProtectedRoute allowedRoles={['Inspector']} />,
         children: [
-            { index: true, element: <InspectorDashboard /> }
+            { index: true, element: <InspectorDashboard /> },
+            { path: 'scan/', element: <QRScannerPage />},
+            { path: 'verify/:token/', element: <VerifyApplication />},
         ]
     },
 

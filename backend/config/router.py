@@ -3,6 +3,7 @@ from apps.permits import viewset as PermitViewSets
 from apps.maps import viewsets as MapsViewSets
 from apps.api import viewsets as UserViewSets
 from apps.payment import viewsets as PaymentViewSets
+from apps.inspector import viewsets as InspectorViewSets
 
 routers = DefaultRouter()
 
@@ -23,3 +24,6 @@ routers.register(r'notification', UserViewSets.NotificationViewSets)
 
 # payment
 routers.register(r'payment', PaymentViewSets.PaymentViewSets)
+
+# Inspector
+routers.register(r'inspector', InspectorViewSets.InspectorLogViewSets)

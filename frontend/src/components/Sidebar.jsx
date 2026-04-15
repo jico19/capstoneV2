@@ -67,8 +67,8 @@ const Sidebar = ({ children }) => {
             case 'Inspector':
                 return (
                     <MenuSection title="Field Inspection">
-                        <SidebarItem icon={QrCode} label="Scan QR Code" />
-                        <SidebarItem icon={History} label="Inspection Logs" />
+                        <SidebarItem icon={History} label="Inspection Logs"/>
+                        <SidebarItem icon={QrCode} label="Scan QR Code" to='/inspector/scan/'/>
                     </MenuSection>
                 );
             case 'Admin':

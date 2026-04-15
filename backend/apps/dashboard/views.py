@@ -32,3 +32,10 @@ class AgriDashboardView(views.APIView):
             "automation_rate": round(sucess_rate, 1),
 
         }, status=status.HTTP_200_OK)
+
+
+
+class InspectorDashboardView(views.APIView):
+    # TODO: Gumamwa ng ano dashboard API Endpoint
+    def get(self, request):
+        pass

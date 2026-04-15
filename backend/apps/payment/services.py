@@ -15,9 +15,9 @@ def get_auth_header():
 
 def create_checkout_session(application_pk: int):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
-    issued_permit = get_object_or_404(permits.IssuedPermit, application=application)
+    issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
 
-    if issued_permit.is_paid:
+    if issued_permit_instance.is_paid:
         raise ValidationError('Already paid.')
 
     farmer = application.farmer
@@ -33,7 +33,7 @@ def create_checkout_session(application_pk: int):
                     {
                         "currency": "PHP",
                         "amount": int(settings.PERMIT_AMOUNT),
-                        "name": f"Livestock Transport Permit — {issued_permit.permit_number}",
+                        "name": f"Livestock Transport Permit — {issued_permit_instance.permit_number}",
                         "quantity": 1,
                     }
                 ],
@@ -42,8 +42,8 @@ def create_checkout_session(application_pk: int):
                 "cancel_url": f"{settings.FRONTEND_URL}/farmer/payment/cancel?application_id={application.pk}",
                 "description": f"Permit fee for application #{application.application_id}",
                 "metadata": {
-                    "permit_id": str(issued_permit.pk),
-                    "permit_number": issued_permit.permit_number,
+                    "permit_id": str(issued_permit_instance.pk),
+                    "permit_number": issued_permit_instance.permit_number,
                     "farmer_id": str(farmer.pk),
                 }
             }
@@ -62,7 +62,7 @@ def create_checkout_session(application_pk: int):
     data = res.json()["data"]
 
     models.PaymentHistory.objects.create(
-        issued_permit=issued_permit,
+        issued_permit=issued_permit_instance,
         status=models.PaymentHistory.Status.PENDING,
         method='ONLINE',
         amount=int(settings.PERMIT_AMOUNT) / 100,

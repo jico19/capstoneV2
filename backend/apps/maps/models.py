@@ -42,7 +42,7 @@ class HogSurvey(models.Model):
         default=0,
     )
     
-    survey_date = models.DateTimeField(auto_created=True, null=True, blank=True)
+    survey_date = models.DateField(auto_created=True, null=True, blank=True)
     uploaded_at    = models.DateTimeField(auto_now_add=True)
 
     class Meta:

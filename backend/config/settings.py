@@ -196,3 +196,4 @@ TASKS = {
         "QUEUES": ["default"]
     }
 }
+

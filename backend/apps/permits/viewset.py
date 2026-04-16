@@ -31,17 +31,17 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
     
     def  get_queryset(self):
 
-        # if self.request.user.role == 'Farmer':
-        #         return models.PermitApplication.objects.filter(farmer=self.request.user)
+        if self.request.user.role == 'Farmer':
+                return models.PermitApplication.objects.filter(farmer=self.request.user)
         
-        # elif self.request.user.role == 'Agri':
-        #     return models.PermitApplication.objects.all()
+        elif self.request.user.role == 'Agri':
+            return models.PermitApplication.objects.all()
         
-        # elif self.request.user.role == 'Opv':
-        #     return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
+        elif self.request.user.role == 'Opv':
+            return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
         
-        # for testing
-        return models.PermitApplication.objects.all()
+        # # for testing
+        # return models.PermitApplication.objects.all()
 
 
     def create(self, request, *args, **kwargs):
@@ -61,8 +61,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             return Response('ok!!', status=status.HTTP_200_OK)
 
         except Exception as e:
-            print(e)
-            return Response('bad request', status=status.HTTP_400_BAD_REQUEST)
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
 
     # actions
     @action(detail=True, methods=['post'])

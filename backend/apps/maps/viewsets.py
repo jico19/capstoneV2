@@ -34,7 +34,7 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
             API Endpoint: GET /api/current-density/?month={n}&season={wet|dry}
             Returns aggregated pig density per barangay for the Leaflet heatmap.
         """
-    # 1. Get query parameters
+        # 1. Get query parameters
         target_month = request.query_params.get('month')
         target_season = request.query_params.get('season')
         # Start with all survey records

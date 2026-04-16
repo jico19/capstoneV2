@@ -1,6 +1,8 @@
 # serializers.py
 from rest_framework import serializers
 from .models import PermitApplication, SubmittedDocument, OPVValidation, OCRValidationResult, IssuedPermit
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 # ─────────────────────────────────────────
 # OCR VALIDATION RESULT
@@ -97,6 +99,11 @@ class PermitApplicationWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermitApplication
         fields = ["origin_barangay", "destination", "number_of_pigs", "transport_date", "purpose"]
+
+
+    def validate_transport_date(self, value):
+        if value < timezone.now().date():
+            raise ValidationError("Date cannot be in the past.")
 
 
 # ─────────────────────────────────────────

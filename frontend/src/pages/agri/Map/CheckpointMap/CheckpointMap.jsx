@@ -38,6 +38,7 @@ const CheckpointMap = () => {
             </div>
         </div>
     )
+    
 }
 
 export default CheckpointMap

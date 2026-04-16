@@ -45,50 +45,71 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
 
     def create(self, request, *args, **kwargs):
+        """
+        Create a new permit application and its associated documents.
+        Wrapped in a transaction to ensure either everything is created or nothing is.
+        """
+        # Ensure only Farmers can create applications
+        if request.user.role != 'Farmer':
+            return Response({"error": "Only farmers can submit new applications."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            # serializes the data
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            application = serializer.save(farmer=request.user)
-            # create the permit
-            services.create_permit(
-                files=request.FILES,
-                application=application,
-                user=request.user
-            )
+            with transaction.atomic():
+                # Serialize the basic application data
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                application = serializer.save(farmer=request.user)
+                
+                # Create associated document records and trigger OCR
+                services.create_permit(
+                    files=request.FILES,
+                    application=application,
+                    user=request.user
+                )
 
-            return Response('ok!!', status=status.HTTP_200_OK)
+                # Set initial status after document upload
+                application.status = models.PermitApplication.Status.SUBMITTED
+                application.save()
+
+            return Response({"msg": "Application submitted successfully", "id": application.pk}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+            # Safely handle different types of exceptions
+            error_detail = getattr(e, 'detail', str(e))
+            return Response({"error": "Failed to create application", "detail": error_detail}, status=status.HTTP_400_BAD_REQUEST)
 
     # actions
     @action(detail=True, methods=['post'])
     def forward(self, request, pk=None):
+        """
+        Forward an application to OPV for validation after Agri review or OCR.
+        """
         try:
-            application = get_object_or_404(
-                models.PermitApplication,
-                pk=pk
-            )
+            application = get_object_or_404(models.PermitApplication, pk=pk)
 
-            if application.status not in ['OCR_VALIDATED', 'MANUAL']:
-                return Response("you can't forward this.", status=status.HTTP_400_BAD_REQUEST)
+            # Check if application is in a valid state to be forwarded
+            valid_forward_statuses = [
+                models.PermitApplication.Status.OCR_VALIDATED, 
+                models.PermitApplication.Status.MANUAL,
+                models.PermitApplication.Status.SUBMITTED
+            ]
+            if application.status not in valid_forward_statuses:
+                return Response({"error": f"Cannot forward application with status: {application.status}"}, status=status.HTTP_400_BAD_REQUEST)
 
             application.status = models.PermitApplication.Status.FORWARDED_TO_OPV
             application.save()
 
-            return Response('forwarded!', status=status.HTTP_200_OK)
-        except Exception:
-            return Response("error forwarding.", status=status.HTTP_400_BAD_REQUEST)
+            return Response({"msg": "Application forwarded to OPV!"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Error forwarding application", "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
+        """
+        Agri officer approval to forward the application to OPV.
+        """
         if request.user.role != 'Agri':
-            return Response(
-                {"detail": "You do not have permission to perform this action."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Only Agri officers can approve applications."}, status=status.HTTP_403_FORBIDDEN)
 
         application_instance = self.get_object()
         approvable_statuses = [
@@ -96,34 +117,38 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             models.PermitApplication.Status.OCR_VALIDATED,
             models.PermitApplication.Status.MANUAL,
         ]
+        
         if application_instance.status not in approvable_statuses:
             return Response(
-                {"detail": f"Cannot approve an application with status '{application_instance.status}'."},
+                {"error": f"Cannot approve an application with status '{application_instance.status}'."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         remarks = request.data.get("remarks", "").strip()
-        application_instance.status = models.PermitApplication.Status.FORWARDED_TO_OPV
+        
+        with transaction.atomic():
+            application_instance.status = models.PermitApplication.Status.FORWARDED_TO_OPV
+            application_instance.save()
 
-        Notification.objects.create(
-            recipient=application_instance.farmer,
-            title="Application Approved",
-            message=(
-                f"Your permit application has been approved and forwarded to the OPV for validation.\n\n"
-                f"Remarks: {remarks}"
-            ) if remarks else "Your permit application has been approved and forwarded to the OPV for validation.",
-        )
+            # Create notification for the farmer
+            Notification.objects.create(
+                recipient=application_instance.farmer,
+                title="Application Approved by Agri",
+                message=(
+                    f"Your permit application has been reviewed by Agri and forwarded to OPV for final validation.\n\n"
+                    f"Remarks: {remarks}"
+                ) if remarks else "Your permit application has been forwarded to OPV.",
+            )
 
-        application_instance.save()
-        return Response("ok", status=status.HTTP_200_OK)
+        return Response({"msg": "Application approved and forwarded to OPV"}, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
+        """
+        Agri officer rejection - sends application back for resubmission.
+        """
         if request.user.role != 'Agri':
-            return Response(
-                {"detail": "You do not have permission to perform this action."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Only Agri officers can reject applications."}, status=status.HTTP_403_FORBIDDEN)
 
         application_instance = self.get_object()
         rejectable_statuses = [
@@ -131,26 +156,28 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             models.PermitApplication.Status.OCR_VALIDATED,
             models.PermitApplication.Status.MANUAL,
         ]
+        
         if application_instance.status not in rejectable_statuses:
             return Response(
-                {"detail": f"Cannot reject an application with status '{application_instance.status}'."},
+                {"error": f"Cannot reject an application with status '{application_instance.status}'."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         remarks = request.data.get("remarks", "").strip()
-        application_instance.status = models.PermitApplication.Status.RESUBMISSION
+        if not remarks:
+            return Response({"error": "Remarks are required when rejecting an application."}, status=status.HTTP_400_BAD_REQUEST)
         
-        Notification.objects.create(
-            recipient=application_instance.farmer,
-            title="Application Requires Resubmission",
-            message=(
-                f"Your permit application has been returned for resubmission.\n\n"
-                f"Remarks: {remarks}"
-            ) if remarks else "Your permit application has been returned for resubmission. Please review and resubmit.",
-        )
+        with transaction.atomic():
+            application_instance.status = models.PermitApplication.Status.RESUBMISSION
+            application_instance.save()
+            
+            Notification.objects.create(
+                recipient=application_instance.farmer,
+                title="Application Requires Resubmission",
+                message=f"Your permit application has been returned for resubmission.\n\nRemarks: {remarks}",
+            )
 
-        application_instance.save()
-        return Response("ok", status=status.HTTP_200_OK)
+        return Response({"msg": "Application rejected and returned for resubmission"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def verify(self, request, pk=None):
@@ -265,39 +292,76 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
         
 
     def create(self, request, *args, **kwargs):
+        """
+        Issue a permit for a validated application.
+        Includes guards for duplicate permits and invalid application status.
+        """
         application_id = request.data.get('application_id')
+        if not application_id:
+            return Response({"error": "application_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         application_instance = get_object_or_404(
             models.PermitApplication, pk=application_id
         )
 
-        issued_permit = models.IssuedPermit.objects.create(
-                permit_number=uuid.uuid4().hex[:13],
-                application_id = application_instance.id,
-                issued_by = request.user,
-                qr_token = uuid.uuid4(),
-        )
+        # Guard: Ensure the application has been validated by OPV
+        if application_instance.status != models.PermitApplication.Status.OPV_VALIDATED:
+            return Response(
+                {"error": f"Cannot issue permit for application with status: {application_instance.status}. It must be OPV_VALIDATED."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        application_instance.status = models.PermitApplication.Status.PAYMENT_PENDING
-        application_instance.save()
+        # Guard: Prevent duplicate IssuedPermit for the same application (OneToOne constraint)
+        if hasattr(application_instance, 'issued_permit'):
+            return Response({"error": "A permit has already been issued for this application."}, status=status.HTTP_400_BAD_REQUEST)
 
+        with transaction.atomic():
+            issued_permit = models.IssuedPermit.objects.create(
+                    permit_number=uuid.uuid4().hex[:13].upper(),
+                    application = application_instance,
+                    issued_by = request.user,
+                    qr_token = uuid.uuid4(),
+            )
 
-        return Response("issued permit!!", status=status.HTTP_200_OK)
+            # Advance status to Payment Pending
+            application_instance.status = models.PermitApplication.Status.PAYMENT_PENDING
+            application_instance.save()
+
+        return Response({"msg": "Permit issued successfully!", "id": issued_permit.id}, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, *args, **kwargs):
+        """
+        Retrieve issued permit documents (VHC, Pass, and the Permit PDF itself).
+        Includes guards for unpaid permits and missing related records.
+        """
         application_id = self.kwargs.get('pk')
-        applicataion_instance = get_object_or_404(
+        application_instance = get_object_or_404(
             models.PermitApplication, pk=application_id
         )    
-        opv_docs_instance = applicataion_instance.opv_validation
-        issued_permit_instance = applicataion_instance.issued_permit
+        
+        # Guard: Check if OPV validation exists
+        try:
+            opv_docs_instance = application_instance.opv_validation
+        except models.OPVValidation.DoesNotExist:
+            return Response({"error": "OPV validation records not found for this application."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Guard: Check if IssuedPermit exists
+        try:
+            issued_permit_instance = application_instance.issued_permit
+        except models.IssuedPermit.DoesNotExist:
+            return Response({"error": "No permit has been issued for this application."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Guard: Only allow retrieval if paid
         if not issued_permit_instance.is_paid:
-            return Response("not paid.", status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "This permit has not been paid for yet."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Guard: Ensure PDF has been generated
+        if not issued_permit_instance.permit_pdf:
+            return Response({"error": "Permit PDF is still being generated. Please try again in a moment."}, status=status.HTTP_202_ACCEPTED)
 
         return Response({
-            "veterinary_health_certificate": request.build_absolute_uri(opv_docs_instance.veterinary_health_certificate.url),
-            "transportation_pass" : request.build_absolute_uri(opv_docs_instance.transportation_pass.url),
+            "veterinary_health_certificate": request.build_absolute_uri(opv_docs_instance.veterinary_health_certificate.url) if opv_docs_instance.veterinary_health_certificate else None,
+            "transportation_pass" : request.build_absolute_uri(opv_docs_instance.transportation_pass.url) if opv_docs_instance.transportation_pass else None,
             "issued_permit_pdf": request.build_absolute_uri(issued_permit_instance.permit_pdf.url),
         }, status=status.HTTP_200_OK)
 

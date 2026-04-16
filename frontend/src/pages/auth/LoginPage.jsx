@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import useAuthStore from "/src/store/authContext";
 import { Lock, User, ShieldCheck, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 const LoginPage = () => {
     const {
@@ -15,9 +16,15 @@ const LoginPage = () => {
     const onSubmit = async (data) => {
         try {
             await login(data);
+            toast.success("Login Successful", {
+                description: "Welcome back to LivestockPass.",
+            });
             navigate("/");
         } catch (err) {
             console.error("Login failed", err);
+            toast.error("Login Failed", {
+                description: "Please check your credentials and try again.",
+            });
         }
     };
 
@@ -68,7 +75,7 @@ const LoginPage = () => {
                 <div className="w-full max-w-sm space-y-8">
 
                     <div className="space-y-2">
-                        <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">System Access</h1>
+                        <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Login your account</h1>
                         <p className="text-gray-500 text-sm">Please enter your credentials to continue.</p>
                     </div>
 
@@ -94,10 +101,6 @@ const LoginPage = () => {
 
                         {/* Password Field */}
                         <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Password</label>
-                                <Link to="/forgot" className="text-[10px] font-bold text-green-700 hover:underline uppercase">Forgot?</Link>
-                            </div>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input

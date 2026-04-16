@@ -7,6 +7,7 @@ import {
     FileText, ExternalLink, ShieldCheck, AlertTriangle
 } from "lucide-react"
 import { api } from "/src/lib/api"
+import { toast } from "sonner"
 
 
 
@@ -38,36 +39,42 @@ const VerifyApplication = () => {
 
             // 2. Fetch Permit Data
             try {
-                // Uncomment your real API call:
                 const res = await api.get(`/application/${token}/verify/`)
                 setApplication(res.data)
 
-                // // MOCK DATA (Matches the structure you provided)
                 setTimeout(() => {
-
                     setIsLoading(false);
                 }, 800);
             } catch (err) {
                 setIsError(true);
                 setIsLoading(false);
+                toast.error("Verification Error", {
+                    description: "Could not retrieve permit details for this QR code."
+                });
             }
         }
         fetchDetails()
-    }, [])
+    }, [token])
 
     const handleLog = async (data) => {
-        console.log(location)
+        try {
+            const formData = new FormData()
+            formData.append('application', application.id)
+            formData.append('notes', data.notes)
+            formData.append('lat', location.lat || 0)
+            formData.append('longi', location.lgn || 0)
 
-        const formData = new FormData()
-        formData.append('application', application.id)
-        formData.append('notes', data.notes)
-        formData.append('lat', location.lat)
-        formData.append('longi', location.lgn)
-
-        console.log("Logged Data:", Object.fromEntries(formData));
-        const res = await api.post(`/inspector/`, formData)
-        console.log(res.data)
-        navigate(-1)
+            const res = await api.post(`/inspector/`, formData)
+            toast.success("Inspection Logged", {
+                description: "The verification details have been recorded successfully."
+            })
+            navigate(-1)
+        } catch (error) {
+            console.error(error)
+            toast.error("Logging Failed", {
+                description: "Could not save the inspection details. Please try again."
+            })
+        }
     }
 
     const formatDate = (dateString) => {

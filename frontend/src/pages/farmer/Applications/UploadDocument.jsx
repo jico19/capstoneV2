@@ -32,7 +32,18 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
                                 type="file"
                                 className="hidden"
                                 accept=".pdf, image/*"
-                                {...register(doc.id, { required: `${doc.label} is required` })}
+                                {...register(doc.id, { 
+                                    required: `${doc.label} is required`,
+                                    validate: (fileList) => {
+                                        if (!fileList || fileList.length === 0) return true;
+                                        const file = fileList[0];
+                                        const maxSize = 30 * 1024 * 1024; // 30MB
+                                        if (file.size > maxSize) {
+                                            return "File size cannot exceed 30MB";
+                                        }
+                                        return true;
+                                    }
+                                })}
                             />
 
                             {hasFile(doc.id) ? (
@@ -49,6 +60,9 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
                                 </>
                             )}
                         </label>
+                        {errors[doc.id] && (
+                            <p className="text-red-600 text-[10px] mt-1 font-bold uppercase tracking-wider">{errors[doc.id].message}</p>
+                        )}
                     </div>
                 ))}
             </div>

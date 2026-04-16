@@ -61,12 +61,19 @@ def create_checkout_session(application_pk: int):
 
     data = res.json()["data"]
 
-    models.PaymentHistory.objects.create(
+    # Create or update the payment history record
+    # We use update_or_create because issued_permit has a OneToOne relationship with PaymentHistory.
+    # If a user requests a checkout session again, we simply update it with the new session ID.
+    models.PaymentHistory.objects.update_or_create(
         issued_permit=issued_permit_instance,
-        status=models.PaymentHistory.Status.PENDING,
-        method='ONLINE',
-        amount=int(settings.PERMIT_AMOUNT) / 100,
-        paymongo_session_id=data["id"],
+        defaults={
+            'status': models.PaymentHistory.Status.PENDING,
+            'method': 'ONLINE',
+            # settings.PERMIT_AMOUNT is in cents (lowest denomination), 
+            # so we divide by 100 for the database field which expects the standard unit.
+            'amount': int(settings.PERMIT_AMOUNT) / 100,
+            'paymongo_session_id': data["id"],
+        }
     )
 
     return {

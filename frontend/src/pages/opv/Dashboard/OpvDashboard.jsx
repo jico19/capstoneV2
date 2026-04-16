@@ -1,204 +1,172 @@
-import { useNavigate } from "react-router-dom";
+import {
+    CheckCircle,
+    LayoutDashboard,
+    Clock,
+    TrendingUp,
+    Eye,
+    FileSignature,
+    Search
+} from "lucide-react";
+import { useGetOPVDashboard } from "/src/hooks/useDashboard";
+import KPICard from "/src/components/KPICard";
+import BarChartComponent from "/src/components/charts/BarChart";
 import { useApplication } from "/src/hooks/useApplications";
+import { useNavigate } from "react-router-dom";
 import StatusBadge from "/src/components/StatusBadge";
 import DateFormatter from "/src/components/DateFormatter";
 import ActionGroup from "/src/components/ActionButton";
-import { Eye, FileSignature, CheckCircle, Clock, LayoutDashboard } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
+
+
+/**
+ * OPV Staff Dashboard
+ * Flat UI implementation: sharp corners, strict typography, gray/white/semantic palette.
+ * Now includes a fully flat Registry Table for application management.
+ */
 const OpvDashboard = () => {
-    // const { data: application, isLoading, isError } = useApplication();
+    const { data: metrics, isLoading, isError } = useGetOPVDashboard();
+    const { data: application, isLoading: ApplicationLoading, isError: ApplicationError } = useApplication();
+    const navigate = useNavigate()
 
-    const navigate = useNavigate();
 
-    // if (isLoading) {
-    //     return (
-    //         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-    //             <span className="loading loading-spinner loading-lg text-blue-600"></span>
-    //             <p className="text-slate-500 font-medium animate-pulse">Loading OPV Registry...</p>
-    //         </div>
-    //     );
-    // }
+    if (isLoading || ApplicationLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4 animate-pulse">Syncing validation queue</p>
+            </div>
+        );
+    }
 
-    // if (isError) {
-    //     return (
-    //         <div className="p-10 text-center text-red-500 bg-red-50 rounded-xl border border-red-200 font-bold max-w-3xl mx-auto mt-10">
-    //             Failed to load registry data. Please check your connection.
-    //         </div>
-    //     );
-    // }
+    if (isError || !metrics || ApplicationError) {
+        return (
+            <div className="p-10 text-center text-red-700 bg-red-50 rounded-none border border-gray-200 font-black uppercase tracking-widest text-xs max-w-3xl mx-auto mt-10">
+                Critical Error: Failed to fetch validation metrics.
+            </div>
+        );
+    }
 
-    // ==========================================
-    // Direct Calculations (No useMemo used as requested)
-    // ==========================================
-    const safeApplications = [];
-
-    const totalApplications = safeApplications.length;
-
-    // Applications waiting for OPV action
-    const pendingReview = safeApplications.filter(app =>
-        ['FORWARDED_TO_OPV', 'PENDING'].includes(app.status)
-    ).length;
-
-    // Applications that are already processed/approved
-    const approvedApplications = safeApplications.filter(app =>
-        ['APPROVED', 'PAID', 'RELEASED'].includes(app.status)
-    ).length;
-
-    const rejectedApplications = safeApplications.filter(app =>
-        app.status === 'REJECTED'
-    ).length;
-
-    // ==========================================
-    // Recharts Data Prep
-    // ==========================================
-    const chartData = [
-        { name: 'Pending Review', value: pendingReview, color: '#f59e0b' }, // Amber
-        { name: 'Approved', value: approvedApplications, color: '#10b981' }, // Green
-        { name: 'Rejected', value: rejectedApplications, color: '#ef4444' }, // Red
-    ];
+    const { kpis, charts } = metrics;
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 bg-slate-50/50 min-h-screen">
-
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-slate-200 pb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-indigo-100 text-indigo-700 rounded-xl">
-                        <LayoutDashboard size={28} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">OPV Dashboard</h1>
-                        <p className="text-sm text-slate-500 font-medium mt-1">Office of the Provincial Veterinarian — Overview</p>
-                    </div>
+        <div className="p-8 space-y-12 font-sans rounded-none">
+            {/* Flat Header Section */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-10">
+                <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Veterinary Office Overview</p>
+                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">OPV.Validation</h1>
+                </div>
+                <div className="bg-white border border-gray-200 p-4 rounded-none">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Current Cycle</p>
+                    <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>
 
-            {/* Top Row: KPI Cards & Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Left Side: Summary Cards */}
-                <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-white p-6  border border-slate-200 flex items-center gap-4">
-                        <div className="p-4 bg-slate-100 rounded-xl text-slate-600">
-                            <FileSignature size={28} />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Total Received</p>
-                            <h3 className="text-4xl font-black text-slate-800">{totalApplications}</h3>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6  border flex items-center gap-4 relative overflow-hidden">
-                        <div className="p-4 bg-amber-50 rounded-xl text-amber-600">
-                            <Clock size={28} />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-amber-600/70 uppercase tracking-wider">Awaiting Review</p>
-                            <h3 className="text-4xl font-black text-amber-700">{pendingReview}</h3>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 border flex items-center gap-4 sm:col-span-2">
-                        <div className="p-4 bg-green-50 rounded-xl text-green-600">
-                            <CheckCircle size={28} />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-green-600/70 uppercase tracking-wider">Successfully Processed</p>
-                            <h3 className="text-4xl font-black text-green-700">{approvedApplications}</h3>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Right Side: Recharts Donut Chart */}
-                <div className="bg-white p-6 border border-slate-200  flex flex-col items-center justify-center min-h-[250px]">
-                    <h3 className="text-sm font-bold text-slate-600 uppercase tracking-widest mb-2 w-full text-left">Status Distribution</h3>
-                    {totalApplications === 0 ? (
-                        <div className="flex-1 flex items-center justify-center text-slate-400 text-sm italic">
-                            No data to visualize
-                        </div>
-                    ) : (
-                        <ResponsiveContainer width="100%" height={220}>
-                            <PieChart>
-                                <Pie
-                                    data={chartData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    )}
-                </div>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <KPICard
+                    title="Awaiting Review"
+                    value={kpis.waiting_for_opv}
+                    subtitle="Applications in validation queue"
+                    icon={Clock}
+                    colorClass="bg-amber-50 text-amber-700"
+                />
+                <KPICard
+                    title="Validated Today"
+                    value={kpis.validated_today}
+                    subtitle="Successfully processed within 24h"
+                    icon={CheckCircle}
+                    colorClass="bg-green-50 text-green-700"
+                />
+                <KPICard
+                    title="Rejection Rate"
+                    value={kpis.rejection_rate}
+                    subtitle="Application quality tracking"
+                    icon={TrendingUp}
+                    colorClass="bg-red-50 text-red-700"
+                    isPercent={true}
+                />
             </div>
 
-            {/* Table Section */}
-            <div className="bg-white border border-slate-200 overflow-hidden">
-                <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-slate-800">Application Registry</h2>
+            {/* Validation History Chart */}
+            <div className="bg-white border border-gray-200 p-10 rounded-none">
+                <div className="mb-10 border-l-2 border-indigo-600 pl-6 space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Workflow Statistics</p>
+                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Daily.Throughput</h2>
                 </div>
+                <BarChartComponent
+                    data={charts.validation_history}
+                    xKey="date"
+                    yKey="count"
+                    height={350}
+                    barColor="#16a34a"
+                />
+            </div>
+
+            {/* Registry Table Section */}
+            <div className="border  bg-white overflow-hidden rounded-none">
+                {/* <div className="p-6 border-b  bg-gray-50 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gray-900 text-white">
+                            <Search size={16} />
+                        </div>
+                        <h3 className="font-black text-gray-900 uppercase tracking-tighter italic">Application.Registry</h3>
+                    </div>
+                </div> */}
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="border-b text-[10px] font-black uppercase tracking-widest">
                             <tr>
-                                <th className="p-5">Application ID</th>
-                                <th className="p-5">Farmer Name</th>
-                                <th className="p-5 text-center">Status</th>
-                                <th className="p-5">Transport Date</th>
-                                <th className="p-5 text-right">Actions</th>
+                                <th className="px-6 py-5">System ID</th>
+                                <th className="px-6 py-5">Payer.Name</th>
+                                <th className="px-6 py-5 text-center">Status.Mix</th>
+                                <th className="px-6 py-5 text-center">Schedule</th>
+                                <th className="px-6 py-5 text-right pr-8">Audit.Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-gray-200">
 
-                            {safeApplications.length === 0 && (
+                            {(!application || application.length === 0) && (
                                 <tr>
                                     <td colSpan="5">
-                                        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                                            <FileSignature size={48} className="mb-4 opacity-20" />
-                                            <p className="text-sm font-medium">Registry is currently empty.</p>
+                                        <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50">
+                                            <FileSignature size={48} className="text-gray-200 mb-4" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Registry is empty</p>
                                         </div>
                                     </td>
                                 </tr>
                             )}
 
-                            {safeApplications.map((data) => (
-                                <tr key={data.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-5">
-                                        <span className="px-3 py-1.5 bg-slate-100 text-slate-600 font-mono text-xs font-bold rounded-lg border border-slate-200">
-                                            {data.application_id}
+                            {application?.map((data) => (
+                                <tr key={data.id} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="px-6 py-5">
+                                        <span className="text-[11px] font-black text-gray-900 font-mono tracking-tight bg-gray-100 px-2 py-1 border border-gray-200">
+                                            #{data.application_id}
                                         </span>
                                     </td>
-                                    <td className="p-5 font-bold text-slate-800 text-sm">
-                                        {data.farmer_name}
+                                    <td className="px-6 py-5">
+                                        <p className="text-sm font-black text-gray-900 uppercase italic leading-none">{data.farmer_name}</p>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Verified.Client</p>
                                     </td>
-                                    <td className="p-5 text-center">
+                                    <td className="px-6 py-5 text-center">
                                         <StatusBadge status={data.status} />
                                     </td>
-                                    <td className="p-5 text-sm font-medium text-slate-600">
-                                        <DateFormatter date={data.transport_date} />
+                                    <td className="px-6 py-5 text-center">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-black text-gray-700 uppercase tracking-tight">
+                                                <DateFormatter date={data.transport_date} />
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="p-5 text-right">
+                                    <td className="px-6 py-5 text-right pr-8">
                                         <div className="flex justify-end">
                                             <ActionGroup
                                                 buttons={[
                                                     {
                                                         icon: Eye,
-                                                        label: "Review",
-                                                        onclick: () => navigate(`application/detail/${data.id}`),
+                                                        label: "Review Audit",
+                                                        onclick: () => navigate(`/opv/application/detail/${data.id}`),
                                                         disable: false
                                                     },
                                                 ]}

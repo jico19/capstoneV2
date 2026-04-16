@@ -1,27 +1,28 @@
 import {
-    LineChart,
-    Line,
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer
+    ResponsiveContainer,
+    Cell
 } from 'recharts';
 
 /**
- * Flat Line Chart
- * Strictly follows GEMINI.md: Primary green or semantic colors, no black data lines.
- * No rounded corners, minimalist labels.
+ * Flat Bar Chart
+ * Strictly follows GEMINI.md: Primary Green or Semantic Colors, no plain black.
+ * Sharp corners, no shadows, no radius.
  */
-const LineChartComponent = ({
+const COLORS = ['#16a34a', '#2563eb', '#ca8a04', '#dc2626', '#9333ea'];
+
+const BarChartComponent = ({
     data = [],
     xKey = 'date',
-    yKey = 'avg',
+    yKey = 'count',
     height = 300,
-    lineColor = '#16a34a', // Default to Primary Green (green-600)
-    showGrid = true
+    barColor = '#16a34a', // Default to Primary Green
 }) => {
-
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -29,54 +30,32 @@ const LineChartComponent = ({
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
-    const formatNumber = (num) => {
-        if (typeof num !== 'number') return num;
-        return num.toLocaleString();
-    };
-
     return (
-        <div className="w-full min-w-0 relative rounded-none" style={{ height }}>
+        <div className="w-full min-w-0 rounded-none" style={{ height }}>
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart
+                <BarChart
                     data={data}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
-                    {showGrid && (
-                        <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#f3f4f6" />
-                    )}
-
+                    <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#f3f4f6" />
                     <XAxis
                         dataKey={xKey}
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: '900' }}
                         tickFormatter={formatDate}
-                        minTickGap={30}
                     />
-
                     <YAxis
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: '900' }}
-                        width={60}
-                        tickFormatter={formatNumber}
                     />
-
-                    <Line
-                        type="monotone" // Smoother look, but keep stroke sharp
-                        dataKey={yKey}
-                        stroke={lineColor}
-                        strokeWidth={2.5}
-                        dot={false}
-                        activeDot={{ r: 4, fill: lineColor, stroke: '#fff', strokeWidth: 2 }}
-                    />
-
                     <Tooltip
                         labelFormatter={formatDate}
                         contentStyle={{
                             backgroundColor: '#111827',
                             border: 'none',
-                            borderRadius: '0px', // rounded-none
+                            borderRadius: '0px',
                             color: '#ffffff',
                             fontSize: '10px',
                             fontWeight: '900',
@@ -90,10 +69,15 @@ const LineChartComponent = ({
                             letterSpacing: '0.1em'
                         }}
                     />
-                </LineChart>
+                    <Bar dataKey={yKey} fill={barColor} radius={0}>
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill || COLORS[index % COLORS.length]} />
+                        ))}
+                    </Bar>
+                </BarChart>
             </ResponsiveContainer>
         </div>
     );
 };
 
-export default LineChartComponent;
+export default BarChartComponent;

@@ -34,7 +34,7 @@ const DownloadApplication = () => {
                     <AlertCircle size={32} />
                     <p className="font-black uppercase text-sm tracking-tighter">Access Denied or Not Found</p>
                     <p className="text-sm text-center">We couldn't find the documents for this permit. Ensure the payment is cleared and the permit has been issued.</p>
-                    <Link to="/farmer/dashboard" className="btn btn-ghost btn-sm underline uppercase font-bold mt-4">Back to Dashboard</Link>
+                    <Link to="/farmer/application" className="btn btn-ghost btn-sm underline uppercase font-bold mt-4">Back to Dashboard</Link>
                 </div>
             </div>
         );
@@ -45,7 +45,7 @@ const DownloadApplication = () => {
 
             {/* 1. Header Navigation */}
             <div className="max-w-5xl mx-auto">
-                <Link to="/farmer/dashboard" className="flex items-center gap-2 text-gray-500 hover:text-green-700 font-bold text-xs uppercase tracking-widest mb-6 transition-colors">
+                <Link to="/farmer/application" className="flex items-center gap-2 text-gray-500 hover:text-green-700 font-bold text-xs uppercase tracking-widest mb-6 transition-colors">
                     <ArrowLeft size={14} /> Back to My Applications
                 </Link>
 

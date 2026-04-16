@@ -5,6 +5,7 @@ import {
 import { useGetNotification } from '/src/hooks/useNotifications';
 import { api } from '/src/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 
 // Helper function to format time (e.g., "2 hours ago")
@@ -29,11 +30,18 @@ const NotificationPage = () => {
     
     // Mark all as read
     const markAllAsRead = async () => {
-        // TODO: Call backend to mark all as read
-
-        const res = await api.get('/notification/mark_all_read/')
-        query.invalidateQueries({ queryKey: ['notification']})
-
+        try {
+            await api.get('/notification/mark_all_read/')
+            query.invalidateQueries({ queryKey: ['notification']})
+            toast.success("Notifications Updated", {
+                description: "All notifications have been marked as read."
+            })
+        } catch (error) {
+            console.error(error)
+            toast.error("Action Failed", {
+                description: "Could not mark notifications as read."
+            })
+        }
     };
 
     // Contextual Icons and Colors based on Type
@@ -61,7 +69,7 @@ const NotificationPage = () => {
                         <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                             Notifications
                             {unreadCount > 0 && (
-                                <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                <span className="bg-red-50 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                                     {unreadCount} New
                                 </span>
                             )}

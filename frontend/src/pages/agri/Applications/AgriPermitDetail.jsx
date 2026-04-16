@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from "/src/hooks/useApplications";
-import DocumentList from "./DocumentList";
+import DocumentList from "/src/components/DocumentList";
 import OCRModal from "./OCRModal";
 import { useState } from "react";
 import ApprovalControls from "./AGRIApprovalControls";
 import { api } from "/src/lib/api";
-import DocumentViewModal from "./DocumentViewModal";
+import DocumentViewModal from "/src/components/DocumentViewModal";
 import ApplicationHeader from "/src/components/ApplicationHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -61,9 +61,14 @@ const AgriPermitDetail = () => {
         try {
             await api.post(`/application/${id}/approve/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Forwarded to the opv.")
+            toast.success("Application Approved", {
+                description: "Forwarded to OPV for final health validation."
+            })
         } catch (error) {
             console.log(error.response)
+            toast.error("Action Failed", {
+                description: "Could not approve the application."
+            })
         }
 
     };
@@ -72,18 +77,32 @@ const AgriPermitDetail = () => {
         try {
             await api.post(`/application/${id}/reject/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Successfully rejected.")
+            toast.success("Application Rejected", {
+                description: "Farmer has been notified for resubmission."
+            })
         } catch (error) {
             console.log(error.response)
+            toast.error("Action Failed", {
+                description: "Could not process the rejection."
+            })
         }
     };
 
     const issue_permit_handler = async (id) => {
-        const res = await api.post('/issued-permit/', {
-            application_id: id
-        })
-        query.invalidateQueries({ queryKey: ['application'] })
-        console.log(res.data)
+        try {
+            const res = await api.post('/issued-permit/', {
+                application_id: id
+            })
+            query.invalidateQueries({ queryKey: ['application'] })
+            toast.success("Permit Issued Successfully", {
+                description: "Payment is now pending from the farmer."
+            })
+            console.log(res.data)
+        } catch (error) {
+            toast.error("Issuance Failed", {
+                description: error.response?.data?.error || "An error occurred while issuing the permit."
+            })
+        }
     }
 
 

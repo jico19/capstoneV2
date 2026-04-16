@@ -1,85 +1,100 @@
+import logging
 from apps.permits import models as permits
 from apps.api import models as api
 import requests
 import re
 from datetime import datetime
+from rest_framework.exceptions import ValidationError, NotFound, APIException
 
-
+logger = logging.getLogger(__name__)
 
 # HELPERS
 
 def check_all_documents_complete(application_id):
-    application         = permits.PermitApplication.objects.get(id=application_id)
-    total_docs          = application.documents.count()
-    total_ocr_results   = permits.OCRValidationResult.objects.filter(
-        document__application=application
-    ).count()
+    try:
+        application = permits.PermitApplication.objects.get(id=application_id)
+    except permits.PermitApplication.DoesNotExist:
+        logger.error(f"PermitApplication with ID {application_id} not found.")
+        raise NotFound(f"PermitApplication with ID {application_id} not found.")
+    except Exception as e:
+        logger.error(f"Error retrieving PermitApplication: {str(e)}")
+        raise APIException("An unexpected error occurred while retrieving the permit application.")
 
-    # Not all docs processed yet — wait
-    if total_ocr_results < total_docs:
-        return
+    try:
+        total_docs = application.documents.count()
+        total_ocr_results = permits.OCRValidationResult.objects.filter(
+            document__application=application
+        ).count()
 
-    manual_docs = permits.OCRValidationResult.objects.filter(
-        document__application=application,
-        status='MANUAL'
-    )
+        # Not all docs processed yet — wait
+        if total_ocr_results < total_docs:
+            return
 
-    print(manual_docs)
-
-    if manual_docs.exists():
-        manual_types = [r.document.get_document_type_display() for r in manual_docs]
-        print(manual_types)
-        application.status  = permits.PermitApplication.Status.MANUAL
-        application.save()
-
-        api.Notification.objects.create(
-            type = api.Notification.Type.WARNING,
-            recipient   = application.farmer,
-            title       = 'Application Under Manual Review',
-            message     = f'Your application #{application.pk} is currently under manual review. '
-                f'Please wait for the Agri Officer to verify your documents.'
+        manual_docs = permits.OCRValidationResult.objects.filter(
+            document__application=application,
+            status='MANUAL'
         )
 
-        agri_officers = api.User.objects.filter(role='Agri')
-        api.Notification.objects.bulk_create([
-            api.Notification(
-                type = api.Notification.Type.INFO,
-                recipient   = officer,
-                title       = 'Manual Review Required',
-                message     = f'Application #{application.pk} from {application.farmer.get_full_name()} '
-                            f'requires manual review for: {", ".join(manual_types)}.'
+        if manual_docs.exists():
+            manual_types = [r.document.get_document_type_display() for r in manual_docs]
+            application.status = permits.PermitApplication.Status.MANUAL
+            application.save()
+
+            api.Notification.objects.create(
+                type=api.Notification.Type.WARNING,
+                recipient=application.farmer,
+                title='Application Under Manual Review',
+                message=f'Your application #{application.pk} is currently under manual review. '
+                        f'Please wait for the Agri Officer to verify your documents.'
             )
-            for officer in agri_officers
-        ])
 
-    else:
-        # All passed
-        application.status  = permits.PermitApplication.Status.OCR_VALIDATED
-        application.save()
+            agri_officers = api.User.objects.filter(role='Agri')
+            if agri_officers.exists():
+                api.Notification.objects.bulk_create([
+                    api.Notification(
+                        type=api.Notification.Type.INFO,
+                        recipient=officer,
+                        title='Manual Review Required',
+                        message=f'Application #{application.pk} from {application.farmer.get_full_name()} '
+                                f'requires manual review for: {", ".join(manual_types)}.'
+                    )
+                    for officer in agri_officers
+                ])
 
-        # Notify farmer
-        api.Notification.objects.create(
-            type = api.Notification.Type.SUCCESS,
-            recipient   = application.farmer,
-            title       = 'Documents Validated Successfully',
-            message     = f'All documents for application #{application.pk} have passed validation. '
-                    f'Your application is now under review.'
-        )
+        else:
+            # All passed
+            application.status = permits.PermitApplication.Status.OCR_VALIDATED
+            application.save()
 
-        # Notify Agri Officers
-        agri_officers =  api.User.objects.filter(role='Agri')
-        api.Notification.objects.bulk_create([
-            permits.Notification(
-                type = api.Notification.Type.INFO,
-                recipient   = officer,
-                title       = 'New Application Ready for Review',
-                message     = f'Application #{application.pk} from {application.farmer.get_full_name()} '
-                            f'has passed OCR validation and is ready for review.'
+            # Notify farmer
+            api.Notification.objects.create(
+                type=api.Notification.Type.SUCCESS,
+                recipient=application.farmer,
+                title='Documents Validated Successfully',
+                message=f'All documents for application #{application.pk} have passed validation. '
+                        f'Your application is now under review.'
             )
-            for officer in agri_officers
-        ])
 
-    return True
+            # Notify Agri Officers
+            agri_officers = api.User.objects.filter(role='Agri')
+            if agri_officers.exists():
+                api.Notification.objects.bulk_create([
+                    api.Notification(
+                        type=api.Notification.Type.INFO,
+                        recipient=officer,
+                        title='New Application Ready for Review',
+                        message=f'Application #{application.pk} from {application.farmer.get_full_name()} '
+                                f'has passed OCR validation and is ready for review.'
+                    )
+                    for officer in agri_officers
+                ])
+
+        return True
+    except Exception as e:
+        logger.error(f"Error in check_all_documents_complete: {str(e)}")
+        # We don't want to break the whole process if notifications fail, 
+        # but the state change is important.
+        raise APIException(f"Failed to process document completion: {str(e)}")
 
 
 

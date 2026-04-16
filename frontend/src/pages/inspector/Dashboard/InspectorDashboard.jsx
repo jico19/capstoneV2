@@ -1,122 +1,124 @@
-import React from 'react';
-import {
-    QrCode,
-    History,
-    ArrowRight,
-    CheckCircle2,
-    XCircle,
-    TrendingUp,
-    Calendar,
+import { 
+    Scan, 
+    Calendar, 
+    ShieldCheck, 
     Clock
-} from 'lucide-react';
-import KPICard from '/src/components/KPICard';
-import { useNavigate } from 'react-router-dom';
+} from "lucide-react";
+import { useGetInspectorDashboard } from "/src/hooks/useDashboard";
+import KPICard from "/src/components/KPICard";
+import BarChartComponent from "/src/components/charts/BarChart";
 
-// --- Sub-component: Recent Scan Item ---
-const ScanItem = ({ id, farmer, status, time }) => (
-    <div className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-        <div className="flex items-center gap-4">
-            <div className={status === 'success' ? 'text-green-600' : 'text-red-500'}>
-                {status === 'success' ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
-            </div>
-            <div>
-                <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{id}</p>
-                <p className="text-xs text-gray-500 font-medium">{farmer}</p>
-            </div>
-        </div>
-        <div className="text-right">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{time}</p>
-            <div className="flex items-center gap-1 text-[10px] font-black uppercase text-green-700 mt-1">
-                Details <ArrowRight size={10} />
-            </div>
-        </div>
-    </div>
-);
 
-const InspectorDashboard = ({ stats = { today: 0, week: 0, month: 0 }, recentScans = [] }) => {
-    const navigate = useNavigate()
+/**
+ * Inspector Dashboard
+ * Field-focused Flat UI: high contrast, no radius, minimalist data tables.
+ */
+const InspectorDashboard = () => {
+    const { data: metrics, isLoading, isError } = useGetInspectorDashboard();
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4 animate-pulse">Syncing field activity</p>
+            </div>
+        );
+    }
+
+    if (isError || !metrics) {
+        return (
+            <div className="p-10 text-center text-red-700 bg-red-50 rounded-none border border-gray-200 font-black uppercase tracking-widest text-xs max-w-3xl mx-auto mt-10">
+                Connection Error: Failed to sync Inspector logs.
+            </div>
+        );
+    }
+
+    const { kpis, charts, recent_activity } = metrics;
 
     return (
-        <div className="min-h-screen p-8 space-y-8">
-            {/* 1. Header Area */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Inspector Dashboard</h1>
-                    <p className="text-gray-500 text-sm font-medium">Checkpoint Operations & Verification Log</p>
+        <div className="max-w-7xl mx-auto p-8 space-y-12 bg-gray-50 min-h-screen font-sans rounded-none">
+            {/* Flat Header Section */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-10">
+                <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Field Verification Hub</p>
+                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">Inspector.View</h1>
+                </div>
+                <div className="bg-white border border-gray-200 p-4 rounded-none">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty.Session</p>
+                    <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>
 
-            {/* 2. Metrics Grid (KPIs from image) */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <KPICard
-                    title="Today's Scans"
-                    value={stats.today}
-                    icon={Clock}
-                    colorClass="bg-blue-50 text-blue-600"
-                    subtitle="total of today scans"
+                    title="My Total Scans"
+                    value={kpis.my_total_scans}
+                    subtitle="Lifetime verification activity"
+                    icon={Scan}
+                    colorClass="bg-gray-100 text-blue-700"
                 />
                 <KPICard
-                    title="Total Scans"
-                    value={stats.week}
-                    icon={TrendingUp}
-                    colorClass="bg-green-50 text-green-600"
-                    subtitle="Total scans in totals"
-                />
-                <KPICard
-                    title="Monthly Totals"
-                    value={stats.month}
+                    title="Scans Today"
+                    value={kpis.scans_today}
+                    subtitle="Activity for current shift"
                     icon={Calendar}
-                    colorClass="bg-purple-50 text-purple-600"
-                    subtitle="Monthly Scans"
+                    colorClass="bg-green-50 text-green-700"
+                />
+                <KPICard
+                    title="System Active"
+                    value={kpis.total_active_permits_in_system}
+                    subtitle="Live permits currently on road"
+                    icon={ShieldCheck}
+                    colorClass="bg-indigo-50 text-indigo-700"
                 />
             </div>
 
-            {/* 3. Primary Scanner Action */}
-            <div className="bg-white border border-gray-200 p-8 flex flex-col items-center text-center space-y-6">
-                <div className="space-y-2">
-                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Ready for Inspection?</h2>
-                    <p className="text-sm text-gray-500 font-medium max-w-xs mx-auto">
-                        Scan the Permit QR code to instantly verify livestock transport legality.
-                    </p>
+            {/* Verification Trend Chart */}
+            <div className="bg-white border border-gray-200 p-10 rounded-none">
+                <div className="mb-10 border-l-2 border-blue-600 pl-6 space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Activity Monitoring</p>
+                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Scan.History</h2>
                 </div>
-                <button
-                    onClick={() => navigate('/inspector/scan/')}
-                    className="btn bg-green-500 text-white h-16 px-12 normal-case font-black text-lg gap-4 shadow-none border-none"
-                >
-                    <QrCode size={24} />
-                    Quick Scan
-                </button>
+                <BarChartComponent
+                    data={charts.activity_trend}
+                    xKey="date"
+                    yKey="count"
+                    height={300}
+                    barColor="#16a34a"
+                />
             </div>
 
-            {/* 4. Recent Activity Log */}
-            {/* <div className="bg-white border border-gray-200 overflow-hidden">
-                <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-600 flex items-center gap-2">
-                        <History size={14} /> Recent Verifications
-                    </h3>
-                    <button className="text-[10px] font-black text-green-700 uppercase hover:underline">View History</button>
+            {/* Recent Scans Activity */}
+            <div className="bg-white border border-gray-200 rounded-none overflow-hidden">
+                <div className="p-6 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+                    <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest leading-none italic">Verified.Logs</h3>
                 </div>
-
-                <div className="divide-y divide-gray-50">
-                    {recentScans.length > 0 ? (
-                        recentScans.map((scan) => (
-                            <ScanItem
-                                key={scan.id}
-                                id={scan.application_id}
-                                farmer={scan.farmer_name}
-                                status={scan.status} // 'success' or 'fail'
-                                time={scan.time}
-                            />
-                        ))
-                    ) : (
-                        <div className="py-20 text-center">
-                            <QrCode size={48} className="mx-auto text-gray-200 mb-4" />
-                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No recent scans recorded</p>
-                        </div>
-                    )}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest">
+                            <tr>
+                                <th className="px-6 py-5">Transport ID</th>
+                                <th className="px-6 py-5">Timestamp</th>
+                                <th className="px-6 py-5 text-right">Verification Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {recent_activity.map((log, idx) => (
+                                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="px-6 py-5 font-black text-gray-900 text-sm tracking-tight font-mono">{log.application__application_id}</td>
+                                    <td className="px-6 py-5 text-gray-500 text-xs font-bold uppercase tracking-widest">
+                                        {new Date(log.scanned_at).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-5 text-right text-gray-400 italic text-xs">
+                                        {log.notes || "System Verified - No Notes"}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-            </div> */}
-
+            </div>
         </div>
     );
 };

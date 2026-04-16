@@ -69,6 +69,13 @@ const QRScannerPage = () => {
     const handleFileUpload = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        const maxSize = 30 * 1024 * 1024; // 30MB
+        if (file.size > maxSize) {
+            alert('File size cannot exceed 30MB');
+            return;
+        }
+
         setScannedResult(null);
 
         const qr = new Html5Qrcode('reader-file');

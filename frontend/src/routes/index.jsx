@@ -7,6 +7,7 @@ import LoginPage from "/src/pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 
 // farmer
+import FarmerDashboard from "../pages/farmer/Dashboard/FarmerDashboard";
 import FarmerApplicationDashboard from "../pages/farmer/Dashboard/FarmerApplicationDashboard";
 import CreateApplication from "../pages/farmer/Applications/CreateApplication";
 import NotificationPage from "../pages/farmer/Notification/NotificationPage";
@@ -44,15 +45,16 @@ const router = createBrowserRouter([
         path: '/farmer',
         element: <ProtectedRoute allowedRoles={['Farmer']} />,
         children: [
-            { index: true, element: <FarmerApplicationDashboard /> },
+            { index: true, element: <FarmerDashboard /> },
+            { path: 'application', element: <FarmerApplicationDashboard /> },
             { path: 'application/detail/:id', element: <ApplicationDetail /> },
             { path: 'application/create/', element: <CreateApplication /> },
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'payment/success/:issued_permit_id', element: <PaymentSuccess /> },
             { path: 'payment/checkout/:id', element: <PaymentCheckout /> },
-            { path: 'applicaation/download/:id', element: <DownloadApplication />}
-        ]
-    },
+            { path: 'application/download/:id', element: <DownloadApplication />}
+            ]
+            },
     {
         path: '/agri',
         element: <ProtectedRoute allowedRoles={['Agri']} />,

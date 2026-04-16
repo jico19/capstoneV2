@@ -3,7 +3,7 @@ import React from 'react';
 /**
  * Global ActionGroup Component
  * Used in tables and lists for consistent row actions.
- * Style: Flat, Sharp, Minimal.
+ * Style: Flat, Sharp, Minimal. Strictly adheres to GEMINI.md.
  */
 const ActionGroup = ({ buttons = [] }) => {
     return (
@@ -21,9 +21,13 @@ const ActionGroup = ({ buttons = [] }) => {
                 return (
                     <div
                         key={i}
-                        className="tooltip tooltip-top"
-                        data-tip={btn.label}
+                        className="group relative"
                     >
+                        {/* Custom Flat Tooltip - Replacing DaisyUI tooltip for full control */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-none whitespace-nowrap z-10 pointer-events-none">
+                            {btn.label}
+                        </div>
+
                         <button
                             onClick={(e) => {
                                 e.stopPropagation(); // Prevent row click events
@@ -31,23 +35,23 @@ const ActionGroup = ({ buttons = [] }) => {
                             }}
                             disabled={btn.disable}
                             className={`
-                /* Layout */
-                btn btn-square btn-sm h-9 w-9
-                
-                /* Border Management: Collapses middle borders to look unified */
-                border border-gray-200 -ml-[1px] first:ml-0
-                
-                /* Flat Styling */
-                rounded-none bg-white transition-colors duration-150
-                
-                /* Interaction States */
-                ${btn.disable
-                                    ? "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                                /* Fixed Dimensions - Sharp Square */
+                                h-10 w-10 flex items-center justify-center
+                                
+                                /* Border Management: Collapses middle borders to look unified */
+                                border border-gray-200 -ml-[1px] first:ml-0
+                                
+                                /* Flat Styling: No radius, no shadows */
+                                rounded-none bg-white transition-all duration-75
+                                
+                                /* Interaction States - High Contrast Semantic Fills */
+                                ${btn.disable
+                                    ? "bg-gray-50 text-gray-200 border-gray-100 cursor-not-allowed"
                                     : isDestructive
-                                        ? "text-gray-500 hover:bg-red-600 hover:text-white hover:border-red-600"
-                                        : "text-gray-600 hover:bg-green-700 hover:text-white hover:border-green-700"
+                                        ? "text-gray-400 hover:bg-red-600 hover:text-white hover:border-red-600"
+                                        : "text-gray-400 hover:bg-green-600 hover:text-white hover:border-green-600"
                                 }
-              `}
+                            `}
                         >
                             {Icon && <Icon size={16} strokeWidth={2.5} />}
                         </button>

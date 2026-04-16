@@ -53,6 +53,13 @@ class SubmittedDocumentWriteSerializer(serializers.ModelSerializer):
         model = SubmittedDocument
         fields = ["application", "document_type", "file"]
 
+    def validate_file(self, value):
+        """Check if file size is less than 30MB."""
+        limit = 30 * 1024 * 1024
+        if value.size > limit:
+            raise ValidationError("File size cannot exceed 30MB.")
+        return value
+
 
 # ─────────────────────────────────────────
 # PERMIT APPLICATION
@@ -104,6 +111,7 @@ class PermitApplicationWriteSerializer(serializers.ModelSerializer):
     def validate_transport_date(self, value):
         if value < timezone.now().date():
             raise ValidationError("Date cannot be in the past.")
+        return value
 
 
 # ─────────────────────────────────────────
@@ -131,6 +139,20 @@ class OPVValidationWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = OPVValidation
         fields = ["application", "status", "remarks", "veterinary_health_certificate", "transportation_pass"]
+
+    def validate_veterinary_health_certificate(self, value):
+        """Check if file size is less than 30MB."""
+        limit = 30 * 1024 * 1024
+        if value and value.size > limit:
+            raise ValidationError("Veterinary Health Certificate size cannot exceed 30MB.")
+        return value
+
+    def validate_transportation_pass(self, value):
+        """Check if file size is less than 30MB."""
+        limit = 30 * 1024 * 1024
+        if value and value.size > limit:
+            raise ValidationError("Transportation Pass size cannot exceed 30MB.")
+        return value
 
 
 # ─────────────────────────────────────────

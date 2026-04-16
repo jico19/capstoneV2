@@ -4,7 +4,17 @@ from apps.maps.models import Barangay
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 from nanoid import generate
+from django.core.exceptions import ValidationError
 
+
+def validate_file_size(value):
+    """Validator to ensure file size does not exceed 30MB."""
+    filesize = value.size
+    
+    if filesize > 30 * 1024 * 1024:
+        raise ValidationError("The maximum file size that can be uploaded is 30MB")
+    else:
+        return value
 
 def document_id():
     '''
@@ -63,7 +73,8 @@ class SubmittedDocument(models.Model):
     document_type = models.CharField(max_length=30, choices=DocumentType.choices)
     file = models.FileField(upload_to='submitted_docs/', validators=[
         FileExtensionValidator(
-            allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])
+            allowed_extensions=['pdf', 'jpg', 'jpeg', 'png']),
+        validate_file_size
         ])
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
@@ -86,8 +97,8 @@ class OPVValidation(models.Model):
     remarks = models.TextField(blank=True)
     validated_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     
-    veterinary_health_certificate   = models.FileField(upload_to='opv_docs/vhc/', null=True, blank=True)
-    transportation_pass = models.FileField(upload_to='opv_docs/pass/', null=True, blank=True)
+    veterinary_health_certificate   = models.FileField(upload_to='opv_docs/vhc/', null=True, blank=True, validators=[validate_file_size])
+    transportation_pass = models.FileField(upload_to='opv_docs/pass/', null=True, blank=True, validators=[validate_file_size])
 
     
     def __str__(self):
@@ -129,7 +140,7 @@ class IssuedPermit(models.Model):
     is_paid = models.BooleanField(default=False)
     payment_method = models.CharField(max_length=100, default="", blank=True, choices=PaymentMethodChoices)
 
-    permit_pdf = models.FileField(upload_to='issued_docs/permits/', null=True, blank=True)
+    permit_pdf = models.FileField(upload_to='issued_docs/permits/', null=True, blank=True, validators=[validate_file_size])
 
     date_issued = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True)

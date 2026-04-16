@@ -1,15 +1,24 @@
 import { useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, replace, useNavigate } from "react-router-dom";
 import { useApplication } from "/src/hooks/useApplications";
 import {
-    ArrowDown, Eye, HandCoins, Plus,
-    MapPin, Inbox, FileText, CircleCheck, AlertCircle
+    Plus,
+    MapPin, Inbox, FileText, CircleCheck, AlertCircle,
+    HandCoins,
+    Eye,
+    ArrowDown
 } from "lucide-react";
 import ActionGroup from "/src/components/ActionButton";
 import DateFormatter from "/src/components/DateFormatter";
 import StatusBadge from "/src/components/StatusBadge";
 import KPICard from "/src/components/KPICard";
 
+
+
+/**
+ * Farmer Application List Dashboard
+ * Refined to follow strict Flat UI guidelines: no rounded corners, plain Tailwind buttons.
+ */
 const FarmerApplicationDashboard = () => {
     const { data: application, isLoading, isError } = useApplication();
     const navigate = useNavigate();
@@ -27,12 +36,12 @@ const FarmerApplicationDashboard = () => {
         };
     }, [application]);
 
-    
+
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-                <span className="loading loading-spinner loading-lg text-blue-600"></span>
-                <p className="text-slate-500 font-medium animate-pulse">Loading your applications...</p>
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4 animate-pulse">Syncing applications</p>
             </div>
         );
     }
@@ -40,8 +49,8 @@ const FarmerApplicationDashboard = () => {
     if (isError) {
         return (
             <div className="max-w-7xl mx-auto p-6">
-                <div className="bg-red-50 text-red-600 border border-red-200 p-4 rounded-xl flex items-center justify-center font-semibold">
-                    Failed to load application data. Please refresh the page.
+                <div className="bg-red-50 text-red-700 border border-gray-200 p-8 rounded-none flex items-center justify-center font-black uppercase tracking-widest text-xs">
+                    Failed to load application data.
                 </div>
             </div>
         );
@@ -49,74 +58,71 @@ const FarmerApplicationDashboard = () => {
 
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+        <div className="max-w-7xl mx-auto p-8 space-y-12 bg-white min-h-screen font-sans rounded-none">
 
             {/* 1. Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-slate-200 pb-6">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Overview</h1>
-                    <p className="text-sm text-slate-500 mt-1">Welcome back. Here is the status of your transport permits.</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-gray-200 pb-10">
+                <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Management Registry</p>
+                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">Applications.Registry</h1>
                 </div>
                 <Link
                     to='/farmer/application/create/'
-                    className="btn bg-green-600 hover:bg-green-700 text-white border-none gap-2 px-6"
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-xs font-black uppercase tracking-wider rounded-none transition-colors flex items-center gap-2"
                 >
-                    <Plus size={18} /> New Application
+                    <Plus size={14} strokeWidth={3} /> New Application
                 </Link>
             </div>
 
             {/* 2. Dynamic Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <KPICard
-                    title="Total Applications"
+                    title="Total History"
                     value={summary.total}
-                    subtitle="Your applications"
+                    subtitle="All time submissions"
                     icon={FileText}
-                    colorClass="bg-green-50 text-green-600"
+                    colorClass="bg-gray-100 text-gray-900"
                 />
 
                 <KPICard
-                    title="Active Permits"
+                    title="Active.Permits"
                     value={summary.active}
-                    subtitle="Your active applications"
+                    subtitle="Valid and released documents"
                     icon={CircleCheck}
-                    colorClass="bg-green-50 text-green-600"
+                    colorClass="bg-green-50 text-green-700"
                 />
 
                 <KPICard
-                    title="Pernding Applications"
+                    title="Pending.Action"
                     value={summary.pending}
-                    subtitle="Your applications"
+                    subtitle="Requiring your attention"
                     icon={AlertCircle}
-                    colorClass="bg-amber-100 text-amber-600"
+                    colorClass="bg-amber-50 text-amber-700"
                 />
-
             </div>
 
             {/* 3. Table Container */}
-            <div className="bg-white border border-slate-200 overflow-hidden">
+            <div className="bg-white border border-gray-200 rounded-none overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                        <thead className="bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest">
                             <tr>
-                                <th className="p-5 font-bold">Application ID</th>
-                                <th className="p-5 font-bold">Details</th>
-                                <th className="p-5 font-bold text-center">Status</th>
-                                <th className="p-5 font-bold">Transport Date</th>
-                                <th className="p-5 font-bold text-right pr-6">Actions</th>
+                                <th className="px-6 py-5">System ID</th>
+                                <th className="px-6 py-5">Transport Details</th>
+                                <th className="px-6 py-5 text-center">Status</th>
+                                <th className="px-6 py-5">Schedule</th>
+                                <th className="px-6 py-5 text-right pr-8">Management</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-gray-100">
 
                             {/* Empty State Handle */}
                             {(!application || application.length === 0) && (
                                 <tr>
                                     <td colSpan="5">
-                                        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                                            <Inbox size={48} className="mb-4 opacity-20" />
-                                            <p className="text-sm font-medium">No applications found.</p>
-                                            <p className="text-xs mt-1">Click "New Application" to get started.</p>
+                                        <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50">
+                                            <Inbox size={48} className="text-gray-200 mb-4" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Registry is empty</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -124,64 +130,66 @@ const FarmerApplicationDashboard = () => {
 
                             {/* Data Mapping */}
                             {application?.map((data) => (
-                                <tr key={data.id} className="hover:bg-slate-50 transition-colors group">
+                                <tr key={data.id} className="hover:bg-gray-50/50 transition-colors group border-gray-100">
 
-                                    {/* Styled ID Badge */}
-                                    <td className="p-5">
-                                        <span className="px-3 py-1.5 bg-slate-100 text-slate-700 font-mono text-xs font-bold rounded-md border border-slate-200">
+                                    {/* ID Badge */}
+                                    <td className="px-6 py-5">
+                                        <span className="text-[11px] font-black text-gray-900 font-mono tracking-tight bg-gray-100 px-2 py-1 border border-gray-200">
                                             {data.application_id}
                                         </span>
                                     </td>
 
-                                    {/* Grouped Details (Farmer + Destination if available) */}
-                                    <td className="p-5">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-slate-800">{data.farmer_name}</span>
+                                    {/* Grouped Details */}
+                                    <td className="px-6 py-5">
+                                        <div className="flex flex-col space-y-1">
+                                            <span className="text-sm font-black text-gray-900 uppercase italic leading-none">{data.farmer_name}</span>
                                             {data.destination && (
-                                                <span className="text-xs font-medium text-slate-500 flex items-center gap-1 mt-0.5">
-                                                    <MapPin size={12} className="text-slate-400" /> {data.destination}
+                                                <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1 uppercase tracking-widest leading-none">
+                                                    <MapPin size={10} className="text-green-600" /> {data.destination}
                                                 </span>
                                             )}
                                         </div>
                                     </td>
 
                                     {/* Status Badge */}
-                                    <td className="p-5 text-center">
+                                    <td className="px-6 py-5 text-center">
                                         <StatusBadge status={data.status} />
                                     </td>
 
                                     {/* Date */}
-                                    <td className="p-5 text-sm font-semibold text-slate-600">
-                                        <DateFormatter date={data.transport_date} />
+                                    <td className="px-6 py-5">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-black text-gray-700 uppercase tracking-tight">
+                                                <DateFormatter date={data.transport_date} />
+                                            </span>
+                                        </div>
                                     </td>
 
                                     {/* Actions */}
-                                    <td className="p-5 text-right pr-6">
-                                        <div className="flex justify-end">
-                                            <ActionGroup
-                                                buttons={[
-                                                    {
-                                                        icon: Eye,
-                                                        label: "View",
-                                                        onclick: () => navigate(`application/detail/${data.id}`),
-                                                        disable: false
-                                                    },
-                                                    {
-                                                        icon: HandCoins,
-                                                        label: "Pay",
-                                                        // Actually route to the payment page we created!
-                                                        onclick: () => navigate(`payment/checkout/${data.id}`),
-                                                        disable: data.status !== 'PAYMENT_PENDING'
-                                                    },
-                                                    {
-                                                        icon: ArrowDown,
-                                                        label: "Permit",
-                                                        onclick: () =>  navigate(`applicaation/download/${data.id}`),
-                                                        disable: !['PAID', 'RELEASED'].includes(data.status)
-                                                    },
-                                                ]}
-                                            />
-                                        </div>
+                                    <td className="px-6 py-5 text-right pr-8">
+                                        <ActionGroup
+                                            buttons={[
+                                                {
+                                                    icon: Eye,
+                                                    label: "View",
+                                                    onclick: () => navigate(`/farmer/application/detail/${data.id}`),
+                                                    disable: false
+                                                },
+                                                {
+                                                    icon: HandCoins,
+                                                    label: "Pay",
+                                                    onclick: () => navigate(`/farmer/payment/checkout/${data.id}`),
+                                                    disable: data.status !== 'PAYMENT_PENDING'
+                                                },
+                                                {
+                                                    icon: ArrowDown,
+                                                    label: "Permit",
+                                                    onclick: () => navigate(`/farmer/application/download/${data.id}`),
+                                                    disable: !['PAID', 'RELEASED'].includes(data.status)
+                                                },
+                                            ]}
+
+                                        />
                                     </td>
                                 </tr>
                             ))}

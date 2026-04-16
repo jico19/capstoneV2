@@ -18,7 +18,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # App Routes
-    path('', include('apps.dashboard.urls'), name="agri_dashboard")
+    path('dashboard/', include('apps.dashboard.urls'), name="agri_dashboard")
 ]
 
 urlpatterns += routers.urls

@@ -61,26 +61,26 @@ const Sidebar = ({ children }) => {
             case 'Opv':
                 return (
                     <MenuSection title="OPV Staff">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" />
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/opv/"/>
                     </MenuSection>
                 );
             case 'Inspector':
                 return (
                     <MenuSection title="Field Inspection">
-                        <SidebarItem icon={History} label="Inspection Logs"/>
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/inspector/"/>
                         <SidebarItem icon={QrCode} label="Scan QR Code" to='/inspector/scan/'/>
                     </MenuSection>
                 );
             case 'Admin':
                 return (
                     <MenuSection title="Administration">
-                        <SidebarItem icon={UserCog} label="User Management" />
-                        <SidebarItem icon={Map} label="Barangay Data" />
-                        <SidebarItem icon={Settings} label="System Settings" />
+                        <SidebarItem icon={UserCog} label="User Management" to="/admin/users" />
+                        <SidebarItem icon={Map} label="Barangay Data" to="/admin/map" />
+                        <SidebarItem icon={Settings} label="System Settings" to="/admin/settings" />
                     </MenuSection>
                 );
             default:
-                return <SidebarItem icon={LayoutDashboard} label="Dashboard" />;
+                return <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/"/>;
         }
     };
 

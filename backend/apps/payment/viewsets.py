@@ -53,60 +53,91 @@ class PaymentViewSets(viewsets.ModelViewSet):
     def verify_paymongo_session(self, request, pk=None):
         """
         Calls PayMongo to check the actual status of the checkout session.
-        it passed issed_permit pk
+        This endpoint verifies if a payment has been successfully made.
         """
         try:
-            application_permit_instance = get_object_or_404(
-                Permits.PermitApplication,
-                pk=pk
-            )
-            issued_permit_instance = application_permit_instance.issued_permit
-            payment_history_instance = issued_permit_instance.payment_history
+            # 1. Fetch the application and its related permit
+            application = get_object_or_404(Permits.PermitApplication, pk=pk)
+            
+            # Verify the application is in the correct state for payment verification
+            if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
+                # If it's already released, we can return success immediately
+                if application.status == Permits.PermitApplication.Status.RELEASED:
+                    return Response({"msg": "Payment already verified", "verified": True}, status=200)
+                return Response({"error": f"Application is not in payment pending state (Current status: {application.status})"}, status=400)
 
-            url = f"{settings.PAYMONGO_URL}/checkout_sessions/{payment_history_instance.paymongo_session_id}"
+            # 2. Get the issued permit and its associated payment history
+            try:
+                issued_permit = application.issued_permit
+            except Permits.IssuedPermit.DoesNotExist:
+                return Response({"error": "No permit has been issued for this application yet"}, status=404)
+
+            try:
+                payment_history = issued_permit.payment_history
+            except models.PaymentHistory.DoesNotExist:
+                return Response({"error": "No payment session found for this permit"}, status=404)
+
+            # 3. If we already know it's a success locally, skip the external API call
+            if payment_history.status == models.PaymentHistory.Status.SUCCESS:
+                return Response({"msg": "Payment already verified", "verified": True}, status=200)
+
+            # 4. Query PayMongo API for the checkout session details
+            url = f"{settings.PAYMONGO_URL}/checkout_sessions/{payment_history.paymongo_session_id}"
             headers = get_auth_header()
 
             response = requests.get(url, headers=headers)
             
-            if payment_history_instance.status == 'SUCCESS':
-                return Response({"msg": "Payment Verified", "verified": True}, status=200)
+            if response.status_code != 200:
+                return Response({"error": "Failed to verify session with payment provider"}, status=400)
 
-            if response.status_code == 200:
-                data = response.json()['data']
-                payment_status = data['attributes']['status']
+            data = response.json().get('data', {})
+            attributes = data.get('attributes', {})
+            payments = attributes.get('payments', [])
 
-                # change to paid for prod
-                if payment_status == 'active': 
-                    with transaction.atomic():
-                        payment_history_instance = models.PaymentHistory.objects.select_for_update().get(
-                            issued_permit=issued_permit_instance
-                        )
-                        
-                        if payment_history_instance.status == 'SUCCESS':
-                            return Response({"msg": "Payment Verified", "verified": True}, status=200)
-                        
-                        # 1. Update Payment History
-                        payment_history_instance.status = 'SUCCESS'
-                        payment_history_instance.method = data['attributes']['payment_method_used']
-                        payment_history_instance.save()
+            # 5. PROTOTYPE SIMULATION:
+            # For this prototype, we treat an 'active' session status as 'paid' to simulate a successful transaction.
+            # IN PRODUCTION: You should iterate through the 'payments' array and check for status == 'paid'.
+            payment_status = attributes.get('status')
+            
+            if payment_status == 'active':
+                with transaction.atomic():
+                    # Re-fetch payment history with a lock to prevent concurrent update issues
+                    payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
+                    
+                    if payment_history.status == models.PaymentHistory.Status.SUCCESS:
+                        return Response({"msg": "Payment already verified", "verified": True}, status=200)
+                    
+                    # A. Update Payment History record
+                    payment_history.status = models.PaymentHistory.Status.SUCCESS
+                    # Defaulting to 'ONLINE' for the prototype simulation
+                    payment_history.method = 'ONLINE'
+                    payment_history.save()
 
-                        # 2. Finally flip the bit on the Permit
-                        permit = issued_permit_instance
-                        permit.is_paid = True
-                        permit.payment_method = data['attributes']['payment_method_used']
-                        permit.valid_until = timezone.now() + timedelta(days=3)
-                        permit.save()
+                    # B. Update the Issued Permit state
+                    issued_permit.is_paid = True
+                    issued_permit.payment_method = 'ONLINE'
+                    # Permits are valid for 3 days from the time of payment simulation
+                    issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
+                    issued_permit.save()
 
-                        # 3. Trigger the PDF Generation and Reciept Generation
-                        generate_permit_pdf.enqueue(permit_application_id=application_permit_instance.pk)     
+                    # C. Advance the Application status to RELEASED
+                    application.status = Permits.PermitApplication.Status.RELEASED
+                    application.save()
 
-                        
+                    # D. Queue the background tasks for PDF generation
+                    generate_permit_pdf.enqueue(permit_application_id=application.pk)     
                 
-                    return Response({
-                        "msg": "Payment Verified",
-                        "verified": True,
-                    }, status=200)
+                return Response({
+                    "msg": "Payment Verified (Simulated)",
+                    "verified": True,
+                }, status=200)
+            else:
+                return Response({
+                    "msg": "Payment session is not active. Please try again.",
+                    "verified": False,
+                }, status=200)
                 
         except Exception as e:
-            print(str(e))
-            return Response("Payment not confirmed yet", status=status.HTTP_400_BAD_REQUEST)
+            # General fallback for unexpected errors
+            print(f"Payment Verification Error: {str(e)}")
+            return Response({"error": "An internal error occurred during verification"}, status=500)

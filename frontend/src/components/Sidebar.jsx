@@ -54,14 +54,14 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/agri/'/>
                         <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application'/>
                         <SidebarItem icon={CreditCard} label="Payment History"to='/agri/payment' />
-                        <SidebarItem icon={Map} label="Geospatial Map" to='/agri/map'/>
+                        <SidebarItem icon={Map} label="Geospatial Map" to='/agri/map/pig-density/'/>
+                        <SidebarItem icon={Map} label="Checkpoint Map" to='/agri/map/check-point/'/>
                     </MenuSection>
                 );
             case 'Opv':
                 return (
                     <MenuSection title="OPV Staff">
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" />
-                        <SidebarItem icon={History} label="Validation History" />
                     </MenuSection>
                 );
             case 'Inspector':

@@ -1,4 +1,4 @@
-import { useParams, useNavigate, data } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from "/src/hooks/useApplications";
 import DocumentList from "./DocumentList";
@@ -59,7 +59,7 @@ const AgriPermitDetail = () => {
 
     const approveHandler = async (data) => {
         try {
-            const res = await api.post(`/application/${id}/approve/`, data)
+            await api.post(`/application/${id}/approve/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
             toast.success("Forwarded to the opv.")
         } catch (error) {
@@ -70,9 +70,8 @@ const AgriPermitDetail = () => {
 
     const rejectHandler = async (data) => {
         try {
-            const res = await api.post(`/application/${id}/reject/`, data)
+            await api.post(`/application/${id}/reject/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
-            console.log(res.data)
             toast.success("Successfully rejected.")
         } catch (error) {
             console.log(error.response)
@@ -134,12 +133,14 @@ const AgriPermitDetail = () => {
                         />
                     ) : null}
 
-                    <button
-                        className="btn btn-success text-white"
-                        onClick={() => issue_permit_handler(application.id)}
-                    >
-                        issued permit
-                    </button>
+                    {application.status === 'OPV_VALIDATED' ? (
+                        <button
+                            className="btn btn-success text-white"
+                            onClick={() => issue_permit_handler(application.id)}
+                        >
+                            issued permit
+                        </button>
+                    ) : null}
 
                 </div>
 

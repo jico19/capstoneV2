@@ -22,6 +22,7 @@ import AgriDashboardPage from "../pages/agri/Dashboard/AgriDashboardPage";
 import ApplicationDashboard from "../pages/agri/Applications/ApplicationDashboard";
 import AgriPermitDetail from "../pages/agri/Applications/AgriPermitDetail";
 import AgriMapPage from "../pages/agri/Map/DensityMap/AgriMapPage";
+import CheckpointMap from "../pages/agri/Map/CheckpointMap/CheckpointMap";
 import AgriPaymentPage from "../pages/agri/Payment/AgriPaymentPage";
 
 // Opv
@@ -59,7 +60,8 @@ const router = createBrowserRouter([
             { index: true, element: <AgriDashboardPage /> },
             { path: 'application/', element: <ApplicationDashboard /> },
             { path: 'application/detail/:id', element: <AgriPermitDetail /> },
-            { path: 'map/', element: <AgriMapPage /> },
+            { path: 'map/pig-density/', element: <AgriMapPage /> },
+            { path: 'map/check-point/', element: <CheckpointMap/>},
             { path: 'payment/', element: <AgriPaymentPage /> },
         ]
     },

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import KPICard from '/src/components/KPICard';
 import { useGetAgriDashboard } from '/src/hooks/useDashboard';
-
+import LineChartComponent from '/src/components/charts/LineChart';
 
 
 const AgriOfficerKPIDashboard = () => {
@@ -49,7 +49,7 @@ const AgriOfficerKPIDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
                     title="OCR Manual Review"
-                    value={agri_metrics.total_manual_ocr}
+                    value={agri_metrics.total_application}
                     subtitle="Requires human verification of documents"
                     icon={AlertCircle}
                     colorClass="bg-red-50 text-red-600"
@@ -78,8 +78,16 @@ const AgriOfficerKPIDashboard = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Status Breakdown Sidebar */}
+            <div className='p-8 bg-white border border-gray-200'>
+                <div className='mb-5'>
+                    <h1 className="text-lg font-black uppercase tracking-widest text-gray-400">Pig Density Trend</h1>
+                </div>                {/* Status Breakdown Sidebar */}
+                <LineChartComponent
+                    data={agri_metrics.density_trend}
+                    xKey="date"
+                    yKey="avg"
+                    height={450}
+                />
             </div>
         </div>
     );

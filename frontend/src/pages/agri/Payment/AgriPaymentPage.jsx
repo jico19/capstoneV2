@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { usePayment } from "/src/hooks/usePayment";
 import {
     DollarSign,
-    Download,
     CheckCircle2,
     Clock,
     Inbox,

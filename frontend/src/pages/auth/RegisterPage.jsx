@@ -1,6 +1,10 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { ShieldCheck, UserPlus, ArrowRight, Mail, Lock, User, Phone } from "lucide-react";
+import { useState } from "react";
+import { api } from "/src/lib/api";
+
+
 
 const RegisterPage = () => {
     const {
@@ -9,20 +13,67 @@ const RegisterPage = () => {
         formState: { errors, isSubmitting },
     } = useForm();
     const navigate = useNavigate();
+    const [isOTP, setIsOTP] = useState(false)
+    const [OTP, setOTP] = useState("")
 
-    const onSubmit = async (data) => {
-        // I handle the setup, you just build the UI
+    // Handle the final registration process
+    const onRegister = async (data) => {
         console.log("Registering Farmer:", data);
-        // await registerFarmer(data)
-        // navigate('/login')
-    };
+
+        try {
+            const res = await api.post('/user/', {
+                username: data.username,
+                password: data.password,
+                phone_no: data.phone,
+                first_name: data.first_name,
+                last_name: data.last_name
+            })
+            console.log(res.data)
+            navigate('/login')
+        } catch(error) {
+            console.log(error.response)
+        }
+    };  
+
+    // Handle sending the OTP to the provided phone number
+    const onSendOTP = async (data) => {
+        try {
+            const res = await api.post('/user/send_otp/', {
+                phone_no: data.phone
+            })
+            alert(res.data.msg)
+            console.log(res.data)
+        } catch(error) {
+            console.log(error)
+        }
+    }
+
+    // Handle verification of the entered OTP
+    const onVerifyOTP = async () => {
+        const phone = register("phone").value || document.querySelector('input[name="phone"]')?.value; 
+        // Better way using watch or getValues if available from useForm
+        
+        try {
+            // We need the phone number to verify the specific OTP session
+            const phone_no = register("phone").name ? document.querySelector('input[name="phone"]')?.value : "";
+            
+            const res = await api.post('/user/verify_otp/', {
+                otp: OTP,
+                phone_no: phone_no 
+            })
+            setIsOTP(true)
+        } catch (error) {
+            console.log(error.response)
+            alert(error.response?.data?.error || "Invalid OTP")
+        }
+    }
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white font-sans">
 
-            {/* Left Side: Farmer Benefits (Dark) */}
+            {/* Left Side: Branding and Benefits */}
             <div className="hidden md:flex md:w-5/12 bg-green-900 p-12 flex-col justify-between relative overflow-hidden">
-                {/* Flat abstract pattern */}
+                {/* Flat abstract decorative element */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-green-800 -mr-32 -mt-32 rotate-45 opacity-50"></div>
 
                 <div className="relative z-10">
@@ -71,24 +122,43 @@ const RegisterPage = () => {
                         <p className="text-gray-500 text-sm font-medium">Create your account to start applying for transport permits.</p>
                     </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                    <form onSubmit={isOTP ? handleSubmit(onRegister) : handleSubmit(onSendOTP)} className="space-y-5">
 
-                        {/* Full Name */}
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Full Name</label>
-                            <div className="relative">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input
-                                    type="text"
-                                    {...register("fullName", { required: "Full name is required" })}
-                                    className="input input-bordered w-full pl-12 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium"
-                                    placeholder="Juan Dela Cruz"
-                                />
+                        {/* Name Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* First Name Field */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">First Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                        type="text"
+                                        {...register("first_name", { required: "First name is required" })}
+                                        className="input input-bordered w-full pl-12 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium"
+                                        placeholder="Juan"
+                                    />
+                                </div>
+                                {errors.first_name && <p className="text-red-500 text-[10px] font-bold uppercase mt-1">{errors.first_name.message}</p>}
+                            </div>
+
+                            {/* Last Name Field */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Last Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                        type="text"
+                                        {...register("last_name", { required: "Last name is required" })}
+                                        className="input input-bordered w-full pl-12 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium"
+                                        placeholder="Dela Cruz"
+                                    />
+                                </div>
+                                {errors.last_name && <p className="text-red-500 text-[10px] font-bold uppercase mt-1">{errors.last_name.message}</p>}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Username */}
+                            {/* Username Field */}
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Username</label>
                                 <input
@@ -97,8 +167,9 @@ const RegisterPage = () => {
                                     className="input input-bordered w-full rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium"
                                     placeholder="juan_farmer"
                                 />
+                                {errors.username && <p className="text-red-500 text-[10px] font-bold uppercase mt-1">{errors.username.message}</p>}
                             </div>
-                            {/* Phone */}
+                            {/* Phone Number Field */}
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Phone Number</label>
                                 <div className="relative">
@@ -106,28 +177,21 @@ const RegisterPage = () => {
                                     <input
                                         type="tel"
                                         {...register("phone", { required: "Phone is required" })}
-                                        className="input input-bordered w-full pl-10 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium"
+                                        className={`input input-bordered w-full pl-10 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium ${isOTP ? 'bg-green-50 border-green-200 text-green-700' : ''}`}
                                         placeholder="09123456789"
+                                        readOnly={isOTP}
                                     />
+                                    {isOTP && (
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-600">
+                                            <ShieldCheck size={16} />
+                                        </div>
+                                    )}
                                 </div>
+                                {errors.phone && <p className="text-red-500 text-[10px] font-bold uppercase mt-1">{errors.phone.message}</p>}
                             </div>
                         </div>
 
-                        {/* Email */}
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Address</label>
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input
-                                    type="email"
-                                    {...register("email", { required: "Email is required" })}
-                                    className="input input-bordered w-full pl-12 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-medium"
-                                    placeholder="juan@email.com"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Password */}
+                        {/* Password Field */}
                         <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Create Password</label>
                             <div className="relative">
@@ -139,30 +203,67 @@ const RegisterPage = () => {
                                     placeholder="••••••••"
                                 />
                             </div>
+                            {errors.password && <p className="text-red-500 text-[10px] font-bold uppercase mt-1">{errors.password.message}</p>}
                         </div>
 
-                        {/* Submit */}
+                        {/* OTP Verification Section (Conditional) */}
+                        {!isOTP && (
+                            <div className="pt-4 border-t border-gray-100 space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Verification Code</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="6-digit code"
+                                            className="input input-bordered flex-1 rounded-none border-gray-200 focus:outline-none focus:border-green-600 font-mono font-black tracking-widest text-sm"
+                                            onChange={(e) => setOTP(e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={onVerifyOTP}
+                                            disabled={!OTP}
+                                            className={`px-6 py-2 text-[10px] font-black uppercase tracking-wider rounded-none transition-colors border-none ${
+                                                OTP 
+                                                ? "bg-gray-900 text-white hover:bg-black" 
+                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                            }`}
+                                        >
+                                            Verify
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 font-medium italic">Enter the code sent via SMS to verify your identity.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Submit Button */}
                         <div className="pt-4">
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="btn btn-primary w-full rounded-none normal-case font-black text-sm uppercase tracking-widest border-none h-14"
+                                className={`w-full h-14 rounded-none px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors border-none ${
+                                    isOTP 
+                                    ? "bg-green-600 hover:bg-green-700 text-white" 
+                                    : "bg-gray-900 hover:bg-black text-white"
+                                }`}
                             >
                                 {isSubmitting ? (
-                                    <span className="loading loading-spinner"></span>
+                                    <span className="loading loading-spinner loading-xs"></span>
                                 ) : (
-                                    <div className="flex items-center gap-2">
-                                        Register Account <UserPlus size={18} />
+                                    <div className="flex items-center justify-center gap-2">
+                                        {isOTP ? "Complete Registration" : "Send Verification Code"}
+                                        {isOTP ? <UserPlus size={18} /> : <ArrowRight size={18} />}
                                     </div>
                                 )}
                             </button>
                         </div>
                     </form>
 
-                    <div className="pt-6 text-center">
-                        <p className="text-gray-500 text-xs font-medium">
+                    {/* Footer Links */}
+                    <div className="pt-6 text-center border-t border-gray-100">
+                        <p className="text-gray-500 text-[10px] font-black uppercase tracking-wider">
                             Already have an account?{" "}
-                            <Link to="/login" className="text-green-700 font-black uppercase hover:underline">
+                            <Link to="/login" className="text-green-700 hover:underline">
                                 Sign In Instead
                             </Link>
                         </p>

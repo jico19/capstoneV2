@@ -42,3 +42,13 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ['-sent_at']
+
+
+
+class AuditTrail(models.Model):
+    who_performed = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    what_performed = models.TextField()
+    when_performed = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"AuditTrails -> #{self.pk} - {self.who_performed.get_full_name() or self.who_performed.username}"

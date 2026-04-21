@@ -6,6 +6,7 @@ from apps.api.models import Notification
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from apps.ocr.tasks import extract_document_info
+from apps.api.models import AuditTrail
 
 def create_permit(files, application, user):
 

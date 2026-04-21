@@ -2,6 +2,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from . import models
 from .services import handle_application_status_change
+from apps.api.models import AuditTrail
+from django.utils import timezone
 
 
 @receiver(post_save, sender=models.SubmittedDocument)

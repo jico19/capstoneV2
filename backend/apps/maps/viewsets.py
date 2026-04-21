@@ -5,8 +5,16 @@ from . import serializers
 from . import models
 from django.db.models import Avg
 
+from rest_framework.permissions import IsAuthenticated
+
 class BarangayViewSets(viewsets.ModelViewSet):
     queryset = models.Barangay.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
     
 
     def get_serializer_class(self):
@@ -19,6 +27,12 @@ class BarangayViewSets(viewsets.ModelViewSet):
 
 class HogSurveyViewSets(viewsets.ModelViewSet):
     queryset = models.HogSurvey.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action in  ['list', 'retrieve']:

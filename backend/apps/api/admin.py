@@ -17,3 +17,4 @@ class CustomUserAdmin(UserAdmin):
     )
 
 admin.site.register(models.Notification)
+admin.site.register(models.AuditTrail)

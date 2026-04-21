@@ -8,11 +8,15 @@ from django.db.models.functions import TruncDate, TruncMonth
 from django.utils import timezone
 from datetime import timedelta
 
+from rest_framework.permissions import IsAuthenticated
+
 class AgriDashboardView(views.APIView):
     """
     Dashboard metrics for Agricultural Officers.
     Includes system health KPIs and trend charts.
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         # 1. KPIs (Pipeline and Automation)
         pending_agri = permits.PermitApplication.objects.filter(
@@ -23,7 +27,7 @@ class AgriDashboardView(views.APIView):
         
         total_ocr = permits.OCRValidationResult.objects.count()
         success_ocr = permits.OCRValidationResult.objects.filter(status='PASSED', manually_overridden=False).count()
-        automation_rate = (success_ocr / total_ocr) * 100 if total_ocr > 0 else 0
+        digital_verification_rate = (success_ocr / total_ocr) * 100 if total_ocr > 0 else 0
 
         # 2. Charts: Density Trend (Avg pigs per survey)
         density_trend = (
@@ -45,7 +49,7 @@ class AgriDashboardView(views.APIView):
                 "pending_agri_review": pending_agri,
                 "awaiting_payment": awaiting_payment,
                 "currently_at_opv": at_opv,
-                "automation_rate": round(automation_rate, 1),
+                "digital_verification_rate": round(digital_verification_rate, 1),
             },
             "charts": {
                 "density_trend": density_trend,
@@ -59,6 +63,8 @@ class FarmerDashboardView(views.APIView):
     Dashboard metrics for Farmers.
     Includes personal business KPIs and transport volume charts.
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = request.user
         my_apps = permits.PermitApplication.objects.filter(farmer=user)
@@ -95,6 +101,8 @@ class OPVDashboardView(views.APIView):
     Dashboard metrics for OPV Staff.
     Includes validation productivity and workload charts.
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         # 1. KPIs
         pending_validation = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
@@ -129,6 +137,8 @@ class InspectorDashboardView(views.APIView):
     Dashboard metrics for Inspectors.
     Includes scan activity and verification charts.
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = request.user
         my_logs = inspector.InspectorLogs.objects.filter(inspector=user)

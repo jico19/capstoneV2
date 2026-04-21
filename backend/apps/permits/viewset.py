@@ -6,17 +6,20 @@ from django.db import transaction
 from . import serializers
 from . import models
 from . import services
-from apps.documents.services import generate_permit_pdf
 import uuid
-from datetime import timedelta
 from apps.api.models import Notification
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import PermitApplicationFilter
+from apps.api.models import AuditTrail
+from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
+
 
 class PermitApplicationViewSets(viewsets.ModelViewSet):
     queryset = models.PermitApplication.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = PermitApplicationFilter
+    permission_classes = [IsAuthenticated]
 
 
     def get_serializer_class(self):
@@ -30,18 +33,20 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             return serializers.PermitApplicationListSerializer
     
     def  get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.PermitApplication.objects.none()
 
-        if self.request.user.role == 'Farmer':
-                return models.PermitApplication.objects.filter(farmer=self.request.user)
+        if user.role == 'Farmer':
+            return models.PermitApplication.objects.filter(farmer=user)
         
-        elif self.request.user.role == 'Agri':
+        elif user.role == 'Agri':
             return models.PermitApplication.objects.all()
         
-        elif self.request.user.role == 'Opv':
+        elif user.role == 'Opv':
             return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
         
-        # # for testing
-        # return models.PermitApplication.objects.all()
+        return models.PermitApplication.objects.none()
 
 
     def create(self, request, *args, **kwargs):
@@ -77,31 +82,6 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             # Safely handle different types of exceptions
             error_detail = getattr(e, 'detail', str(e))
             return Response({"error": "Failed to create application", "detail": error_detail}, status=status.HTTP_400_BAD_REQUEST)
-
-    # actions
-    @action(detail=True, methods=['post'])
-    def forward(self, request, pk=None):
-        """
-        Forward an application to OPV for validation after Agri review or OCR.
-        """
-        try:
-            application = get_object_or_404(models.PermitApplication, pk=pk)
-
-            # Check if application is in a valid state to be forwarded
-            valid_forward_statuses = [
-                models.PermitApplication.Status.OCR_VALIDATED, 
-                models.PermitApplication.Status.MANUAL,
-                models.PermitApplication.Status.SUBMITTED
-            ]
-            if application.status not in valid_forward_statuses:
-                return Response({"error": f"Cannot forward application with status: {application.status}"}, status=status.HTTP_400_BAD_REQUEST)
-
-            application.status = models.PermitApplication.Status.FORWARDED_TO_OPV
-            application.save()
-
-            return Response({"msg": "Application forwarded to OPV!"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": "Error forwarding application", "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -138,6 +118,13 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
                     f"Your permit application has been reviewed by Agri and forwarded to OPV for final validation.\n\n"
                     f"Remarks: {remarks}"
                 ) if remarks else "Your permit application has been forwarded to OPV.",
+            )
+
+            # --- Formal Audit Entry ---
+            AuditTrail.objects.create(
+                who_performed = request.user,
+                what_performed = f"[AGRI OFFICER REVIEW] - Application #{application_instance.application_id} approved for health validation. Forwarded to OPV.",
+                when_performed = timezone.now(),
             )
 
         return Response({"msg": "Application approved and forwarded to OPV"}, status=status.HTTP_200_OK)
@@ -177,25 +164,46 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
                 message=f"Your permit application has been returned for resubmission.\n\nRemarks: {remarks}",
             )
 
+            # --- Formal Audit Entry ---
+            AuditTrail.objects.create(
+                who_performed = request.user,
+                what_performed = f"[AGRI OFFICER REVIEW] - Application #{application_instance.application_id} returned for resubmission. Reason: {remarks}.",
+                when_performed = timezone.now(),
+            )
+
         return Response({"msg": "Application rejected and returned for resubmission"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def verify(self, request, pk=None):
+        """
+        Verification endpoint used by the Inspector App to scan QR codes.
+        Takes the qr_token as 'pk' and returns the associated permit details if valid.
+        """
+        # Ensure only authorized personnel can verify
+        if request.user.role not in ['Agri', 'Opv', 'Inspector']:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             issued_permit_instance = get_object_or_404(
                 models.IssuedPermit, qr_token = pk
             )
 
             serializer = self.get_serializer(issued_permit_instance.application)
+
+            # --- Formal Audit Entry ---
+            AuditTrail.objects.create(
+                who_performed = request.user,
+                what_performed = f"[FIELD INSPECTION] - Security QR Code scan performed for Application #{issued_permit_instance.application.application_id}. Result: VERIFIED.",
+                when_performed = timezone.now(),
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print(str(e))
-            return Response("error", status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SubmittedDocumentViewSets(viewsets.ModelViewSet):
     queryset = models.SubmittedDocument.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -205,8 +213,16 @@ class SubmittedDocumentViewSets(viewsets.ModelViewSet):
         else:
             return serializers.SubmittedDocumentListSerializer
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'Farmer':
+            return models.SubmittedDocument.objects.filter(application__farmer=user)
+        return models.SubmittedDocument.objects.all()
+
+
 class OPVValidationViewSets(viewsets.ModelViewSet):
     queryset = models.OPVValidation.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -216,11 +232,19 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OPVValidationDetailSerializer
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'Farmer':
+            return models.OPVValidation.objects.filter(application__farmer=user)
+        return models.OPVValidation.objects.all()
 
     # actions
     @action(detail=False, methods=['get'])
     def application(self, request):
-        """ Display the Application to """
+        """ Display the Application to OPV """
+        if request.user.role != "Opv":
+             return Response({"error": "Not Authorized"}, status=status.HTTP_403_FORBIDDEN)
+
         qs = models.PermitApplication.objects.filter(
             status__icontains='OPV'
         )
@@ -228,20 +252,20 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
             qs, many=True
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Approve the application attched with documents."""
+        if request.user.role != "Opv":
+            return Response({"error": "Not Authorized"}, status=status.HTTP_403_FORBIDDEN)
+
         application_instance = get_object_or_404(
             models.PermitApplication,
             pk=pk
         )
 
-        # if request.user.role != "Opv":
-        #     return Response("Not Authorized", status=status.HTTP_403_FORBIDDEN)
-        
         if application_instance.status not in ["OPV_REJECTED", "FORWARDED_TO_OPV"]:
-            return Response("This is already approved.", status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "This is already approved."}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data
         files = request.FILES
@@ -253,21 +277,28 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
             staff=request.user
         )
 
-        return Response("ok!!", status=status.HTTP_200_OK)
-    
+        # --- Formal Audit Entry ---
+        AuditTrail.objects.create(
+            who_performed = request.user,
+            what_performed = f"[PROVINCIAL VETERINARY REVIEW] - Health requirements validated for Application #{application_instance.application_id}. Status updated to OPV_VALIDATED.",
+            when_performed = timezone.now(),
+        )
+
+        return Response({"msg": "Approved successfully"}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """Reject the applications with reason"""
+        if request.user.role != "Opv":
+            return Response({"error": "Not Authorized"}, status=status.HTTP_403_FORBIDDEN)
+
         application_instance = get_object_or_404(
             models.PermitApplication,
             pk=pk
         )
-        
-        # if request.user.role != "Opv":
-        #     return Response("Not Authorized", status=status.HTTP_403_FORBIDDEN)
 
         if application_instance.status == "OPV_VALIDATED":
-            return Response("This is already approved.", status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "This is already approved."}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data
 
@@ -277,10 +308,19 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
             data=data
         )
 
-        return Response("ok!!", status=status.HTTP_200_OK)
+        # --- Formal Audit Entry ---
+        AuditTrail.objects.create(
+            who_performed = request.user,
+            what_performed = f"[PROVINCIAL VETERINARY REVIEW] - Application #{application_instance.application_id} rejected by Veterinary Officer. Remarks: {data.get('remarks', 'N/A')}.",
+            when_performed = timezone.now(),
+        )
+
+        return Response({"msg": "Rejected successfully"}, status=status.HTTP_200_OK)
+
 
 class IssuedPermitViewSets(viewsets.ModelViewSet):
     queryset = models.IssuedPermit.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -289,13 +329,21 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
             return serializers.IssuedPermitWriteSerializer
         else:
             return serializers.IssuedPermitDetailSerializer
-        
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'Farmer':
+            return models.IssuedPermit.objects.filter(application__farmer=user)
+        return models.IssuedPermit.objects.all()
 
     def create(self, request, *args, **kwargs):
         """
         Issue a permit for a validated application.
         Includes guards for duplicate permits and invalid application status.
         """
+        if request.user.role != "Agri":
+            return Response({"error": "Only Agri officers can issue permits."}, status=status.HTTP_403_FORBIDDEN)
+
         application_id = request.data.get('application_id')
         if not application_id:
             return Response({"error": "application_id is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -327,6 +375,13 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
             application_instance.status = models.PermitApplication.Status.PAYMENT_PENDING
             application_instance.save()
 
+            # --- Formal Audit Entry ---
+            AuditTrail.objects.create(
+                who_performed = request.user,
+                what_performed = f"[PERMIT ISSUANCE] - Final Transport Permit {issued_permit.permit_number} issued for Application #{application_instance.application_id} by {request.user.get_full_name()}. Status: PAYMENT_PENDING.",
+                when_performed = timezone.now(),
+            )
+
         return Response({"msg": "Permit issued successfully!", "id": issued_permit.id}, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, *args, **kwargs):
@@ -338,7 +393,11 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
         application_instance = get_object_or_404(
             models.PermitApplication, pk=application_id
         )    
-        
+
+        # Ownership check for Farmer
+        if request.user.role == 'Farmer' and application_instance.farmer != request.user:
+            return Response({"error": "Unauthorized access to this permit."}, status=status.HTTP_403_FORBIDDEN)
+
         # Guard: Check if OPV validation exists
         try:
             opv_docs_instance = application_instance.opv_validation
@@ -368,7 +427,7 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
 
 class OCRValidationResultViewSets(viewsets.ModelViewSet):
     queryset = models.OCRValidationResult.objects.all()
-
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -377,9 +436,17 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
             return serializers.OCRValidationResultWriteSerializer
         else:
             return serializers.OCRValidationResultListSerializer
-        
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'Farmer':
+            return models.OCRValidationResult.objects.filter(document__application__farmer=user)
+        return models.OCRValidationResult.objects.all()
+
     def update(self, request, *args, **kwargs):
-        
+        if request.user.role != "Agri":
+            return Response({"error": "Only Agri officers can manually override OCR results."}, status=status.HTTP_403_FORBIDDEN)
+
         new_fields = request.data
         ocr_instance = self.get_object()
         merged = {**ocr_instance.extracted_field, **new_fields}
@@ -388,8 +455,15 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
         ocr_instance.status = models.OCRValidationResult.ValidationStatus.OVERRIDDEN
         ocr_instance.manually_overridden = True
         ocr_instance.overridden_by = request.user
-        ocr_instance.overridden_fields    = new_fields
+        ocr_instance.overridden_fields = new_fields
         ocr_instance.remarks = f'Manually reviewed by {request.user.get_full_name()}'
         ocr_instance.save()
 
-        return Response("Updated!", status=status.HTTP_200_OK)
+        # --- Formal Audit Entry ---
+        AuditTrail.objects.create(
+            who_performed = request.user,
+            what_performed = f"[OCR DATA CORRECTION]- Agri Officer manually corrected data fields for Document #{ocr_instance.document.id} issued for Application #{ocr_instance.document.application.id}.",
+            when_performed = timezone.now(),
+        )
+
+        return Response({"msg": "Updated successfully"}, status=status.HTTP_200_OK)

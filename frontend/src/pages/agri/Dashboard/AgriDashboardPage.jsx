@@ -77,9 +77,9 @@ const AgriOfficerKPIDashboard = () => {
                     colorClass="bg-yellow-50 text-yellow-700"
                 />
                 <KPICard
-                    title="Automation Rate"
-                    value={kpis.automation_rate}
-                    subtitle="OCR performance without override"
+                    title="Digital Verification"
+                    value={kpis.digital_verification_rate}
+                    subtitle="AI-assisted document validation"
                     icon={TrendingUp}
                     colorClass="bg-green-50 text-green-700"
                     isPercent={true}

@@ -25,12 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SCRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.documents',
     'apps.dashboard',
     'apps.inspector',
+    'apps.sms',
 ]
 
 
@@ -147,7 +148,9 @@ AUTH_USER_MODEL = 'api.User'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
@@ -159,7 +162,6 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    # Uncomment for prod
     # 'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',
     # ],
@@ -183,10 +185,16 @@ OCR_URL = os.environ.get('OCR_API_URL')
 OCR_API_KEY = os.environ.get('OCR_API_KEY')
 
 PAYMONGO_SECRET_KEY = os.environ.get('PAYMONGO_TEST_SECRET_KEY')
-PAYMONGI_PUBLICK_KEY = os.environ.get('PAYMONGO_TEST_PUBLIC_KEY')
+PAYMONGO_PUBLIC_KEY = os.environ.get('PAYMONGO_TEST_PUBLIC_KEY')
 PERMIT_AMOUNT = os.environ.get('PERMIT_AMOUNT')
 PAYMONGO_URL = os.environ.get('PAYMONGO_URL')
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
+
+# SMS SECRETS
+SMS_BASE_URL = os.environ.get('SMS_BASE_URL')
+SMS_USERNAME = os.environ.get('SMS_USERNAME')
+SMS_PASSWORD = os.environ.get('SMS_PASSWORD')
+
 
 
 # DJANGO TASK
@@ -197,3 +205,10 @@ TASKS = {
     }
 }
 
+
+# DJANGO CACHE
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}

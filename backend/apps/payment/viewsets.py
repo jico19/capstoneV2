@@ -8,18 +8,59 @@ from . import services
 from .services import get_auth_header
 import requests
 from django.conf import settings
-from apps.documents.services import generate_permit_pdf
+from apps.documents.services import generate_permit_pdf, generate_collection_report_pdf
 from django.utils import timezone
 from datetime import timedelta
 import uuid
 from django.shortcuts import get_object_or_404
 from apps.permits import models as Permits
 from django.db import transaction
+from django.http import FileResponse
 
-
+from rest_framework.permissions import IsAuthenticated
 
 class PaymentViewSets(viewsets.ModelViewSet):
     queryset = models.PaymentHistory.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'Farmer':
+            return models.PaymentHistory.objects.filter(issued_permit__application__farmer=user)
+        return models.PaymentHistory.objects.all()
+
+    @action(detail=False, methods=['get'])
+    def generate_report(self, request):
+        """
+        API Endpoint: GET /api/payments/generate_report/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+        Generates and returns a PDF collection report for a date range.
+        """
+        if request.user.role != 'Agri':
+            return Response({"error": "Only Agri officers can generate collection reports."}, status=403)
+
+        from datetime import datetime
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+        
+        today = timezone.now().date()
+        start_date = today
+        end_date = today
+        
+        try:
+            if start_date_str:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
+
+        if start_date > end_date:
+            return Response({"error": "Start date cannot be after end date"}, status=400)
+
+        pdf_buffer = generate_collection_report_pdf(start_date=start_date, end_date=end_date)
+        filename = f"COLLECTION_REPORT_{start_date}_to_{end_date}.pdf"
+
+        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -34,10 +75,13 @@ class PaymentViewSets(viewsets.ModelViewSet):
     def checkout_session(self, request, pk=None):
         """
             pass the issued permit PK to create the checkout session
-            TODO: CREATE ISSUED PERMIT HERE
-            TODO: ADD PERMIT NUMBER
         """
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
+
+        # Ownership check
+        if request.user.role == 'Farmer' and application.farmer != request.user:
+            return Response({"error": "Unauthorized access to this application"}, status=403)
+
         if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
             return Response({"error": "Application not ready for payment"}, status=400)
 
@@ -58,6 +102,10 @@ class PaymentViewSets(viewsets.ModelViewSet):
         try:
             # 1. Fetch the application and its related permit
             application = get_object_or_404(Permits.PermitApplication, pk=pk)
+
+            # Ownership check
+            if request.user.role == 'Farmer' and application.farmer != request.user:
+                return Response({"error": "Unauthorized access to this application"}, status=403)
             
             # Verify the application is in the correct state for payment verification
             if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:

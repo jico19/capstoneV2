@@ -32,7 +32,7 @@ class PermitApplication(models.Model):
         FORWARDED_TO_OPV    = 'FORWARDED_TO_OPV',  'Forwarded to OPV'
         OPV_VALIDATED       = 'OPV_VALIDATED',      'OPV Validated'
         OPV_REJECTED        = 'OPV_REJECTED',       'OPV Rejected'
-        PERMIT_ISSUED       = 'PERMIT_ISSUED',       'Permrit issued'# ← payment starts here
+        PERMIT_ISSUED       = 'PERMIT_ISSUED',       'Permit issued'# ← payment starts here
         PAYMENT_PENDING     = 'PAYMENT_PENDING',     'Payment pending'# ← waiting for payment
         RELEASED            = 'RELEASED',            'Released' 
 

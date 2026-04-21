@@ -20,12 +20,16 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
         fields = [
             'username',
             'password',
+            'phone_no',
+            'first_name',
+            'last_name',
         ]
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
     def create(self, validated_data):
+        print(validated_data)
         return models.User.objects.create_user(**validated_data)
 
 

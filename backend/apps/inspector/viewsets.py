@@ -5,13 +5,24 @@ from rest_framework.response import Response
 
 
 
+from rest_framework.permissions import IsAuthenticated
+
 class InspectorLogViewSets(viewsets.ModelViewSet):
     queryset = models.InspectorLogs.objects.all()
     serializer_class = serializers.InspectorLogsSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['Admin', 'Agri']:
+            return models.InspectorLogs.objects.all()
+        # Inspectors can only see their own logs
+        return models.InspectorLogs.objects.filter(inspector=user)
 
     def create(self, request, *args, **kwargs):
-        # print(request.data)
+        if request.user.role != 'Inspector':
+            return Response({"error": "Only inspectors can log verification activity."}, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)

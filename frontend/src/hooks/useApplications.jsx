@@ -2,11 +2,13 @@ import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
-export const useApplication = () => {
+export const useApplication = (limit = 10, offset = 0) => {
     return useQuery({
-        queryKey: ['application'],
+        queryKey: ['application', limit, offset],
         queryFn: async () => {
-            const res = await api.get('/application/')
+            const res = await api.get('/application/', {
+                params: { limit, offset }
+            })
             return res.data
         },
         staleTime: 1000 * 60 * 5, // treat data as fresh for 5 mins

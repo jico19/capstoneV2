@@ -12,20 +12,24 @@ import KPICard from "/src/components/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
 import { useApplication } from "/src/hooks/useApplications";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import StatusBadge from "/src/components/StatusBadge";
 import DateFormatter from "/src/components/DateFormatter";
 import ActionGroup from "/src/components/ActionButton";
+import Pagination from "/src/components/Pagination";
 
 
 
 /**
  * OPV Staff Dashboard
  * Flat UI implementation: sharp corners, strict typography, gray/white/semantic palette.
- * Now includes a fully flat Registry Table for application management.
+ * Now includes a fully flat Registry Table for application management with pagination.
  */
 const OpvDashboard = () => {
+    const [limit] = useState(10);
+    const [offset, setOffset] = useState(0);
     const { data: metrics, isLoading, isError } = useGetOPVDashboard();
-    const { data: application, isLoading: ApplicationLoading, isError: ApplicationError } = useApplication();
+    const { data, isLoading: ApplicationLoading, isError: ApplicationError } = useApplication(limit, offset);
     const navigate = useNavigate()
 
 
@@ -47,6 +51,8 @@ const OpvDashboard = () => {
     }
 
     const { kpis, charts } = metrics;
+    const applications = data?.results || [];
+    const count = data?.count || 0;
 
     return (
         <div className="p-8 space-y-12 font-sans rounded-none">
@@ -105,15 +111,6 @@ const OpvDashboard = () => {
 
             {/* Registry Table Section */}
             <div className="border  bg-white overflow-hidden rounded-none">
-                {/* <div className="p-6 border-b  bg-gray-50 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gray-900 text-white">
-                            <Search size={16} />
-                        </div>
-                        <h3 className="font-black text-gray-900 uppercase tracking-tighter italic">Application.Registry</h3>
-                    </div>
-                </div> */}
-
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead className="border-b text-[10px] font-black uppercase tracking-widest">
@@ -127,7 +124,7 @@ const OpvDashboard = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
 
-                            {(!application || application.length === 0) && (
+                            {applications.length === 0 && (
                                 <tr>
                                     <td colSpan="5">
                                         <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50">
@@ -138,7 +135,7 @@ const OpvDashboard = () => {
                                 </tr>
                             )}
 
-                            {application?.map((data) => (
+                            {applications.map((data) => (
                                 <tr key={data.id} className="hover:bg-gray-50 transition-colors group">
                                     <td className="px-6 py-5">
                                         <span className="text-[11px] font-black text-gray-900 font-mono tracking-tight bg-gray-100 px-2 py-1 border border-gray-200">
@@ -178,6 +175,12 @@ const OpvDashboard = () => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination 
+                    count={count} 
+                    limit={limit} 
+                    offset={offset} 
+                    onPageChange={setOffset} 
+                />
             </div>
 
         </div>

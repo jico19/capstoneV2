@@ -590,7 +590,7 @@ function ControlGroup({
 }) {
   return (
     <div
-      className="border-border bg-background [&>button:not(:last-child)]:border-border flex flex-col overflow-hidden rounded-md border shadow-sm [&>button:not(:last-child)]:border-b">
+      className="border-gray-100 bg-white [&>button:not(:last-child)]:border-gray-100 flex flex-col overflow-hidden rounded-none border shadow-none [&>button:not(:last-child)]:border-b">
       {children}
     </div>
   );
@@ -608,7 +608,7 @@ function ControlButton({
       aria-label={label}
       type="button"
       className={cn(
-        "hover:bg-accent dark:hover:bg-accent/40 flex size-8 items-center justify-center transition-colors",
+        "hover:bg-gray-50 flex size-10 items-center justify-center transition-colors",
         disabled && "pointer-events-none cursor-not-allowed opacity-50"
       )}
       disabled={disabled}>
@@ -835,14 +835,14 @@ function MapPopup({
 
   return createPortal(<div
     className={cn(
-      "bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 relative rounded-md border p-3 shadow-md",
+      "bg-white text-gray-900 relative rounded-none border border-gray-100 p-4 shadow-none transition-none",
       className
     )}>
     {closeButton && (
       <button
         type="button"
         onClick={handleClose}
-        className="ring-offset-background focus:ring-ring absolute top-1 right-1 z-10 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-none"
+        className="absolute top-2 right-2 z-10 opacity-70 transition-colors hover:opacity-100 focus:outline-none"
         aria-label="Close popup">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>

@@ -19,7 +19,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
     queryset = models.PermitApplication.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = PermitApplicationFilter
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
     def get_serializer_class(self):
@@ -203,7 +203,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
 class SubmittedDocumentViewSets(viewsets.ModelViewSet):
     queryset = models.SubmittedDocument.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -213,16 +213,11 @@ class SubmittedDocumentViewSets(viewsets.ModelViewSet):
         else:
             return serializers.SubmittedDocumentListSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.SubmittedDocument.objects.filter(application__farmer=user)
-        return models.SubmittedDocument.objects.all()
 
 
 class OPVValidationViewSets(viewsets.ModelViewSet):
     queryset = models.OPVValidation.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -232,11 +227,11 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OPVValidationDetailSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.OPVValidation.objects.filter(application__farmer=user)
-        return models.OPVValidation.objects.all()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.role == 'Farmer':
+    #         return models.OPVValidation.objects.filter(application__farmer=user)
+    #     return models.OPVValidation.objects.all()
 
     # actions
     @action(detail=False, methods=['get'])
@@ -248,6 +243,12 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
         qs = models.PermitApplication.objects.filter(
             status__icontains='OPV'
         )
+        
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = serializers.PermitApplicationListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = serializers.PermitApplicationListSerializer(
             qs, many=True
         )
@@ -320,7 +321,7 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
 
 class IssuedPermitViewSets(viewsets.ModelViewSet):
     queryset = models.IssuedPermit.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -330,11 +331,11 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
         else:
             return serializers.IssuedPermitDetailSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.IssuedPermit.objects.filter(application__farmer=user)
-        return models.IssuedPermit.objects.all()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.role == 'Farmer':
+    #         return models.IssuedPermit.objects.filter(application__farmer=user)
+    #     return models.IssuedPermit.objects.all()
 
     def create(self, request, *args, **kwargs):
         """
@@ -437,11 +438,11 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OCRValidationResultListSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.OCRValidationResult.objects.filter(document__application__farmer=user)
-        return models.OCRValidationResult.objects.all()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.role == 'Farmer':
+    #         return models.OCRValidationResult.objects.filter(document__application__farmer=user)
+    #     return models.OCRValidationResult.objects.all()
 
     def update(self, request, *args, **kwargs):
         if request.user.role != "Agri":

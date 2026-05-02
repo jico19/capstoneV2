@@ -230,3 +230,74 @@ def generate_collection_report_pdf(start_date, end_date):
 
     buffer.seek(0)
     return buffer
+
+
+def generate_inspector_report_pdf(start_date, end_date):
+    """
+    Generates a PDF report of all field verifications performed by inspectors.
+    """
+    from apps.inspector.models import InspectorLogs
+    logs = InspectorLogs.objects.filter(
+        scanned_at__date__range=[start_date, end_date]
+    ).select_related('inspector', 'application__farmer').order_by('-scanned_at')
+
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    # Branding Colors
+    PRIMARY_PURPLE = colors.HexColor('#6b21a8') # High contrast purple
+    TEXT_DARK = colors.HexColor('#111827')
+
+    # Header
+    p.setFillColor(PRIMARY_PURPLE)
+    p.rect(0, height - 3*cm, width, 3*cm, fill=True, stroke=False)
+    
+    p.setFillColor(colors.white)
+    p.setFont('Helvetica-Bold', 18)
+    p.drawString(1*cm, height - 1.2*cm, "SARIAYA MUNICIPAL FIELD VERIFICATION")
+    
+    p.setFont('Helvetica', 10)
+    date_range_str = f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
+    p.drawString(1*cm, height - 1.8*cm, "INSPECTOR DUTY LOGS")
+    p.setFont('Helvetica-Bold', 10)
+    p.drawString(1*cm, height - 2.4*cm, f"AUDIT PERIOD: {date_range_str.upper()}")
+
+    # Table Data
+    data = [["ID", "INSPECTOR", "FARMER", "TIMESTAMP", "REMARKS"]]
+    for log in logs:
+        data.append([
+            f"LOG-{log.id}",
+            log.inspector.username.upper(),
+            log.application.farmer.get_full_name().upper()[:15],
+            log.scanned_at.strftime('%Y-%m-%d %H:%M'),
+            (log.notes[:30] + '...') if len(log.notes) > 30 else (log.notes or "VERIFIED")
+        ])
+
+    # Table Styling
+    table = Table(data, colWidths=[2.5*cm, 3.5*cm, 4.5*cm, 4*cm, 4.5*cm])
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_PURPLE),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+    ])
+    table.setStyle(style)
+
+    tw, th = table.wrapOn(p, width, height)
+    table.drawOn(p, 1*cm, height - 4.5*cm - th)
+
+    # Footer
+    p.setFillColor(colors.grey)
+    p.setFont('Helvetica-Oblique', 8)
+    p.drawString(1*cm, 1*cm, f"Official Audit Document • Generated {timezone.now().strftime('%Y-%m-%d')}")
+    
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+    return buffer

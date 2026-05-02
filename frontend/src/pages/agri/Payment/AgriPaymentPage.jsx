@@ -15,15 +15,21 @@ import {
     ArrowRight
 } from 'lucide-react';
 import KPICard from '/src/components/KPICard';
+import Pagination from '/src/components/Pagination';
 
 
 const AgriPaymentPage = () => {
-    const { data: payments, isLoading, isError, generateReport } = usePayment();
+    const [limit] = useState(10);
+    const [offset, setOffset] = useState(0);
+    const { data, isLoading, isError, generateReport } = usePayment(limit, offset);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
     const today = new Date().toISOString().split('T')[0];
     const [startDate, setStartDate] = useState(today);
     const [endDate, setEndDate] = useState(today);
+
+    const payments = data?.results || [];
+    const count = data?.count || 0;
 
     // Calculate aggregates for the top row
     const stats = useMemo(() => {
@@ -187,6 +193,12 @@ const AgriPaymentPage = () => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination 
+                    count={count} 
+                    limit={limit} 
+                    offset={offset} 
+                    onPageChange={setOffset} 
+                />
             </div>
 
             {/* 4. Date Range Selection Modal */}

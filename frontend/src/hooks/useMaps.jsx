@@ -34,3 +34,25 @@ export const useGetHogSurvey = (month, season) => {
         placeholderData: keepPreviousData, 
     })
 }
+
+export const useGetTransportVolume = () => {
+    return useQuery({
+        queryKey: ['transport-volume'],
+        queryFn: async () => {
+            const res = await api.get('/barangay/transport_volume/');
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 5,
+    })
+}
+
+export const useGetCheckpoints = () => {
+    return useQuery({
+        queryKey: ['checkpoints'],
+        queryFn: async () => {
+            const res = await api.get('/checkpoints/');
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 5,
+    })
+}

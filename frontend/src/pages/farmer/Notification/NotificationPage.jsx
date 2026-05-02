@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import {
     Bell, CheckCircle2, AlertTriangle, Info,
-    CheckCheck, CreditCard, ChevronRight
+    CheckCheck, ChevronRight, Inbox
 } from 'lucide-react';
 import { useGetNotification } from '/src/hooks/useNotifications';
 import { api } from '/src/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import Pagination from '/src/components/Pagination';
 
-
-// Helper function to format time (e.g., "2 hours ago")
+/**
+ * Notification Page
+ * Redesigned for Farmer-Friendly simplicity and high-signal minimalism.
+ */
 const getRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -22,128 +26,143 @@ const getRelativeTime = (dateString) => {
 };
 
 const NotificationPage = () => {
-    const { data: notification, isLoading, isError } = useGetNotification()
+    const [limit] = useState(10);
+    const [offset, setOffset] = useState(0);
+    const { data, isLoading, isError } = useGetNotification(limit, offset)
     const query = useQueryClient()
 
-    if (isLoading) return <div className="p-10 text-center font-bold opacity-50">Loading Your Notification...</div>;
-    if (isError) return <div className="p-10 text-error font-bold">Failed to load data.</div>;
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+                <span className="loading loading-spinner loading-lg text-green-600"></span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Opening your messages...</p>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="p-4 md:p-8">
+                <div className="bg-red-50 text-red-600 border border-red-100 p-8 rounded-none flex items-center justify-center text-center font-black uppercase tracking-widest text-xs">
+                    Failed to load messages. Please refresh.
+                </div>
+            </div>
+        );
+    }
     
-    // Mark all as read
+    const notifications = data?.results || [];
+    const count = data?.count || 0;
+
     const markAllAsRead = async () => {
         try {
             await api.get('/notification/mark_all_read/')
             query.invalidateQueries({ queryKey: ['notification']})
-            toast.success("Notifications Updated", {
-                description: "All notifications have been marked as read."
+            toast.success("Messages Updated", {
+                description: "All your messages have been marked as read."
             })
         } catch (error) {
             console.error(error)
             toast.error("Action Failed", {
-                description: "Could not mark notifications as read."
+                description: "Could not update messages."
             })
         }
     };
 
-    // Contextual Icons and Colors based on Type
     const getIconInfo = (type) => {
         switch (type) {
-            case 'SUCCESS': return { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100' };
-            case 'WARNING': return { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-100' };
+            case 'SUCCESS': return { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' };
+            case 'WARNING': return { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' };
             case 'INFO':
-            default: return { icon: Info, color: 'text-blue-600', bg: 'bg-blue-100' };
+            default: return { icon: Info, color: 'text-blue-600', bg: 'bg-blue-50' };
         }
     };
 
-    const unreadCount = notification.filter(n => !n.is_read).length
+    const unreadCount = notifications.filter(n => !n.is_read).length
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8 space-y-8 bg-white min-h-full font-sans">
 
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                        <Bell size={24} />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                            Notifications
-                            {unreadCount > 0 && (
-                                <span className="bg-red-50 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                    {unreadCount} New
-                                </span>
-                            )}
-                        </h1>
-                        <p className="text-sm text-slate-500 mt-0.5">Stay updated on your permit statuses.</p>
-                    </div>
+            {/* 1. Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-100 pb-6 md:pb-8">
+                <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Communication Center</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                        Your Messages
+                        {unreadCount > 0 && (
+                            <span className="bg-green-600 text-white text-[10px] px-3 py-1 font-black uppercase tracking-widest leading-none">
+                                {unreadCount} NEW
+                            </span>
+                        )}
+                    </h1>
+                    <p className="text-sm text-gray-500 font-medium">Stay updated on your permit statuses and office news.</p>
                 </div>
 
                 {unreadCount > 0 && (
                     <button
                         onClick={markAllAsRead}
-                        className="btn btn-sm btn-ghost text-slate-500 hover:text-blue-600 gap-2 font-medium"
+                        className="w-full md:w-auto bg-gray-900 hover:bg-black text-white px-6 py-3 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex justify-center items-center gap-2"
                     >
-                        <CheckCheck size={16} /> Mark all as read
+                        <CheckCheck size={16} strokeWidth={3} /> Clear All Notifications
                     </button>
                 )}
             </div>
 
-            {/* Notification List Container */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-
-                {notification.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                        <Bell size={48} className="mb-4 opacity-20" />
-                        <p className="text-sm font-medium text-slate-500">You're all caught up!</p>
-                        <p className="text-xs mt-1">No new notifications right now.</p>
+            {/* 2. Notification List */}
+            <div className="bg-white border border-gray-100 rounded-none overflow-hidden">
+                {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-32 bg-gray-50/50">
+                        <Inbox size={48} className="text-gray-300 mb-4" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Inbox is empty</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-100">
-                        {notification.map((notif) => {
-                            const { icon: Icon, color, bg } = getIconInfo(notif.type);
+                    <>
+                        <div className="divide-y divide-gray-100">
+                            {notifications.map((notif) => {
+                                const { icon: Icon, color, bg } = getIconInfo(notif.type);
 
-                            return (
-                                <div
-                                    key={notif.id}
-                                    className={`p-4 md:p-5 flex gap-4 cursor-pointer transition-all duration-200
-                                        ${notif.is_read ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/30 hover:bg-blue-50/50'}`}
-                                >
-                                    {/* Icon */}
-                                    <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-1 ${bg} ${color}`}>
-                                        <Icon size={20} />
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start gap-2 mb-1">
-                                            <h3 className={`text-sm font-bold truncate ${notif.is_read ? 'text-slate-700' : 'text-slate-900'}`}>
-                                                {notif.title}
-                                            </h3>
-                                            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0 mt-0.5">
-                                                {getRelativeTime(notif.sent_at)}
-                                            </span>
+                                return (
+                                    <div
+                                        key={notif.id}
+                                        className={`p-6 flex gap-6 cursor-pointer transition-colors relative group
+                                            ${notif.is_read ? 'bg-white hover:bg-gray-50' : 'bg-green-50/20 hover:bg-green-50/40 border-l-4 border-green-600 pl-5'}`}
+                                    >
+                                        {/* Status Icon */}
+                                        <div className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-none border border-gray-100 bg-white ${color}`}>
+                                            <Icon size={24} strokeWidth={2.5} />
                                         </div>
-                                        <p className={`text-sm leading-relaxed ${notif.is_read ? 'text-slate-500' : 'text-slate-700 font-medium'}`}>
-                                            {notif.message}
-                                        </p>
-                                    </div>
 
-                                    {/* Unread Dot & Arrow */}
-                                    <div className="shrink-0 flex flex-col items-end justify-center gap-2 pl-2">
-                                        {!notif.is_read && (
-                                            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                                        )}
-                                        {notif.action_link && (
-                                            <ChevronRight size={16} className="text-slate-300" />
-                                        )}
+                                        {/* Message Content */}
+                                        <div className="flex-1 min-w-0 space-y-1">
+                                            <div className="flex justify-between items-start gap-4">
+                                                <h3 className={`text-sm font-black uppercase tracking-tight truncate ${notif.is_read ? 'text-gray-600' : 'text-gray-900'}`}>
+                                                    {notif.title}
+                                                </h3>
+                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap pt-1">
+                                                    {getRelativeTime(notif.sent_at)}
+                                                </span>
+                                            </div>
+                                            <p className={`text-sm leading-relaxed ${notif.is_read ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>
+                                                {notif.message}
+                                            </p>
+                                        </div>
+
+                                        {/* Action Indicator */}
+                                        <div className="shrink-0 flex items-center pl-2">
+                                            <ChevronRight size={18} className={`transition-transform group-hover:translate-x-1 ${notif.is_read ? 'text-gray-200' : 'text-green-600'}`} strokeWidth={3} />
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })}
-                    </div>
+                                )
+                            })}
+                        </div>
+                        <Pagination 
+                            count={count} 
+                            limit={limit} 
+                            offset={offset} 
+                            onPageChange={setOffset} 
+                        />
+                    </>
                 )}
             </div>
-
         </div>
     );
 };

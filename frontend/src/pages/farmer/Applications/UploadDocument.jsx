@@ -17,16 +17,19 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
     ];
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-lg font-bold text-slate-800 border-b pb-2">2. Required Documents</h2>
-            <p className="text-sm text-slate-500">Please upload clear photos or PDFs of the following requirements.</p>
+        <div className="space-y-8">
+            <div className="border-b border-gray-100 pb-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 2</p>
+                <h2 className="text-xl font-black text-gray-900 uppercase">Required Documents</h2>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-widest mt-1">Please upload clear photos or PDFs.</p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {documents.map((doc) => (
                     <div key={doc.id} className="relative">
                         <label
-                            className={`flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-xl cursor-pointer transition-all
-                            ${hasFile(doc.id) ? "border-green-500 bg-green-50" : errors[doc.id] ? "border-red-400 bg-red-50" : "border-slate-300 hover:border-blue-400 hover:bg-slate-50"}`}
+                            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-none cursor-pointer transition-colors
+                            ${hasFile(doc.id) ? "border-green-600 bg-green-50" : errors[doc.id] ? "border-red-600 bg-red-50" : "border-gray-300 hover:border-green-600 hover:bg-gray-50"}`}
                         >
                             <input
                                 type="file"
@@ -48,28 +51,40 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
 
                             {hasFile(doc.id) ? (
                                 <>
-                                    <CheckCircle2 className="text-green-500 mb-2" size={24} />
-                                    <span className="text-sm font-bold text-green-700">Uploaded</span>
-                                    <span className="text-xs text-green-600/70 truncate w-full text-center px-2">{watch(doc.id)[0].name}</span>
+                                    <CheckCircle2 className="text-green-600 mb-2" size={24} />
+                                    <span className="text-xs font-black uppercase tracking-widest text-green-700">Uploaded</span>
+                                    <span className="text-[10px] text-green-600/70 truncate w-full text-center px-2 mt-1">{watch(doc.id)[0].name}</span>
                                 </>
                             ) : (
                                 <>
-                                    <UploadCloud className={`${errors[doc.id] ? "text-red-400" : "text-slate-400"} mb-2`} size={24} />
-                                    <span className={`text-sm font-bold ${errors[doc.id] ? "text-red-600" : "text-slate-700"}`}>{doc.label}</span>
-                                    <span className="text-xs text-slate-400">{doc.desc}</span>
+                                    <UploadCloud className={`${errors[doc.id] ? "text-red-600" : "text-gray-400"} mb-2`} size={24} />
+                                    <span className={`text-xs font-black uppercase tracking-widest ${errors[doc.id] ? "text-red-700" : "text-gray-900"}`}>{doc.label}</span>
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">{doc.desc}</span>
                                 </>
                             )}
                         </label>
                         {errors[doc.id] && (
-                            <p className="text-red-600 text-[10px] mt-1 font-bold uppercase tracking-wider">{errors[doc.id].message}</p>
+                            <p className="text-red-600 text-[10px] mt-2 font-bold uppercase tracking-wider text-center">{errors[doc.id].message}</p>
                         )}
                     </div>
                 ))}
             </div>
 
-            <div className="flex justify-between pt-6 border-t mt-8">
-                <button type="button" className="btn btn-ghost" onClick={prevStep}>Back</button>
-                <button type="button" className="btn btn-primary px-8" onClick={nextStep}>Review Application</button>
+            <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 border-t border-gray-100 gap-4 mt-8">
+                <button 
+                    type="button" 
+                    className="w-full sm:w-auto border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors" 
+                    onClick={prevStep}
+                >
+                    Back
+                </button>
+                <button 
+                    type="button" 
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors" 
+                    onClick={nextStep}
+                >
+                    Review Application
+                </button>
             </div>
         </div>
     );

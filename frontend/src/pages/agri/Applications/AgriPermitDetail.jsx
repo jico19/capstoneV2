@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from "/src/hooks/useApplications";
 import DocumentList from "/src/components/DocumentList";
 import OCRModal from "./OCRModal";
@@ -11,6 +11,10 @@ import ApplicationHeader from "/src/components/ApplicationHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+/**
+ * Agri Permit Detail View
+ * Redesigned for Farmer-Friendly simplicity and Minimalist Design System.
+ */
 const AgriPermitDetail = () => {
     const [activeModal, setActiveModal] = useState(null)
     const [ocrID, setOcrID] = useState(0)
@@ -22,14 +26,17 @@ const AgriPermitDetail = () => {
     const query = useQueryClient()
 
     if (isLoading) return (
-        <div className="flex items-center justify-center min-h-screen">
-            <span className="loading loading-spinner loading-lg text-green-700"></span>
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
+            <span className="loading loading-spinner loading-lg text-green-600"></span>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Opening Application...</p>
         </div>
     );
 
     if (isError) return (
-        <div className="max-w-4xl mx-auto p-8 text-center">
-            <div className="alert alert-error rounded-xl">Something went wrong fetching this permit.</div>
+        <div className="max-w-4xl mx-auto p-8">
+            <div className="bg-red-50 border border-red-100 p-8 text-red-600 text-center font-black uppercase tracking-widest text-xs">
+                Could not load this permit. Please go back and try again.
+            </div>
         </div>
     );
 
@@ -51,10 +58,9 @@ const AgriPermitDetail = () => {
     }
 
     const handleUpdateOCR = (data) => {
-        console.log(ocrID)
         updateOCR({ id: ocrID, data })
         closeModal()
-        toast.success("Successfully fix the data.")
+        toast.success("Details updated successfully.")
     }
 
     const approveHandler = async (data) => {
@@ -62,12 +68,11 @@ const AgriPermitDetail = () => {
             await api.post(`/application/${id}/approve/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
             toast.success("Application Approved", {
-                description: "Forwarded to OPV for final health validation."
+                description: "Forwarded to health office for final check."
             })
         } catch (error) {
-            console.log(error.response)
             toast.error("Action Failed", {
-                description: "Could not approve the application."
+                description: "Could not approve the request."
             })
         }
 
@@ -77,30 +82,28 @@ const AgriPermitDetail = () => {
         try {
             await api.post(`/application/${id}/reject/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Application Rejected", {
-                description: "Farmer has been notified for resubmission."
+            toast.success("Application Returned", {
+                description: "The farmer has been notified to fix the details."
             })
         } catch (error) {
-            console.log(error.response)
             toast.error("Action Failed", {
-                description: "Could not process the rejection."
+                description: "Could not process the return."
             })
         }
     };
 
     const issue_permit_handler = async (id) => {
         try {
-            const res = await api.post('/issued-permit/', {
+            await api.post('/issued-permit/', {
                 application_id: id
             })
             query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Permit Issued Successfully", {
-                description: "Payment is now pending from the farmer."
+            toast.success("Permit Issued", {
+                description: "Document is now ready for payment."
             })
-            console.log(res.data)
         } catch (error) {
             toast.error("Issuance Failed", {
-                description: error.response?.data?.error || "An error occurred while issuing the permit."
+                description: error.response?.data?.error || "Could not issue the official permit."
             })
         }
     }
@@ -123,24 +126,25 @@ const AgriPermitDetail = () => {
                 />
             )}
 
-            <div className="max-w-5xl mx-auto p-6 md:p-12 min-h-screen bg-white">
-                {/* Minimal Navigation */}
+            <div className="flex-1 max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white space-y-12">
+                {/* Navigation */}
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-green-700 transition-colors mb-10"
+                    className="flex items-center gap-3 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-green-600 transition-all border-b-2 border-transparent hover:border-green-600 w-fit pb-1"
                 >
-                    <ArrowLeft size={16} /> Back to Registry
+                    <ArrowLeft size={16} strokeWidth={3} /> Return to Application List
                 </button>
 
                 <div className="space-y-16">
                     <ApplicationHeader data={application} />
 
-                    <section>
-                        <div className="flex items-center gap-4 mb-8">
-                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                                Verification Checklist
-                            </h2>
-                            <div className="h-[1px] flex-1 bg-slate-100"></div>
+                    <section className="space-y-8">
+                        <div className="flex items-center gap-6">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Check Documents</h2>
+                            </div>
+                            <div className="h-[2px] flex-1 bg-gray-100"></div>
                         </div>
                         <DocumentList documents={application?.documents} fixData={fixDataHandler} documentView={viewDocument} />
                     </section>
@@ -153,12 +157,21 @@ const AgriPermitDetail = () => {
                     ) : null}
 
                     {application.status === 'OPV_VALIDATED' ? (
-                        <button
-                            className="btn btn-success text-white"
-                            onClick={() => issue_permit_handler(application.id)}
-                        >
-                            issued permit
-                        </button>
+                        <div className="pt-8 border-t border-gray-100">
+                             <div className="bg-green-50 border border-green-100 p-8 flex flex-col items-center gap-6">
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-xl font-black text-gray-900 tracking-tight">Everything Looks Good</h2>
+                                    <p className="text-sm text-gray-600 font-medium">Health validation is complete. You can now issue the final permit.</p>
+                                </div>
+                                <button
+                                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-12 py-5 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-colors"
+                                    onClick={() => issue_permit_handler(application.id)}
+                                >
+                                    <CheckCircle size={20} />
+                                    Issue Official Permit
+                                </button>
+                             </div>
+                        </div>
                     ) : null}
 
                 </div>

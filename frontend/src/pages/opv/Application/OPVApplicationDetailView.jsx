@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from "/src/hooks/useApplications"
 import ApplicationHeader from "/src/components/ApplicationHeader"
-import { ArrowLeft, LayoutDashboard, FileText } from "lucide-react"
+import { ArrowLeft, FileText } from "lucide-react"
 import DocumentList from "/src/components/DocumentList"
 import OPVApprovalControls from "./OPVApprovalControl"
 import { api } from "/src/lib/api"
@@ -13,8 +13,7 @@ import DocumentViewModal from "/src/components/DocumentViewModal"
 
 /**
  * OPV Application Detail View
- * Strictly follows Flat UI: no radius, sharp borders, industrial typography.
- * Now supports document review modal for evidence verification.
+ * Redesigned for Farmer-Friendly clarity and Minimalist Design System.
  */
 const OPVApplicationDetail = () => {
     const { id } = useParams()
@@ -25,18 +24,18 @@ const OPVApplicationDetail = () => {
 
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-            <span className="loading loading-spinner loading-lg text-indigo-600"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4 animate-pulse">Syncing Audit Data</p>
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+            <span className="loading loading-spinner loading-lg text-green-600"></span>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Opening Application...</p>
         </div>
     );
 
     if (isError) return (
-        <div className="max-w-5xl mx-auto p-12">
-            <div className="bg-red-50 border border-red-200 p-10 flex flex-col items-center text-center space-y-4">
-                <h2 className="text-xl font-black text-red-700 uppercase italic tracking-tighter">Sync.Failure</h2>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Could not retrieve application details from the central registry.</p>
-                <button onClick={() => navigate(-1)} className="bg-gray-900 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest">Return to Dashboard</button>
+        <div className="max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white">
+            <div className="bg-red-50 border border-red-100 p-10 flex flex-col items-center text-center space-y-4 rounded-none">
+                <h2 className="text-xl font-black text-red-700 uppercase tracking-tighter">Sync Failure</h2>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Could not retrieve application details.</p>
+                <button onClick={() => navigate(-1)} className="bg-gray-900 hover:bg-gray-800 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest transition-colors">Back to Dashboard</button>
             </div>
         </div>
     );
@@ -58,7 +57,7 @@ const OPVApplicationDetail = () => {
         } catch (error) {
             console.log(error)
             toast.error("Validation Failed", {
-                description: "Could not complete the OPV validation process."
+                description: "Could not complete the validation process."
             })
         }
     }
@@ -68,7 +67,7 @@ const OPVApplicationDetail = () => {
             await api.post(`opv/${id}/reject/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
             toast.success("Application Returned", {
-                description: "Sent back for corrections."
+                description: "The farmer has been notified to fix the details."
             })
         } catch (error) {
             toast.error("Action Failed")
@@ -88,28 +87,25 @@ const OPVApplicationDetail = () => {
                 />
             )}
 
-            <div className="max-w-6xl mx-auto p-6 md:p-12 min-h-screen bg-white font-sans">
-                {/* Minimalist Flat Navigation */}
+            <div className="flex-1 max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white space-y-12">
+                {/* Navigation */}
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-600 transition-all mb-12 border-b-2 border-transparent hover:border-indigo-600 pb-1"
+                    className="flex items-center gap-3 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-green-600 transition-all border-b-2 border-transparent hover:border-green-600 w-fit pb-1"
                 >
-                    <ArrowLeft size={16} strokeWidth={3} /> Return.to.Applications
+                    <ArrowLeft size={16} strokeWidth={3} /> Return to Application List
                 </button>
 
-                <div className="space-y-20">
+                <div className="space-y-16">
                     {/* Header Info */}
                     <ApplicationHeader data={application} />
 
                     {/* Document Section */}
-                    <section>
-                        <div className="flex items-center gap-6 mb-10">
-                            <div className="bg-gray-900 text-white p-3">
-                                <FileText size={20} />
-                            </div>
+                    <section className="space-y-8">
+                        <div className="flex items-center gap-6">
                             <div className="space-y-1">
-                                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Audit.Trail</h2>
-                                <p className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic leading-none">Evidence.Verification</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Check Documents</h2>
                             </div>
                             <div className="h-[2px] flex-1 bg-gray-100"></div>
                         </div>
@@ -122,17 +118,24 @@ const OPVApplicationDetail = () => {
 
                     {/* Actions Section */}
                     {application.status === "FORWARDED_TO_OPV" ? (
-                        <div className="border-t-4 border-gray-900 pt-12">
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 2</p>
+                                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Health Validation</h2>
+                                </div>
+                                <div className="h-[2px] flex-1 bg-gray-100"></div>
+                            </div>
                             <OPVApprovalControls
                                 onApprove={onApprove}
                                 onReject={onReject}
                             />
                         </div>
                     ) : (
-                        <div className="bg-gray-50 border border-gray-200 p-10 text-center">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Workflow.Status</p>
-                            <p className="text-sm font-black text-gray-900 uppercase italic mt-2">
-                                Audit is in state: <span className="text-indigo-600">[{application.status.replace(/_/g, '.')}]</span>
+                        <div className="bg-gray-50 border border-gray-100 p-10 flex flex-col items-center text-center gap-3">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Validation Status</p>
+                            <p className="text-sm font-black text-gray-900 uppercase">
+                                Current State: <span className="text-green-600">{application.status_display}</span>
                             </p>
                         </div>
                     )}

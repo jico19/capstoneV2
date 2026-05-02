@@ -8,8 +8,6 @@ from rest_framework_simplejwt.views import (
 )
 from .router import routers
 # app viewsets
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
 

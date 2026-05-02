@@ -18,6 +18,7 @@ routers.register(r'ocr-validation', PermitViewSets.OCRValidationResultViewSets)
 routers.register(r'barangay', MapsViewSets.BarangayViewSets)
 routers.register(r'hog-survey', MapsViewSets.HogSurveyViewSets)
 
+
 # user
 routers.register(r'user', UserViewSets.UserViewSets)
 routers.register(r'notification', UserViewSets.NotificationViewSets)

@@ -30,10 +30,10 @@ const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent }) 
             {/* Bottom Section: Friendly Helper Text */}
             {subtitle && (
                 <div className="mt-8 pt-4 border-t border-gray-50 relative z-10">
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none flex items-center gap-2">
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-green-600 rounded-none"></div>
                         {subtitle}
-                    </p>
+                    </div>
                 </div>
             )}
         </div>

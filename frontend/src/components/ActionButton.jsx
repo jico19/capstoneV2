@@ -24,7 +24,7 @@ const ActionGroup = ({ buttons = [] }) => {
                         className="group relative"
                     >
                         {/* Custom Flat Tooltip - Replacing DaisyUI tooltip for full control */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-none whitespace-nowrap z-10 pointer-events-none">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-none whitespace-nowrap z-50 pointer-events-none">
                             {btn.label}
                         </div>
 

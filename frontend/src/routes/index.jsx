@@ -15,16 +15,17 @@ import PaymentSuccess from "../pages/farmer/Payments/PaymentSuccess";
 import ApplicationDetail from "../pages/farmer/Applications/ApplicationDetail";
 import PaymentCheckout from "../pages/farmer/Payments/PaymentCheckout";
 import DownloadApplication from "../pages/farmer/Dashboard/DownloadApplication";
-
-
+import FarmerSettings from "../pages/farmer/Settings/FarmerSettings";
 
 // agri
 import AgriDashboardPage from "../pages/agri/Dashboard/AgriDashboardPage";
 import ApplicationDashboard from "../pages/agri/Applications/ApplicationDashboard";
 import AgriPermitDetail from "../pages/agri/Applications/AgriPermitDetail";
 import AgriMapPage from "../pages/agri/Map/DensityMap/AgriMapPage";
-import CheckpointMap from "../pages/agri/Map/CheckpointMap/CheckpointMap";
 import AgriPaymentPage from "../pages/agri/Payment/AgriPaymentPage";
+import AgriReportsPage from "../pages/agri/Reports/AgriReportsPage";
+
+
 
 // Opv
 import OpvDashboard from "../pages/opv/Dashboard/OpvDashboard";
@@ -34,6 +35,9 @@ import OPVApplicationDetail from "../pages/opv/Application/OPVApplicationDetailV
 import InspectorDashboard from "../pages/inspector/Dashboard/InspectorDashboard";
 import QRScannerPage from "../pages/inspector/QR/QRScannerPage";
 import VerifyApplication from "../pages/inspector/Application/VerifyApplication";
+
+// Others
+import NotFoundPage from "../pages/NotFoundPage";
 
 const router = createBrowserRouter([
     { path: "/login", element: <LoginPage /> },
@@ -52,7 +56,8 @@ const router = createBrowserRouter([
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'payment/success/:issued_permit_id', element: <PaymentSuccess /> },
             { path: 'payment/checkout/:id', element: <PaymentCheckout /> },
-            { path: 'application/download/:id', element: <DownloadApplication />}
+            { path: 'application/download/:id', element: <DownloadApplication />},
+            { path: 'settings/', element: <FarmerSettings /> }
             ]
             },
     {
@@ -63,8 +68,8 @@ const router = createBrowserRouter([
             { path: 'application/', element: <ApplicationDashboard /> },
             { path: 'application/detail/:id', element: <AgriPermitDetail /> },
             { path: 'map/pig-density/', element: <AgriMapPage /> },
-            { path: 'map/check-point/', element: <CheckpointMap/>},
             { path: 'payment/', element: <AgriPaymentPage /> },
+            { path: 'reports/', element: <AgriReportsPage /> },
         ]
     },
 
@@ -87,8 +92,8 @@ const router = createBrowserRouter([
         ]
     },
 
-    { path: "*", element: <div>404</div> },
+    { path: "*", element: <NotFoundPage /> },
 ])
 
 
-export default router
+export default router;

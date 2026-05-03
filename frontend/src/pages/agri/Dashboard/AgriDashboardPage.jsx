@@ -45,10 +45,10 @@ const AgriOfficerKPIDashboard = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-gray-100 pb-8 gap-4">
                 <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Management Overview</p>
-                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Operations<span className="text-green-600">.</span>Summary</h1>
+                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Operations Summary</h1>
                 </div>
                 <div className="bg-gray-50 border border-gray-100 px-4 py-2 rounded-none">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">System.Date</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">System Date</p>
                     <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>

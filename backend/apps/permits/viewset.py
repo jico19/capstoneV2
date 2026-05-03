@@ -32,21 +32,21 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
         else:
             return serializers.PermitApplicationListSerializer
     
-    def  get_queryset(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return models.PermitApplication.objects.none()
+    # def  get_queryset(self):
+    #     user = self.request.user
+    #     if not user.is_authenticated:
+    #         return models.PermitApplication.objects.none()
 
-        if user.role == 'Farmer':
-            return models.PermitApplication.objects.filter(farmer=user)
+    #     if user.role == 'Farmer':
+    #         return models.PermitApplication.objects.filter(farmer=user)
         
-        elif user.role == 'Agri':
-            return models.PermitApplication.objects.all()
+    #     elif user.role == 'Agri':
+    #         return models.PermitApplication.objects.all()
         
-        elif user.role == 'Opv':
-            return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
+    #     elif user.role == 'Opv':
+    #         return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
         
-        return models.PermitApplication.objects.none()
+    #     return models.PermitApplication.objects.all()
 
 
     def create(self, request, *args, **kwargs):

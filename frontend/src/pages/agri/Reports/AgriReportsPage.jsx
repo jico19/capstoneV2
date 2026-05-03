@@ -1,10 +1,140 @@
-import { useState} from"react";
-import { Download, FileText, Calendar, BarChart3, TrendingUp, Loader2, ChevronRight, Search, ShieldCheck, ArrowRight, Zap, Briefcase} from"lucide-react";
-import { usePayment} from"/src/hooks/usePayment";
-import { useGetAgriDashboard} from"/src/hooks/useDashboard";
-import { useHogSurveys} from"/src/hooks/useHogSurveys";
-import { useInspectorLogs} from"/src/hooks/useInspectorLogs";
-import { toast} from"sonner"; /** * Redesigned Agri Reports Center * A"Reporting Suite" aesthetic using high-contrast typography and modular cards. */
-const AgriReportsPage = () => { const { generateReport: generatePaymentReport} = usePayment(); const { data: dashboardData} = useGetAgriDashboard(); const { useExportHogSurveyCsv} = useHogSurveys(); const exportHogCsv = useExportHogSurveyCsv(); const { generateReport: generateInspectorReport} = useInspectorLogs(); const today = new Date().toISOString().split('T')[0]; // Report State Management const [reports, setReports] = useState({ revenue: { start: today, end: today}, population: { start: today, end: today}, inspector: { start: today, end: today}}); const updateDate = (type, field, value) => { setReports(prev => ({ ...prev, [type]: { ...prev[type], [field]: value}}));}; const handlePaymentExport = () => { generatePaymentReport.mutate({ start_date: reports.revenue.start, end_date: reports.revenue.end}, { onSuccess: () => toast.success("Revenue Report Generated"), onError: () => toast.error("Export Failed")});}; const handleHogExport = () => { exportHogCsv.mutate({ start_date: reports.population.start, end_date: reports.population.end}, { onSuccess: () => toast.success("Hog Summary Exported"), onError: () => toast.error("Export Failed")});}; const handleInspectorExport = () => { generateInspectorReport.mutate({ start_date: reports.inspector.start, end_date: reports.inspector.end}, { onSuccess: () => toast.success("Inspector Logs Exported"), onError: () => toast.error("Export Failed")});}; return ( <div className="p-8 lg:p-12 space-y-12 bg-white min-h-screen"> {/* --- 1. THE SUITE HEADER --- */} <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b-4 border-gray-900 pb-10"> <div className="space-y-3"> <div className="flex items-center gap-3"> <div className="p-2 bg-green-600 text-white"> <Zap size={24} fill="currentColor" /> </div> <span className="text-[10px] font-black uppercase text-gray-400">Official Management Suite</span> </div> <h1 className="text-6xl font-black text-gray-900 uppercase leading-none"> Reports Center </h1> </div> <div className="text-right hidden md:block"> <p className="text-[10px] font-black uppercase text-gray-400">System Status</p> <div className="flex items-center gap-2 justify-end text-green-600 font-bold uppercase text-xs mt-1"> <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span> Database Connected </div> </div> </div> {/* --- 2. THE REPORTING GRID --- */} <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-gray-900"> {/* REVENUE SECTOR */} <div className="p-10 border-b lg:border-b-0 lg:border-r border-gray-900 space-y-8 hover:bg-gray-50 transition-colors group"> <div className="space-y-2"> <div className="flex justify-between items-start"> <FileText className="text-gray-900 group-hover:text-green-600 transition-colors" size={32} strokeWidth={2.5} /> <span className="text-[10px] font-black uppercase bg-gray-100 px-2 py-1">SEC-01</span> </div> <h2 className="text-2xl font-black uppercase italic">Revenue Ledger</h2> <p className="text-xs text-gray-500 font-medium leading-relaxed">Export fiscal data including permit fees and collection history for auditing.</p> </div> <div className="space-y-4 pt-4 border-t border-gray-200"> <DateInput label="Start Date" value={reports.revenue.start} onChange={(v) => updateDate('revenue','start', v)} /> <DateInput label="End Date" value={reports.revenue.end} onChange={(v) => updateDate('revenue','end', v)} /> </div> <button onClick={handlePaymentExport} disabled={generatePaymentReport.isPending} className="w-full bg-gray-900 hover:bg-green-600 text-white p-5 text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50" > {generatePaymentReport.isPending ? <Loader2 className="animate-spin" size={14} /> :"Compile PDF Report"} <ArrowRight size={14} /> </button> </div> {/* LIVESTOCK SECTOR */} <div className="p-10 border-b lg:border-b-0 lg:border-r border-gray-900 space-y-8 hover:bg-gray-50 transition-colors group"> <div className="space-y-2"> <div className="flex justify-between items-start"> <TrendingUp className="text-gray-900 group-hover:text-green-600 transition-colors" size={32} strokeWidth={2.5} /> <span className="text-[10px] font-black uppercase bg-gray-100 px-2 py-1">SEC-02</span> </div> <h2 className="text-2xl font-black uppercase italic">Swine Census</h2> <p className="text-xs text-gray-500 font-medium leading-relaxed">Geospatial population summary by barangay. Useful for ASF monitoring.</p> </div> <div className="space-y-4 pt-4 border-t border-gray-200"> <DateInput label="Start Date" value={reports.population.start} onChange={(v) => updateDate('population','start', v)} /> <DateInput label="End Date" value={reports.population.end} onChange={(v) => updateDate('population','end', v)} /> </div> <button onClick={handleHogExport} disabled={exportHogCsv.isPending} className="w-full bg-gray-900 hover:bg-green-600 text-white p-5 text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50" > {exportHogCsv.isPending ? <Loader2 className="animate-spin" size={14} /> :"Export CSV Data"} <ArrowRight size={14} /> </button> </div> {/* FIELD LOG SECTOR */} <div className="p-10 space-y-8 hover:bg-gray-50 transition-colors group"> <div className="space-y-2"> <div className="flex justify-between items-start"> <ShieldCheck className="text-gray-900 group-hover:text-green-600 transition-colors" size={32} strokeWidth={2.5} /> <span className="text-[10px] font-black uppercase bg-gray-100 px-2 py-1">SEC-03</span> </div> <h2 className="text-2xl font-black uppercase italic">Inspector Duty</h2> <p className="text-xs text-gray-500 font-medium leading-relaxed">Verification logs from municipal checkpoints and field inspections.</p> </div> <div className="space-y-4 pt-4 border-t border-gray-200"> <DateInput label="Start Date" value={reports.inspector.start} onChange={(v) => updateDate('inspector','start', v)} /> <DateInput label="End Date" value={reports.inspector.end} onChange={(v) => updateDate('inspector','end', v)} /> </div> <button onClick={handleInspectorExport} disabled={generateInspectorReport.isPending} className="w-full bg-gray-900 hover:bg-green-600 text-white p-5 text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50" > {generateInspectorReport.isPending ? <Loader2 className="animate-spin" size={14} /> :"Download Duty Logs"} <ArrowRight size={14} /> </button> </div> </div> {/* --- 3. QUICK SNAPSHOT FOOTER --- */} <div className="grid grid-cols-1 md:grid-cols-4 gap-6"> <SnapshotItem label="Total Revenue (MTD)" value={`₱ ${dashboardData?.kpis.total_revenue?.toLocaleString() ||'0'}`} icon={Zap} /> <SnapshotItem label="Permits Issued" value={dashboardData?.kpis.total_permits ||'0'} icon={Briefcase} /> <SnapshotItem label="Inspection Rate" value="98.2%" icon={ShieldCheck} /> <div className="p-6 bg-gray-50 flex flex-col justify-center"> <p className="text-[10px] font-black uppercase text-gray-400">Download All</p> <button className="text-[10px] font-black uppercase text-green-600 mt-1 flex items-center gap-2 group"> Master Archive <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" /> </button> </div> </div> </div> );}; const DateInput = ({ label, value, onChange}) => ( <div className="space-y-1"> <label className="text-[9px] font-black uppercase text-gray-400">{label}</label> <div className="relative"> <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-900" size={14} /> <input type="date" className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 text-xs font-mono font-bold focus:outline-none focus:border-green-600 transition-colors" value={value} onChange={(e) => onChange(e.target.value)} /> </div> </div>
-); const SnapshotItem = ({ label, value, icon: Icon}) => ( <div className="p-6 bg-white border border-gray-200 flex items-center gap-4"> <div className="p-2 bg-gray-50 text-gray-400"> <Icon size={20} /> </div> <div> <p className="text-[9px] font-black uppercase text-gray-400 leading-none">{label}</p> <p className="text-xl font-black text-gray-900 uppercase mt-1">{value}</p> </div> </div>
-); export default AgriReportsPage;
+import React from 'react';
+import { 
+    BarChart3, 
+    Download, 
+    FileText, 
+    PieChart, 
+    TrendingUp, 
+    Calendar,
+    ArrowRight,
+    Search
+} from 'lucide-react';
+
+/**
+ * Agri Reports Page
+ * Centralized interface for municipal reporting and data export.
+ * Adheres to Design.MD: Stone neutrals, flat UI, square edges.
+ */
+const AgriReportsPage = () => {
+    // Mock report types for the prototype UI
+    const reports = [
+        {
+            id: 'permit-issuance',
+            title: 'Permit Issuance Summary',
+            description: 'Comprehensive list of all issued permits including destination and animal counts.',
+            lastGenerated: 'Today, 10:45 AM',
+            icon: FileText
+        },
+        {
+            id: 'revenue-collection',
+            title: 'Revenue & Fees Report',
+            description: 'Financial breakdown of all collected permit fees and payment gateway transactions.',
+            lastGenerated: 'Yesterday, 4:20 PM',
+            icon: BarChart3
+        },
+        {
+            id: 'barangay-distribution',
+            title: 'Barangay Volume Distribution',
+            description: 'Analysis of livestock movement origin points across all municipal barangays.',
+            lastGenerated: 'May 02, 2026',
+            icon: PieChart
+        },
+        {
+            id: 'inspector-logs',
+            title: 'Field Inspection Audit',
+            description: 'Detailed log of QR code scans and field checkpoints recorded by inspectors.',
+            lastGenerated: 'May 01, 2026',
+            icon: TrendingUp
+        }
+    ];
+
+    const handleExport = (reportId, format) => {
+        console.log(`Exporting ${reportId} as ${format}`);
+        // Implementation for actual export would go here
+    };
+
+    return (
+        <div className="p-4 md:p-8 space-y-10 bg-stone-50/50 min-h-full">
+            
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-stone-200 pb-8 gap-6">
+                <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Data & Analytics</p>
+                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter">Municipal Reports</h1>
+                </div>
+                
+                <div className="flex items-center gap-3 bg-white border border-stone-200 px-4 py-3 rounded-none w-full md:w-auto">
+                    <Calendar size={16} className="text-stone-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Reporting Period: May 2026</span>
+                </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {reports.map((report) => (
+                    <div key={report.id} className="bg-white border border-stone-200 rounded-none overflow-hidden flex flex-col group">
+                        <div className="p-8 space-y-4 flex-1">
+                            <div className="flex items-start justify-between">
+                                <div className="p-4 bg-stone-50 border border-stone-100 text-stone-400 group-hover:text-green-700 group-hover:border-green-100 group-hover:bg-green-50 transition-colors duration-200">
+                                    <report.icon size={24} />
+                                </div>
+                                <span className="text-[9px] font-black text-stone-300 uppercase tracking-[0.2em]">
+                                    Report ID: {report.id.toUpperCase()}
+                                </span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <h2 className="text-xl font-black text-stone-800 uppercase tracking-tight">
+                                    {report.title}
+                                </h2>
+                                <p className="text-xs text-stone-500 font-medium leading-relaxed">
+                                    {report.description}
+                                </p>
+                            </div>
+
+                            <div className="pt-4 flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Last Generated:</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">{report.lastGenerated}</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 border-t border-stone-100">
+                            <button 
+                                onClick={() => handleExport(report.id, 'CSV')}
+                                className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 flex items-center justify-center gap-2 border-r border-stone-100 transition-colors"
+                            >
+                                <Download size={14} /> Export CSV
+                            </button>
+                            <button 
+                                onClick={() => handleExport(report.id, 'PDF')}
+                                className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-green-700 hover:bg-green-50 flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <FileText size={14} /> Export PDF
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Advanced Search/Filter Section */}
+            <div className="bg-white border border-stone-200 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-1">
+                    <h3 className="text-sm font-black text-stone-800 uppercase tracking-tight">Need a custom dataset?</h3>
+                    <p className="text-xs text-stone-500 font-medium">Use the advanced filter to generate specific date-range reports.</p>
+                </div>
+                <button className="w-full md:w-auto bg-stone-800 hover:bg-stone-700 text-white px-8 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-3">
+                    <Search size={16} /> Open Advanced Filter <ArrowRight size={16} />
+                </button>
+            </div>
+
+            {/* Compliance Footer */}
+            <div className="flex items-center justify-center gap-2 pt-10 border-t border-stone-100 opacity-30">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">
+                    Official Municipal Record System • SARIAYA, QUEZON
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default AgriReportsPage;

@@ -20,7 +20,8 @@ def send_sms_update_approve(sender, instance, created, **kwargs):
         'RELEASED'
     ]
     if instance.status in monitored_statuses:
-        send_via_status.enqueue(instance)
+        # di siya nag ga accept ng instance
+        send_via_status.enqueue(instance.id)
 
 
 

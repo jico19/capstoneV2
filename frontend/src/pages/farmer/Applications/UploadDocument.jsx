@@ -1,6 +1,6 @@
 import { UploadCloud, CheckCircle2 } from "lucide-react";
 
-const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
+const UploadDocument = ({ register, errors, watch, prevStep, nextStep, isResubmit = false }) => {
 
     // Helper to check if a file is selected
     const hasFile = (fieldName) => {
@@ -21,7 +21,9 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
             <div className="border-b border-gray-100 pb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 2</p>
                 <h2 className="text-xl font-black text-gray-900 uppercase">Required Documents</h2>
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-widest mt-1">Please upload clear photos or PDFs.</p>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-widest mt-1">
+                    {isResubmit ? "Optionally replace specific documents." : "Please upload clear photos or PDFs."}
+                </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -36,7 +38,7 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep }) => {
                                 className="hidden"
                                 accept=".pdf, image/*"
                                 {...register(doc.id, { 
-                                    required: `${doc.label} is required`,
+                                    required: isResubmit ? false : `${doc.label} is required`,
                                     validate: (fileList) => {
                                         if (!fileList || fileList.length === 0) return true;
                                         const file = fileList[0];

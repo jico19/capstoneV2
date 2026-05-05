@@ -115,24 +115,7 @@ const AgriReportsPage = () => {
                     </div>
                 ))}
             </div>
-
-            {/* Advanced Search/Filter Section */}
-            <div className="bg-white border border-stone-200 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="space-y-1">
-                    <h3 className="text-sm font-black text-stone-800 uppercase tracking-tight">Need a custom dataset?</h3>
-                    <p className="text-xs text-stone-500 font-medium">Use the advanced filter to generate specific date-range reports.</p>
-                </div>
-                <button className="w-full md:w-auto bg-stone-800 hover:bg-stone-700 text-white px-8 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-3">
-                    <Search size={16} /> Open Advanced Filter <ArrowRight size={16} />
-                </button>
-            </div>
-
-            {/* Compliance Footer */}
-            <div className="flex items-center justify-center gap-2 pt-10 border-t border-stone-100 opacity-30">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">
-                    Official Municipal Record System • SARIAYA, QUEZON
-                </p>
-            </div>
+            
         </div>
     );
 };

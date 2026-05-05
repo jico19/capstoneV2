@@ -11,7 +11,7 @@ a permit management system for the Sariaya Municipal Agriculture Office.
 - Roles: Farmer, Agri, Opv, Inspector
 
 ## Key Files to Always Read First
-Before doing any task, read the following files for context:
+Before doing any **code task**, read the following files for context:
 - `permits/views.py` — ViewSets and business logic
 - `permits/models.py` — Data models
 - `permits/serializers.py` — Serializers
@@ -19,9 +19,53 @@ Before doing any task, read the following files for context:
 
 ---
 
-## How to Write Code (Always Follow These)
+## Step 1: Identify the Task Mode
 
-These rules apply to every task — tests, bug fixes, components, everything.
+Before doing anything, classify the request into one of these modes.
+Each mode has different behavior. Do not apply code task rules to non-code tasks.
+
+### Mode A — Question / Audit / Discussion
+Triggered when the developer is asking something, not asking for code output.
+Examples: "what libraries am I using?", "is this pattern okay?", "why is this slow?",
+"audit my dependencies", "explain this to me"
+
+**How to respond:**
+- Answer directly and clearly — no need to reference project files first
+- Use plain, conversational language
+- Give your honest assessment with brief reasoning
+- If something is wrong or could be better, say so plainly
+- Skip the code standards, structure rules, and post-generation summaries
+- Only show code if it genuinely helps illustrate your answer
+
+---
+
+### Mode B — Code Task (Generate / Fix / Add)
+Triggered when the developer asks you to write, fix, or add something.
+Examples: "write a test for this", "fix this bug", "add error handling here",
+"build this component", "add this endpoint"
+
+**How to respond:**
+- Read the relevant project files first
+- Apply all code style rules (see below)
+- Follow the task-specific rules for that task type
+- Include a plain English summary after the code
+
+---
+
+### Mode C — Mixed (Question + Possible Code)
+Triggered when the developer asks a question but code output may help.
+Examples: "how should I structure this?", "what's the best way to handle X?"
+
+**How to respond:**
+- Answer the question first in plain language
+- Ask if they want you to generate the code before writing it
+- Don't generate code they didn't ask for
+
+---
+
+## Code Style Rules (Mode B Only)
+
+These rules apply only when you are writing, fixing, or adding code.
 
 ### Keep Code Readable
 
@@ -65,21 +109,14 @@ def get_permit(self, request, pk):
 - For React components, add a comment above the component explaining what it
   renders and what props it expects
 
-### Explain What You Generated
+### Explain What You Generated (After Every Code Task)
 
 After generating any code, always include a short **plain English summary** of:
 1. What the code does
 2. Why you structured it that way
 3. Any important detail the developer should know before using it
 
-Do not use jargon in this explanation. Write like you are talking to someone
-who knows the project but may not know the specific pattern you used.
-
-Example:
-> "This test file covers the PermitViewSet. Each test logs in as a specific role
-> and calls the endpoint. If the role is not allowed, it expects a 403 back.
-> The `permit` fixture creates a test permit in the database so we don't need
-> to create one manually in every test."
+Do not use jargon in this explanation.
 
 ### Never Generate Code That Is Hard to Follow
 
@@ -107,9 +144,7 @@ Example:
 
 ---
 
-## Task: Generate Tests
-
-When asked to generate or write tests:
+## Task: Generate Tests (Mode B)
 
 ### Rules
 - Use pytest-django with APIClient from rest_framework.test
@@ -139,7 +174,6 @@ def test_farmer_cannot_approve_own_permit():
 ```
 
 ### Test Structure — Use Arrange / Act / Assert
-Every test must follow this pattern with a blank line between each section:
 
 ```python
 def test_farmer_can_create_permit(farmer_client, barangay):
@@ -166,9 +200,7 @@ def test_farmer_can_create_permit(farmer_client, barangay):
 
 ---
 
-## Task: Fix Bugs
-
-When asked to find or fix bugs:
+## Task: Fix Bugs (Mode B)
 
 ### Rules
 - Read the relevant file(s) first before suggesting any fix
@@ -183,9 +215,7 @@ When asked to find or fix bugs:
 
 ---
 
-## Task: Add Error Guards
-
-When asked to add error handling or error guards:
+## Task: Add Error Guards (Mode B)
 
 ### Rules
 - Cover these scenarios at minimum:
@@ -209,9 +239,7 @@ When asked to add error handling or error guards:
 
 ---
 
-## Task: Frontend Components
-
-When asked to build or update React components:
+## Task: Frontend Components (Mode B)
 
 ### Design Style
 - Clean and minimal, flat UI — no shadows, no gradients, no glassmorphism
@@ -312,12 +340,10 @@ must follow these rules:
 
 ---
 
-## General Rules (All Tasks)
+## General Rules (All Modes)
 
 - Never break existing functionality
 - Follow the existing code style and naming conventions
 - Do not add unnecessary dependencies
-- If unsure about project structure, read the files first before asking
-- Always explain what you generated in plain English after the code
-- If something you generated might be confusing, point it out and explain it
+- If unsure about something, ask — don't assume and proceed
 - Never leave the developer guessing — if a decision was made for a reason, say so

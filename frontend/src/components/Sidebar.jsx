@@ -83,8 +83,9 @@ const Sidebar = ({ children }) => {
             case 'Opv':
                 return (
                     <MenuSection title="Staff Portal">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/opv/"/>
-                        <SidebarItem icon={History} label="Validation History" to="/opv/history/"/>
+                        <SidebarItem icon={LayoutDashboard} label="Overview" to="/opv/"/>
+                        <SidebarItem icon={FilesIcon} label="Applications" to="/opv/application/"/>
+                        <SidebarItem icon={BarChart3} label="Analytics" to="/opv/analytics/"/>
                     </MenuSection>
                 );
             case 'Inspector':

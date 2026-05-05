@@ -39,6 +39,38 @@ def create_permit(files, application, user):
     # or you can wrap it in transaction.on_commit
         transaction.on_commit(lambda d_id=d_id: extract_document_info.enqueue(d_id))
 
+def resubmit_permit(files, application, user):
+    """
+    Handles the logic for resubmitting an application.
+    Updates existing documents or creates new ones if they don't exist.
+    """
+    document_ids = []
+
+    for document_type, file in files.items():
+        # Update or create document record
+        doc, created = models.SubmittedDocument.objects.update_or_create(
+            application=application,
+            document_type=document_type,
+            defaults={'file': file}
+        )
+        document_ids.append(doc.id)
+
+        # Reset OCR result if document was updated to ensure fresh validation
+        if not created:
+             models.OCRValidationResult.objects.filter(document=doc).delete()
+
+    # Trigger OCR task for new/updated documents
+    for d_id in document_ids:
+        transaction.on_commit(lambda d_id=d_id: extract_document_info.enqueue(d_id))
+    
+    # Notify Farmer
+    Notification.objects.create(
+        type=Notification.Type.INFO,
+        recipient=user,
+        title="Application Resubmitted",
+        message=f"Your application #{application.application_id} has been resubmitted successfully. It is now awaiting review."
+    )
+
 def create_approve_opv_validation(application_id: int, files, staff, data):
     if not files or len(files) < 2:
         raise ValidationError("No documents uploaded. Please upload the required documents.")

@@ -3,33 +3,40 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import {
     ArrowLeft, CheckCircle2, User, MapPin,
-    Truck, Calendar, Loader2, XCircle,
-    FileText, ExternalLink, ShieldCheck, AlertTriangle
+    Truck, Calendar, XCircle,
+    FileText, ExternalLink, ShieldCheck, AlertTriangle,
+    Loader2
 } from "lucide-react"
 import { api } from "/src/lib/api"
 import { toast } from "sonner"
+import DateFormatter from "/src/components/DateFormatter"
+import { useInspectorLogs } from "/src/hooks/useInspectorLogs"
 
-
-
+/**
+ * Verify Application Page
+ * Inspector-specific view for checking permit validity after QR scan.
+ * Minimalist, industrial design focused on speed and clarity in the field.
+ */
 const VerifyApplication = () => {
     const { token } = useParams()
     const navigate = useNavigate()
     const [application, setApplication] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isError, setIsError] = useState(false)
-    const [location, setLocation] = useState({ lat: null, lng: null })
+    const [location, setLocation] = useState({ lat: 0, lng: 0 })
 
+    const { createLog } = useInspectorLogs()
     const { register, handleSubmit, formState: { isSubmitting } } = useForm()
 
     useEffect(() => {
         const fetchDetails = async () => {
-            // 1. Get GPS Location
+            // 1. Get GPS Location for the audit trail
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         setLocation({
                             lat: position.coords.latitude,
-                            lgn: position.coords.longitude
+                            lng: position.coords.longitude
                         })
                     },
                     (error) => console.error("Location error:", error.message),
@@ -41,211 +48,178 @@ const VerifyApplication = () => {
             try {
                 const res = await api.get(`/application/${token}/verify/`)
                 setApplication(res.data)
-
-                setTimeout(() => {
-                    setIsLoading(false);
-                }, 800);
+                setIsLoading(false)
             } catch (err) {
-                setIsError(true);
-                setIsLoading(false);
-                toast.error("Verification Error", {
-                    description: "Could not retrieve permit details for this QR code."
-                });
+                setIsError(true)
+                setIsLoading(false)
+                toast.error("Invalid Code", {
+                    description: "This permit could not be verified."
+                })
             }
         }
         fetchDetails()
     }, [token])
 
-    const handleLog = async (data) => {
-        try {
-            const formData = new FormData()
-            formData.append('application', application.id)
-            formData.append('notes', data.notes)
-            formData.append('lat', location.lat || 0)
-            formData.append('longi', location.lgn || 0)
+    const onSubmit = async (data) => {
+        const formData = new FormData()
+        formData.append('application', application.id)
+        formData.append('notes', data.notes || "")
+        formData.append('lat', location.lat)
+        formData.append('longi', location.lng)
 
-            const res = await api.post(`/inspector/`, formData)
-            toast.success("Inspection Logged", {
-                description: "The verification details have been recorded successfully."
-            })
-            navigate(-1)
-        } catch (error) {
-            console.error(error)
-            toast.error("Logging Failed", {
-                description: "Could not save the inspection details. Please try again."
-            })
-        }
+        createLog.mutate(formData, {
+            onSuccess: () => {
+                navigate('/inspector/')
+            }
+        })
     }
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "";
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('en-US', options);
-    };
+    if (isLoading) return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+            <span className="loading loading-spinner loading-lg text-green-700"></span>
+            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Checking Permit...</p>
+        </div>
+    )
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center text-green-700">
-                <Loader2 size={40} className="animate-spin mb-4" />
-                <p className="font-semibold text-sm">Verifying QR Code...</p>
-            </div>
-        )
-    }
-
-    if (isError || !application) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center">
-                <XCircle size={64} className="text-red-500 mb-4" />
-                <h1 className="text-2xl font-bold text-gray-900">Invalid Permit</h1>
-                <p className="mt-2 text-gray-500 text-sm">This permit could not be found or has been revoked.</p>
-                <button onClick={() => navigate(-1)} className="mt-8 btn btn-outline rounded-xl w-full">
-                    Scan Again
+    if (isError || !application) return (
+        <div className="max-w-xl mx-auto p-8 min-h-screen bg-white">
+            <div className="bg-red-50 border border-red-100 p-10 flex flex-col items-center text-center space-y-6">
+                <XCircle size={48} className="text-red-600" />
+                <div className="space-y-2">
+                    <h2 className="text-xl font-black text-red-700 uppercase tracking-tighter leading-none">Invalid Permit</h2>
+                    <p className="text-xs font-bold text-stone-500 uppercase tracking-widest leading-relaxed">
+                        This QR code is either fake, expired, or has been revoked. Do not allow transport.
+                    </p>
+                </div>
+                <button 
+                    onClick={() => navigate('/inspector/scan')} 
+                    className="w-full bg-stone-800 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest"
+                >
+                    Try Another Code
                 </button>
             </div>
-        )
-    }
+        </div>
+    )
 
-
-    const isValid = ['RELEASED', 'PAID'].includes(application.status);
+    const isValid = ['RELEASED', 'PAID'].includes(application.status)
 
     return (
-        <div className="min-h-screen pb-10">
+        <div className="max-w-xl mx-auto p-4 md:p-8 min-h-screen bg-white font-sans">
+            {/* Header */}
+            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-stone-400 text-[10px] font-black uppercase tracking-widest hover:text-green-700 transition-colors mb-8"
+            >
+                <ArrowLeft size={16} /> Cancel
+            </button>
 
-            {/* Header Navigation */}
-            <div className="flex items-center gap-4 px-6 py-5">
-                <button onClick={() => navigate(-1)} className="text-gray-800 hover:bg-gray-200 p-1 rounded-full transition-colors">
-                    <ArrowLeft size={22} />
-                </button>
-                <h1 className="text-xl font-bold text-gray-900">QR Scanner</h1>
+            <div className="mb-10 flex justify-between items-end border-b border-stone-100 pb-6">
+                <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Security Check</p>
+                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter">Verification</h1>
+                </div>
+                {isValid ? (
+                    <div className="bg-green-50 border border-green-600 px-3 py-1 flex items-center gap-1.5 text-green-700">
+                        <CheckCircle2 size={14} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Valid</span>
+                    </div>
+                ) : (
+                    <div className="bg-red-50 border border-red-600 px-3 py-1 flex items-center gap-1.5 text-red-700">
+                        <XCircle size={14} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Invalid</span>
+                    </div>
+                )}
             </div>
 
-            <div className="px-5 space-y-6 max-w-md mx-auto">
-
-                {/* 1. Main Permit Card */}
-                <div className={`bg-white rounded-2xl border ${isValid ? 'border-green-200' : 'border-red-200'} shadow-sm overflow-hidden`}>
-                    <div className="flex justify-between items-center px-5 py-3 border-b border-gray-100">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                            Livestock Transport Permit
-                        </span>
-                        {isValid ? (
-                            <div className="flex items-center gap-1 text-green-700 font-bold text-[11px] uppercase tracking-wider">
-                                <CheckCircle2 size={14} /> Valid
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1 text-red-600 font-bold text-[11px] uppercase tracking-wider">
-                                <XCircle size={14} /> Invalid
-                            </div>
-                        )}
+            <div className="space-y-8">
+                {/* Farmer / Basic Info */}
+                <div className="flex items-center gap-4 bg-stone-50 p-6 border border-stone-200">
+                    <div className="w-12 h-12 bg-white border border-stone-200 flex items-center justify-center text-stone-400">
+                        <User size={24} />
                     </div>
-
-                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-700 shrink-0 border border-green-100">
-                            <User size={24} />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold text-gray-900 leading-tight">{application.farmer_name}</h2>
-                            <p className="text-sm text-gray-500">{application.application_id}</p>
-                        </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Transport Owner</p>
+                        <h2 className="text-xl font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{application.farmer_name}</h2>
+                        <p className="text-[10px] font-mono font-bold text-stone-500 mt-1">ID: {application.application_id}</p>
                     </div>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-y-5 gap-x-4 p-5">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-gray-400">
-                                <MapPin size={14} />
-                                <span className="text-xs font-medium">Origin</span>
-                            </div>
-                            <p className="text-sm font-medium text-gray-900">{application.origin_barangay_name}</p>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-gray-400">
-                                <MapPin size={14} />
-                                <span className="text-xs font-medium">Destination</span>
-                            </div>
-                            <p className="text-sm font-medium text-gray-900">{application.destination}</p>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-gray-400">
-                                <Truck size={14} />
-                                <span className="text-xs font-medium">No. of Pigs</span>
-                            </div>
-                            <p className="text-sm font-medium text-gray-900">{application.number_of_pigs} heads</p>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-gray-400">
-                                <Calendar size={14} />
-                                <span className="text-xs font-medium">Transport Date</span>
-                            </div>
-                            <p className="text-sm font-medium text-gray-900">{formatDate(application.transport_date)}</p>
+                {/* Travel Details Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="border border-stone-200 p-4 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">From</p>
+                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.origin_barangay_name}</p>
+                    </div>
+                    <div className="border border-stone-200 p-4 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">To</p>
+                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.destination}</p>
+                    </div>
+                    <div className="border border-stone-200 p-4 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Load</p>
+                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.number_of_pigs} Heads</p>
+                    </div>
+                    <div className="border border-stone-200 p-4 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Date</p>
+                        <div className="text-sm font-bold text-stone-800 uppercase tracking-tight">
+                            <DateFormatter date={application.transport_date} />
                         </div>
                     </div>
                 </div>
 
-                {/* 2. Attached Documents Card */}
-                {application.documents && application.documents.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="flex items-center px-5 py-3 border-b border-gray-100 gap-2">
-                            <FileText size={16} className="text-gray-400" />
-                            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                Attached Documents
-                            </span>
-                        </div>
-
-                        <div className="divide-y divide-gray-50">
-                            {application.documents.map((doc) => (
-                                <div key={doc.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-gray-800">{doc.document_type_display}</span>
-
-                                        {/* Status Badge from OCR data */}
+                {/* Documents Evidence */}
+                <div className="space-y-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Document Evidence</p>
+                    <div className="space-y-2">
+                        {application.documents?.map((doc) => (
+                            <div key={doc.id} className="border border-stone-200 p-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold text-stone-800 uppercase tracking-tighter">{doc.document_type_display}</p>
+                                    <div className="flex items-center gap-1.5">
                                         {doc.ocr?.status === 'PASSED' ? (
-                                            <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 mt-1 uppercase">
+                                            <span className="flex items-center gap-1 text-[9px] font-black text-green-700 uppercase tracking-widest">
                                                 <ShieldCheck size={12} /> System Verified
                                             </span>
                                         ) : (
-                                            <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-600 mt-1 uppercase">
-                                                <AlertTriangle size={12} /> Manual Check
+                                            <span className="flex items-center gap-1 text-[9px] font-black text-amber-600 uppercase tracking-widest">
+                                                <AlertTriangle size={12} /> Visual Check
                                             </span>
                                         )}
                                     </div>
-
-                                    <a
-                                        href={doc.file}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center gap-1.5 bg-green-50 text-[#2c7a51] hover:bg-green-100 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
-                                    >
-                                        View <ExternalLink size={14} />
-                                    </a>
                                 </div>
-                            ))}
-                        </div>
+                                <a 
+                                    href={doc.file} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="p-2 border border-stone-200 hover:bg-stone-100 text-stone-600"
+                                >
+                                    <ExternalLink size={16} />
+                                </a>
+                            </div>
+                        ))}
                     </div>
-                )}
+                </div>
 
-                {/* 3. Inspection Form */}
-                <form onSubmit={handleSubmit(handleLog)} className="space-y-4 pt-2">
+                {/* Inspection Log Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4 border-t border-stone-100">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-800">Inspection Remarks</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-600">Inspector Notes</label>
                         <textarea
                             {...register('notes')}
-                            placeholder="e.g. All pigs accounted for, documents matched"
-                            className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 text-sm font-medium resize-none h-28 placeholder:text-gray-400 text-gray-800 shadow-sm"
-                        ></textarea>
+                            placeholder="Add observations or issues found..."
+                            className="w-full p-4 bg-white border border-stone-200 focus:border-green-700 outline-none text-sm font-medium resize-none h-32 placeholder:text-stone-300"
+                        />
                     </div>
 
                     <button
                         type="submit"
                         disabled={isSubmitting || !isValid}
-                        className="w-full bg-[#2c7a51] hover:bg-green-800 text-white font-medium text-sm h-14 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-widest text-xs h-14 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                     >
                         {isSubmitting ? (
-                            <Loader2 className="animate-spin" size={20} />
+                            <span className="loading loading-spinner loading-sm"></span>
                         ) : (
                             <>
-                                <CheckCircle2 size={18} /> Submit Inspection Log
+                                <CheckCircle2 size={16} /> Record Inspection
                             </>
                         )}
                     </button>

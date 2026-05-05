@@ -60,6 +60,23 @@ const ApplicationDetail = () => {
                 <div className="space-y-12 md:space-y-20">
                     <ApplicationHeader data={application} />
                     
+                    {application.status === "RESUBMISSION" && (
+                        <div className="bg-amber-50 border border-amber-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-black text-amber-800 uppercase tracking-widest">Action Required</h3>
+                                <p className="text-xs font-bold text-amber-700/70 uppercase tracking-widest leading-relaxed max-w-xl">
+                                    Your application was returned for correction. Please update your details or documents to proceed.
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => navigate(`/farmer/application/resubmit/${id}`)}
+                                className="bg-amber-600 hover:bg-amber-700 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto"
+                            >
+                                Resubmit Now
+                            </button>
+                        </div>
+                    )}
+                    
                     <section>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-8 md:mb-10">
                             <div className="flex items-center gap-4">

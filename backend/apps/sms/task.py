@@ -2,11 +2,14 @@ from django.tasks import task
 from apps.permits import models as permits
 from .models import SMSLog
 from .services import send_sms
+from django.shortcuts import get_object_or_404
 
 
 @task()
-def send_via_status(application):
+def send_via_status(application_id):
     # TODO: Check if the user is Allowed to Send SMS
+
+    application =  get_object_or_404(permits.PermitApplication, application_id)
 
     if not application.farmer.receive_sms:
         return # pass if the send sms is false

@@ -72,6 +72,25 @@ export const useCreateApplicataion = () => {
     })
 }
 
+export const useResubmitApplication = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, formData }) => {
+            const res = await api.post(`/application/${id}/resubmit/`, formData)
+            return res.data
+        },
+        onSuccess: (data) => {
+            toast.success('Your application has been resubmitted.')
+            queryClient.invalidateQueries({ queryKey: ['application'] })
+        },
+        onError: (error) => {
+            console.error(error)
+            const detail = error.response?.data?.detail || "Could not resubmit application."
+            toast.error(detail)
+        }
+    })
+}
+
 export const useGetPermit = (id) => {
     return useQuery({
         queryKey: ['docs', id],

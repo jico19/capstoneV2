@@ -28,6 +28,3 @@ def trigger_payment_flow(sender, instance, created, **kwargs):
         handle_application_status_change(application, Status.PAYMENT_PENDING)
     elif instance.is_paid and application.status == Status.PAYMENT_PENDING:
         handle_application_status_change(application, Status.RELEASED)
-
-
-

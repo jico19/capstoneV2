@@ -4,26 +4,29 @@ import { MapPin, Navigation, PiggyBank, Calendar, ClipboardList } from "lucide-r
 const FarmerInfo = ({ register, errors, nextStep }) => {
     const { data: map, isLoading, isError } = useGetMaps();
 
-    if (isLoading) return <div className="p-10 text-center font-bold text-slate-400 animate-pulse">Loading Map Data...</div>;
-    if (isError) return <div className="p-10 text-center text-red-500 font-bold bg-red-50 rounded-xl">Failed to load barangay data.</div>;
+    if (isLoading) return <div className="p-10 text-center font-bold text-gray-400 uppercase tracking-widest text-xs">Loading Map Data...</div>;
+    if (isError) return <div className="p-10 text-center text-red-600 font-bold bg-red-50 uppercase tracking-widest text-xs">Failed to load barangay data.</div>;
 
-    const inputClass = "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all";
-    const errorClass = "border-red-400 bg-red-50 focus:ring-red-500/20 focus:border-red-500";
+    const inputClass = "w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900";
+    const errorClass = "border-red-600 bg-red-50 focus:border-red-600 text-red-900";
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-lg font-bold text-slate-800 border-b pb-2">1. Transport Details</h2>
+        <div className="space-y-8">
+            <div className="border-b border-gray-100 pb-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
+                <h2 className="text-xl font-black text-gray-900 uppercase">Transport Details</h2>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Barangay Select */}
-                <div className="space-y-1 relative">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Origin Barangay</label>
+                <div className="space-y-2 relative">
+                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Origin Barangay</label>
                     <div className="relative">
-                        <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                        <MapPin className="absolute left-3 top-3.5 text-gray-400" size={18} />
                         <select
                             {...register('origin_barangay', { required: "Barangay is required" })}
                             defaultValue=""
-                            className={`${inputClass} ${errors.origin_barangay ? errorClass : ''} appearance-none`}
+                            className={`${inputClass} ${errors.origin_barangay ? errorClass : ''} appearance-none cursor-pointer`}
                         >
                             <option value="" disabled>-- SELECT BARANGAY --</option>
                             {map?.map((data) => (
@@ -31,29 +34,29 @@ const FarmerInfo = ({ register, errors, nextStep }) => {
                             ))}
                         </select>
                     </div>
-                    {errors.origin_barangay && <span className="text-xs text-red-500">{errors.origin_barangay.message}</span>}
+                    {errors.origin_barangay && <span className="text-[10px] font-bold uppercase tracking-wider text-red-600">{errors.origin_barangay.message}</span>}
                 </div>
 
                 {/* Destination */}
-                <div className="space-y-1 relative">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Destination</label>
+                <div className="space-y-2 relative">
+                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Destination</label>
                     <div className="relative">
-                        <Navigation className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                        <Navigation className="absolute left-3 top-3.5 text-gray-400" size={18} />
                         <input
                             type="text"
-                            placeholder="e.g. Metro Manila"
-                            className={`${inputClass} ${errors.destination ? errorClass : ''}`}
+                            placeholder="E.G. METRO MANILA"
+                            className={`${inputClass} ${errors.destination ? errorClass : ''} placeholder:uppercase`}
                             {...register('destination', { required: "Destination is required" })}
                         />
                     </div>
-                    {errors.destination && <span className="text-xs text-red-500">{errors.destination.message}</span>}
+                    {errors.destination && <span className="text-[10px] font-bold uppercase tracking-wider text-red-600">{errors.destination.message}</span>}
                 </div>
 
                 {/* Number of Pigs */}
-                <div className="space-y-1 relative">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Heads</label>
+                <div className="space-y-2 relative">
+                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Number of Heads</label>
                     <div className="relative">
-                        <PiggyBank className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                        <PiggyBank className="absolute left-3 top-3.5 text-gray-400" size={18} />
                         <input
                             type="number"
                             min="1"
@@ -65,10 +68,10 @@ const FarmerInfo = ({ register, errors, nextStep }) => {
                 </div>
 
                 {/* Transport Date */}
-                <div className="space-y-1 relative">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Transport Date</label>
+                <div className="space-y-2 relative">
+                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Transport Date</label>
                     <div className="relative">
-                        <Calendar className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                        <Calendar className="absolute left-3 top-3.5 text-gray-400" size={18} />
                         <input
                             type="date"
                             className={`${inputClass} ${errors.transport_date ? errorClass : ''}`}
@@ -79,20 +82,26 @@ const FarmerInfo = ({ register, errors, nextStep }) => {
             </div>
 
             {/* Purpose */}
-            <div className="space-y-1 relative">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Purpose of Transport</label>
+            <div className="space-y-2 relative">
+                <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Purpose of Transport</label>
                 <div className="relative">
-                    <ClipboardList className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                    <ClipboardList className="absolute left-3 top-3.5 text-gray-400" size={18} />
                     <textarea
-                        className={`${inputClass} min-h-[100px] ${errors.purpose ? errorClass : ''}`}
-                        placeholder="e.g. For slaughter, For breeding..."
+                        className={`${inputClass} min-h-[120px] ${errors.purpose ? errorClass : ''} placeholder:uppercase`}
+                        placeholder="E.G. FOR SLAUGHTER, FOR BREEDING..."
                         {...register('purpose', { required: "Purpose is required" })}
                     />
                 </div>
             </div>
 
-            <div className="flex justify-end pt-4">
-                <button type="button" onClick={nextStep} className="btn btn-primary px-8">Next Step</button>
+            <div className="flex justify-end pt-6 border-t border-gray-100">
+                <button 
+                    type="button" 
+                    onClick={nextStep} 
+                    className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors"
+                >
+                    Next Step
+                </button>
             </div>
         </div>
     );

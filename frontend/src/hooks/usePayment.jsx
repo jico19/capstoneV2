@@ -3,11 +3,13 @@ import { api } from "../lib/api";
 
 
 
-export const usePayment = () => {
+export const usePayment = (limit = 10, offset = 0) => {
     const query = useQuery({
-        queryKey: ['payment'],
+        queryKey: ['payment', limit, offset],
         queryFn: async () => {
-            const res = await api.get('/payment/')
+            const res = await api.get('/payment/', {
+                params: { limit, offset }
+            })
             return res.data
         }
     })

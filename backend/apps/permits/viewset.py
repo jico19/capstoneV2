@@ -19,7 +19,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
     queryset = models.PermitApplication.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = PermitApplicationFilter
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
     def get_serializer_class(self):
@@ -32,21 +32,21 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
         else:
             return serializers.PermitApplicationListSerializer
     
-    def  get_queryset(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return models.PermitApplication.objects.none()
+    # def  get_queryset(self):
+    #     user = self.request.user
+    #     if not user.is_authenticated:
+    #         return models.PermitApplication.objects.none()
 
-        if user.role == 'Farmer':
-            return models.PermitApplication.objects.filter(farmer=user)
+    #     if user.role == 'Farmer':
+    #         return models.PermitApplication.objects.filter(farmer=user)
         
-        elif user.role == 'Agri':
-            return models.PermitApplication.objects.all()
+    #     elif user.role == 'Agri':
+    #         return models.PermitApplication.objects.all()
         
-        elif user.role == 'Opv':
-            return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
+    #     elif user.role == 'Opv':
+    #         return models.PermitApplication.objects.filter(status__in = ["OPV_REJECTED", "OPV_VALIDATED", "FORWARDED_TO_OPV"])
         
-        return models.PermitApplication.objects.none()
+    #     return models.PermitApplication.objects.all()
 
 
     def create(self, request, *args, **kwargs):
@@ -173,6 +173,55 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
         return Response({"msg": "Application rejected and returned for resubmission"}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def resubmit(self, request, pk=None):
+        """
+        Farmer resubmission - allows updating details and documents for rejected applications.
+        """
+        if request.user.role != 'Farmer':
+            return Response({"error": "Only farmers can resubmit their applications."}, status=status.HTTP_403_FORBIDDEN)
+
+        application_instance = self.get_object()
+
+        # Guard: Only allow resubmission if status is RESUBMISSION
+        if application_instance.status != models.PermitApplication.Status.RESUBMISSION:
+            return Response(
+                {"error": f"Cannot resubmit an application with status '{application_instance.status}'. Status must be 'RESUBMISSION'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with transaction.atomic():
+                # Update basic application data if provided
+                serializer = self.get_serializer(application_instance, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
+                # Handle document updates/replacements
+                if request.FILES:
+                    services.resubmit_permit(
+                        files=request.FILES,
+                        application=application_instance,
+                        user=request.user
+                    )
+
+                # Set status back to SUBMITTED
+                application_instance.status = models.PermitApplication.Status.SUBMITTED
+                application_instance.save()
+
+                # --- Formal Audit Entry ---
+                AuditTrail.objects.create(
+                    who_performed = request.user,
+                    what_performed = f"[FARMER RESUBMISSION] - Application #{application_instance.application_id} resubmitted with updated information/documents.",
+                    when_performed = timezone.now(),
+                )
+
+            return Response({"msg": "Application resubmitted successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            error_detail = getattr(e, 'detail', str(e))
+            return Response({"error": "Failed to resubmit application", "detail": error_detail}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['get'])
     def verify(self, request, pk=None):
         """
@@ -203,7 +252,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
 class SubmittedDocumentViewSets(viewsets.ModelViewSet):
     queryset = models.SubmittedDocument.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -213,16 +262,11 @@ class SubmittedDocumentViewSets(viewsets.ModelViewSet):
         else:
             return serializers.SubmittedDocumentListSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.SubmittedDocument.objects.filter(application__farmer=user)
-        return models.SubmittedDocument.objects.all()
 
 
 class OPVValidationViewSets(viewsets.ModelViewSet):
     queryset = models.OPVValidation.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -232,11 +276,11 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OPVValidationDetailSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.OPVValidation.objects.filter(application__farmer=user)
-        return models.OPVValidation.objects.all()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.role == 'Farmer':
+    #         return models.OPVValidation.objects.filter(application__farmer=user)
+    #     return models.OPVValidation.objects.all()
 
     # actions
     @action(detail=False, methods=['get'])
@@ -248,6 +292,12 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
         qs = models.PermitApplication.objects.filter(
             status__icontains='OPV'
         )
+        
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = serializers.PermitApplicationListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = serializers.PermitApplicationListSerializer(
             qs, many=True
         )
@@ -320,7 +370,7 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
 
 class IssuedPermitViewSets(viewsets.ModelViewSet):
     queryset = models.IssuedPermit.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -330,11 +380,11 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
         else:
             return serializers.IssuedPermitDetailSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.IssuedPermit.objects.filter(application__farmer=user)
-        return models.IssuedPermit.objects.all()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.role == 'Farmer':
+    #         return models.IssuedPermit.objects.filter(application__farmer=user)
+    #     return models.IssuedPermit.objects.all()
 
     def create(self, request, *args, **kwargs):
         """
@@ -437,11 +487,11 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OCRValidationResultListSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'Farmer':
-            return models.OCRValidationResult.objects.filter(document__application__farmer=user)
-        return models.OCRValidationResult.objects.all()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.role == 'Farmer':
+    #         return models.OCRValidationResult.objects.filter(document__application__farmer=user)
+    #     return models.OCRValidationResult.objects.all()
 
     def update(self, request, *args, **kwargs):
         if request.user.role != "Agri":

@@ -36,6 +36,7 @@ export const useGetInspectorDashboard = () => {
         queryKey: ['inspector_metrics'],
         queryFn: async () => {
             const res = await api.get('/dashboard/inspector-metrics/')
+            console.log(res.data)
             return res.data
         }
     })

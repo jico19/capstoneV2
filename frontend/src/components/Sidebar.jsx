@@ -12,22 +12,40 @@ import {
     LogOut,
     Menu,
     FilesIcon,
+    FileText,
 } from "lucide-react";
 import useAuthStore from "../store/authContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
+// Standard navigation item for the sidebar.
+// Follows Design.MD: stone text, green active indicator on the right.
+const SidebarItem = ({ icon: Icon, label, to }) => {
+    const location = useLocation();
+    const isActive = location.pathname === to;
 
-const SidebarItem = ({ icon: Icon, label, to }) => (
-    <Link to={to} className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-base-300 transition-colors">
-            <Icon size={20} className="text-base-content/70" />
-            <span className="font-medium text-sm">{label}</span>
-    </Link>
-);
+    return (
+        <Link 
+            to={to} 
+            className={`flex items-center gap-3 px-6 py-3 transition-colors duration-150 ${
+                isActive 
+                ? "bg-green-50 text-green-700 border-r-2 border-green-700" 
+                : "text-stone-600 border-r-2 border-transparent hover:bg-stone-50 hover:text-stone-900"
+            }`}
+        >
+            <Icon size={18} className={isActive ? "text-green-700" : "text-stone-400"} />
+            <span className={`text-sm tracking-tight ${isActive ? "font-bold" : "font-medium"}`}>{label}</span>
+        </Link>
+    );
+};
 
+// Section header for grouping sidebar items.
+// Uses text-[10px] font-black uppercase tracking-widest per Design.MD.
 const MenuSection = ({ title, children }) => (
     <>
-        <li className="menu-title mt-4">
-            <span className="text-[10px] uppercase tracking-widest font-bold opacity-50">{title}</span>
+        <li className="px-6 mt-8 mb-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                {title}
+            </span>
         </li>
         {children}
     </>
@@ -35,70 +53,79 @@ const MenuSection = ({ title, children }) => (
 
 const Sidebar = ({ children }) => {
     const { user, isAuthenticated, logout} = useAuthStore();
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     const renderMenuByRole = () => {
-        if (!isAuthenticated) return <SidebarItem icon={LayoutDashboard} label="Public Information" />;
+        if (!isAuthenticated) return <SidebarItem icon={LayoutDashboard} label="Public Info" to="/" />;
 
         switch (user.role) {
             case 'Farmer':
                 return (
-                    <MenuSection title="Farmer Portal">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/farmer/'/>
-                        <SidebarItem icon={Bell} label="Notifications" to="/farmer/notification/"/>
+                    <MenuSection title="Farmer Services">
+                        <SidebarItem icon={LayoutDashboard} label="Home Dashboard" to='/farmer/'/>
+                        <SidebarItem icon={FilesIcon} label="My Applications" to='/farmer/application'/>
+                        <SidebarItem icon={FilePlus2} label="Apply for Permit" to='/farmer/application/create/'/>
+                        <SidebarItem icon={Bell} label="Your Messages" to="/farmer/notification/"/>
+                        <SidebarItem icon={Settings} label="Your Settings" to="/farmer/settings/"/>
                     </MenuSection>
                 );
             case 'Agri':
                 return (
-                    <MenuSection title="Agriculture Office">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/agri/'/>
+                    <MenuSection title="Agri Office">
+                        <SidebarItem icon={LayoutDashboard} label="Overview" to='/agri/'/>
                         <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application'/>
-                        <SidebarItem icon={CreditCard} label="Payment History"to='/agri/payment' />
-                        <SidebarItem icon={Map} label="Geospatial Map" to='/agri/map/pig-density/'/>
-                        <SidebarItem icon={Map} label="Checkpoint Map" to='/agri/map/check-point/'/>
+                        <SidebarItem icon={CreditCard} label="Payments"to='/agri/payment' />
+                        <SidebarItem icon={Map} label="Pig Map" to='/agri/map/pig-density/'/>
+                        <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/'/>
+                        <SidebarItem icon={BarChart3} label="Reports" to='/agri/reports/'/>
                     </MenuSection>
                 );
             case 'Opv':
                 return (
-                    <MenuSection title="OPV Staff">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/opv/"/>
+                    <MenuSection title="Staff Portal">
+                        <SidebarItem icon={LayoutDashboard} label="Overview" to="/opv/"/>
+                        <SidebarItem icon={FilesIcon} label="Applications" to="/opv/application/"/>
+                        <SidebarItem icon={BarChart3} label="Analytics" to="/opv/analytics/"/>
                     </MenuSection>
                 );
             case 'Inspector':
                 return (
-                    <MenuSection title="Field Inspection">
+                    <MenuSection title="Field Check">
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/inspector/"/>
                         <SidebarItem icon={QrCode} label="Scan QR Code" to='/inspector/scan/'/>
+                        <SidebarItem icon={History} label="Inspection History" to='/inspector/history/'/>
                     </MenuSection>
                 );
             case 'Admin':
                 return (
-                    <MenuSection title="Administration">
-                        <SidebarItem icon={UserCog} label="User Management" to="/admin/users" />
-                        <SidebarItem icon={Map} label="Barangay Data" to="/admin/map" />
-                        <SidebarItem icon={Settings} label="System Settings" to="/admin/settings" />
+                    <MenuSection title="Settings">
+                        <SidebarItem icon={UserCog} label="Manage Users" to="/admin/users" />
+                        <SidebarItem icon={Map} label="Map Data" to="/admin/map" />
+                        <SidebarItem icon={Settings} label="System Tools" to="/admin/settings" />
                     </MenuSection>
                 );
             default:
-                return <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/"/>;
+                return <SidebarItem icon={LayoutDashboard} label="Home" to="/"/>;
         }
     };
 
     return (
-        <div className="drawer lg:drawer-open min-h-screen bg-base-100">
+        <div className="drawer lg:drawer-open min-h-screen bg-stone-50 font-sans">
             <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" />
 
             {/* Main Content Area */}
             <div className="drawer-content flex flex-col bg-white">
                 {/* Mobile Header */}
-                <header className="navbar lg:hidden bg-base-100 border-b border-base-200 px-4">
-                    <label htmlFor="sidebar-drawer" className="btn btn-ghost btn-square">
+                <header className="navbar lg:hidden bg-white border-b border-stone-100 px-4">
+                    <label htmlFor="sidebar-drawer" className="btn btn-ghost btn-square text-stone-900 rounded-none">
                         <Menu size={24} />
                     </label>
-                    <div className="flex-1 ml-2 font-bold text-primary tracking-tight">LivestockPass</div>
+                    <div className="flex-1 ml-2 font-black text-green-700 tracking-tighter text-xl">
+                        LivestockPass
+                    </div>
                 </header>
 
-                <main className="p-6 lg:p-10">
+                <main className="flex-1 overflow-auto">
                     {children}
                 </main>
             </div>
@@ -107,29 +134,34 @@ const Sidebar = ({ children }) => {
             <aside className="drawer-side z-40">
                 <label htmlFor="sidebar-drawer" className="drawer-overlay"></label>
 
-                <div className="flex flex-col w-72 min-h-full bg-base-200 border-r border-base-300">
+                <div className="flex flex-col w-64 min-h-full bg-white border-r border-stone-200">
                     {/* App Branding */}
-                    <div className="px-8 pt-8 pb-4">
-                        <h1 className="text-2xl font-black text-green-600 flex items-center gap-2">
-                            LivestockPass
+                    <div className="px-6 pt-10 pb-6">
+                        <h1 className="text-xl font-black text-stone-900 flex items-center gap-1 leading-none tracking-tighter">
+                            Livestock<span className="text-green-700">Pass</span>
                         </h1>
+                        <p className="text-[11px] font-black text-stone-400 mt-2 tracking-widest uppercase">
+                            Municipal Service Portal
+                        </p>
                     </div>
 
                     {/* Navigation Menu */}
-                    <ul className="menu flex-1 px-4 py-2">
-                        {renderMenuByRole()}
-                    </ul>
+                    <nav className="flex-1">
+                        <ul className="flex flex-col">
+                            {renderMenuByRole()}
+                        </ul>
+                    </nav>
 
                     {/* Sidebar Footer */}
-                    <div className="p-4 border-t border-base-300 bg-base-200/50">
+                    <div className="p-4 border-t border-stone-100">
                         <button 
                             onClick={() => {
                                 logout()
                                 navigate('/')
                             }}
-                            className="btn btn-ghost btn-block justify-start gap-3 font-medium text-sm text-error hover:bg-error/10"
+                            className="flex items-center w-full gap-3 px-4 py-4 text-xs font-black tracking-widest transition-colors rounded-none text-stone-500 hover:bg-red-50 hover:text-red-600 uppercase"
                         >
-                            <LogOut size={18} />
+                            <LogOut size={16} />
                             Sign Out
                         </button>
                     </div>

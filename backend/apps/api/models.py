@@ -19,6 +19,7 @@ class User(AbstractUser):
     ])
     address = models.CharField(max_length=255, blank=True)
     barangay = models.ForeignKey(Barangay, help_text="User barangay.", on_delete=models.CASCADE, null=True, blank=True)
+    receive_sms = models.BooleanField(default=True, help_text="Whether the user wants to receive SMS notifications.")
 
     def __str__(self):
         return f"{self.username} | {self.role}"

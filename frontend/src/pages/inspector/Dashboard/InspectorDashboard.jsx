@@ -2,11 +2,13 @@ import {
     Scan, 
     Calendar, 
     ShieldCheck, 
-    Clock
+    Clock,
+    History
 } from "lucide-react";
 import { useGetInspectorDashboard } from "/src/hooks/useDashboard";
 import KPICard from "/src/components/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
+import { useNavigate } from "react-router-dom";
 
 
 /**
@@ -33,7 +35,7 @@ const InspectorDashboard = () => {
         );
     }
 
-    const { kpis, charts, recent_activity } = metrics;
+    const { kpis, charts } = metrics;
 
     return (
         <div className="max-w-7xl mx-auto p-8 space-y-12 bg-gray-50 min-h-screen font-sans rounded-none">
@@ -89,36 +91,6 @@ const InspectorDashboard = () => {
                 />
             </div>
 
-            {/* Recent Scans Activity */}
-            <div className="bg-white border border-gray-200 rounded-none overflow-hidden">
-                <div className="p-6 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
-                    <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest leading-none italic">Verified.Logs</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest">
-                            <tr>
-                                <th className="px-6 py-5">Transport ID</th>
-                                <th className="px-6 py-5">Timestamp</th>
-                                <th className="px-6 py-5 text-right">Verification Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {recent_activity.map((log, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-6 py-5 font-black text-gray-900 text-sm tracking-tight font-mono">{log.application__application_id}</td>
-                                    <td className="px-6 py-5 text-gray-500 text-xs font-bold uppercase tracking-widest">
-                                        {new Date(log.scanned_at).toLocaleString()}
-                                    </td>
-                                    <td className="px-6 py-5 text-right text-gray-400 italic text-xs">
-                                        {log.notes || "System Verified - No Notes"}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     );
 };

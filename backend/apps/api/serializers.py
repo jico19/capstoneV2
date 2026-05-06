@@ -4,14 +4,21 @@ from . import models
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    barangay_name = serializers.CharField(source='barangay.name', read_only=True)
+
     class Meta:
         model = models.User
         fields = [
             'id',
             'username',
+            'first_name',
+            'last_name',
             'role',
             'phone_no',
             'address',
+            'barangay',
+            'barangay_name',
+            'receive_sms',
         ]
 
 class UserWriteSeiralizer(serializers.ModelSerializer):
@@ -23,9 +30,12 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
             'phone_no',
             'first_name',
             'last_name',
+            'address',
+            'barangay',
+            'receive_sms',
         ]
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True, 'required': False}
         }
 
     def create(self, validated_data):

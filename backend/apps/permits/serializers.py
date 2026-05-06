@@ -72,7 +72,7 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PermitApplication
-        fields = ["id", "application_id", "farmer_name", "status", "is_issued","status_display", "transport_date", "created_at"]
+        fields = ["id", "application_id", "destination","farmer_name", "status", "is_issued","status_display", "transport_date", "created_at"]
 
     def get_farmer_name(self, obj):
         return obj.farmer.get_full_name() or obj.farmer.username

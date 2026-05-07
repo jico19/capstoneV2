@@ -7,7 +7,8 @@ import { Map as MapIcon, Info, Activity, AlertTriangle, Search, TrendingUp, BarC
  * Pig Map - Redesigned for Farmer-Friendly clarity and Minimalist Design System
  */
 const AgriMapPage = () => {
-    const [selectedMonth, setSelectedMonth] = useState('')
+    const [startMonth, setStartMonth] = useState('')
+    const [endMonth, setEndMonth] = useState('')
     const [selectedSeason, setSelectedSeason] = useState('all')
     const [activeFilters, setActiveFilters] = useState(['Low', 'Medium', 'High', 'Very High', 'None'])
     const [selectedBarangay, setSelectedBarangay] = useState(null)
@@ -27,7 +28,7 @@ const AgriMapPage = () => {
         isLoading: surveyLoading,
         isError: surveyError,
         isFetching: surveyFetching
-    } = useGetHogSurvey(selectedMonth, selectedSeason)
+    } = useGetHogSurvey(startMonth, endMonth, selectedSeason)
 
     const handleSearch = (barangayName) => {
         const barangay = map?.find(b => b.name === barangayName)
@@ -40,6 +41,11 @@ const AgriMapPage = () => {
             })
         }
     }
+
+    const months = [
+        "January", "February", "March", "April", "May", "June", 
+        "July", "August", "September", "October", "November", "December"
+    ];
 
     if (mapLoading || surveyLoading) {
         return (
@@ -82,7 +88,7 @@ const AgriMapPage = () => {
                     <p className="text-gray-500 text-sm font-medium">See how many pigs are in each area of Sariaya</p>
                 </div>
 
-                <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white border border-gray-100 p-2">
+                <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white border border-gray-100 p-3">
                     {/* Search */}
                     <div className="flex items-center gap-2 px-4 py-2 border-b sm:border-b-0 sm:border-r border-gray-100">
                         <Search size={18} className="text-gray-400" />
@@ -98,27 +104,59 @@ const AgriMapPage = () => {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-3 px-2">
+                    {/* Season Shortcut */}
+                    <div className="px-2 border-b sm:border-b-0 sm:border-r border-gray-100">
                         <select
-                            className="flex-1 bg-white border border-gray-100 px-4 py-2 font-black text-[10px] uppercase tracking-widest focus:outline-none focus:border-green-600 rounded-none cursor-pointer"
+                            className="w-full bg-white px-2 py-2 font-black text-[10px] uppercase tracking-widest focus:outline-none focus:border-green-600 rounded-none cursor-pointer"
                             value={selectedSeason}
-                            onChange={(e) => setSelectedSeason(e.target.value)}
+                            onChange={(e) => {
+                                setSelectedSeason(e.target.value);
+                                setStartMonth('');
+                                setEndMonth('');
+                            }}
                         >
                             <option value="all">Full Year</option>
-                            <option value="wet">Wet Season</option>
-                            <option value="dry">Dry Season</option>
+                            <option value="wet">Wet Season (Jun-Nov)</option>
+                            <option value="dry">Dry Season (Dec-May)</option>
                         </select>
+                    </div>
 
-                        <select
-                            className="flex-1 bg-white border border-gray-100 px-4 py-2 font-black text-[10px] uppercase tracking-widest focus:outline-none focus:border-green-600 rounded-none cursor-pointer"
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
-                        >
-                            <option value="">By Month</option>
-                            {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
-                                <option key={m} value={i + 1}>{m}</option>
-                            ))}
-                        </select>
+                    {/* Month Range */}
+                    <div className="flex items-center gap-2 px-2">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">From</span>
+                            <select
+                                className="bg-stone-50 border border-stone-200 px-3 py-2 font-black text-[10px] uppercase tracking-widest focus:outline-none focus:border-green-600 rounded-none cursor-pointer"
+                                value={startMonth}
+                                onChange={(e) => {
+                                    setStartMonth(e.target.value);
+                                    setSelectedSeason('all');
+                                }}
+                            >
+                                <option value="">Start</option>
+                                {months.map((m, i) => (
+                                    <option key={m} value={i + 1}>{m}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">To</span>
+                            <select
+                                className="bg-stone-50 border border-stone-200 px-3 py-2 font-black text-[10px] uppercase tracking-widest focus:outline-none focus:border-green-600 rounded-none cursor-pointer"
+                                value={endMonth}
+                                onChange={(e) => {
+                                    setEndMonth(e.target.value);
+                                    setSelectedSeason('all');
+                                }}
+                                disabled={!startMonth}
+                            >
+                                <option value="">End</option>
+                                {months.map((m, i) => (
+                                    <option key={m} value={i + 1}>{m}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>

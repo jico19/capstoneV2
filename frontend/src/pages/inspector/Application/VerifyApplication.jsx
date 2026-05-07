@@ -148,7 +148,9 @@ const VerifyApplication = () => {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="border border-stone-200 p-4 space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">From</p>
-                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.origin_barangay_name}</p>
+                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">
+                            {application.origins?.length > 1 ? "Multiple Origins" : (application.origins?.[0]?.barangay_name || application.origin_barangay_name)}
+                        </p>
                     </div>
                     <div className="border border-stone-200 p-4 space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">To</p>
@@ -170,7 +172,7 @@ const VerifyApplication = () => {
                 <div className="space-y-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Document Evidence</p>
                     <div className="space-y-2">
-                        {application.documents?.map((doc) => (
+                        {application.all_documents?.map((doc) => (
                             <div key={doc.id} className="border border-stone-200 p-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
                                 <div className="space-y-1">
                                     <p className="text-xs font-bold text-stone-800 uppercase tracking-tighter">{doc.document_type_display}</p>

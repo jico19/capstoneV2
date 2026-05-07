@@ -17,7 +17,6 @@ const ApplicationDetail = () => {
     const [selectedDocId, setSelectedDocId] = useState(null)
     const { data: application, isLoading, isError } = useApplicationDetail(id)
 
-    
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
             <span className="loading loading-spinner loading-lg text-green-600"></span>
@@ -38,6 +37,7 @@ const ApplicationDetail = () => {
     const viewDocument = (doc_id) => {
         setSelectedDocId(doc_id);
     }
+
 
     return (
         <>
@@ -92,7 +92,7 @@ const ApplicationDetail = () => {
                         </div>
                         
                         <DocumentList 
-                            documents={application.documents} 
+                            documents={application.all_documents} 
                             documentView={viewDocument}
                         />
                     </section>

@@ -146,6 +146,8 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         including type breakdown and historical trends.
         """
         target_month = request.query_params.get('month')
+        start_month = request.query_params.get('start_month')
+        end_month = request.query_params.get('end_month')
         target_season = request.query_params.get('season')
         
         # Start with all survey records
@@ -153,8 +155,16 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
 
         # 1. Filter current period
         current_queryset = queryset
+        
         if target_month:
             current_queryset = current_queryset.filter(survey_date__month=int(target_month))
+        elif start_month and end_month:
+            sm, em = int(start_month), int(end_month)
+            if sm <= em:
+                current_queryset = current_queryset.filter(survey_date__month__range=(sm, em))
+            else:
+                # Wrap around logic (e.g. Nov to Feb)
+                current_queryset = current_queryset.filter(Q(survey_date__month__gte=sm) | Q(survey_date__month__lte=em))
         elif target_season:
             season = target_season.lower()
             if season == 'wet':

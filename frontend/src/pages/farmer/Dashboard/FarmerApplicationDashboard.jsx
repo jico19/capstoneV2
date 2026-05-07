@@ -52,12 +52,6 @@ const FarmerApplicationDashboard = () => {
         setStatusFilter("");
     };
 
-
-    // useEffect(() => {
-    //     console.log(statusFilter)
-    // }, [statusFilter, searchQuery])
-
-
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">

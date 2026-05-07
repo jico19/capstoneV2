@@ -22,7 +22,13 @@ const useAuthStore = create(
                     // const userData = response.data;
                     const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/login/`, credentials)
                     const decoded = jwtDecode(res.data.access)
-                    const user = { id: decoded.id, username: decoded.username, role: decoded.role };
+                    const user = {
+                        id: decoded.id,
+                        username: decoded.username,
+                        role: decoded.role,
+                        first_name: decoded.first_name,
+                        last_name: decoded.last_name
+                    };
 
                     set({
                         user: user,

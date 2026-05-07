@@ -1,17 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
-
-
-export const useGetNotification = (limit = 10, offset = 0) => {
+export const useGetAuditTrail = (limit = 10, offset = 0) => {
     return useQuery({
-        queryKey: ['notification', limit, offset],
+        queryKey: ['audit-trail', limit, offset],
         queryFn: async () => {
-            const res = await api.get('/notification/', {
+            const res = await api.get('/audit-trail/', {
                 params: { limit, offset }
             })
             return res.data
-        },
-        staleTime: 1000 * 60 * 10
+        }
     })
 }

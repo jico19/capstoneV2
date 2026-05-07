@@ -14,8 +14,9 @@ import { useNavigate } from "react-router-dom";
  */
 const CreateApplication = () => {
     const [step, setStep] = useState(1);
-    const { mutate } = useCreateApplicataion()
-    const navigate = useNavigate()
+    const [origins, setOrigins] = useState([{ id: Date.now(), barangay: '', number_of_pigs: '' }]);
+    const { mutate } = useCreateApplicataion();
+    const navigate = useNavigate();
 
     const {
         register,
@@ -25,26 +26,47 @@ const CreateApplication = () => {
         formState: { errors, isSubmitting }
     } = useForm();
 
+    const addOrigin = () => {
+        setOrigins([...origins, { id: Date.now(), barangay: '', number_of_pigs: '' }]);
+    };
+
+    const removeOrigin = (id) => {
+        if (origins.length > 1) {
+            setOrigins(origins.filter(o => o.id !== id));
+        }
+    };
+
     const onSubmit = (data) => {
-        const formData = new FormData()
-        formData.append('origin_barangay', data.origin_barangay)
-        formData.append('destination', data.destination)
-        formData.append('number_of_pigs', data.number_of_pigs)
-        formData.append('transport_date', data.transport_date)
-        formData.append('purpose', data.purpose)
+        const formData = new FormData();
+        formData.append('destination', data.destination);
+        formData.append('transport_date', data.transport_date);
+        formData.append('purpose', data.purpose);
 
-        // files
-        formData.append('traders_pass', data.traders_pass[0])
-        formData.append('handlers_license', data.handlers_license[0])
-        formData.append('transport_carrier_reg', data.transport_carrier_reg[0])
-        formData.append('cis', data.cis[0])
-        formData.append('endorsement_cert', data.endorsement_cert[0])
+        // Append origins
+        origins.forEach((o, index) => {
+            formData.append(`origins[${index}][barangay]`, data[`barangay_${o.id}`]);
+            formData.append(`origins[${index}][number_of_pigs]`, data[`pigs_${o.id}`]);
+        });
 
+        // Append documents
+        // Common docs
+        ['traders_pass', 'handlers_license', 'transport_carrier_reg'].forEach(docType => {
+            if (data[docType]?.[0]) formData.append(docType, data[docType][0]);
+        });
 
-        mutate(formData)
-        reset()
-        setStep(1)
-        navigate('/farmer/')
+        // Origin-specific docs
+        origins.forEach((o, index) => {
+            ['cis', 'endorsement_cert'].forEach(docType => {
+                const key = `origin_${index}_${docType}`;
+                const dataKey = `origin_${o.id}_${docType}`;
+                if (data[dataKey]?.[0]) formData.append(key, data[dataKey][0]);
+            });
+        });
+        
+        mutate(formData);
+        reset();
+        setStep(1);
+        navigate('/farmer/');
     };
 
     const nextStep = async () => {
@@ -100,6 +122,9 @@ const CreateApplication = () => {
                             register={register}
                             errors={errors}
                             nextStep={() => nextStep(['origin_barangay', 'destination', 'number_of_pigs', 'transport_date', 'purpose'])}
+                            origins={origins}
+                            addOrigin={addOrigin}
+                            removeOrigin={removeOrigin}
                         />
                     )}
 
@@ -110,6 +135,7 @@ const CreateApplication = () => {
                             watch={watch}
                             prevStep={prevStep}
                             nextStep={() => nextStep()}
+                            origins={origins}
                         />
                     )}
 
@@ -118,6 +144,7 @@ const CreateApplication = () => {
                             watch={watch}
                             prevStep={prevStep}
                             isSubmitting={isSubmitting}
+                            origins={origins}
                         />
                     )}
 

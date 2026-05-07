@@ -32,22 +32,18 @@ class PermitApplication(models.Model):
         FORWARDED_TO_OPV    = 'FORWARDED_TO_OPV',  'Forwarded to OPV'
         OPV_VALIDATED       = 'OPV_VALIDATED',      'OPV Validated'
         OPV_REJECTED        = 'OPV_REJECTED',       'OPV Rejected'
-        PERMIT_ISSUED       = 'PERMIT_ISSUED',       'Permit issued'# ← payment starts here
-        PAYMENT_PENDING     = 'PAYMENT_PENDING',     'Payment pending'# ← waiting for payment
+        PERMIT_ISSUED       = 'PERMIT_ISSUED',       'Permit issued'
+        PAYMENT_PENDING     = 'PAYMENT_PENDING',     'Payment pending'
         RELEASED            = 'RELEASED',            'Released' 
 
     application_id  = models.CharField(max_length=12, unique=True, editable=False, default=document_id)
     farmer = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=50, choices=Status.choices, default=Status.DRAFT)
 
-    # Transport details
-    origin_barangay = models.ForeignKey(Barangay, on_delete=models.SET_NULL, null=True, related_name='origin')
     destination = models.CharField(max_length=255)
-    number_of_pigs = models.PositiveIntegerField()
     transport_date = models.DateField()
     purpose = models.TextField(blank=True)
 
-    # Tracking
     is_issued = models.BooleanField(default=False)
     issued_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -61,6 +57,15 @@ class PermitApplication(models.Model):
         return f"Application #{self.pk} — {self.farmer} ({self.status})"
     
 
+class TransportOrigin(models.Model):
+    application = models.ForeignKey(PermitApplication, on_delete=models.CASCADE, related_name='origins')
+    barangay = models.ForeignKey(Barangay, on_delete=models.CASCADE)
+    number_of_pigs = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.barangay.name} ({self.number_of_pigs} pigs)"
+
+
 class SubmittedDocument(models.Model):
     class DocumentType(models.TextChoices):
         TRADERS_PASS = 'traders_pass', "Trader's Pass"
@@ -69,7 +74,8 @@ class SubmittedDocument(models.Model):
         CIS = 'cis', "CIS (Barangay-issued)"
         ENDORSEMENT_CERTIFICATE = 'endorsement_cert', "Endorsement Certificate"
 
-    application = models.ForeignKey(PermitApplication, on_delete=models.CASCADE, related_name='documents')
+    # Updated to link to TransportOrigin
+    origin = models.ForeignKey(TransportOrigin, on_delete=models.CASCADE, related_name='documents')
     document_type = models.CharField(max_length=30, choices=DocumentType.choices)
     file = models.FileField(upload_to='submitted_docs/', validators=[
         FileExtensionValidator(
@@ -79,10 +85,10 @@ class SubmittedDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = [('application', 'document_type')]
+        unique_together = [('origin', 'document_type')]
 
     def __str__(self):
-        return f"Document → {self.get_document_type_display()} — App #{self.application_id}"
+        return f"Document → {self.get_document_type_display()} — Origin #{self.origin_id}"
 
 class OPVValidation(models.Model):
     

@@ -62,6 +62,11 @@ class NotificationSerializer(serializers.ModelSerializer):
             'sent_at'
         ]
 
+class AuditTrailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.AuditTrail
+        fields = '__all__'
+
 
 class CustomTokenObtainSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -71,5 +76,8 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
         token['id'] = user.id
         token['role'] = user.role
         token['username'] = user.username
+        token['first_name'] = user.first_name
+        token['last_name'] = user.last_name
+
         
         return token

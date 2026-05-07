@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import PermitApplication, SubmittedDocument, OPVValidation, OCRValidationResult, IssuedPermit
+from .models import PermitApplication, SubmittedDocument, OPVValidation, OCRValidationResult, IssuedPermit, TransportOrigin
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -29,36 +29,33 @@ class OCRValidationResultWriteSerializer(serializers.ModelSerializer):
         fields = ["id", "document", "status", "extracted_field", "remarks", "validated_at", "manually_overridden"]
 
 # ─────────────────────────────────────────
-# SUBMITTED DOCUMENT
+# TRANSPORT ORIGIN & DOCUMENTS
 # ─────────────────────────────────────────
 
 class SubmittedDocumentListSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/<id>/ (nested inside permit application)"""
     document_type_display = serializers.CharField(source="get_document_type_display", read_only=True)
-
-    ocr = OCRValidationResultListSerializer(
-        read_only=True,
-    )
-
+    ocr = OCRValidationResultListSerializer(read_only=True)
 
     class Meta:
         model = SubmittedDocument
-        fields = ["id", "document_type", "document_type_display", "file","ocr","uploaded_at"]
+        fields = ["id", "document_type", "document_type_display", "file", "ocr", "uploaded_at"]
 
-
-class SubmittedDocumentWriteSerializer(serializers.ModelSerializer):
-    """Used in: POST /documents/"""
+class TransportOriginListSerializer(serializers.ModelSerializer):
+    """Used in: GET /applications/<id>/ (nested)"""
+    barangay_name = serializers.CharField(source='barangay.name', read_only=True)
+    documents = SubmittedDocumentListSerializer(many=True, read_only=True)
 
     class Meta:
-        model = SubmittedDocument
-        fields = ["application", "document_type", "file"]
+        model = TransportOrigin
+        fields = ["id", "barangay", "barangay_name", "number_of_pigs", "documents"]
 
-    def validate_file(self, value):
-        """Check if file size is less than 30MB."""
-        limit = 30 * 1024 * 1024
-        if value.size > limit:
-            raise ValidationError("File size cannot exceed 30MB.")
-        return value
+class TransportOriginWriteSerializer(serializers.ModelSerializer):
+    """Used for nested creation/updates"""
+    class Meta:
+        model = TransportOrigin
+        fields = ["id", "barangay", "number_of_pigs"]
+        extra_kwargs = {'id': {'read_only': False, 'required': False}}
 
 
 # ─────────────────────────────────────────
@@ -72,7 +69,7 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PermitApplication
-        fields = ["id", "application_id", "destination","farmer_name", "status", "is_issued","status_display", "transport_date", "created_at"]
+        fields = ["id", "application_id", "destination", "farmer_name", "status", "is_issued", "status_display", "transport_date", "created_at"]
 
     def get_farmer_name(self, obj):
         return obj.farmer.get_full_name() or obj.farmer.username
@@ -82,36 +79,76 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/<id>/"""
     farmer_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-    origin_barangay_name = serializers.CharField(source="origin_barangay.name", read_only=True, default=None)
-    documents = SubmittedDocumentListSerializer(many=True, read_only=True)
-
+    origins = TransportOriginListSerializer(many=True, read_only=True)
+    all_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
         fields = [
             "id", "application_id", "farmer_name", "status", "status_display",
-            "origin_barangay_name", "destination", "number_of_pigs",
-            "transport_date", "purpose", "documents", "created_at",
+            "destination", "transport_date", "purpose", "origins", "all_documents", "created_at",
         ]
 
     def get_farmer_name(self, obj):
         return obj.farmer.get_full_name() or obj.farmer.username
 
+    def get_all_documents(self, obj):
+        # Flatten all documents from all transport origins
+        all_docs = []
+        for origin in obj.origins.all():
+            all_docs.extend(origin.documents.all())
+        return SubmittedDocumentListSerializer(all_docs, many=True).data
+
 
 class PermitApplicationWriteSerializer(serializers.ModelSerializer):
-    """Used in: POST /applications/  |  PATCH /applications/<id>/
-    Note: 'farmer' is excluded — set it via perform_create(serializer.save(farmer=request.user))
-    """
+    """Used in: POST /applications/"""
+    origins = TransportOriginWriteSerializer(many=True)
 
     class Meta:
         model = PermitApplication
-        fields = ["origin_barangay", "destination", "number_of_pigs", "transport_date", "purpose"]
-
+        fields = ["destination", "transport_date", "purpose", "origins"]
 
     def validate_transport_date(self, value):
         if value < timezone.now().date():
             raise ValidationError("Date cannot be in the past.")
         return value
+    
+    def create(self, validated_data):
+        origins_data = validated_data.pop('origins')
+        application = PermitApplication.objects.create(**validated_data)
+        for origin_data in origins_data:
+            TransportOrigin.objects.create(application=application, **origin_data)
+        return application
+
+    def update(self, instance, validated_data):
+        origins_data = validated_data.pop('origins', None)
+        
+        # Update PermitApplication fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if origins_data is not None:
+            # Keep track of IDs present in the request
+            keep_origins = []
+            for origin_data in origins_data:
+                origin_id = origin_data.get('id')
+                if origin_id:
+                    # Update existing origin
+                    origin_item = TransportOrigin.objects.get(id=origin_id, application=instance)
+                    origin_item.barangay = origin_data.get('barangay', origin_item.barangay)
+                    origin_item.number_of_pigs = origin_data.get('number_of_pigs', origin_item.number_of_pigs)
+                    origin_item.save()
+                    keep_origins.append(origin_item.id)
+                else:
+                    # Create new origin
+                    new_origin = TransportOrigin.objects.create(application=instance, **origin_data)
+                    keep_origins.append(new_origin.id)
+            
+            # Delete origins not in keep_origins
+            instance.origins.exclude(id__in=keep_origins).delete()
+        
+        return instance
 
 
 # ─────────────────────────────────────────

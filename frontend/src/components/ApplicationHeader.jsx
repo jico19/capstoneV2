@@ -33,7 +33,12 @@ const ApplicationHeader = ({ data }) => {
 
             {/* Transport Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 border border-gray-100 bg-gray-50/50">
-                <DetailItem label="From Area" value={data.origin_barangay_name} sub="Sariaya, Quezon" icon={<MapPin size={16} className="text-green-600" />} />
+                <DetailItem 
+                    label="From Area" 
+                    value={data.origins?.length > 1 ? "Multiple Origins" : (data.origins?.[0]?.barangay_name || data.origin_barangay_name)} 
+                    sub={data.origins?.length > 1 ? `${data.origins.length} Source Locations` : "Sariaya, Quezon"} 
+                    icon={<MapPin size={16} className="text-green-600" />} 
+                />
                 <DetailItem label="Going To" value={data.destination} icon={<Clipboard size={16} className="text-green-600" />} />
                 <DetailItem label="Total Count" value={`${data.number_of_pigs} Heads`} sub="Live Swine" icon={<User size={16} className="text-green-600" />} />
                 <DetailItem label="Travel Date" value={data.transport_date} icon={<Calendar size={16} className="text-green-600" />} />

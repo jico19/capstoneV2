@@ -15,14 +15,15 @@ export const useGetMaps = () => {
 }
 
 
-export const useGetHogSurvey = (month, season) => {
+export const useGetHogSurvey = (startMonth, endMonth, season) => {
     return useQuery({
-        // The array MUST include month and season so React Query knows to re-fetch when they change
-        queryKey: ['hog-survey', month, season],
+        // The array MUST include months and season so React Query knows to re-fetch when they change
+        queryKey: ['hog-survey', startMonth, endMonth, season],
         queryFn: async () => {
             // Build the params dynamically
             const params = {};
-            if (month) params.month = month;
+            if (startMonth) params.start_month = startMonth;
+            if (endMonth) params.end_month = endMonth;
             if (season) params.season = season;
 
             // Make sure your Axios instance is pointing to the correct Django endpoint

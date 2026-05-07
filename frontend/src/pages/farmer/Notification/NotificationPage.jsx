@@ -1,33 +1,26 @@
 import { useState } from 'react';
 import {
-    Bell, CheckCircle2, AlertTriangle, Info,
-    CheckCheck, ChevronRight, Inbox
+    CheckCircle2, AlertTriangle, Info,
+    CheckCheck, Inbox, ChevronRight
 } from 'lucide-react';
 import { useGetNotification } from '/src/hooks/useNotifications';
 import { api } from '/src/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import Pagination from '/src/components/Pagination';
+import NotificationItem from './NotificationItem';
+
 
 /**
  * Notification Page
  * Redesigned for Farmer-Friendly simplicity and high-signal minimalism.
  */
-const getRelativeTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 172800) return 'Yesterday';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
 
 const NotificationPage = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
+    const [filter, setFilter] = useState('ALL'); // ALL, UNREAD, READ
     const { data, isLoading, isError } = useGetNotification(limit, offset)
     const query = useQueryClient()
 
@@ -53,6 +46,12 @@ const NotificationPage = () => {
     const notifications = data?.results || [];
     const count = data?.count || 0;
 
+    const filteredNotifications = notifications.filter(n => {
+        if (filter === 'UNREAD') return !n.is_read;
+        if (filter === 'READ') return n.is_read;
+        return true;
+    });
+
     const markAllAsRead = async () => {
         try {
             await api.get('/notification/mark_all_read/')
@@ -68,101 +67,55 @@ const NotificationPage = () => {
         }
     };
 
-    const getIconInfo = (type) => {
-        switch (type) {
-            case 'SUCCESS': return { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' };
-            case 'WARNING': return { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' };
-            case 'INFO':
-            default: return { icon: Info, color: 'text-blue-600', bg: 'bg-blue-50' };
-        }
-    };
-
-    const unreadCount = notifications.filter(n => !n.is_read).length
-
     return (
-        <div className="flex-1 p-4 md:p-8 space-y-8 bg-white min-h-full font-sans">
-
-            {/* 1. Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-100 pb-6 md:pb-8">
-                <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Communication Center</p>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                        Your Messages
-                        {unreadCount > 0 && (
-                            <span className="bg-green-600 text-white text-[10px] px-3 py-1 font-black uppercase tracking-widest leading-none">
-                                {unreadCount} NEW
-                            </span>
-                        )}
-                    </h1>
-                    <p className="text-sm text-gray-500 font-medium">Stay updated on your permit statuses and office news.</p>
+        <div className="flex-1 bg-white min-h-full">
+            {/* Header */}
+            <header className="p-6 border-b border-stone-100 space-y-4">
+                <h1 className="text-xl font-black text-stone-900 uppercase tracking-tighter">Messages</h1>
+                
+                {/* Filters */}
+                <div className="flex gap-2">
+                    {['ALL', 'UNREAD', 'READ'].map(f => (
+                        <button 
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${
+                                filter === f ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-400 border-stone-200'
+                            }`}
+                        >
+                            {f}
+                        </button>
+                    ))}
                 </div>
+            </header>
 
-                {unreadCount > 0 && (
-                    <button
-                        onClick={markAllAsRead}
-                        className="w-full md:w-auto bg-gray-900 hover:bg-black text-white px-6 py-3 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex justify-center items-center gap-2"
-                    >
-                        <CheckCheck size={16} strokeWidth={3} /> Clear All Notifications
-                    </button>
-                )}
-            </div>
-
-            {/* 2. Notification List */}
-            <div className="bg-white border border-gray-100 rounded-none overflow-hidden">
-                {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-32 bg-gray-50/50">
-                        <Inbox size={48} className="text-gray-300 mb-4" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Inbox is empty</p>
+            {/* List */}
+            <div className="divide-y divide-stone-100">
+                {filteredNotifications.length === 0 ? (
+                    <div className="py-20 flex flex-col items-center text-stone-300">
+                        <Inbox size={40} />
+                        <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-stone-400">Nothing here</p>
                     </div>
                 ) : (
-                    <>
-                        <div className="divide-y divide-gray-100">
-                            {notifications.map((notif) => {
-                                const { icon: Icon, color, bg } = getIconInfo(notif.type);
-
-                                return (
-                                    <div
-                                        key={notif.id}
-                                        className={`p-6 flex gap-6 cursor-pointer transition-colors relative group
-                                            ${notif.is_read ? 'bg-white hover:bg-gray-50' : 'bg-green-50/20 hover:bg-green-50/40 border-l-4 border-green-600 pl-5'}`}
-                                    >
-                                        {/* Status Icon */}
-                                        <div className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-none border border-gray-100 bg-white ${color}`}>
-                                            <Icon size={24} strokeWidth={2.5} />
-                                        </div>
-
-                                        {/* Message Content */}
-                                        <div className="flex-1 min-w-0 space-y-1">
-                                            <div className="flex justify-between items-start gap-4">
-                                                <h3 className={`text-sm font-black uppercase tracking-tight truncate ${notif.is_read ? 'text-gray-600' : 'text-gray-900'}`}>
-                                                    {notif.title}
-                                                </h3>
-                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap pt-1">
-                                                    {getRelativeTime(notif.sent_at)}
-                                                </span>
-                                            </div>
-                                            <p className={`text-sm leading-relaxed ${notif.is_read ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>
-                                                {notif.message}
-                                            </p>
-                                        </div>
-
-                                        {/* Action Indicator */}
-                                        <div className="shrink-0 flex items-center pl-2">
-                                            <ChevronRight size={18} className={`transition-transform group-hover:translate-x-1 ${notif.is_read ? 'text-gray-200' : 'text-green-600'}`} strokeWidth={3} />
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                        <Pagination 
-                            count={count} 
-                            limit={limit} 
-                            offset={offset} 
-                            onPageChange={setOffset} 
-                        />
-                    </>
+                    filteredNotifications.map(n => <NotificationItem key={n.id} notif={n} />)
                 )}
             </div>
+
+            {/* Pagination Footer */}
+            {count > limit && (
+                <div className="border-t border-stone-100 bg-stone-50/50">
+                    <Pagination count={count} limit={limit} offset={offset} onPageChange={setOffset} />
+                </div>
+            )}
+
+            {/* Footer Actions */}
+            {notifications.some(n => !n.is_read) && (
+                <div className="p-4 border-t border-stone-100">
+                    <button onClick={markAllAsRead} className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                        <CheckCheck size={14} /> Mark All Read
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

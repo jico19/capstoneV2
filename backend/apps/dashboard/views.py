@@ -77,7 +77,7 @@ class FarmerDashboardView(views.APIView):
         # 2. Charts: Monthly Transport Volume (Sum of pigs per month)
         transport_volume = (
             my_apps.annotate(date=TruncMonth('created_at'))
-            .values('date').annotate(total_pigs=Sum('number_of_pigs')).order_by('date')
+            .values('date').annotate(total_pigs=Sum('origins__number_of_pigs')).order_by('date')
         )
 
         # 3. Charts: Status Distribution (Personal)
@@ -93,7 +93,7 @@ class FarmerDashboardView(views.APIView):
                 "transport_volume": transport_volume,
                 "status_distribution": status_dist,
             },
-            "recent_applications": my_apps.order_by('-updated_at')[:5].values('application_id', 'status', 'updated_at')
+            "recent_applications": my_apps.order_by('-updated_at')[:5].values('id','application_id', 'status', 'updated_at')
         }, status=status.HTTP_200_OK)
 
 class OPVDashboardView(views.APIView):

@@ -13,6 +13,7 @@ routers.register(r'document', PermitViewSets.SubmittedDocumentViewSets)
 routers.register(r'opv', PermitViewSets.OPVValidationViewSets)
 routers.register(r'issued-permit', PermitViewSets.IssuedPermitViewSets)
 routers.register(r'ocr-validation', PermitViewSets.OCRValidationResultViewSets)
+routers.register(r'report', PermitViewSets.ReportViewSets, basename='report')
 
 # map
 routers.register(r'barangay', MapsViewSets.BarangayViewSets)
@@ -22,6 +23,7 @@ routers.register(r'hog-survey', MapsViewSets.HogSurveyViewSets)
 # user
 routers.register(r'user', UserViewSets.UserViewSets)
 routers.register(r'notification', UserViewSets.NotificationViewSets)
+routers.register(r'audit-trail', UserViewSets.AuditTrailViewSets)
 
 # payment
 routers.register(r'payment', PaymentViewSets.PaymentViewSets)

@@ -1,6 +1,6 @@
 import { CheckCircle } from "lucide-react";
 
-const ReviewApplication = ({ watch, prevStep, isSubmitting }) => {
+const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
 
     const formData = watch();
 
@@ -39,10 +39,15 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting }) => {
 
             <div className="bg-gray-50 p-6 border border-gray-200 rounded-none">
                 <h3 className="text-xs font-black tracking-[0.2em] text-gray-900 uppercase mb-4 border-b border-gray-200 pb-2">Transport Info</h3>
-                <DetailRow label="Barangay ID (Origin)" value={formData.origin_barangay} />
+                {origins.map((o, index) => (
+                    <div key={o.id} className="mb-4 pb-4 border-b border-gray-200 last:border-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-green-700 mb-2">Origin #{index + 1}</p>
+                        <DetailRow label="Barangay ID" value={formData[`barangay_${o.id}`]} />
+                        <DetailRow label="Number of Heads" value={formData[`pigs_${o.id}`]} />
+                    </div>
+                ))}
                 <DetailRow label="Destination" value={formData.destination} />
                 <DetailRow label="Transport Date" value={formData.transport_date} />
-                <DetailRow label="Number of Heads" value={formData.number_of_pigs} />
                 <DetailRow label="Purpose" value={formData.purpose} />
             </div>
 
@@ -51,8 +56,12 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting }) => {
                 <DocRow label="Trader's Pass" field="traders_pass" />
                 <DocRow label="Handler's License" field="handlers_license" />
                 <DocRow label="Carrier Registration" field="transport_carrier_reg" />
-                <DocRow label="Certificate of Inspection" field="cis" />
-                <DocRow label="Endorsement Certificate" field="endorsement_cert" />
+                {origins.map((o, index) => (
+                    <div key={o.id}>
+                        <DocRow label={`CIS (Origin #${index + 1})`} field={`origin_${o.id}_cis`} />
+                        <DocRow label={`Endorsement (Origin #${index + 1})`} field={`origin_${o.id}_endorsement_cert`} />
+                    </div>
+                ))}
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 border-t border-gray-100 gap-4 mt-8">

@@ -8,8 +8,8 @@ from django.utils import timezone
 
 @receiver(post_save, sender=models.SubmittedDocument)
 def trigger_ocr_flow(sender, instance, created, **kwargs):
-    if created and instance.application.status == models.PermitApplication.Status.DRAFT:
-        handle_application_status_change(instance.application, models.PermitApplication.Status.SUBMITTED)
+    if created and instance.origin.application.status == models.PermitApplication.Status.DRAFT:
+        handle_application_status_change(instance.origin.application, models.PermitApplication.Status.SUBMITTED)
 
 
 @receiver(post_save, sender=models.OPVValidation)

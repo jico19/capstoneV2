@@ -5,6 +5,7 @@ import RootRedirect from "./RootRedirect";
 // auths
 import LoginPage from "/src/pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import SettingsPage from "../pages/shared/SettingsPage";
 
 // farmer
 import FarmerDashboard from "../pages/farmer/Dashboard/FarmerDashboard";
@@ -16,7 +17,6 @@ import PaymentSuccess from "../pages/farmer/Payments/PaymentSuccess";
 import ApplicationDetail from "../pages/farmer/Applications/ApplicationDetail";
 import PaymentCheckout from "../pages/farmer/Payments/PaymentCheckout";
 import DownloadApplication from "../pages/farmer/Dashboard/DownloadApplication";
-import FarmerSettings from "../pages/farmer/Settings/FarmerSettings";
 
 // agri
 import AgriDashboardPage from "../pages/agri/Dashboard/AgriDashboardPage";
@@ -61,7 +61,7 @@ const router = createBrowserRouter([
             { path: 'payment/success/:issued_permit_id', element: <PaymentSuccess /> },
             { path: 'payment/checkout/:id', element: <PaymentCheckout /> },
             { path: 'application/download/:id', element: <DownloadApplication />},
-            { path: 'settings/', element: <FarmerSettings /> }
+            { path: 'settings/', element: <SettingsPage /> }
             ]
             },
     {
@@ -75,6 +75,7 @@ const router = createBrowserRouter([
             { path: 'payment/', element: <AgriPaymentPage /> },
             { path: 'reports/', element: <AgriReportsPage /> },
             { path: 'audit-trail/', element: <AuditTrailPage /> },
+            { path: 'settings/', element: <SettingsPage /> },
         ]
     },
 
@@ -85,6 +86,7 @@ const router = createBrowserRouter([
             { index: true, element: <OpvDashboard /> },
             { path: 'application/', element: <OpvApplicationDashboard /> },
             { path: 'application/detail/:id', element: <OPVApplicationDetail /> },
+            { path: 'settings/', element: <SettingsPage /> },
         ]
     },
 
@@ -96,6 +98,8 @@ const router = createBrowserRouter([
             { path: 'scan/', element: <QRScannerPage />},
             { path: 'history/', element: <InspectionHistory />},
             { path: 'verify/:token/', element: <VerifyApplication />},
+            { path: 'notification/', element: <NotificationPage /> },
+            { path: 'settings/', element: <SettingsPage /> },
         ]
     },
 

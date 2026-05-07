@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
@@ -49,39 +50,63 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
     #     return models.PermitApplication.objects.all()
 
 
+    def _parse_bracket_data(self, data):
+        """
+        Helper to parse origins[i][field] style keys from FormData/QueryDict.
+        """
+        origins_data = []
+        i = 0
+        while f'origins[{i}][barangay]' in data:
+            origin = {
+                'barangay': data.get(f'origins[{i}][barangay]'),
+                'number_of_pigs': data.get(f'origins[{i}][number_of_pigs]'),
+            }
+            # Include ID if present (for updates)
+            if f'origins[{i}][id]' in data:
+                origin['id'] = data.get(f'origins[{i}][id]')
+            
+            origins_data.append(origin)
+            i += 1
+        return origins_data
+
     def create(self, request, *args, **kwargs):
         """
-        Create a new permit application and its associated documents.
-        Wrapped in a transaction to ensure either everything is created or nothing is.
+        Create a new permit application with nested origins parsed from FormData.
         """
-        # Ensure only Farmers can create applications
         if request.user.role != 'Farmer':
             return Response({"error": "Only farmers can submit new applications."}, status=status.HTTP_403_FORBIDDEN)
 
+        # Construct payload for serializer
+        data = {
+            'destination': request.data.get('destination'),
+            'transport_date': request.data.get('transport_date'),
+            'purpose': request.data.get('purpose'),
+            'origins': self._parse_bracket_data(request.data)
+        }
+
         try:
             with transaction.atomic():
-                # Serialize the basic application data
-                serializer = self.get_serializer(data=request.data)
+                serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
                 application = serializer.save(farmer=request.user)
                 
-                # Create associated document records and trigger OCR
-                services.create_permit(
-                    files=request.FILES,
-                    application=application,
-                    user=request.user
-                )
-
-                # Set initial status after document upload
+                # Link documents using the saved application and files
+                if request.FILES:
+                    services.create_permit(
+                        files=request.FILES,
+                        application=application,
+                        user=request.user
+                    )
+                
                 application.status = models.PermitApplication.Status.SUBMITTED
                 application.save()
 
             return Response({"msg": "Application submitted successfully", "id": application.pk}, status=status.HTTP_201_CREATED)
 
+        except ValidationError as e:
+            return Response({"error": "Validation failed", "detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Safely handle different types of exceptions
-            error_detail = getattr(e, 'detail', str(e))
-            return Response({"error": "Failed to create application", "detail": error_detail}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Failed to create application", "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -192,8 +217,16 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
+                # Construct payload for serializer
+                data = {
+                    'destination': request.data.get('destination'),
+                    'transport_date': request.data.get('transport_date'),
+                    'purpose': request.data.get('purpose'),
+                    'origins': self._parse_bracket_data(request.data)
+                }
+
                 # Update basic application data if provided
-                serializer = self.get_serializer(application_instance, data=request.data, partial=True)
+                serializer = self.get_serializer(application_instance, data=data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
 
@@ -512,8 +545,105 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
         # --- Formal Audit Entry ---
         AuditTrail.objects.create(
             who_performed = request.user,
-            what_performed = f"[OCR DATA CORRECTION]- Agri Officer manually corrected data fields for Document #{ocr_instance.document.id} issued for Application #{ocr_instance.document.application.id}.",
+            what_performed = f"[OCR DATA CORRECTION]- Agri Officer manually corrected data fields for Document #{ocr_instance.document.id} issued for Application #{ocr_instance.document.origin.application.id}.",
             when_performed = timezone.now(),
         )
 
         return Response({"msg": "Updated successfully"}, status=status.HTTP_200_OK)
+
+
+class ReportViewSets(viewsets.ViewSet):
+    """
+    Report generation endpoints for Agri Officers only.
+    All reports accept optional start_date and end_date query params (YYYY-MM-DD).
+    Defaults to today when not provided.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _parse_date_range(self, request):
+        """Parse start_date and end_date from query params. Defaults to today."""
+        from datetime import datetime
+        today = timezone.now().date()
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
+        except ValueError:
+            return None, None, Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+        if start_date > end_date:
+            return None, None, Response({"error": "Start date cannot be after end date."}, status=400)
+
+        return start_date, end_date, None
+
+    @action(detail=False, methods=['get'], url_path='permit-issuance/pdf')
+    def permit_issuance_pdf(self, request):
+        """Export the permit issuance summary as a PDF for a given date range."""
+        from django.http import FileResponse
+        from apps.documents.services import generate_permit_issuance_report_pdf
+
+        if request.user.role != 'Agri':
+            return Response({"error": "Only Agri officers can generate reports."}, status=403)
+
+        start_date, end_date, error = self._parse_date_range(request)
+        if error:
+            return error
+
+        pdf_buffer = generate_permit_issuance_report_pdf(start_date=start_date, end_date=end_date)
+        filename = f"PERMIT_ISSUANCE_{start_date}_to_{end_date}.pdf"
+        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+
+    @action(detail=False, methods=['get'], url_path='permit-issuance/csv')
+    def permit_issuance_csv(self, request):
+        """Export the permit issuance list as a CSV file for a given date range."""
+        from django.http import HttpResponse
+        from apps.documents.services import generate_permit_issuance_csv
+
+        if request.user.role != 'Agri':
+            return Response({"error": "Only Agri officers can generate reports."}, status=403)
+
+        start_date, end_date, error = self._parse_date_range(request)
+        if error:
+            return error
+
+        csv_output = generate_permit_issuance_csv(start_date=start_date, end_date=end_date)
+        filename = f"PERMIT_ISSUANCE_{start_date}_to_{end_date}.csv"
+        response = HttpResponse(csv_output, content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    @action(detail=False, methods=['get'], url_path='barangay-distribution/pdf')
+    def barangay_distribution_pdf(self, request):
+        """Export barangay livestock volume distribution as a PDF."""
+        from django.http import FileResponse
+        from apps.documents.services import generate_barangay_distribution_pdf
+
+        if request.user.role != 'Agri':
+            return Response({"error": "Only Agri officers can generate reports."}, status=403)
+
+        start_date, end_date, error = self._parse_date_range(request)
+        if error:
+            return error
+
+        pdf_buffer = generate_barangay_distribution_pdf(start_date=start_date, end_date=end_date)
+        filename = f"BARANGAY_DISTRIBUTION_{start_date}_to_{end_date}.pdf"
+        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+
+    @action(detail=False, methods=['get'], url_path='inspector-logs/pdf')
+    def inspector_logs_pdf(self, request):
+        """Export field inspection audit log as a PDF."""
+        from django.http import FileResponse
+        from apps.documents.services import generate_inspector_report_pdf
+
+        if request.user.role != 'Agri':
+            return Response({"error": "Only Agri officers can generate reports."}, status=403)
+
+        start_date, end_date, error = self._parse_date_range(request)
+        if error:
+            return error
+
+        pdf_buffer = generate_inspector_report_pdf(start_date=start_date, end_date=end_date)
+        filename = f"INSPECTOR_LOGS_{start_date}_to_{end_date}.pdf"
+        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)

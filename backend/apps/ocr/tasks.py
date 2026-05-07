@@ -33,7 +33,7 @@ def extract_document_info(document_id: int):
             }
         )
         try:
-            check_all_documents_complete(doc.application.id)
+            check_all_documents_complete(doc.origin.application.id)
         except Exception as e:
             logger.error(f"Error in check_all_documents_complete: {str(e)}")
         return
@@ -98,6 +98,6 @@ def extract_document_info(document_id: int):
 
     finally:
         try:
-            check_all_documents_complete(doc.application.id)
+            check_all_documents_complete(doc.origin.application.id)
         except Exception as e:
             logger.error(f"Error in final check_all_documents_complete: {str(e)}")

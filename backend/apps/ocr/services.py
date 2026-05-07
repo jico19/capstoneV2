@@ -21,9 +21,9 @@ def check_all_documents_complete(application_id):
         raise APIException("An unexpected error occurred while retrieving the permit application.")
 
     try:
-        total_docs = application.documents.count()
+        total_docs = permits.SubmittedDocument.objects.filter(origin__application=application).count()
         total_ocr_results = permits.OCRValidationResult.objects.filter(
-            document__application=application
+            document__origin__application=application
         ).count()
 
         # Not all docs processed yet — wait
@@ -31,7 +31,7 @@ def check_all_documents_complete(application_id):
             return
 
         manual_docs = permits.OCRValidationResult.objects.filter(
-            document__application=application,
+            document__origin__application=application,
             status='MANUAL'
         )
 

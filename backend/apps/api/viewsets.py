@@ -127,10 +127,11 @@ class NotificationViewSets(viewsets.ModelViewSet):
 
         if user.role == 'Farmer':
             return models.Notification.objects.filter(
-                recipient=user, is_read=False
+                recipient=user
             )
+        
         # Other roles might need to see their own notifications too
-        return models.Notification.objects.filter(recipient=user)
+        return models.Notification.objects.none()
         
     @action(detail=False, methods=['get'])
     def mark_all_read(self, request):
@@ -140,3 +141,8 @@ class NotificationViewSets(viewsets.ModelViewSet):
         ).update(is_read=True)
 
         return Response('ok!!', status=status.HTTP_200_OK)
+    
+class AuditTrailViewSets(viewsets.ModelViewSet):
+    serializer_class = serializers.AuditTrailSerializer
+    queryset = models.AuditTrail.objects.all()
+    permission_classes = [IsAuthenticated]

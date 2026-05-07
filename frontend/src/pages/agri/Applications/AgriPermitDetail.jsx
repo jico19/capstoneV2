@@ -146,7 +146,7 @@ const AgriPermitDetail = () => {
                             </div>
                             <div className="h-[2px] flex-1 bg-gray-100"></div>
                         </div>
-                        <DocumentList documents={application?.documents} fixData={fixDataHandler} documentView={viewDocument} />
+                        <DocumentList documents={application?.all_documents} fixData={fixDataHandler} documentView={viewDocument} />
                     </section>
 
                     {application.status === 'MANUAL' || application.status === 'OCR_VALIDATED' ? (

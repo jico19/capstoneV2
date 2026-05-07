@@ -167,3 +167,6 @@ frontend/.env.production.local
 backend/apps/ml_engine/models/*.joblib
 backend/media/
 backend/static/
+
+.gemini/
+gha-creds-*.json

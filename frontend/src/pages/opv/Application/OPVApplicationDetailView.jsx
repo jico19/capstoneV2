@@ -111,7 +111,7 @@ const OPVApplicationDetail = () => {
                         </div>
                         
                         <DocumentList 
-                            documents={application.documents} 
+                            documents={application.all_documents} 
                             documentView={viewDocument}
                         />
                     </section>

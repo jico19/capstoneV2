@@ -11,7 +11,12 @@ from .utils import generate_otp
 
 class UserViewSets(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return []
+        return super().get_permissions()
 
 
     def get_serializer_class(self):
@@ -22,15 +27,18 @@ class UserViewSets(viewsets.ModelViewSet):
         else:
             return serializers.UserListSerializer
     
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.role == 'Admin':
-    #         return models.User.objects.all()
-    #     # Non-admin users can only see their own profile
-    #     return models.User.objects.filter(id=user.id)
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+             return models.User.objects.none()
+             
+        if user.role == 'Admin':
+            return models.User.objects.all()
+        # Non-admin users can only see their own profile
+        return models.User.objects.filter(id=user.id)
     
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[])
     def verify_otp(self, request):
         phone_no = request.data.get('phone_no')
         otp_input = request.data.get('otp')
@@ -71,7 +79,7 @@ class UserViewSets(viewsets.ModelViewSet):
             "is_verified": True
         }, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[])
     def send_otp(self, request):
         phone_no = request.data.get('phone_no')
 

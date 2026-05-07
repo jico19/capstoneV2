@@ -170,3 +170,4 @@ backend/static/
 
 .gemini/
 gha-creds-*.json
+.gemini_security/

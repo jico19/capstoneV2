@@ -31,14 +31,8 @@ const AgriMapPage = () => {
     } = useGetHogSurvey(startMonth, endMonth, selectedSeason)
 
     const handleSearch = (barangayName) => {
-        const barangay = map?.find(b => b.name === barangayName)
-        if (barangay && mapRef.current) {
+        if (barangayName) {
             setSelectedBarangay(barangayName)
-            mapRef.current.flyTo({
-                center: [Number(barangay.longitude), Number(barangay.latitude)],
-                zoom: 15,
-                duration: 0 
-            })
         }
     }
 
@@ -197,12 +191,6 @@ const AgriMapPage = () => {
                         <div className="pt-6 border-t border-gray-100">
                             <div className="flex justify-between items-center mb-6">
                                 <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Map Colors</span>
-                                <button 
-                                    onClick={() => setActiveFilters(['Low', 'Medium', 'High', 'Very High', 'None'])}
-                                    className="text-[10px] font-black uppercase text-green-600 hover:text-green-700 underline underline-offset-4"
-                                >
-                                    RESET
-                                </button>
                             </div>
                             <div className="space-y-4">
                                 {[

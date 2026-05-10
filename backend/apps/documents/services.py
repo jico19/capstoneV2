@@ -1,6 +1,8 @@
 # services/permit_generator.py
 
+import logging
 from io import BytesIO
+from datetime import timedelta
 from django.core.files import File
 from django.conf import settings
 from reportlab.lib.pagesizes import A4
@@ -18,11 +20,17 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Sum
 
-@task()
-def generate_permit_pdf(permit_application_id):
+logger = logging.getLogger(__name__)
+
+@task(takes_context=True)
+def generate_permit_pdf(context, permit_application_id):
+    """
+    Background task to generate a PDF permit.
+    Uses TaskContext for basic retry on transient failures (e.g. database locks).
+    """
     try:
         with transaction.atomic():
-            application = get_object_or_404(PermitApplication, pk=permit_application_id)
+            application = PermitApplication.objects.select_related('farmer', 'issued_permit').get(pk=permit_application_id)
             issued_permit = application.issued_permit
             buffer = BytesIO()
             p = canvas.Canvas(buffer, pagesize=A4)
@@ -143,10 +151,21 @@ def generate_permit_pdf(permit_application_id):
             application.save()
             
             issued_permit.permit_pdf.save(filename, File(buffer), save=True)
+            logger.info(f"Successfully generated PDF for application {permit_application_id}")
 
             return f"PDF Generated: {filename}"
+            
+    except PermitApplication.DoesNotExist:
+        logger.error(f"PermitApplication {permit_application_id} not found.")
     except Exception as e:
-        raise e
+        attempt = context.task_result.attempt_count
+        if attempt < 3:
+            wait_time = 10 * attempt
+            logger.warning(f"Failed to generate PDF for {permit_application_id}. Retrying in {wait_time}s... (Attempt {attempt})")
+            generate_permit_pdf.using(run_after=timedelta(seconds=wait_time)).enqueue(permit_application_id)
+        else:
+            logger.error(f"Max attempts reached for PDF generation on application {permit_application_id}: {str(e)}")
+            raise e
 
 
 def generate_collection_report_pdf(start_date, end_date):

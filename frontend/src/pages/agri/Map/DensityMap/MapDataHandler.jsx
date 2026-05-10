@@ -7,10 +7,10 @@ const MapDataHandler = ({ mapData, surveyData, activeFilters = ['Low', 'Medium',
     const [selectedField, setSelectedField] = useState(null);
 
     // --- 1. SEARCH TRIGGER LOGIC ---
+    // Only handles the initial "Find" action: zooming and setting the popup
     useEffect(() => {
         if (!selectedBarangay || !isLoaded || !mapData || !map) return;
 
-        // Find the barangay in our data
         const item = mapData.find(b => b.name === selectedBarangay);
         const surveyRecord = surveyData?.find(s => s.barangay === selectedBarangay) || {};
         
@@ -19,14 +19,14 @@ const MapDataHandler = ({ mapData, surveyData, activeFilters = ['Low', 'Medium',
             const lng = Number(item.longitude);
             const lat = Number(item.latitude);
             
-            // 1. Center the map on the barangay immediately
+            // Zoom once
             map.easeTo({
                 center: [lng, lat],
                 zoom: 14,
-                duration: 0
+                duration: 800
             });
 
-            // 2. Trigger the popup info
+            // Show popup
             setSelectedField({
                 name: item.name,
                 density: surveyRecord.density_level || 'None',
@@ -37,8 +37,30 @@ const MapDataHandler = ({ mapData, surveyData, activeFilters = ['Low', 'Medium',
                 lng: lng,
                 lat: lat
             });
+
+            // CRITICAL: Clear the search state so it doesn't re-trigger on data updates
+            // and allows searching the same barangay again
+            setSelectedBarangay(null);
         }
-    }, [selectedBarangay, isLoaded, mapData, surveyData, map]);
+    }, [selectedBarangay, isLoaded, mapData, map, setSelectedBarangay]); // Removed surveyData
+
+    // --- 1.1 DATA UPDATE LOGIC ---
+    // Updates the content of the ALREADY OPEN popup when filters change
+    useEffect(() => {
+        if (!selectedField || !surveyData) return;
+
+        const updatedRecord = surveyData.find(s => s.barangay === selectedField.name);
+        if (updatedRecord) {
+            setSelectedField(prev => ({
+                ...prev,
+                density: updatedRecord.density_level || 'None',
+                totalPigs: updatedRecord.total_pigs || 0,
+                breakdown: updatedRecord.breakdown || {},
+                trend: updatedRecord.trend || 'stable',
+                isPrediction: updatedRecord.is_prediction || false
+            }));
+        }
+    }, [surveyData]);
 
     // --- 2. SETUP SOURCE AND LAYERS ---
     useEffect(() => {

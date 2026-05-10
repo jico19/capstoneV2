@@ -285,7 +285,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
 class SubmittedDocumentViewSets(viewsets.ModelViewSet):
     queryset = models.SubmittedDocument.objects.all()
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -295,11 +295,20 @@ class SubmittedDocumentViewSets(viewsets.ModelViewSet):
         else:
             return serializers.SubmittedDocumentListSerializer
 
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.SubmittedDocument.objects.none()
+
+        if user.role == 'Farmer':
+            return models.SubmittedDocument.objects.filter(origin__application__farmer=user)
+        return models.SubmittedDocument.objects.all()
+
 
 
 class OPVValidationViewSets(viewsets.ModelViewSet):
     queryset = models.OPVValidation.objects.all()
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -309,11 +318,14 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OPVValidationDetailSerializer
 
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.role == 'Farmer':
-    #         return models.OPVValidation.objects.filter(application__farmer=user)
-    #     return models.OPVValidation.objects.all()
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.OPVValidation.objects.none()
+
+        if user.role == 'Farmer':
+            return models.OPVValidation.objects.filter(application__farmer=user)
+        return models.OPVValidation.objects.all()
 
     # actions
     @action(detail=False, methods=['get'])
@@ -403,7 +415,7 @@ class OPVValidationViewSets(viewsets.ModelViewSet):
 
 class IssuedPermitViewSets(viewsets.ModelViewSet):
     queryset = models.IssuedPermit.objects.all()
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -413,11 +425,14 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
         else:
             return serializers.IssuedPermitDetailSerializer
 
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.role == 'Farmer':
-    #         return models.IssuedPermit.objects.filter(application__farmer=user)
-    #     return models.IssuedPermit.objects.all()
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.IssuedPermit.objects.none()
+
+        if user.role == 'Farmer':
+            return models.IssuedPermit.objects.filter(application__farmer=user)
+        return models.IssuedPermit.objects.all()
 
     def create(self, request, *args, **kwargs):
         """
@@ -520,11 +535,14 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
         else:
             return serializers.OCRValidationResultListSerializer
 
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.role == 'Farmer':
-    #         return models.OCRValidationResult.objects.filter(document__application__farmer=user)
-    #     return models.OCRValidationResult.objects.all()
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.OCRValidationResult.objects.none()
+
+        if user.role == 'Farmer':
+            return models.OCRValidationResult.objects.filter(document__origin__application__farmer=user)
+        return models.OCRValidationResult.objects.all()
 
     def update(self, request, *args, **kwargs):
         if request.user.role != "Agri":

@@ -161,14 +161,66 @@ class InspectorDashboardView(views.APIView):
             .values('date').annotate(count=Count('id')).order_by('date')
         )
 
+class OPVAnalyticsView(views.APIView):
+    """
+    Tactical insights for OPV Staff.
+    Focuses on volume by origin and destination hotspots.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'Opv':
+            return Response({"error": "Unauthorized"}, status=403)
+
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        # Filter for applications created in last 30 days
+        apps_last_30 = permits.PermitApplication.objects.filter(
+            created_at__gte=thirty_days_ago
+        )
+        
+        # Applications that successfully reached OPV validation or further
+        validated_apps = apps_last_30.filter(
+            status__in=[
+                permits.PermitApplication.Status.OPV_VALIDATED,
+                permits.PermitApplication.Status.PERMIT_ISSUED,
+                permits.PermitApplication.Status.PAYMENT_PENDING,
+                permits.PermitApplication.Status.RELEASED
+            ]
+        )
+
+        # 1. KPIs
+        total_volume = validated_apps.aggregate(total=Sum('origins__number_of_pigs'))['total'] or 0
+        
+        opv_processed = permits.OPVValidation.objects.filter(validated_at__gte=thirty_days_ago)
+        total_processed = opv_processed.count()
+        total_validated = opv_processed.filter(status=permits.OPVValidation.Status.VALIDATED).count()
+        pass_rate = (total_validated / total_processed * 100) if total_processed > 0 else 0
+        
+        active_queue = apps_last_30.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
+
+        # 2. Charts: Top 5 Origin Barangays by Volume
+        top_barangays = (
+            validated_apps.values('origins__barangay__name')
+            .annotate(count=Sum('origins__number_of_pigs'))
+            .order_by('-count')[:5]
+        )
+        
+        # 3. Charts: Top 5 Destinations by Application Count
+        top_destinations = (
+            validated_apps.values('destination')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:5]
+        )
+
         return Response({
             "kpis": {
-                "my_total_scans": total_scans,
-                "scans_today": scans_today,
-                "total_active_permits_in_system": currently_active_permits,
+                "total_volume": total_volume,
+                "pass_rate": round(pass_rate, 1),
+                "active_queue": active_queue
             },
             "charts": {
-                "activity_trend": activity_trend,
-            },
-            "recent_activity": my_logs.order_by('-scanned_at')[:5].values('application__application_id', 'scanned_at')
+                "top_barangays": [{"name": item['origins__barangay__name'], "count": item['count']} for item in top_barangays if item['origins__barangay__name']],
+                "top_destinations": [{"name": item['destination'], "count": item['count']} for item in top_destinations]
+            }
         }, status=status.HTTP_200_OK)

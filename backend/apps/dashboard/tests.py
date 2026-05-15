@@ -7,8 +7,8 @@ from apps.api.models import User
 from apps.maps.models import Barangay
 
 @pytest.mark.django_db
-class TestOPVAnalytics:
-    def test_opv_analytics_returns_correct_data(self):
+class TestOPVIntelligence:
+    def test_opv_dashboard_returns_unified_data(self):
         client = APIClient()
         user = User.objects.create_user(username='opv_user', role='Opv', password='password')
         client.force_authenticate(user=user)
@@ -32,10 +32,18 @@ class TestOPVAnalytics:
             validated_at=timezone.now()
         )
 
-        response = client.get('/dashboard/opv-analytics/')
+        response = client.get('/dashboard/opv-metrics/')
         assert response.status_code == 200
         data = response.data
+        
+        # Check Workload KPIs
+        assert 'waiting_for_opv' in data['kpis']
+        
+        # Check Tactical KPIs
         assert data['kpis']['total_volume'] == 10
+        assert data['kpis']['pass_rate'] == 100.0
+        
+        # Check Tactical Charts
         assert data['charts']['top_barangays'][0]['name'] == 'Barangay A'
         assert data['charts']['top_barangays'][0]['count'] == 10
         assert data['charts']['top_destinations'][0]['name'] == 'Manila'

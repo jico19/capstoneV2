@@ -95,7 +95,6 @@ const Sidebar = ({ children }) => {
                     <MenuSection title="Staff Portal">
                         <SidebarItem icon={LayoutDashboard} label="Overview" to="/opv/"/>
                         <SidebarItem icon={FilesIcon} label="Applications" to="/opv/application/"/>
-                        <SidebarItem icon={BarChart3} label="Analytics" to="/opv/analytics/"/>
                         <SidebarItem icon={Settings} label="Settings" to="/opv/settings/"/>
                     </MenuSection>
                 );

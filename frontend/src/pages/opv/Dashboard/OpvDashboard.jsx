@@ -3,7 +3,9 @@ import {
     Clock,
     TrendingUp,
     FileSignature,
-    ArrowRight
+    ArrowRight,
+    Truck,
+    Percent
 } from "lucide-react";
 import { useGetOPVDashboard } from "/src/hooks/useDashboard";
 import KPICard from "/src/components/KPICard";
@@ -11,9 +13,9 @@ import BarChartComponent from "/src/components/charts/BarChart";
 import { useNavigate } from "react-router-dom";
 
 /**
- * OPV Staff Dashboard Overview
+ * OPV Staff Dashboard Overview (Unified)
  * High-signal minimalist overview of the Veterinary Office performance.
- * Focuses on KPIs and throughput trends.
+ * Merges workload monitoring with tactical livestock movement analytics.
  */
 const OpvDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetOPVDashboard();
@@ -23,7 +25,7 @@ const OpvDashboard = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
                 <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4 animate-pulse">Syncing validation metrics</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4 animate-pulse">Syncing intelligence metrics</p>
             </div>
         );
     }
@@ -31,7 +33,7 @@ const OpvDashboard = () => {
     if (isError || !metrics) {
         return (
             <div className="p-10 text-center text-red-700 bg-red-50 border border-red-200 rounded-none font-black uppercase tracking-widest text-xs max-w-3xl mx-auto mt-10">
-                Critical Error: Failed to fetch validation metrics.
+                Critical Error: Failed to fetch dashboard intelligence.
             </div>
         );
     }
@@ -43,7 +45,7 @@ const OpvDashboard = () => {
             {/* Flat Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-stone-100 pb-10">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 leading-none">Veterinary Office Overview</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 leading-none text-green-700">Operational.Intelligence</p>
                     <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none italic">OPV.Dashboard</h1>
                 </div>
                 <button 
@@ -54,47 +56,93 @@ const OpvDashboard = () => {
                 </button>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* KPI Cards: Primary Operational Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <KPICard
                     title="Awaiting Review"
                     value={kpis.waiting_for_opv}
-                    subtitle="Applications in validation queue"
+                    subtitle="Validation queue"
                     icon={Clock}
                     colorClass="bg-amber-50 text-amber-700"
                 />
                 <KPICard
                     title="Validated Today"
                     value={kpis.validated_today}
-                    subtitle="Successfully processed within 24h"
+                    subtitle="Processed within 24h"
                     icon={CheckCircle}
                     colorClass="bg-green-50 text-green-700"
                 />
                 <KPICard
-                    title="Rejection Rate"
-                    value={kpis.rejection_rate}
-                    subtitle="Application quality tracking"
-                    icon={TrendingUp}
-                    colorClass="bg-red-50 text-red-700"
+                    title="Total Volume"
+                    value={kpis.total_volume}
+                    subtitle="Heads transported (30d)"
+                    icon={Truck}
+                    colorClass="bg-stone-50 text-stone-700"
+                />
+                <KPICard
+                    title="Pass Rate"
+                    value={kpis.pass_rate}
+                    subtitle="Validation success rate"
+                    icon={Percent}
+                    colorClass="bg-blue-50 text-blue-700"
                     isPercent={true}
                 />
             </div>
 
-            {/* Validation History Chart */}
-            <div className="bg-stone-50 border border-stone-200 p-8 md:p-12 rounded-none">
-                <div className="mb-10 border-l-4 border-green-700 pl-6 space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Workflow Statistics</p>
-                    <h2 className="text-2xl font-black text-stone-800 uppercase tracking-tighter leading-tight">Daily.Throughput</h2>
-                    <p className="text-xs text-stone-500 font-medium max-w-md mt-2">Historical data showing the volume of applications validated by the provincial veterinary office over the past 30 days.</p>
+            {/* Main Content Area: Workload & Movement */}
+            <div className="space-y-8">
+                {/* Validation History Chart */}
+                <div className="bg-stone-50 border border-stone-200 p-8 md:p-12 rounded-none">
+                    <div className="mb-10 border-l-4 border-green-700 pl-6 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Workflow Statistics</p>
+                        <h2 className="text-2xl font-black text-stone-800 uppercase tracking-tighter leading-tight">Daily.Throughput</h2>
+                    </div>
+                    <div className="bg-white p-6 border border-stone-100">
+                        <BarChartComponent
+                            data={charts.validation_history}
+                            xKey="date"
+                            yKey="count"
+                            height={300}
+                            barColor="#15803d"
+                        />
+                    </div>
                 </div>
-                <div className="bg-white p-6 border border-stone-100">
-                    <BarChartComponent
-                        data={charts.validation_history}
-                        xKey="date"
-                        yKey="count"
-                        height={350}
-                        barColor="#15803d"
-                    />
+
+                {/* Tactical Analytics Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Origins Bar Chart */}
+                    <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
+                        <div className="mb-8 border-l-4 border-green-700 pl-4 space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Geographic Source</p>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Top.Origin.Areas</h3>
+                        </div>
+                        <div className="bg-white p-6 border border-stone-100">
+                            <BarChartComponent
+                                data={charts.top_barangays}
+                                xKey="name"
+                                yKey="count"
+                                height={250}
+                                barColor="#15803d"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Destinations Bar Chart */}
+                    <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
+                        <div className="mb-8 border-l-4 border-blue-700 pl-4 space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Traffic Hotspots</p>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Destination.Trends</h3>
+                        </div>
+                        <div className="bg-white p-6 border border-stone-100">
+                            <BarChartComponent
+                                data={charts.top_destinations}
+                                xKey="name"
+                                yKey="count"
+                                height={250}
+                                barColor="#1d4ed8"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

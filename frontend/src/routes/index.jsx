@@ -31,7 +31,6 @@ import AuditTrailPage from "../pages/agri/Audit/AuditTrailPage";
 // Opv
 import OpvDashboard from "../pages/opv/Dashboard/OpvDashboard";
 import OpvApplicationDashboard from "../pages/opv/Application/OpvApplicationDashboard";
-import OpvAnalytics from "../pages/opv/Analytics/OpvAnalytics";
 import OPVApplicationDetail from "../pages/opv/Application/OPVApplicationDetailView";
 
 // Inspector

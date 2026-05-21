@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from apps.api.models import User
 from apps.maps.models import Barangay
-from apps.permits.models import PermitApplication
+from apps.permits.models import PermitApplication, TransportOrigin
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import date
 
@@ -26,11 +26,14 @@ class FileSizeLimitTests(APITestCase):
         
         self.application = PermitApplication.objects.create(
             farmer=self.farmer,
-            origin_barangay=self.barangay,
             destination="Manila",
-            number_of_pigs=5,
             transport_date=date.today(),
             status=PermitApplication.Status.FORWARDED_TO_OPV
+        )
+        self.origin = TransportOrigin.objects.create(
+            application=self.application,
+            barangay=self.barangay,
+            number_of_pigs=5
         )
 
     def test_create_application_file_too_large(self):
@@ -44,16 +47,16 @@ class FileSizeLimitTests(APITestCase):
         small_file = SimpleUploadedFile('small.jpg', b'small content', content_type='image/jpeg')
         
         data = {
-            'origin_barangay': self.barangay.id,
+            'origins[0][barangay]': self.barangay.id,
+            'origins[0][number_of_pigs]': 10,
             'destination': 'Batangas',
-            'number_of_pigs': 10,
             'transport_date': date.today().isoformat(),
             'purpose': 'Sale',
             'traders_pass': large_file, # One large file
             'handlers_license': small_file,
             'transport_carrier_reg': small_file,
-            'cis': small_file,
-            'endorsement_cert': small_file,
+            'origin_0_cis': small_file,
+            'origin_0_endorsement_cert': small_file,
         }
         
         response = self.client.post(url, data, format='multipart')
@@ -94,16 +97,16 @@ class FileSizeLimitTests(APITestCase):
         limit_file = SimpleUploadedFile('limit.jpg', limit_content, content_type='image/jpeg')
         
         data = {
-            'origin_barangay': self.barangay.id,
+            'origins[0][barangay]': self.barangay.id,
+            'origins[0][number_of_pigs]': 10,
             'destination': 'Batangas',
-            'number_of_pigs': 10,
             'transport_date': date.today().isoformat(),
             'purpose': 'Sale',
             'traders_pass': limit_file,
             'handlers_license': limit_file,
             'transport_carrier_reg': limit_file,
-            'cis': limit_file,
-            'endorsement_cert': limit_file,
+            'origin_0_cis': limit_file,
+            'origin_0_endorsement_cert': limit_file,
         }
         
         # This might take a moment to process 150MB of data in memory

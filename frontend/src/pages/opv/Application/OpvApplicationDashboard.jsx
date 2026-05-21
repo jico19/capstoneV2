@@ -72,9 +72,6 @@ const OpvApplicationDashboard = () => {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <button className="bg-stone-50 border border-stone-200 p-3 text-stone-400 hover:text-stone-900 transition-colors">
-                        <Filter size={16} />
-                    </button>
                 </div>
             </div>
 

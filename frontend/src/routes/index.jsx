@@ -2,6 +2,14 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import ProtectedRoute from "./protectedRoute";
 import RootRedirect from "./RootRedirect";
 
+
+// Landing Page
+import LandingLayout from "../pages/landing-page/LandingLayout";
+import LandingHome from "../pages/landing-page/Home/home";
+import LandingRequirements from "../pages/landing-page/Requirements/requirements";
+import LandingAbout from "../pages/landing-page/About/about";
+import LandingFAQs from "../pages/landing-page/FAQs/faqs";
+
 // auths
 import LoginPage from "/src/pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
@@ -43,11 +51,26 @@ import VerifyApplication from "../pages/inspector/Application/VerifyApplication"
 import NotFoundPage from "../pages/NotFoundPage";
 
 const router = createBrowserRouter([
+    // none-role route
     { path: "/login", element: <LoginPage /> },
-    { path: '/register', element: <RegisterPage />},
-    { path: "/", element: <RootRedirect />, },
+    { path: '/register', element: <RegisterPage /> },
 
+    // Landing & Root Redirect
+    {
+        path: '/',
+        element: <LandingLayout />,
+        children: [
+            { 
+                index: true, 
+                element: <RootRedirect><LandingHome /></RootRedirect> 
+            },
+            { path: 'about', element: <LandingAbout /> },
+            { path: 'requirements', element: <LandingRequirements /> },
+            { path: 'faqs', element: <LandingFAQs /> },
+        ]
+    },
 
+    // farmer route
     {
         path: '/farmer',
         element: <ProtectedRoute allowedRoles={['Farmer']} />,
@@ -60,10 +83,11 @@ const router = createBrowserRouter([
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'payment/success/:issued_permit_id', element: <PaymentSuccess /> },
             { path: 'payment/checkout/:id', element: <PaymentCheckout /> },
-            { path: 'application/download/:id', element: <DownloadApplication />},
+            { path: 'application/download/:id', element: <DownloadApplication /> },
             { path: 'settings/', element: <SettingsPage /> }
-            ]
-            },
+        ]
+    },
+    // agri route
     {
         path: '/agri',
         element: <ProtectedRoute allowedRoles={['Agri']} />,
@@ -78,7 +102,7 @@ const router = createBrowserRouter([
             { path: 'settings/', element: <SettingsPage /> },
         ]
     },
-
+    // opv route
     {
         path: '/opv',
         element: <ProtectedRoute allowedRoles={['Opv']} />,
@@ -89,15 +113,15 @@ const router = createBrowserRouter([
             { path: 'settings/', element: <SettingsPage /> },
         ]
     },
-
+    // inspector route
     {
         path: '/inspector',
         element: <ProtectedRoute allowedRoles={['Inspector']} />,
         children: [
             { index: true, element: <InspectorDashboard /> },
-            { path: 'scan/', element: <QRScannerPage />},
-            { path: 'history/', element: <InspectionHistory />},
-            { path: 'verify/:token/', element: <VerifyApplication />},
+            { path: 'scan/', element: <QRScannerPage /> },
+            { path: 'history/', element: <InspectionHistory /> },
+            { path: 'verify/:token/', element: <VerifyApplication /> },
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'settings/', element: <SettingsPage /> },
         ]

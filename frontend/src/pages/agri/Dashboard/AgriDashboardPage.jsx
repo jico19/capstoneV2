@@ -4,7 +4,7 @@ import {
     Clock,
     TrendingUp
 } from 'lucide-react';
-import KPICard from '/src/components/KPICard';
+import KPICard from '../../../components/ui/KPICard';
 import { useGetAgriDashboard } from '/src/hooks/useDashboard';
 import LineChartComponent from '/src/components/charts/LineChart';
 import PieChartComponent from '/src/components/charts/PieChart';

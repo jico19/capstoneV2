@@ -6,7 +6,7 @@ import {
     ChevronRight,
     ArrowRight
 } from 'lucide-react';
-import KPICard from '/src/components/KPICard';
+import KPICard from '../../../components/ui/KPICard';
 import { useGetFarmerDashboard } from '/src/hooks/useDashboard';
 import { Link } from 'react-router-dom';
 import useAuthStore from '/src/store/authContext';

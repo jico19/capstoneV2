@@ -1,13 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from "/src/hooks/useApplications";
-import DocumentList from "/src/components/DocumentList";
+import DocumentList from "../../../components/ui/DocumentList";
 import OCRModal from "./OCRModal";
 import { useState } from "react";
 import ApprovalControls from "./AGRIApprovalControls";
 import { api } from "/src/lib/api";
-import DocumentViewModal from "/src/components/DocumentViewModal";
-import ApplicationHeader from "/src/components/ApplicationHeader";
+import DocumentViewModal from "../../../components/ui/DocumentViewModal";
+import ApplicationHeader from "../../../components/ui/ApplicationHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 

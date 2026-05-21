@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { Eye, Inbox, FileText, AlertCircle, Clock, CheckCircle } from "lucide-react";
-import DateFormatter from "/src/components/DateFormatter";
-import ActionGroup from "/src/components/ActionButton";
-import StatusBadge from "/src/components/StatusBadge";
+import DateFormatter from "../../../components/ui/DateFormatter";
+import ActionGroup from "/src/components/ui/ActionButton";
+import StatusBadge from "../../../components/ui/StatusBadge";
 import { useApplication } from "/src/hooks/useApplications";
 import { useState, useMemo } from "react";
-import Pagination from "/src/components/Pagination";
-import KPICard from "/src/components/KPICard";
+import Pagination from "../../../components/ui/Pagination";
+import KPICard from "../../../components/ui/KPICard";
 
 /**
  * Agri Application Dashboard

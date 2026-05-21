@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import { api } from "/src/lib/api"
 import { toast } from "sonner"
-import DateFormatter from "/src/components/DateFormatter"
+import DateFormatter from "../../../components/ui/DateFormatter"
 import { useInspectorLogs } from "/src/hooks/useInspectorLogs"
 
 /**

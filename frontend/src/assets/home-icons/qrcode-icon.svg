@@ -1,0 +1,27 @@
+<svg id="svg" fill="#0a2a1a" stroke="#0a2a1a" width="200" height="200" version="1.1" viewBox="144 144 512 512" xmlns="http://www.w3.org/2000/svg">
+    <g id="IconSvg_bgCarrier" stroke-width="0"></g>
+    <g id="IconSvg_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0">
+      <g xmlns="http://www.w3.org/2000/svg">
+  <path d="m379.01 588.93h-167.94v-167.93h167.94zm-125.95-41.984h83.969v-83.965h-83.969z"></path>
+  <path d="m588.93 379.01h-167.93v-167.94h167.94zm-125.95-41.984h83.969l-0.003906-83.969h-83.965z"></path>
+  <path d="m379.01 379.01h-167.94v-167.94h167.94zm-125.95-41.984h83.969v-83.969h-83.969z"></path>
+  <path d="m588.93 588.93h-83.969v-41.984h41.984v-41.984h41.984z"></path>
+  <path d="m462.98 588.93h-41.984v-83.969h41.984v-41.98h41.98v83.965h-41.98z"></path>
+  <path d="m420.99 420.99h41.984v41.984h-41.984z"></path>
+  <path d="m504.96 420.99h83.969v41.984h-83.969z"></path>
+ </g>
+
+      </g>
+     <g id="IconSvg_iconCarrier">
+      <g xmlns="http://www.w3.org/2000/svg">
+  <path d="m379.01 588.93h-167.94v-167.93h167.94zm-125.95-41.984h83.969v-83.965h-83.969z"></path>
+  <path d="m588.93 379.01h-167.93v-167.94h167.94zm-125.95-41.984h83.969l-0.003906-83.969h-83.965z"></path>
+  <path d="m379.01 379.01h-167.94v-167.94h167.94zm-125.95-41.984h83.969v-83.969h-83.969z"></path>
+  <path d="m588.93 588.93h-83.969v-41.984h41.984v-41.984h41.984z"></path>
+  <path d="m462.98 588.93h-41.984v-83.969h41.984v-41.98h41.98v83.965h-41.98z"></path>
+  <path d="m420.99 420.99h41.984v41.984h-41.984z"></path>
+  <path d="m504.96 420.99h83.969v41.984h-83.969z"></path>
+ </g>
+
+      </g>
+      </svg>

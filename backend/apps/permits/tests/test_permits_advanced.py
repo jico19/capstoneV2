@@ -35,10 +35,10 @@ class PermitAdvancedTests(APITestCase):
         self.inspector_client = self.client
 
         # URLs
-        self.permit_list_url = reverse('application-list')
-        self.opv_list_url = reverse('opv-list')
-        self.issued_permit_list_url = reverse('issued-permit-list')
-        self.ocr_validation_list_url = reverse('ocr-validation-list')
+        self.permit_list_url = reverse('permitapplication-list')
+        self.opv_list_url = reverse('opvvalidation-list')
+        self.issued_permit_list_url = reverse('issuedpermit-list')
+        self.ocr_validation_list_url = reverse('ocrvalidationresult-list')
 
     # --- PermitApplicationViewSets Tests ---
 
@@ -139,7 +139,7 @@ class PermitAdvancedTests(APITestCase):
             'origins[0][barangay]': self.barangay.id,
             'origins[0][number_of_pigs]': 20, # Updated
         }
-        resubmit_url = reverse('application-resubmit', args=[application.pk])
+        resubmit_url = reverse('permitapplication-resubmit', args=[application.pk])
         response = self.farmer_client.post(resubmit_url, data, format='multipart')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -176,7 +176,7 @@ class PermitAdvancedTests(APITestCase):
             'origins[1][barangay]': new_barangay.id,
             'origins[1][number_of_pigs]': 15, # New origin
         }
-        resubmit_url = reverse('application-resubmit', args=[application.pk])
+        resubmit_url = reverse('permitapplication-resubmit', args=[application.pk])
         response = self.farmer_client.post(resubmit_url, data, format='multipart')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -208,7 +208,7 @@ class PermitAdvancedTests(APITestCase):
             'origins[0][barangay]': self.barangay.id,
             'origins[0][number_of_pigs]': 5, # Keep only this one
         }
-        resubmit_url = reverse('application-resubmit', args=[application.pk])
+        resubmit_url = reverse('permitapplication-resubmit', args=[application.pk])
         response = self.farmer_client.post(resubmit_url, data, format='multipart')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -228,7 +228,7 @@ class PermitAdvancedTests(APITestCase):
             'destination': 'Updated Destination',
             'transport_date': (timezone.now().date() + timedelta(days=10)).isoformat(),
         }
-        resubmit_url = reverse('application-resubmit', args=[application.pk])
+        resubmit_url = reverse('permitapplication-resubmit', args=[application.pk])
         response = self.farmer_client.post(resubmit_url, data, format='multipart')
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -248,7 +248,7 @@ class PermitAdvancedTests(APITestCase):
             'destination': 'Agri tries to resubmit',
             'transport_date': (timezone.now().date() + timedelta(days=10)).isoformat(),
         }
-        resubmit_url = reverse('application-resubmit', args=[application.pk])
+        resubmit_url = reverse('permitapplication-resubmit', args=[application.pk])
         response = self.agri_client.post(resubmit_url, data, format='multipart')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -280,7 +280,7 @@ class PermitAdvancedTests(APITestCase):
         # I'll modify this test to check if OPV can create via the 'approve' action, which then calls the service.
 
         # Let's test the `approve` action directly, as that's how OPVValidation records are primarily created/updated.
-        approve_url = reverse('opv-approve', args=[application.pk])
+        approve_url = reverse('opvvalidation-approve', args=[application.pk])
         response = self.opv_client.post(approve_url, data, format='multipart')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -301,7 +301,7 @@ class PermitAdvancedTests(APITestCase):
         data = {
             'remarks': 'Agri tries to approve OPV',
         }
-        approve_url = reverse('opv-approve', args=[application.pk])
+        approve_url = reverse('opvvalidation-approve', args=[application.pk])
         response = self.agri_client.post(approve_url, data)
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -320,7 +320,7 @@ class PermitAdvancedTests(APITestCase):
         data = {
             'remarks': 'OPV rejected due to health concerns',
         }
-        reject_url = reverse('opv-reject', args=[application.pk])
+        reject_url = reverse('opvvalidation-reject', args=[application.pk])
         response = self.opv_client.post(reject_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -338,7 +338,7 @@ class PermitAdvancedTests(APITestCase):
         opv_app_2 = PermitApplicationFactory(farmer=self.farmer_user, status=models.PermitApplication.Status.OPV_REJECTED)
 
         self.opv_client.force_authenticate(user=self.opv_user)
-        opv_application_url = reverse('opv-application')
+        opv_application_url = reverse('opvvalidation-application')
         response = self.opv_client.get(opv_application_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -437,7 +437,7 @@ class PermitAdvancedTests(APITestCase):
         issued_permit = IssuedPermitFactory(application=application, is_paid=False)
 
         self.farmer_client.force_authenticate(user=self.farmer_user)
-        retrieve_url = reverse('issued-permit-detail', args=[application.pk])
+        retrieve_url = reverse('issuedpermit-detail', args=[application.pk])
         response = self.farmer_client.get(retrieve_url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -453,7 +453,7 @@ class PermitAdvancedTests(APITestCase):
         issued_permit = IssuedPermitFactory(application=application, is_paid=True, permit_pdf=None) # No PDF yet
 
         self.farmer_client.force_authenticate(user=self.farmer_user)
-        retrieve_url = reverse('issued-permit-detail', args=[application.pk])
+        retrieve_url = reverse('issuedpermit-detail', args=[application.pk])
         response = self.farmer_client.get(retrieve_url)
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
@@ -474,7 +474,7 @@ class PermitAdvancedTests(APITestCase):
         )
         
         self.agri_client.force_authenticate(user=self.agri_user)
-        override_url = reverse('ocr-validation-detail', args=[ocr_result.pk])
+        override_url = reverse('ocrvalidationresult-detail', args=[ocr_result.pk])
         new_extracted_data = {'name': 'Correct Name', 'address': 'Some Address'}
         
         response = self.agri_client.patch(override_url, new_extracted_data, format='json')
@@ -499,7 +499,7 @@ class PermitAdvancedTests(APITestCase):
         )
         
         self.farmer_client.force_authenticate(user=self.farmer_user)
-        override_url = reverse('ocr-validation-detail', args=[ocr_result.pk])
+        override_url = reverse('ocrvalidationresult-detail', args=[ocr_result.pk])
         new_extracted_data = {'name': 'Correct Name'}
         
         response = self.farmer_client.patch(override_url, new_extracted_data, format='json')

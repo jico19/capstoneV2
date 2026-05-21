@@ -38,15 +38,15 @@ const InspectorDashboard = () => {
     const { kpis, charts } = metrics;
 
     return (
-        <div className="max-w-7xl mx-auto p-8 space-y-12 bg-gray-50 min-h-screen font-sans rounded-none">
+        <div className="mx-auto p-8 space-y-12 bg-gray-50 min-h-screen font-sans rounded-none">
             {/* Flat Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-10">
                 <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Field Verification Hub</p>
-                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">Inspector.View</h1>
+                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">Inspector View</h1>
                 </div>
                 <div className="bg-white border border-gray-200 p-4 rounded-none">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty.Session</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty Session</p>
                     <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>

@@ -41,12 +41,12 @@ const OpvDashboard = () => {
     const { kpis, charts } = metrics;
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-12 bg-white min-h-screen font-sans rounded-none">
+        <div className="mx-auto p-4 md:p-8 space-y-12 bg-white min-h-screen font-sans rounded-none">
             {/* Flat Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-stone-100 pb-10">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 leading-none text-green-700">Operational.Intelligence</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none italic">OPV.Dashboard</h1>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 leading-none text-green-700">Operational Intelligence</p>
+                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none italic">OPV Dashboard</h1>
                 </div>
                 <button 
                     onClick={() => navigate('/opv/application')}

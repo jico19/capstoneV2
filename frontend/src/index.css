@@ -1,11 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
 @import "tailwindcss";
-
 @import "tw-animate-css";
-
 @import "shadcn/tailwind.css";
-
 @import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
@@ -15,11 +12,11 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui;
-}
-
-@theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Inter Variable', sans-serif;
+  --font-archivo: 'Archivo Black', sans-serif;
+  --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+
+  /* Standard System Colors */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,6 +48,15 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+
+  /* Landing Page Brand Colors */
+  --color-brand-primary:       #0a2a1a;
+  --color-brand-primary-mid:   #1a5c34;
+  --color-brand-primary-light: #1b6b3a;
+  --color-brand-mint:          #52b788;
+  --color-brand-amber:         #f5a623;
+  --color-brand-bg:            #f8faf8;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -58,6 +64,114 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Navbar drop */
+  --animate-navbar-drop:         navbarDrop 0.55s cubic-bezier(0.22,1,0.36,1) both;
+  --animate-navbar-drop-logo:    navbarDrop 0.6s  cubic-bezier(0.22,1,0.36,1) 0.05s both;
+  --animate-navbar-drop-links:   navbarDrop 0.65s cubic-bezier(0.22,1,0.36,1) 0.1s  both;
+  --animate-navbar-drop-actions: navbarDrop 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both;
+
+  /* Hamburger */
+  --animate-ham-open-1: hamOpen1 0.3s ease forwards;
+  --animate-ham-open-2: hamOpen2 0.2s ease forwards;
+  --animate-ham-open-3: hamOpen3 0.3s ease forwards;
+
+  /* Pulse dot — shared badge dot */
+  --animate-pulse-dot:    pulseDot 2s ease-in-out infinite;
+  --animate-hero-pulse:   pulseDot 2s ease-in-out infinite;
+  --animate-cta-pulse:    pulseDot 2s ease-in-out infinite;
+  --animate-footer-pulse: pulseDot 2s ease-in-out infinite;
+
+  /* Hero entrance */
+  --animate-hero-badge:    heroSlideUp 0.6s ease 0.1s  forwards;
+  --animate-hero-title:    heroSlideUp 0.7s ease 0.25s forwards;
+  --animate-hero-subtitle: heroSlideUp 0.6s ease 0.45s forwards;
+  --animate-hero-actions:  heroSlideUp 0.6s ease 0.6s  forwards;
+  --animate-hero-trust:    heroFadeIn  0.6s ease 0.8s  forwards;
+  --animate-hero-visual:   heroSlideLeft 0.8s ease 0.5s forwards;
+  --animate-hero-float-1:  heroSlideUp 0.6s ease 1.0s forwards;
+  --animate-hero-float-2:  heroSlideUp 0.6s ease 1.2s forwards;
+  --animate-hero-float-3:  heroSlideUp 0.6s ease 1.3s forwards;
+  --animate-hero-float:    heroFloat 4s ease-in-out infinite;
+  --animate-hero-underline:heroUnderline 0.6s ease 0.9s forwards;
+
+  /* Stats */
+  --animate-stats-item: statsFadeUp 0.5s ease forwards;
+
+  /* Blobs */
+  --animate-blob-float:         blobFloat 8s  ease-in-out infinite;
+  --animate-blob-float-reverse: blobFloat 10s ease-in-out infinite reverse;
+  --animate-about-blob-1:       aboutBlobFloat 9s  ease-in-out infinite;
+  --animate-about-blob-2:       aboutBlobFloat 11s ease-in-out infinite reverse;
+
+  /* Page entrance (Requirements, About) */
+  --animate-fade-up-1: fadeUp 0.6s ease 0.1s  both;
+  --animate-fade-up-2: fadeUp 0.7s ease 0.2s  both;
+  --animate-fade-up-3: fadeUp 0.7s ease 0.35s both;
+  --animate-fade-up-4: fadeUp 0.7s ease 0.5s  both;
+
+  /* About page */
+  --animate-about-fade-1: aboutFadeUp 0.6s ease 0.1s  both;
+  --animate-about-fade-2: aboutFadeUp 0.7s ease 0.2s  both;
+  --animate-about-fade-3: aboutFadeUp 0.7s ease 0.35s both;
+  --animate-about-fade-4: aboutFadeUp 0.7s ease 0.5s  both;
+  --animate-success-pop:  successPop  0.5s ease both;
+
+  @keyframes navbarDrop {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+  @keyframes hamOpen1 { to { transform: translateY(7px)  rotate(45deg);  } }
+  @keyframes hamOpen2 { to { opacity: 0; width: 0; } }
+  @keyframes hamOpen3 { to { transform: translateY(-7px) rotate(-45deg); } }
+
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1;   transform: scale(1);    box-shadow: 0 0 0 0   rgba(245,166,35,0.4); }
+    50%       { opacity: 0.4; transform: scale(0.75); box-shadow: 0 0 0 6px rgba(245,166,35,0);   }
+  }
+  @keyframes heroSlideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes heroSlideLeft {
+    from { opacity: 0; transform: translateX(32px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes heroFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes heroFloat {
+    0%, 100% { transform: translateY(0);     }
+    50%       { transform: translateY(-10px); }
+  }
+  @keyframes heroUnderline { to { transform: scaleX(1); } }
+
+  @keyframes statsFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes blobFloat {
+    0%, 100% { transform: rotate(-20deg) scale(1); }
+    50%       { transform: rotate(-20deg) scale(1.05) translateY(-8px); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(1.5rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes aboutBlobFloat {
+    0%, 100% { transform: rotate(20deg) scale(1); }
+    50%       { transform: rotate(20deg) scale(1.04) translateY(-0.5rem); }
+  }
+  @keyframes aboutFadeUp {
+    from { opacity: 0; transform: translateY(1.5rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes successPop {
+    0%   { transform: scale(0); }
+    60%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
 }
 
 :root {
@@ -146,3 +260,170 @@
     @apply font-sans;
   }
 }
+
+/* NAVBAR — SVG sibling selector */
+.navbar-links-rect {
+  stroke: #0a2a1a;
+  stroke-width: 2.5;
+  fill: transparent;
+  stroke-dashoffset: 5;
+  stroke-dasharray: 0 0 10 40 10 40;
+  transition: 0.5s;
+}
+.nav-link:nth-child(1):hover ~ svg .navbar-links-rect { stroke-dashoffset: 0; stroke-dasharray: 0 0.1 6 80.3 5.6 10;     }
+.nav-link:nth-child(2):hover ~ svg .navbar-links-rect { stroke-dashoffset: 0; stroke-dasharray: 0 11 9.5 50.9 10 31.6;    }
+.nav-link:nth-child(3):hover ~ svg .navbar-links-rect { stroke-dashoffset: 0; stroke-dasharray: 0 24.5 9.5 24.2 9.7 31.6; }
+.nav-link:nth-child(4):hover ~ svg .navbar-links-rect { stroke-dashoffset: 0; stroke-dasharray: 0 36.8 5.6 7.5 5.6 76;    }
+.nav-link:hover        ~ svg .navbar-links-rect       { stroke-dashoffset: 0; stroke-dasharray: 0 0 10 40 10 40; transition: 0.5s !important; }
+
+/* SCROLL REVEAL */
+.reveal-block {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-block.is-visible          { opacity: 1 !important; transform: translateY(0) !important; }
+.features-card.is-visible         { opacity: 1 !important; transform: translateY(0) !important; }
+.features-card.is-visible:hover   { transform: translateY(-4px) !important; }
+.hiw-step.is-visible              { opacity: 1 !important; transform: translateY(0) !important; }
+.benefits-card.is-visible         { opacity: 1 !important; transform: translateY(0) !important; }
+.benefits-card.is-visible:hover   { transform: translateY(-6px) !important; }
+.rdoc-card.is-visible             { opacity: 1 !important; transform: translateY(0) !important; }
+.rdoc-card.is-visible:hover       { transform: translateY(-2px) !important; }
+.contact-card-inner.is-visible    { opacity: 1 !important; transform: translateY(0) !important; }
+
+/* STATS — JS-triggered animation */
+.stats-item {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: statsFadeUp 0.5s ease forwards;
+  animation-play-state: paused;
+}
+.stats-is-visible .stats-item { animation-play-state: running; }
+
+/* HOW IT WORKS — connector arrow + nth-child ::after */
+.hiw-connector {
+  position: absolute;
+  top: 28px; left: 50%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 0;
+}
+.hiw-connector-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(10,42,26,0.15), rgba(10,42,26,0.06));
+  margin-left: 28px;
+}
+.hiw-connector-arrow {
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid rgba(10,42,26,0.15);
+  margin-right: -2px;
+}
+@media (max-width: 900px) {
+  .hiw-connector { display: none; }
+  .hiw-step:nth-child(1)::after,
+  .hiw-step:nth-child(2)::after {
+    content: '';
+    position: absolute;
+    bottom: -24px; left: 50%;
+    transform: translateX(-50%);
+    width: 2px; height: 20px;
+    background: rgba(10,42,26,0.1);
+  }
+}
+@media (max-width: 560px) { .hiw-step::after { display: none !important; } }
+
+/* PROFILE CARD */
+.profile-card {
+  background: #1a2e22;
+  border-radius: 1.75rem;
+  padding: 5px;
+  width: 16rem;
+  height: 26rem;
+  overflow: clip;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.profile-card:hover { border-color: rgba(82,183,136,0.6); box-shadow: 0 0.75rem 2rem rgba(0,0,0,0.3); }
+.profile-card::before {
+  content: "";
+  position: absolute;
+  width: calc(100% - 10px);
+  height: 35%;
+  bottom: 0.3rem;
+  mask: linear-gradient(#0000, #000f 60%);
+  backdrop-filter: blur(0.8rem);
+  border-radius: 0 0 1.4rem 1.4rem;
+  translate: 0 0;
+  transition: translate 0.3s ease, opacity 0.3s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+.profile-card:hover::before,
+.profile-card:focus-within::before { translate: 0 100%; opacity: 0; }
+.profile-card-img {
+  max-width: 100%; aspect-ratio: 2 / 3; object-fit: cover;
+  object-position: 50% 5%; border-radius: 1.4rem;
+  display: block; width: 100%; height: auto;
+  transition: aspect-ratio 0.3s ease, object-position 0.3s ease;
+}
+.profile-card:hover .profile-card-img,
+.profile-card:focus-within .profile-card-img { aspect-ratio: 0.9 / 1; object-position: 50% 10%; }
+.profile-card-section { padding: 0 0.4rem; display: flex; flex-direction: column; position: relative; z-index: 2; }
+.profile-card-name {
+  position: absolute; bottom: 1rem; left: 0.9rem; right: 0.9rem; margin-bottom: 50px;
+  font-family: 'Archivo Black', sans-serif; font-size: 1.05rem; letter-spacing: -0.01em;
+  color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,0.7); z-index: 3;
+  transition: position 0s, bottom 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, font-size 0.3s ease;
+}
+.profile-card:hover .profile-card-name,
+.profile-card:focus-within .profile-card-name {
+  position: relative; bottom: auto; left: auto; right: auto;
+  color: #fff; text-shadow: none; font-size: 1.1rem; margin: 0.7rem 0 0.25rem;
+}
+.profile-card-position {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem;
+  line-height: 1.5; color: #aaa; margin: 0 0 0.65rem;
+  opacity: 0; translate: 0 0.4rem;
+  transition: opacity 0.3s 0.1s ease, translate 0.3s 0.1s ease;
+}
+.profile-card:hover .profile-card-position,
+.profile-card:focus-within .profile-card-position { opacity: 1; translate: 0 0; }
+.profile-card-socials {
+  display: flex; align-items: center; gap: 0.5rem;
+  opacity: 0; translate: 0 0.4rem;
+  transition: opacity 0.3s 0.18s ease, translate 0.3s 0.18s ease;
+}
+.profile-card:hover .profile-card-socials,
+.profile-card:focus-within .profile-card-socials { opacity: 1; translate: 0 0; }
+.profile-card-social-btn {
+  position: relative; display: inline-flex; align-items: center;
+  justify-content: center; padding: 0.45rem; border-radius: 0.55rem;
+  background: rgba(255,255,255,0.08); cursor: pointer; text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+.profile-card-social-btn:hover { background: rgba(255,255,255,0.9); transform: translateY(-0.2rem); }
+.profile-card-social-icon {
+  width: 1.8rem; height: 1.8rem; object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(68%) sepia(60%) saturate(600%) hue-rotate(5deg) brightness(105%);
+  transition: filter 0.25s ease;
+}
+.profile-card-tooltip {
+  position: absolute; bottom: calc(100% + 0.45rem); left: 50%; translate: -50% 0;
+  background: var(--tooltip-color, #333); color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.68rem; font-weight: 700;
+  padding: 0.25rem 0.55rem; border-radius: 0.4rem; white-space: nowrap;
+  pointer-events: none; opacity: 0; scale: 0.8;
+  transition: opacity 0.18s ease, scale 0.18s ease;
+}
+.profile-card-tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; translate: -50% 0;
+  border: 0.3rem solid transparent; border-top-color: var(--tooltip-color, #333);
+}
+.profile-card-social-btn:hover .profile-card-tooltip { opacity: 1; scale: 1; }

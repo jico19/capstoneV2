@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useInspectorLogs } from "/src/hooks/useInspectorLogs";
 import { ArrowLeft, Clock, MapPin, User, FileText, Calendar } from "lucide-react";
-import DateFormatter from "/src/components/DateFormatter";
+import DateFormatter from "../../../components/ui/DateFormatter";
 
 /**
  * Inspection History Page

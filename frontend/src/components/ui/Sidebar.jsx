@@ -14,10 +14,10 @@ import {
     FilesIcon,
     FileText,
 } from "lucide-react";
-import useAuthStore from "../store/authContext";
+import useAuthStore from "../../store/authContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import MobileNavbar from "./MobileNavbar";
-import { useGetNotification } from "../hooks/useNotifications";
+import { useGetNotification } from "../../hooks/useNotifications";
 
 // Standard navigation item for the sidebar.
 // Follows Design.MD: stone text, green active indicator on the right.

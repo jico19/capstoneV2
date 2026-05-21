@@ -2,11 +2,11 @@ import { Navigate } from 'react-router-dom';
 import useAuthStore from '../store/authContext';
 
 
-const RootRedirect = () => {
+const RootRedirect = ({ children }) => {
     const { isAuthenticated, user } = useAuthStore();
 
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+        return children;
     }
 
     // Auto-redirect to their specific dashboard if they land on "/"

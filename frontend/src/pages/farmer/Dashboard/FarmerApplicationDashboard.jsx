@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApplication } from "/src/hooks/useApplications";
 import {
@@ -12,11 +12,11 @@ import {
     Filter,
     Calendar
 } from "lucide-react";
-import ActionGroup from "/src/components/ActionButton";
-import DateFormatter from "/src/components/DateFormatter";
-import StatusBadge from "/src/components/StatusBadge";
-import KPICard from "/src/components/KPICard";
-import Pagination from "/src/components/Pagination";
+import ActionGroup from "/src/components/ui/ActionButton";
+import DateFormatter from "../../../components/ui/DateFormatter";
+import StatusBadge from "../../../components/ui/StatusBadge";
+import KPICard from "../../../components/ui/KPICard";
+import Pagination from "../../../components/ui/Pagination";
 
 /**
  * Farmer Application List Dashboard

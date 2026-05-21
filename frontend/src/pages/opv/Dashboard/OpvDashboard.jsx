@@ -8,7 +8,7 @@ import {
     Percent
 } from "lucide-react";
 import { useGetOPVDashboard } from "/src/hooks/useDashboard";
-import KPICard from "/src/components/KPICard";
+import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
 import { useNavigate } from "react-router-dom";
 

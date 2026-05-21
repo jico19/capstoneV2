@@ -9,7 +9,7 @@ import {
     QrCode,
     History,
 } from 'lucide-react';
-import useAuthStore from '../store/authContext';
+import useAuthStore from '../../store/authContext';
 
 /**
  * Mobile-first navigation bar for Farmer and Inspector roles.

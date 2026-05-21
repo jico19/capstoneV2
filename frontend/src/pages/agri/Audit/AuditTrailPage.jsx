@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGetAuditTrail } from '/src/hooks/useAudit';
 import { User, Clock, History } from 'lucide-react';
-import Pagination from '/src/components/Pagination';
+import Pagination from '../../../components/ui/Pagination';
 
 /**
  * Human-Friendly Audit Trail Page

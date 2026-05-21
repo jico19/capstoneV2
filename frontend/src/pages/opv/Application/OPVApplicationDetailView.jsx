@@ -1,14 +1,14 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from "/src/hooks/useApplications"
-import ApplicationHeader from "/src/components/ApplicationHeader"
+import ApplicationHeader from "../../../components/ui/ApplicationHeader"
 import { ArrowLeft, FileText } from "lucide-react"
-import DocumentList from "/src/components/DocumentList"
+import DocumentList from "../../../components/ui/DocumentList"
 import OPVApprovalControls from "./OPVApprovalControl"
 import { api } from "/src/lib/api"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useState } from "react"
-import DocumentViewModal from "/src/components/DocumentViewModal"
+import DocumentViewModal from "../../../components/ui/DocumentViewModal"
 
 
 /**

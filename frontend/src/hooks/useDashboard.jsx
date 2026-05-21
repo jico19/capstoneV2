@@ -41,3 +41,13 @@ export const useGetInspectorDashboard = () => {
         }
     })
 }
+
+export const useGetOPVAnalytics = () => {
+    return useQuery({
+        queryKey: ['opv_analytics'],
+        queryFn: async () => {
+            const res = await api.get('/dashboard/opv-analytics/')
+            return res.data
+        }
+    })
+}

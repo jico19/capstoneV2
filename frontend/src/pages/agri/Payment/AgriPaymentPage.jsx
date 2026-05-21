@@ -14,8 +14,8 @@ import {
     X,
     ArrowRight
 } from 'lucide-react';
-import KPICard from '/src/components/KPICard';
-import Pagination from '/src/components/Pagination';
+import KPICard from '../../../components/ui/KPICard';
+import Pagination from '../../../components/ui/Pagination';
 
 
 const AgriPaymentPage = () => {

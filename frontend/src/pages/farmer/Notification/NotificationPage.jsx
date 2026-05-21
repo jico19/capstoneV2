@@ -7,7 +7,7 @@ import { useGetNotification } from '/src/hooks/useNotifications';
 import { api } from '/src/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import Pagination from '/src/components/Pagination';
+import Pagination from '../../../components/ui/Pagination';
 import NotificationItem from './NotificationItem';
 
 

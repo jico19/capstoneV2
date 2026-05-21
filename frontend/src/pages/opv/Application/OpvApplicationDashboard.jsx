@@ -8,10 +8,9 @@ import {
 } from "lucide-react";
 import { useApplication } from "/src/hooks/useApplications";
 import { useNavigate } from "react-router-dom";
-import StatusBadge from "/src/components/StatusBadge";
-import DateFormatter from "/src/components/DateFormatter";
-import ActionGroup from "/src/components/ActionButton";
-import Pagination from "/src/components/Pagination";
+import StatusBadge from "../../../components/ui/StatusBadge";
+import DateFormatter from "../../../components/ui/DateFormatter";
+import Pagination from "../../../components/ui/Pagination";
 
 /**
  * OPV Application Management Dashboard

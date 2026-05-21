@@ -99,19 +99,37 @@ class FarmerDashboardView(views.APIView):
 class OPVDashboardView(views.APIView):
     """
     Dashboard metrics for OPV Staff.
-    Includes validation productivity and workload charts.
+    Includes validation productivity, workload, and tactical livestock movement.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # 1. KPIs
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        # 1. Pipeline KPIs
         pending_validation = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
         completed_today = permits.OPVValidation.objects.filter(validated_at__date=timezone.now().date(), status=permits.OPVValidation.Status.VALIDATED).count()
 
-        # Rejection Rate: Quality of incoming documents
-        total_validated = permits.OPVValidation.objects.count()
-        total_rejected = permits.OPVValidation.objects.filter(status=permits.OPVValidation.Status.REJECTED).count()
-        rejection_rate = (total_rejected / total_validated * 100) if total_validated > 0 else 0
+        # Rejection Rate & Pass Rate
+        opv_processed_30 = permits.OPVValidation.objects.filter(validated_at__gte=thirty_days_ago)
+        total_validated_30 = opv_processed_30.count()
+        total_rejected_30 = opv_processed_30.filter(status=permits.OPVValidation.Status.REJECTED).count()
+        total_passed_30 = opv_processed_30.filter(status=permits.OPVValidation.Status.VALIDATED).count()
+        
+        rejection_rate = (total_rejected_30 / total_validated_30 * 100) if total_validated_30 > 0 else 0
+        pass_rate = (total_passed_30 / total_validated_30 * 100) if total_validated_30 > 0 else 0
+
+        # Total Volume (Heads)
+        validated_apps_30 = permits.PermitApplication.objects.filter(
+            created_at__gte=thirty_days_ago,
+            status__in=[
+                permits.PermitApplication.Status.OPV_VALIDATED,
+                permits.PermitApplication.Status.PERMIT_ISSUED,
+                permits.PermitApplication.Status.PAYMENT_PENDING,
+                permits.PermitApplication.Status.RELEASED
+            ]
+        )
+        total_volume = validated_apps_30.aggregate(total=Sum('origins__number_of_pigs'))['total'] or 0
 
         # 2. Charts: Daily Validation Volume (Last 14 days)
         two_weeks_ago = timezone.now().date() - timedelta(days=14)
@@ -121,14 +139,31 @@ class OPVDashboardView(views.APIView):
             .values('date').annotate(count=Count('id')).order_by('date')
         )
 
+        # 3. Tactical Charts (Top 5)
+        top_barangays = (
+            validated_apps_30.values('origins__barangay__name')
+            .annotate(count=Sum('origins__number_of_pigs'))
+            .order_by('-count')[:5]
+        )
+        
+        top_destinations = (
+            validated_apps_30.values('destination')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:5]
+        )
+
         return Response({
             "kpis": {
                 "waiting_for_opv": pending_validation,
                 "validated_today": completed_today,
                 "rejection_rate": round(rejection_rate, 1),
+                "pass_rate": round(pass_rate, 1),
+                "total_volume": total_volume,
             },
             "charts": {
                 "validation_history": validation_history,
+                "top_barangays": [{"name": item['origins__barangay__name'], "count": item['count']} for item in top_barangays if item['origins__barangay__name']],
+                "top_destinations": [{"name": item['destination'], "count": item['count']} for item in top_destinations]
             }
         }, status=status.HTTP_200_OK)
 

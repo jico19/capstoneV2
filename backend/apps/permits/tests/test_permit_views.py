@@ -32,22 +32,28 @@ class PermitApplicationTests(APITestCase):
         
         self.application = PermitApplication.objects.create(
             farmer=self.farmer,
-            origin_barangay=self.barangay,
             destination="Manila",
-            number_of_pigs=5,
             transport_date=date.today(),
             status=PermitApplication.Status.SUBMITTED
+        )
+        self.origin = TransportOrigin.objects.create(
+            application=self.application,
+            barangay=self.barangay,
+            number_of_pigs=5
         )
 
     def test_list_applications_farmer(self):
         """Farmers should only see their own applications."""
         other_farmer = User.objects.create_user(username='other', password='password', role='Farmer')
-        PermitApplication.objects.create(
+        app = PermitApplication.objects.create(
             farmer=other_farmer,
-            origin_barangay=self.barangay,
             destination="Other",
-            number_of_pigs=2,
             transport_date=date.today()
+        )
+        TransportOrigin.objects.create(
+            application=app,
+            barangay=self.barangay,
+            number_of_pigs=2
         )
         
         self.client.force_authenticate(user=self.farmer)
@@ -70,24 +76,22 @@ class PermitApplicationTests(APITestCase):
     def test_list_applications_opv(self):
         """Opv users should only see applications with specific statuses."""
         # Create an application that Opv should NOT see
-        PermitApplication.objects.create(
+        app_draft = PermitApplication.objects.create(
             farmer=self.farmer,
-            origin_barangay=self.barangay,
             destination="Private",
-            number_of_pigs=1,
             transport_date=date.today(),
             status=PermitApplication.Status.DRAFT
         )
+        TransportOrigin.objects.create(application=app_draft, barangay=self.barangay, number_of_pigs=1)
         
         # Create an application that Opv SHOULD see
         app_for_opv = PermitApplication.objects.create(
             farmer=self.farmer,
-            origin_barangay=self.barangay,
             destination="Public",
-            number_of_pigs=1,
             transport_date=date.today(),
             status=PermitApplication.Status.FORWARDED_TO_OPV
         )
+        TransportOrigin.objects.create(application=app_for_opv, barangay=self.barangay, number_of_pigs=1)
         
         self.client.force_authenticate(user=self.opv)
         url = reverse('permitapplication-list')
@@ -108,18 +112,18 @@ class PermitApplicationTests(APITestCase):
         self.client.force_authenticate(user=self.farmer)
         url = reverse('permitapplication-list')
         
-        # Need 5 files as per services.py: if not files or len(files) < 5:
+        # Need 5 files as per services.py
         data = {
-            'origin_barangay': self.barangay.id,
+            'origins[0][barangay]': self.barangay.id,
+            'origins[0][number_of_pigs]': 10,
             'destination': 'Batangas',
-            'number_of_pigs': 10,
             'transport_date': date.today().isoformat(),
             'purpose': 'Sale',
             'traders_pass': SimpleUploadedFile('traders.jpg', b'content', content_type='image/jpeg'),
             'handlers_license': SimpleUploadedFile('handlers.jpg', b'content', content_type='image/jpeg'),
             'transport_carrier_reg': SimpleUploadedFile('carrier.jpg', b'content', content_type='image/jpeg'),
-            'cis': SimpleUploadedFile('cis.jpg', b'content', content_type='image/jpeg'),
-            'endorsement_cert': SimpleUploadedFile('endorsement.jpg', b'content', content_type='image/jpeg'),
+            'origin_0_cis': SimpleUploadedFile('cis.jpg', b'content', content_type='image/jpeg'),
+            'origin_0_endorsement_cert': SimpleUploadedFile('endorsement.jpg', b'content', content_type='image/jpeg'),
         }
         
         response = self.client.post(url, data, format='multipart')
@@ -135,9 +139,9 @@ class PermitApplicationTests(APITestCase):
         url = reverse('permitapplication-list')
         
         data = {
-            'origin_barangay': self.barangay.id,
+            'origins[0][barangay]': self.barangay.id,
+            'origins[0][number_of_pigs]': 10,
             'destination': 'Quezon',
-            'number_of_pigs': 10,
             'transport_date': date.today().isoformat(),
             'purpose': 'Sale',
             'traders_pass': SimpleUploadedFile('test.jpg', b'content', content_type='image/jpeg'),

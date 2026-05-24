@@ -93,7 +93,7 @@ class FarmerDashboardView(views.APIView):
                 "transport_volume": transport_volume,
                 "status_distribution": status_dist,
             },
-            "recent_applications": my_apps.order_by('-updated_at')[:5].values('id','application_id', 'status', 'updated_at')
+            "recent_applications": my_apps.order_by('-updated_at')[:5].values('id','application_id', 'status', 'transport_date' )
         }, status=status.HTTP_200_OK)
 
 class OPVDashboardView(views.APIView):

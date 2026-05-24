@@ -67,11 +67,11 @@ const FarmerDashboard = () => {
                             <Link key={app.id} to={`/farmer/application/detail/${app.id}`} className="p-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
                                 <div className="min-w-0">
                                     <p className="text-xs font-black text-stone-900 truncate uppercase tracking-tight">{app.application_id}</p>
-                                    <p className="text-[10px] font-medium text-stone-500 mt-0.5">{app.transport_date} • {app.origins?.reduce((sum, o) => sum + (o.number_of_pigs || 0), 0) || 0} Heads</p>
+                                    <p className="text-[10px] font-medium text-stone-500 mt-0.5">{app.transport_date}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <span className="hidden sm:block text-[9px] font-black uppercase bg-stone-100 px-2 py-0.5 text-stone-600">
-                                        {app.status_display}
+                                        {app.status}
                                     </span>
                                     <ChevronRight size={16} className="text-stone-300" />
                                 </div>

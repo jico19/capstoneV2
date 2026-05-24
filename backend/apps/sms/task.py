@@ -4,12 +4,11 @@ from django.tasks import task
 from apps.permits import models as permits
 from .models import SMSLog
 from .services import send_sms
-from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 
-@task(takes_context=True)
-def send_via_status(context, application_id):
+@task()
+def send_via_status(application_id, attempt=3):
     """
     Sends a status update SMS to the farmer.
     Uses django-tasks TaskContext for non-blocking retries on gateway failure.
@@ -72,7 +71,6 @@ def send_via_status(context, application_id):
             logger.info(f"Successfully sent and logged status update for {application.application_id}")
         else:
             # Handle failure with retry
-            attempt = context.task_result.attempt_count
             MAX_ATTEMPTS = 3
             if attempt < MAX_ATTEMPTS:
                 wait_time = 60 * attempt  # 60s, 120s

@@ -19,8 +19,8 @@ class OCRRateLimitError(Exception):
     """Custom exception for OCR rate limits."""
     pass
 
-@task(takes_context=True)
-def extract_document_info(context, document_id: int):
+@task()
+def extract_document_info(document_id: int, attempt=3):
     """
     Background task to process OCR for a document.
     Uses django-tasks TaskContext to handle non-blocking retries for rate limits.

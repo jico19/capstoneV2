@@ -13,7 +13,7 @@ def get_auth_header():
     encoded = base64.b64encode(f"{key}:".encode()).decode()
     return {"Authorization": f"Basic {encoded}", "Content-Type": "application/json"}
 
-def create_checkout_session(application_pk: int):
+def create_checkout_session(application_pk: int, total_price: float):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
     issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
 
@@ -32,7 +32,7 @@ def create_checkout_session(application_pk: int):
                 "line_items": [
                     {
                         "currency": "PHP",
-                        "amount": int(settings.PERMIT_AMOUNT),
+                        "amount": int(float(total_price) * 100),
                         "name": f"Livestock Transport Permit — {issued_permit_instance.permit_number}",
                         "quantity": 1,
                     }
@@ -55,7 +55,7 @@ def create_checkout_session(application_pk: int):
         json=payload,
         headers=get_auth_header(),
     )
-
+    
     if res.status_code != 200:
         raise ValidationError(res.json())
 
@@ -69,9 +69,7 @@ def create_checkout_session(application_pk: int):
         defaults={
             'status': models.PaymentHistory.Status.PENDING,
             'method': 'ONLINE',
-            # settings.PERMIT_AMOUNT is in cents (lowest denomination), 
-            # so we divide by 100 for the database field which expects the standard unit.
-            'amount': int(settings.PERMIT_AMOUNT) / 100,
+            'amount': total_price,
             'paymongo_session_id': data["id"],
         }
     )

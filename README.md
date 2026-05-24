@@ -1,33 +1,48 @@
-# LivestockPass: Municipal Permit & Hog Density Management System
+# 🐖 LivestockPass
+### **Digital Permit & Hog Management System for Sariaya**
 
-LivestockPass is a specialized full-stack platform designed for the **Sariaya Municipal Agriculture Office** to digitize the issuance, tracking, and verification of livestock transport permits. It combines administrative workflows with geospatial data and machine learning to monitor hog populations effectively.
+LivestockPass is a modern, paperless platform built specifically for the **Sariaya Municipal Agriculture Office**. It simplifies the process of getting, checking, and managing livestock transport permits, making it easier for farmers and faster for government staff.
 
-## 🚀 Core Features
+---
 
-### 1. Digital Permit Lifecycle
-- **Farmer Submission:** Automated document upload (Max 30MB) with built-in **OCR (Optical Character Recognition)** to extract data from clearances and licenses.
-- **Multi-Role Approval:** Seamless workflow transitions between **Agri Officers** (Administrative) and **OPV Staff** (Veterinary/Technical).
-- **Secure Issuance:** Unique 13-digit permit numbers and encrypted QR tokens for every approved application.
+## ✨ How LivestockPass Helps You
 
-### 2. Payment & Release
-- **Hybrid Payment Gateway:** Supports online payments via **Paymongo** and manual walk-in verification by Agri staff.
-- **Automated PDF Generation:** Once paid, the system generates an official Permit PDF containing all clearances and a scannable QR code.
+### 🌾 For Farmers: Apply from Anywhere
+*   **No More Paperwork:** Upload your clearances and licenses directly from your phone or computer.
+*   **Automatic Reading:** Our system "reads" your documents automatically to save you from typing in every detail.
+*   **Stay Informed:** Receive instant notifications when your permit is approved or needs more information.
 
-### 3. Field Verification (Inspector App)
-- **Real-time Scanning:** Roadside Inspectors can scan permit QR codes to instantly verify the validity, pig count, and origin/destination details.
-- **GPS Logging:** Automatically logs the location and timestamp of every inspection.
+### 🏛️ For the Agriculture Office: Faster Approvals
+*   **Digital Workflow:** Review applications in a clear, step-by-step system—no more lost folders.
+*   **Secure Payments:** Support for both online (PayMongo) and walk-in payments.
+*   **Official Permits:** Instantly generate professional PDF permits with secure, unforgeable QR codes.
 
-### 4. Hog Density & ML Engine
-- **Geospatial Heatmaps:** Visualizes historical hog populations across Sariaya barangays using Leaflet.
-- **Predictive Analytics:** Features an **ML Engine (Random Forest Regressor)** to predict future pig density based on seasonal trends and historical survey data.
+### 🛣️ For Roadside Inspectors: Instant Verification
+*   **Scan & Go:** Use the mobile app to scan a permit’s QR code.
+*   **Real-time Data:** Instantly see the pig count, where they came from, and where they are going.
+*   **Security:** High-security tokens ensure that every permit is authentic and valid.
 
-## 🛠️ Tech Stack
-- **Backend:** Django, Django REST Framework, SQLite/PostgreSQL.
-- **Frontend:** React, Tailwind CSS, DaisyUI, Lucide React.
-- **Analysis:** Pandas, Scikit-Learn, Joblib (ML Engine).
-- **Background Tasks:** Django Tasks for OCR and PDF generation.
+### 📊 For Decision Makers: Hog Density & Predictions
+*   **Visual Heatmaps:** See a map of Sariaya showing exactly where the hog populations are highest.
+*   **Predict the Future:** Uses smart technology (Machine Learning) to predict how many pigs will be in each barangay in the coming months.
 
-## 🔒 Security & Standards
-- **RBAC:** Robust Role-Based Access Control (Admin, Agri, Opv, Farmer, Inspector).
-- **Data Integrity:** Strict file size validation (30MB) and unique tokenization for all issued documents.
-- **Audit Logs:** Full traceability for every status change and inspection log.
+---
+
+## 🛠️ How it Works (The Journey)
+1.  **Submit:** The farmer uploads required documents (clearances and IDs).
+2.  **Review:** Agri and Veterinary staff check the documents digitally.
+3.  **Pay:** Once approved, the farmer pays online or at the office.
+4.  **Issue:** The system creates a secure permit with a unique QR code.
+5.  **Verify:** Inspectors scan the permit during transport to ensure safety and legality.
+
+---
+
+## ⚙️ Technical Overview (For Developers)
+*   **Backend:** Django & Django REST Framework (Python)
+*   **Frontend:** React & Tailwind CSS
+*   **Intelligence:** Scikit-Learn (Random Forest Regressor) for density prediction.
+*   **Tasks:** Automated OCR (Optical Character Recognition) for document reading.
+*   **Maps:** Interactive Leaflet maps with geospatial data.
+
+---
+*Developed for the Sariaya Municipal Agriculture Office.*

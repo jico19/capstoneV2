@@ -79,14 +79,14 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/<id>/"""
     farmer_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-    origins = TransportOriginListSerializer(many=True, read_only=True)
+    number_of_pigs = serializers.SerializerMethodField()
     all_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
         fields = [
-            "id", "application_id", "farmer_name", "status", "status_display",
-            "destination", "transport_date", "purpose", "origins", "all_documents", "created_at",
+            "id", "application_id", "farmer_name", "status", "status_display", "number_of_pigs",
+            "destination", "transport_date", "purpose", "all_documents", "created_at",
         ]
 
     def get_farmer_name(self, obj):
@@ -98,8 +98,10 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         for origin in obj.origins.all():
             all_docs.extend(origin.documents.all())
         return SubmittedDocumentListSerializer(all_docs, many=True).data
-
-
+    
+    def get_number_of_pigs(self, obj):
+        return sum(origin.number_of_pigs for origin in obj.origins.all())
+    
 class PermitApplicationWriteSerializer(serializers.ModelSerializer):
     """Used in: POST /applications/"""
     origins = TransportOriginWriteSerializer(many=True)

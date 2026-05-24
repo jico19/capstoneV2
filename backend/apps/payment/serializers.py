@@ -28,6 +28,7 @@ class PaymentListSerializers(serializers.ModelSerializer):
             'farmer_name',
             'paymongo_session_id',
             'confirmed_by',
+            'created_at',
         ]
 
 

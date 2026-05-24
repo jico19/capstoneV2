@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react';
 import { api } from '/src/lib/api';
@@ -12,11 +12,18 @@ const PaymentCheckout = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [totalPrice, setTotalprice] = useState(0)
 
     const { data: application, isLoading: isApplicationLoading, isError } = useApplicationDetail(id)
 
-    // Using amount from settings or application if available, fallback to mock for prototype
-    const amount = 500.00; 
+    console.log(application)
+
+    const document_price = [
+        { "doc_name": "Veterinary Health Certificate", "price": 50.00 },
+        { "doc_name": "Transportation Pass", "price": 50.00 },
+        { "doc_name": "Sariaya Transportation Permit", "price": 50.00 },
+    ]
+
 
     const handleProceedToPayment = async () => {
         setIsLoading(true);
@@ -24,7 +31,7 @@ const PaymentCheckout = () => {
 
         try {
             // Call backend endpoint that triggers create_checkout_session()
-            const response = await api.post(`/payment/${id}/checkout_session/`);
+            const response = await api.post(`/payment/${id}/checkout_session/`, { total_price: totalPrice });
             const checkoutUrl = response.data.checkout_url;
 
             if (checkoutUrl) {
@@ -36,7 +43,7 @@ const PaymentCheckout = () => {
                 throw new Error("No checkout URL received from server.");
             }
         } catch (err) {
-            console.error(err);
+            console.error(err.response);
             setError("Failed to generate payment link. Please try again.");
             setIsLoading(false);
             toast.error("Payment Error", {
@@ -44,6 +51,10 @@ const PaymentCheckout = () => {
             });
         }
     };
+
+    useEffect(() => {
+        setTotalprice(document_price.reduce((total_price, curr) => total_price + curr.price, 0))
+    }, [])
 
     if (isApplicationLoading) {
         return (
@@ -60,7 +71,7 @@ const PaymentCheckout = () => {
                 <div className="bg-red-50 border border-red-200 p-8 flex flex-col items-center text-center gap-4 rounded-none">
                     <AlertCircle size={32} className="text-red-600" />
                     <p className="text-xs font-black uppercase tracking-widest text-red-700">Failed to load application data</p>
-                    <button 
+                    <button
                         onClick={() => window.location.reload()}
                         className="text-xs font-bold text-red-600 underline uppercase"
                     >
@@ -74,7 +85,7 @@ const PaymentCheckout = () => {
     return (
         <div className="min-h-screen bg-stone-50/50 p-6 lg:p-12">
             <div className="max-w-4xl mx-auto space-y-10">
-                
+
                 {/* Navigation */}
                 <button
                     onClick={() => navigate(-1)}
@@ -105,7 +116,7 @@ const PaymentCheckout = () => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div className="flex flex-col space-y-5">
 
                     {/* Left: Summary */}
                     <div className="lg:col-span-3 space-y-6">
@@ -126,13 +137,15 @@ const PaymentCheckout = () => {
                                         {application?.destination}
                                     </span>
                                 </div>
-                                <div className="flex justify-between py-4">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Number of Animals</span>
-                                    <span className="font-black text-stone-800 text-xs uppercase">{application?.number_of_pigs} Heads</span>
-                                </div>
+                                {document_price.map((data, idx) => (
+                                    <div className="flex justify-between py-4 last:pb-0" key={idx}>
+                                        <span className="text-xs font-black uppercase tracking-widest text-stone-800">{data.doc_name}</span>
+                                        <span className="text-2xl font-black text-green-700 font-mono">₱{data.price}</span>
+                                    </div>
+                                ))}
                                 <div className="flex justify-between py-4 last:pb-0">
                                     <span className="text-xs font-black uppercase tracking-widest text-stone-800">Total Due</span>
-                                    <span className="text-2xl font-black text-green-700 font-mono">₱{amount.toLocaleString()}</span>
+                                    <span className="text-2xl font-black text-green-700 font-mono">₱{totalPrice}</span>
                                 </div>
                             </div>
                         </div>
@@ -147,27 +160,6 @@ const PaymentCheckout = () => {
 
                     {/* Right: Payment Action */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white border border-stone-200 p-6 space-y-6">
-                            <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
-                                <CreditCard size={14} /> Payment Options
-                            </h2>
-                            
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 p-3 bg-stone-50 border border-stone-200 text-stone-800">
-                                    <CheckCircle2 size={16} className="text-green-700" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">GCash & Maya</span>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-stone-50 border border-stone-200 text-stone-800">
-                                    <CheckCircle2 size={16} className="text-green-700" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Debit / Credit Cards</span>
-                                </div>
-                            </div>
-
-                            <p className="text-[10px] font-medium text-stone-500 leading-relaxed uppercase tracking-wider">
-                                Click below to proceed to the secure municipal payment gateway.
-                            </p>
-                        </div>
-
                         <button
                             onClick={handleProceedToPayment}
                             disabled={isLoading}
@@ -180,7 +172,7 @@ const PaymentCheckout = () => {
                                 </>
                             ) : (
                                 <>
-                                    Pay ₱{amount.toLocaleString()} <ChevronRight size={18} />
+                                    Pay ₱{totalPrice} <ChevronRight size={18} />
                                 </>
                             )}
                         </button>

@@ -17,12 +17,13 @@ function useCounter(target, duration = 1800, start = false) {
   return count;
 }
 
+// TODO:
+// use real data from the backend
 const STATS = [
   { value: 500,  suffix: "+",    label: "Permits Issued",           delay: "0s"    },
   { value: 15,   suffix: " min", label: "Average Processing Time",  delay: "0.1s"  },
   { value: 24,   suffix: "/7",   label: "Application Submission",   delay: "0.2s"  },
-  { value: 100,  suffix: "%",    label: "Fraud Detection Rate",     delay: "0.3s"  },
-];
+];  
 
 function StatItem({ value, suffix, label, delay, animate }) {
   const count = useCounter(value, 1800, animate);

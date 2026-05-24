@@ -11,7 +11,6 @@ from django.conf import settings
 from apps.documents.services import generate_permit_pdf, generate_collection_report_pdf
 from django.utils import timezone
 from datetime import timedelta
-import uuid
 from django.shortcuts import get_object_or_404
 from apps.permits import models as Permits
 from django.db import transaction
@@ -78,6 +77,8 @@ class PaymentViewSets(viewsets.ModelViewSet):
         """
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
 
+        total_price = request.data.get("total_price", 0)
+
         # Ownership check
         if request.user.role == 'Farmer' and application.farmer != request.user:
             return Response({"error": "Unauthorized access to this application"}, status=403)
@@ -89,7 +90,7 @@ class PaymentViewSets(viewsets.ModelViewSet):
             # Create Issued instance
             # pass the issued_permit pk
             issued_permit = get_object_or_404(Permits.IssuedPermit, application=application)
-            data = services.create_checkout_session(application_pk=application.pk)
+            data = services.create_checkout_session(application_pk=application.pk, total_price = total_price)
 
             return Response(data, status=status.HTTP_200_OK)
 
@@ -107,13 +108,6 @@ class PaymentViewSets(viewsets.ModelViewSet):
             if request.user.role == 'Farmer' and application.farmer != request.user:
                 return Response({"error": "Unauthorized access to this application"}, status=403)
             
-            # Verify the application is in the correct state for payment verification
-            if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
-                # If it's already released, we can return success immediately
-                if application.status == Permits.PermitApplication.Status.RELEASED:
-                    return Response({"msg": "Payment already verified", "verified": True}, status=200)
-                return Response({"error": f"Application is not in payment pending state (Current status: {application.status})"}, status=400)
-
             # 2. Get the issued permit and its associated payment history
             try:
                 issued_permit = application.issued_permit
@@ -125,11 +119,27 @@ class PaymentViewSets(viewsets.ModelViewSet):
             except models.PaymentHistory.DoesNotExist:
                 return Response({"error": "No payment session found for this permit"}, status=404)
 
-            # 3. If we already know it's a success locally, skip the external API call
-            if payment_history.status == models.PaymentHistory.Status.SUCCESS:
-                return Response({"msg": "Payment already verified", "verified": True}, status=200)
+            # 3. Verify the application is in the correct state for payment verification
+            # If it's already released, we can return success immediately
+            if application.status == Permits.PermitApplication.Status.RELEASED:
+                return Response({
+                    "msg": "Payment already verified", 
+                    "verified": True,
+                    "data": serializers.PaymentListSerializers(payment_history).data
+                }, status=200)
 
-            # 4. Query PayMongo API for the checkout session details
+            if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
+                return Response({"error": f"Application is not in payment pending state (Current status: {application.status})"}, status=400)
+
+            # 4. If we already know it's a success locally, skip the external API call
+            if payment_history.status == models.PaymentHistory.Status.SUCCESS:
+                return Response({
+                    "msg": "Payment already verified",
+                    "verified": True,
+                    "data": serializers.PaymentListSerializers(payment_history).data
+                }, status=200)
+
+            # 5. Query PayMongo API for the checkout session details
             url = f"{settings.PAYMONGO_URL}/checkout_sessions/{payment_history.paymongo_session_id}"
             headers = get_auth_header()
 
@@ -142,7 +152,7 @@ class PaymentViewSets(viewsets.ModelViewSet):
             attributes = data.get('attributes', {})
             payments = attributes.get('payments', [])
 
-            # 5. PROTOTYPE SIMULATION:
+            # 6. PROTOTYPE SIMULATION:
             # For this prototype, we treat an 'active' session status as 'paid' to simulate a successful transaction.
             # IN PRODUCTION: You should iterate through the 'payments' array and check for status == 'paid'.
             payment_status = attributes.get('status')
@@ -153,7 +163,11 @@ class PaymentViewSets(viewsets.ModelViewSet):
                     payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
                     
                     if payment_history.status == models.PaymentHistory.Status.SUCCESS:
-                        return Response({"msg": "Payment already verified", "verified": True}, status=200)
+                        return Response({
+                            "msg": "Payment already verified", 
+                            "verified": True,
+                            "data": serializers.PaymentListSerializers(payment_history).data
+                        }, status=200)
                     
                     # A. Update Payment History record
                     payment_history.status = models.PaymentHistory.Status.SUCCESS
@@ -178,6 +192,7 @@ class PaymentViewSets(viewsets.ModelViewSet):
                 return Response({
                     "msg": "Payment Verified (Simulated)",
                     "verified": True,
+                    "data": serializers.PaymentListSerializers(payment_history).data
                 }, status=200)
             else:
                 return Response({

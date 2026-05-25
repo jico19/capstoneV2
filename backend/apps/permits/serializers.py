@@ -81,12 +81,13 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     number_of_pigs = serializers.SerializerMethodField()
     all_documents = serializers.SerializerMethodField()
+    origins = TransportOriginListSerializer(many=True, read_only=True)
 
     class Meta:
         model = PermitApplication
         fields = [
             "id", "application_id", "farmer_name", "status", "status_display", "number_of_pigs",
-            "destination", "transport_date", "purpose", "all_documents", "created_at",
+            "destination", "transport_date", "purpose", "all_documents", "origins", "created_at",
         ]
 
     def get_farmer_name(self, obj):

@@ -45,7 +45,7 @@ const OpvAnalytics = () => {
                 <KPICard
                     title="Total Volume"
                     value={kpis.total_volume}
-                    subtitle="Heads transported (30d)"
+                    subtitle="Pigs transported (30d)"
                     icon={Truck}
                     colorClass="bg-green-50 text-green-700"
                 />

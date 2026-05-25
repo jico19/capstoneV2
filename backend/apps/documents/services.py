@@ -137,8 +137,8 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             draw_info_row(
                 1.5*cm,
                 height - 9.9*cm,
-                "Total Heads (Swine)",
-                f"{total_pigs} HEADS",
+                "Total Quantity (Swine)",
+                f"{total_pigs} PIGS",
                 w=6*cm
             )
             draw_info_row(
@@ -433,7 +433,7 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
     p.drawString(1*cm, height - 2.4*cm, f"PERIOD: {date_range_str.upper()}")
 
     # Build table rows: one row per issued permit
-    data = [["PERMIT #", "FARMER", "ORIGIN", "DESTINATION", "HEADS", "DATE"]]
+    data = [["PERMIT #", "FARMER", "ORIGIN", "DESTINATION", "PIGS", "DATE"]]
     for issued in permits:
         application = issued.application
         origins = application.origins.all()

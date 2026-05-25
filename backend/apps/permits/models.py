@@ -26,9 +26,9 @@ class PermitApplication(models.Model):
     class Status(models.TextChoices):
         DRAFT               = 'DRAFT',              'Draft'
         SUBMITTED           = 'SUBMITTED',          'Submitted'
-        RESUBMISSION        = 'RESUBMISSION',          'Resubmission'
+        RESUBMISSION        = 'RESUBMISSION',        'Resubmission'
         OCR_VALIDATED       = 'OCR_VALIDATED',      'OCR Validated'
-        MANUAL              = 'MANUAL',             'Manual Review'
+        MANUAL              = 'MANUAL',             'Waiting for Manual Review'
         FORWARDED_TO_OPV    = 'FORWARDED_TO_OPV',  'Forwarded to OPV'
         OPV_VALIDATED       = 'OPV_VALIDATED',      'OPV Validated'
         OPV_REJECTED        = 'OPV_REJECTED',       'OPV Rejected'
@@ -150,7 +150,14 @@ class IssuedPermit(models.Model):
 
     date_issued = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True)
-    
-    def __str__(self):
-        return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {self.issued_by.username}"
+
+    def save(self, *args, **kwargs):
+        # Set expiry date to 3 days after issuance
+        if not self.valid_until:
+            # If date_issued is not yet set (new object), use current date
+            base_date = self.date_issued if self.date_issued else timezone.now().date()
+            self.valid_until = base_date + timedelta(days=3)
+        super().save(*args, **kwargs)
+
+    def __str__(self):        return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {self.issued_by.username}"
 

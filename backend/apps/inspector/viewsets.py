@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from . import serializers
 from . import models
 from rest_framework.response import Response
+from apps.api.models import User, Notification
 
 
 
@@ -61,9 +62,27 @@ class InspectorLogViewSets(viewsets.ModelViewSet):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(inspector=request.user)
+            log_instance = serializer.save(inspector=request.user)
+
+            # --- Send Notifications ---
+            # 1. Notify the Farmer
+            Notification.objects.create(
+                recipient=log_instance.application.farmer,
+                type=Notification.Type.INFO,
+                title="Checkpoint Verified",
+                message=f"Your transport permit (ID: {log_instance.application.application_id}) has been successfully verified by an inspector at a checkpoint."
+            )
+
+            # 2. Notify Agri and OPV offices
+            staff_to_notify = User.objects.filter(role__in=['Agri', 'Opv'])
+            for staff in staff_to_notify:
+                Notification.objects.create(
+                    recipient=staff,
+                    type=Notification.Type.INFO,
+                    title="Field Inspection Activity",
+                    message=f"Inspector {request.user.get_full_name() or request.user.username} has just recorded a field verification for Application #{log_instance.application.application_id}."
+                )
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print(str(e))
-            return Response("error", status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Failed to record inspection", "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

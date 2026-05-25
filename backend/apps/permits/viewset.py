@@ -269,18 +269,41 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             issued_permit_instance = get_object_or_404(
                 models.IssuedPermit, qr_token = pk
             )
+            application_instance = issued_permit_instance.application
 
-            serializer = self.get_serializer(issued_permit_instance.application)
+            # Check if permit is released (paid)
+            if application_instance.status != models.PermitApplication.Status.RELEASED:
+                 return Response({
+                    "error": "This permit has not been released. Payment may be pending or the application is still in process."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if permit has expired
+            if issued_permit_instance.valid_until < timezone.now().date():
+                 # Audit failure
+                 AuditTrail.objects.create(
+                    who_performed = request.user,
+                    what_performed = f"[FIELD INSPECTION] - Security QR Code scan failed for Application #{application_instance.application_id}. Result: EXPIRED.",
+                    when_performed = timezone.now(),
+                 )
+                 return Response({
+                    "error": "This permit has expired. Transport is no longer authorized.",
+                    "expired_at": issued_permit_instance.valid_until
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = self.get_serializer(application_instance)
 
             # --- Formal Audit Entry ---
             AuditTrail.objects.create(
                 who_performed = request.user,
-                what_performed = f"[FIELD INSPECTION] - Security QR Code scan performed for Application #{issued_permit_instance.application.application_id}. Result: VERIFIED.",
+                what_performed = f"[FIELD INSPECTION] - Security QR Code scan performed for Application #{application_instance.application_id}. Result: VERIFIED.",
                 when_performed = timezone.now(),
             )
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            data = serializer.data
+            data['valid_until'] = issued_permit_instance.valid_until
+            return Response(data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SubmittedDocumentViewSets(viewsets.ModelViewSet):
@@ -525,7 +548,7 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
 
 class OCRValidationResultViewSets(viewsets.ModelViewSet):
     queryset = models.OCRValidationResult.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -537,11 +560,11 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if not user.is_authenticated:
-            return models.OCRValidationResult.objects.none()
+        # if not user.is_authenticated:
+        #     return models.OCRValidationResult.objects.none()
 
-        if user.role == 'Farmer':
-            return models.OCRValidationResult.objects.filter(document__origin__application__farmer=user)
+        # if user.role == 'Farmer':
+        #     return models.OCRValidationResult.objects.filter(document__origin__application__farmer=user)
         return models.OCRValidationResult.objects.all()
 
     def update(self, request, *args, **kwargs):

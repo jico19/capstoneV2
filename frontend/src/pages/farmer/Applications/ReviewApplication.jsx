@@ -43,7 +43,7 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
                     <div key={o.id} className="mb-4 pb-4 border-b border-gray-200 last:border-0">
                         <p className="text-[9px] font-black uppercase tracking-widest text-green-700 mb-2">Origin #{index + 1}</p>
                         <DetailRow label="Barangay ID" value={formData[`barangay_${o.id}`]} />
-                        <DetailRow label="Number of Heads" value={formData[`pigs_${o.id}`]} />
+                        <DetailRow label="Number of Pigs" value={formData[`pigs_${o.id}`]} />
                     </div>
                 ))}
                 <DetailRow label="Destination" value={formData.destination} />

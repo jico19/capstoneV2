@@ -101,7 +101,8 @@ const VerifyApplication = () => {
         </div>
     )
 
-    const isValid = ['RELEASED', 'PAID'].includes(application.status)
+    const isExpired = application.valid_until && new Date(application.valid_until) < new Date(new Date().setHours(0,0,0,0))
+    const isValid = ['RELEASED', 'PAID'].includes(application.status) && !isExpired
 
     return (
         <div className="max-w-xl mx-auto p-4 md:p-8 min-h-screen bg-white font-sans">
@@ -126,7 +127,7 @@ const VerifyApplication = () => {
                 ) : (
                     <div className="bg-red-50 border border-red-600 px-3 py-1 flex items-center gap-1.5 text-red-700">
                         <XCircle size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Invalid</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{isExpired ? 'Expired' : 'Invalid'}</span>
                     </div>
                 )}
             </div>
@@ -146,22 +147,27 @@ const VerifyApplication = () => {
 
                 {/* Travel Details Grid */}
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="border border-stone-200 p-4 space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">From</p>
-                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">
-                            {application.origins?.length > 1 ? "Multiple Origins" : (application.origins?.[0]?.barangay_name || application.origin_barangay_name)}
-                        </p>
+                    <div className="border border-stone-200 p-4 space-y-1 col-span-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Origin Barangay(s)</p>
+                        <div className="space-y-2 mt-2">
+                            {application.origins?.map((origin) => (
+                                <div key={origin.id} className="flex justify-between items-center border-b border-stone-100 pb-1 last:border-0">
+                                    <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{origin.barangay_name}</p>
+                                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{origin.number_of_pigs} Pigs</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div className="border border-stone-200 p-4 space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">To</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Destination</p>
                         <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.destination}</p>
                     </div>
                     <div className="border border-stone-200 p-4 space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Load</p>
-                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.number_of_pigs} Heads</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Load</p>
+                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{application.number_of_pigs} Pigs</p>
                     </div>
-                    <div className="border border-stone-200 p-4 space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Date</p>
+                    <div className="border border-stone-200 p-4 space-y-1 col-span-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Transport Date</p>
                         <div className="text-sm font-bold text-stone-800 uppercase tracking-tight">
                             <DateFormatter date={application.transport_date} />
                         </div>

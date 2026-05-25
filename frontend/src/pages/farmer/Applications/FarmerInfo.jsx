@@ -37,7 +37,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                 </select>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Number of Heads</label>
+                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Number of Pigs</label>
                                 <input type="number" {...register(`pigs_${origin.id}`, { required: true })} className={inputClass} placeholder="0" />
                             </div>
                         </div>

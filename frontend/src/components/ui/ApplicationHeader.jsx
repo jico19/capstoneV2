@@ -4,7 +4,8 @@ import { MapPin, Calendar, Clipboard, User } from 'lucide-react';
  * Application Header
  * Redesigned for Farmer-Friendly clarity and Minimalist Design System.
  */
-const ApplicationHeader = ({ data }) => {
+const ApplicationHeader = ({ data }) => {   
+
     return (
         <header className="relative space-y-10">
             {/* Top Row: Identification */}
@@ -26,7 +27,7 @@ const ApplicationHeader = ({ data }) => {
                         Current Status
                     </span>
                     <div className="px-5 py-2 bg-green-50 text-green-700 border border-green-100 rounded-none text-xs font-black uppercase tracking-widest">
-                        {data.status_display}
+                        {data.status_display }
                     </div>
                 </div>
             </div>
@@ -40,7 +41,7 @@ const ApplicationHeader = ({ data }) => {
                     icon={<MapPin size={16} className="text-green-600" />} 
                 />
                 <DetailItem label="Going To" value={data.destination} icon={<Clipboard size={16} className="text-green-600" />} />
-                <DetailItem label="Total Count" value={`${data.number_of_pigs} Heads`} sub="Live Swine" icon={<User size={16} className="text-green-600" />} />
+                <DetailItem label="Total Count" value={`${data.number_of_pigs} Pigs`} sub="Live Swine" icon={<User size={16} className="text-green-600" />} />
                 <DetailItem label="Travel Date" value={data.transport_date} icon={<Calendar size={16} className="text-green-600" />} />
             </div>
 

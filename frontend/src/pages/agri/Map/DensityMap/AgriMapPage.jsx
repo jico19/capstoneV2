@@ -15,8 +15,8 @@ const AgriMapPage = () => {
     const mapRef = useRef(null)
 
     const toggleFilter = (level) => {
-        setActiveFilters(prev => 
-            prev.includes(level) 
+        setActiveFilters(prev =>
+            prev.includes(level)
                 ? prev.filter(f => f !== level)
                 : [...prev, level]
         )
@@ -36,8 +36,15 @@ const AgriMapPage = () => {
         }
     }
 
+    const clearFilters = () => {
+        setStartMonth('')
+        setEndMonth('')
+        setSelectedSeason('all')
+        setSelectedBarangay(null)
+    }
+
     const months = [
-        "January", "February", "March", "April", "May", "June", 
+        "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ];
 
@@ -86,7 +93,7 @@ const AgriMapPage = () => {
                     {/* Search */}
                     <div className="flex items-center gap-2 px-4 py-2 border-b sm:border-b-0 sm:border-r border-gray-100">
                         <Search size={18} className="text-gray-400" />
-                        <select 
+                        <select
                             className="bg-transparent text-xs font-black uppercase tracking-widest focus:outline-none min-w-[180px] cursor-pointer"
                             onChange={(e) => handleSearch(e.target.value)}
                             value=""
@@ -152,12 +159,22 @@ const AgriMapPage = () => {
                             </select>
                         </div>
                     </div>
+                    {(startMonth || endMonth || selectedSeason !== 'all' || selectedBarangay) && (
+                        <button
+                            onClick={clearFilters}
+                            className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest
+                            transition-colors flex items-center gap-2"
+                        >
+                            <AlertTriangle size={14} className="text-amber-500" />
+                            Clear
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* 2. Main Map Layout */}
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-                
+
                 {/* Side Info Panel */}
                 <div className="xl:col-span-1 space-y-6">
                     <div className="bg-white border border-gray-100 p-6 space-y-8">
@@ -167,23 +184,15 @@ const AgriMapPage = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                            <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-100">
+                            <div className={`flex items-center gap-4 p-4 bg-green-50 border border-green-100 transition-all duration-300 ${surveyFetching ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
                                 <div className="text-green-600">
                                     <TrendingUp size={24} />
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-green-700 uppercase tracking-widest">Total Pigs</p>
-                                    <p className="text-2xl font-black text-gray-900 leading-none mt-1">{totalPigs.toLocaleString()}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 p-4 bg-red-50 border border-red-100">
-                                <div className="text-red-600">
-                                    <BarChart3 size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-red-700 uppercase tracking-widest">Busy Areas</p>
-                                    <p className="text-2xl font-black text-gray-900 leading-none mt-1">{highDensityBarangays}</p>
+                                    <p className="text-2xl font-black text-gray-900 leading-none mt-1">
+                                        {surveyFetching ? '...' : totalPigs.toLocaleString()}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -194,14 +203,14 @@ const AgriMapPage = () => {
                             </div>
                             <div className="space-y-4">
                                 {[
-                                    { id: 'Very High', label: 'Very High (More than 500)', color: 'bg-red-600' },
-                                    { id: 'High', label: 'High (200 to 500)', color: 'bg-red-400' },
-                                    { id: 'Medium', label: 'Medium (50 to 200)', color: 'bg-amber-500' },
-                                    { id: 'Low', label: 'Low (Less than 50)', color: 'bg-green-600' },
-                                    { id: 'None', label: 'Stable / No Data', color: 'bg-gray-300' }
+                                    { id: 'Very High', label: 'Very High', color: 'bg-red-600' },
+                                    { id: 'High', label: 'High', color: 'bg-red-400' },
+                                    { id: 'Medium', label: 'Medium', color: 'bg-amber-500' },
+                                    { id: 'Low', label: 'Low', color: 'bg-green-600' },
+                                    { id: 'None', label: 'No Data', color: 'bg-gray-300' }
                                 ].map((item) => (
-                                    <button 
-                                        key={item.id} 
+                                    <button
+                                        key={item.id}
                                         onClick={() => toggleFilter(item.id)}
                                         className={`flex items-center gap-4 w-full transition-opacity group ${activeFilters.includes(item.id) ? 'opacity-100' : 'opacity-30'}`}
                                     >
@@ -228,18 +237,25 @@ const AgriMapPage = () => {
                 </div>
 
                 {/* Map Display Container */}
-                <div className="xl:col-span-3 bg-white border border-gray-100 relative h-[650px] xl:h-[750px]">
-                    {/* Custom Map UI Overlays */}
-                    <div className="absolute top-4 left-4 z-[10] bg-white border border-gray-900 px-4 py-2 font-black text-[10px] uppercase tracking-[0.2em] text-gray-900 flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-600" />
-                        Live GIS Service
-                    </div>
+                <div className="xl:col-span-3 bg-white border border-gray-100 relative h-[650px] xl:h-[750px] overflow-hidden">
+                    {/* Lazy Loading Overlay */}
+                    {surveyFetching && (
+                        <div className="absolute inset-0 z-[1000] bg-white/30 backdrop-blur-[1px] flex items-center justify-center">
+                            <div className="bg-white p-5 flex items-center gap-4">
+                                <span className="loading loading-spinner loading-md text-green-600"></span>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-900">Updating Map</p>
+                                    <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400">Loading new records...</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* The Actual Map Component */}
-                    <MainMap 
-                        ref={mapRef} 
-                        mapData={map} 
-                        surveyData={survey} 
+                    <MainMap
+                        ref={mapRef}
+                        mapData={map}
+                        surveyData={survey}
                         activeFilters={activeFilters}
                         selectedBarangay={selectedBarangay}
                         setSelectedBarangay={setSelectedBarangay}
@@ -249,5 +265,7 @@ const AgriMapPage = () => {
         </div>
     )
 }
+
+
 
 export default AgriMapPage

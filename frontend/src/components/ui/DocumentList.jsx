@@ -51,7 +51,17 @@ const DocumentList = ({ documents, fixData, documentView }) => {
                             icon: <AlertTriangle size={20} className="text-amber-600" />,
                             iconBg: 'bg-amber-50 border-amber-100'
                         };
-                    } else {
+                    } else if (doc.ocr.status === "OVERRIDDEN") {
+                        stateStyles = {
+                            border: 'border-l-4 border-green-600',
+                            badge: 'bg-green-50 text-green-700 border-green-600',
+                            statusText: 'Manually Checked',
+                            helperText: 'This document has been checked and verified.',
+                            icon: <CheckCircle size={20} className="text-green-600" />,
+                            iconBg: 'bg-green-50 border-green-100'
+                        };
+                    }
+                    else {
                         stateStyles = {
                             border: 'border-l-4 border-green-600',
                             badge: 'bg-green-50 text-green-700 border-green-600',
@@ -98,16 +108,19 @@ const DocumentList = ({ documents, fixData, documentView }) => {
                         </div>
 
                         <div className="mt-6 md:mt-0 flex flex-wrap items-center gap-2">
-                            {hasOcr && needsReview && fixData && (
+                            {hasOcr && (needsReview || doc.ocr.status === 'OVERRIDDEN') && fixData && (
                                 <button
                                     onClick={() => fixData({ ocr_id: doc.ocr.id, doc_id: doc.id })}
-                                    className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-none transition-colors flex items-center gap-2"
+                                    className={`
+                                        ${doc.ocr.status === 'OVERRIDDEN' ? 'bg-stone-800 hover:bg-stone-700' : 'bg-amber-500 hover:bg-amber-600'} 
+                                        text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-none transition-colors flex items-center gap-2
+                                    `}
                                 >
-                                    <Pencil size={14} /> Fix Info
+                                    <Pencil size={14} /> {doc.ocr.status === 'OVERRIDDEN' ? 'Edit Details' : 'Fix Info'}
                                 </button>
                             )}
                             {documentView && (
-                                <button 
+                                <button
                                     onClick={() => documentView(doc.id)}
                                     className="bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-none transition-colors flex items-center gap-2"
                                 >

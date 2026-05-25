@@ -119,7 +119,7 @@ class OPVDashboardView(views.APIView):
         rejection_rate = (total_rejected_30 / total_validated_30 * 100) if total_validated_30 > 0 else 0
         pass_rate = (total_passed_30 / total_validated_30 * 100) if total_validated_30 > 0 else 0
 
-        # Total Volume (Heads)
+        # Total Volume (Pigs)
         validated_apps_30 = permits.PermitApplication.objects.filter(
             created_at__gte=thirty_days_ago,
             status__in=[

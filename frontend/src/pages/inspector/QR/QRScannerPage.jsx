@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, ShieldCheck, Upload, ExternalLink, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Camera, ShieldCheck, Upload, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { toast } from 'sonner';
 
 const QRScannerPage = () => {
     const navigate = useNavigate();
@@ -9,6 +10,7 @@ const QRScannerPage = () => {
     const [cameraError, setCameraError] = useState(null);
     const [scannedResult, setScannedResult] = useState(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
     const scannerRef = useRef(null);
 
@@ -19,7 +21,11 @@ const QRScannerPage = () => {
         try {
             // Clean up any existing scanner instance first
             if (scannerRef.current) {
-                await scannerRef.current.stop().catch(() => { });
+                try {
+                    await scannerRef.current.stop();
+                } catch (e) {
+                    // Ignore stop errors if already stopped
+                }
                 scannerRef.current = null;
             }
 
@@ -46,15 +52,16 @@ const QRScannerPage = () => {
                 setCameraError('Could not start camera. Please try again.');
             }
             setIsScanning(false);
-
-            // Retry automatically after 2s if permission was the issue
-            setTimeout(() => startCamera(), 2000);
         }
     };
 
     const stopCamera = async () => {
         if (scannerRef.current) {
-            await scannerRef.current.stop().catch(() => { });
+            try {
+                await scannerRef.current.stop();
+            } catch (e) {
+                // Ignore
+            }
             scannerRef.current = null;
         }
         setIsScanning(false);
@@ -62,36 +69,59 @@ const QRScannerPage = () => {
 
     const handleScanSuccess = async (result) => {
         await stopCamera();
-        console.log(result)
+        console.log("Scan Success:", result);
         setScannedResult(result);
     };
 
-    const handleFileUpload = (e) => {
+    const handleFileUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const maxSize = 30 * 1024 * 1024; // 30MB
         if (file.size > maxSize) {
-            alert('File size cannot exceed 30MB');
+            toast.error('File size cannot exceed 30MB');
             return;
         }
 
         setScannedResult(null);
+        setCameraError(null);
+        setIsUploading(true);
 
-        const qr = new Html5Qrcode('reader-file');
-        qr.scanFile(file, true)
-            .then(handleScanSuccess)
-            .catch(() => alert('No QR code found in the selected image.'));
+        try {
+            const qrScanner = new Html5Qrcode('reader-file');
+            const result = await qrScanner.scanFile(file, true);
+            handleScanSuccess(result);
+        } catch (err) {
+            console.error("File Scan Error:", err);
+            setCameraError('No QR code found in the selected image. Please ensure it is clear and well-lit.');
+        } finally {
+            setIsUploading(false);
+            // Reset input so the same file can be uploaded again if needed
+            if (e.target) e.target.value = '';
+        }
     };
 
     const handleOpenLink = () => {
         if (!scannedResult) return;
-        const isUrl = /^https?:\/\//i.test(scannedResult);
-        if (isUrl) {
-            window.open(scannedResult, '_blank', 'noopener,noreferrer');
-        } else {
-            navigate(`/result/${encodeURIComponent(scannedResult)}`);
+        
+        let token = scannedResult;
+        
+        // If it's a full URL, extract the token (usually the last part)
+        if (/^https?:\/\//i.test(scannedResult)) {
+            try {
+                const url = new URL(scannedResult);
+                const pathParts = url.pathname.split('/').filter(p => p !== '');
+                // The token is expected to be the last part of the path
+                // e.g., /inspector/verify/TOKEN/ -> TOKEN
+                token = pathParts[pathParts.length - 1];
+            } catch (e) {
+                // Fallback to basic split if URL parsing fails
+                const parts = scannedResult.split('/').filter(p => p !== '');
+                token = parts[parts.length - 1];
+            }
         }
+        
+        navigate(`/inspector/verify/${token}/`);
     };
 
     const handleScanAnother = () => {
@@ -151,7 +181,7 @@ const QRScannerPage = () => {
                         />
 
                         {/* Hidden element for file scanning (html5-qrcode needs a DOM node) */}
-                        <div id="reader-file" className="hidden" />
+                        <div id="reader-file" style={{ position: 'absolute', left: '-10000px', top: '-10000px', width: '300px', height: '300px' }} />
 
                         {/* Overlay: shown when camera is not active */}
                         {!isScanning && !cameraError && activeTab === 'camera' && (
@@ -236,9 +266,19 @@ const QRScannerPage = () => {
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-full h-14 border-2 border-gray-200 hover:bg-gray-50 text-gray-800 font-black text-base rounded-xl flex items-center justify-center gap-3 transition-colors"
+                                disabled={isUploading}
+                                className="w-full h-14 border-2 border-gray-200 hover:bg-gray-50 text-gray-800 font-black text-base rounded-xl flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
                             >
-                                <Upload size={20} /> Choose QR Image
+                                {isUploading ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={20} />
+                                        Scanning...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={20} /> Choose QR Image
+                                    </>
+                                )}
                             </button>
                         </>
                     )}
@@ -263,7 +303,7 @@ const QRScannerPage = () => {
                                 onClick={handleOpenLink}
                                 className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-black text-sm rounded-xl flex items-center justify-center gap-2 transition-colors"
                             >
-                                Open Link <ExternalLink size={16} />
+                                Verify Permit <ExternalLink size={16} />
                             </button>
                             <button
                                 onClick={handleScanAnother}

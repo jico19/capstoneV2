@@ -299,7 +299,7 @@ Form labels must be short and direct. Helper text must explain **why** we're ask
 | `Input barangay of residence` | `Barangay` |
 | `Date of permit issuance` | `Date Issued` |
 | `Destination municipality` | `Where are the animals going?` |
-| `Number of heads` | `How many animals?` |
+| `Number of pigs` | `How many animals?` |
 
 ### Status Messages
 Status labels on badges and in notifications must tell the farmer exactly where their request stands — not just the system state.

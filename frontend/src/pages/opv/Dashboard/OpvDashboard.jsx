@@ -75,7 +75,7 @@ const OpvDashboard = () => {
                 <KPICard
                     title="Total Volume"
                     value={kpis.total_volume}
-                    subtitle="Heads transported (30d)"
+                    subtitle="Pigs transported (30d)"
                     icon={Truck}
                     colorClass="bg-stone-50 text-stone-700"
                 />

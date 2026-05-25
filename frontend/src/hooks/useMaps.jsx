@@ -16,6 +16,12 @@ export const useGetMaps = () => {
 
 
 export const useGetHogSurvey = (startMonth, endMonth, season) => {
+    // Only fetch if:
+    // 1. A specific season is selected (wet/dry)
+    // 2. OR both months are empty (initial full year view)
+    // 3. OR both months are selected (complete custom range)
+    const isReady = (season !== 'all') || (!startMonth && !endMonth) || (!!startMonth && !!endMonth);
+
     return useQuery({
         // The array MUST include months and season so React Query knows to re-fetch when they change
         queryKey: ['hog-survey', startMonth, endMonth, season],
@@ -26,13 +32,17 @@ export const useGetHogSurvey = (startMonth, endMonth, season) => {
             if (endMonth) params.end_month = endMonth;
             if (season) params.season = season;
 
+            // Artificial delay to showcase the loading state
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             // Make sure your Axios instance is pointing to the correct Django endpoint
             const res = await api.get('/hog-survey/survey_data/', { params });
-            console.log(res.data)
             return res.data;
         },
         // Important: this keeps the old map colors on screen while the new ones load
-        placeholderData: keepPreviousData, 
+        placeholderData: keepPreviousData,
+        enabled: isReady,
+        staleTime: 1000 * 60 * 5, // treat data as fresh for 5 mins
     })
 }
 

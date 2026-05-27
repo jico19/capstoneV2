@@ -99,6 +99,7 @@ const router = createBrowserRouter([
             { path: 'payment/', element: <AgriPaymentPage /> },
             { path: 'reports/', element: <AgriReportsPage /> },
             { path: 'audit-trail/', element: <AuditTrailPage /> },
+            { path: 'notification/', element: <NotificationPage /> },
             { path: 'settings/', element: <SettingsPage /> },
         ]
     },
@@ -110,6 +111,7 @@ const router = createBrowserRouter([
             { index: true, element: <OpvDashboard /> },
             { path: 'application/', element: <OpvApplicationDashboard /> },
             { path: 'application/detail/:id', element: <OPVApplicationDetail /> },
+            { path: 'notification/', element: <NotificationPage /> },
             { path: 'settings/', element: <SettingsPage /> },
         ]
     },

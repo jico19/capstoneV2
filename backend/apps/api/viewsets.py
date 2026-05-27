@@ -133,13 +133,9 @@ class NotificationViewSets(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return models.Notification.objects.none()
 
-        if user.role == 'Farmer':
-            return models.Notification.objects.filter(
-                recipient=user
-            )
-        
-        # Other roles might need to see their own notifications too
-        return models.Notification.objects.none()
+        return models.Notification.objects.filter(
+            recipient=user
+        )
         
     @action(detail=False, methods=['get'])
     def mark_all_read(self, request):
@@ -149,6 +145,18 @@ class NotificationViewSets(viewsets.ModelViewSet):
         ).update(is_read=True)
 
         return Response('ok!!', status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        # Returns the count of unread notifications for the authenticated user.
+        unread_count = models.Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).count()
+        
+        return Response({
+            'unread_count': unread_count
+        }, status=status.HTTP_200_OK)
     
 class AuditTrailViewSets(viewsets.ModelViewSet):
     serializer_class = serializers.AuditTrailSerializer

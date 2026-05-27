@@ -17,24 +17,28 @@ import {
 import useAuthStore from "../../store/authContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import MobileNavbar from "./MobileNavbar";
-import { useGetNotification } from "../../hooks/useNotifications";
+import { useGetUnreadNotificationCount } from "../../hooks/useNotifications";
+import NotificationBadge from "./NotificationBadge";
 
 // Standard navigation item for the sidebar.
 // Follows Design.MD: stone text, green active indicator on the right.
-const SidebarItem = ({ icon: Icon, label, to }) => {
+const SidebarItem = ({ icon: Icon, label, to, badgeCount = 0 }) => {
     const location = useLocation();
     const isActive = location.pathname === to;
 
     return (
         <Link 
             to={to} 
-            className={`flex items-center gap-3 px-6 py-3 transition-colors duration-150 ${
+            className={`flex items-center gap-3 px-6 py-3 transition-colors duration-150 relative ${
                 isActive 
                 ? "bg-green-50 text-green-700 border-r-2 border-green-700" 
                 : "text-stone-600 border-r-2 border-transparent hover:bg-stone-50 hover:text-stone-900"
             }`}
         >
-            <Icon size={18} className={isActive ? "text-green-700" : "text-stone-400"} />
+            <div className="relative">
+                <Icon size={18} className={isActive ? "text-green-700" : "text-stone-400"} />
+                {badgeCount > 0 && <NotificationBadge count={badgeCount} />}
+            </div>
             <span className={`text-sm tracking-tight ${isActive ? "font-bold" : "font-medium"}`}>{label}</span>
         </Link>
     );
@@ -60,9 +64,8 @@ const Sidebar = ({ children }) => {
 
     const isMobileFirstRole = user && (user.role === 'Farmer' || user.role === 'Inspector');
     
-    // Fetch notifications for the unread count badge
-    const { data: notificationData } = useGetNotification(1, 0);
-    const unreadCount = notificationData?.results?.filter(n => !n.is_read).length || 0;
+    // Fetch unread notification count for the badge
+    const { data: unreadCount = 0 } = useGetUnreadNotificationCount();
 
     const renderMenuByRole = () => {
         if (!isAuthenticated) return <SidebarItem icon={LayoutDashboard} label="Public Info" to="/" />;
@@ -74,7 +77,7 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={LayoutDashboard} label="Home Dashboard" to='/farmer/'/>
                         <SidebarItem icon={FilesIcon} label="My Applications" to='/farmer/application'/>
                         <SidebarItem icon={FilePlus2} label="Apply for Permit" to='/farmer/application/create/'/>
-                        <SidebarItem icon={Bell} label="Your Messages" to="/farmer/notification/"/>
+                        <SidebarItem icon={Bell} label="Your Messages" to="/farmer/notification/" badgeCount={unreadCount}/>
                         <SidebarItem icon={Settings} label="Your Settings" to="/farmer/settings/"/>
                     </MenuSection>
                 );
@@ -104,6 +107,7 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/inspector/"/>
                         <SidebarItem icon={QrCode} label="Scan QR Code" to='/inspector/scan/'/>
                         <SidebarItem icon={History} label="Inspection History" to='/inspector/history/'/>
+                        <SidebarItem icon={Bell} label="Notifications" to='/inspector/notification/' badgeCount={unreadCount}/>
                         <SidebarItem icon={Settings} label="Settings" to='/inspector/settings/'/>
                     </MenuSection>
                 );
@@ -146,7 +150,7 @@ const Sidebar = ({ children }) => {
                         </div>
                         
                         <div className="flex items-center gap-4">
-                            {/* Notification Bell */}
+                            {/* Notification Bell with Badge */}
                             <Link 
                                 to={`/${user.role.toLowerCase()}/notification/`}
                                 className={`relative p-2 transition-colors ${
@@ -154,9 +158,7 @@ const Sidebar = ({ children }) => {
                                 }`}
                             >
                                 <Bell size={20} />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full border border-white"></span>
-                                )}
+                                <NotificationBadge count={unreadCount} />
                             </Link>
 
                             <button 

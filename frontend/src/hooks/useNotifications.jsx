@@ -15,3 +15,16 @@ export const useGetNotification = (limit = 10, offset = 0) => {
         staleTime: 1000 * 60 * 10
     })
 }
+
+// Hook to fetch unread notification count.
+export const useGetUnreadNotificationCount = () => {
+    return useQuery({
+        queryKey: ['notification', 'unread_count'],
+        queryFn: async () => {
+            const res = await api.get('/notification/unread_count/')
+            return res.data.unread_count
+        },
+        staleTime: 1000 * 30, // Refetch every 30 seconds to keep badge fresh
+        refetchInterval: 1000 * 30
+    })
+}

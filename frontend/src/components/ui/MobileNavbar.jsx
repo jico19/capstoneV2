@@ -10,6 +10,8 @@ import {
     History,
 } from 'lucide-react';
 import useAuthStore from '../../store/authContext';
+import NotificationBadge from './NotificationBadge';
+import { useGetUnreadNotificationCount } from '../../hooks/useNotifications';
 
 /**
  * Mobile-first navigation bar for Farmer and Inspector roles.
@@ -24,6 +26,7 @@ import useAuthStore from '../../store/authContext';
 const MobileNavbar = () => {
     const { user, isAuthenticated } = useAuthStore();
     const location = useLocation();
+    const { data: unreadCount = 0 } = useGetUnreadNotificationCount();
 
     if (!isAuthenticated || !user) return null;
 
@@ -65,7 +68,7 @@ const MobileNavbar = () => {
                         <Link
                             key={item.to}
                             to={item.to}
-                            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors duration-150 ${
+                            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors duration-150 relative ${
                                 isActive ? 'text-green-700' : 'text-stone-400'
                             }`}
                         >
@@ -74,11 +77,17 @@ const MobileNavbar = () => {
                                 {isActive && (
                                     <div className="absolute -top-[8px] w-full h-1 bg-green-700" />
                                 )}
-                                <Icon 
-                                    size={20} 
-                                    className={isActive ? 'text-green-700' : 'text-stone-400'} 
-                                    strokeWidth={isActive ? 2.5 : 2} 
-                                />
+                                <div className="relative">
+                                    <Icon 
+                                        size={20} 
+                                        className={isActive ? 'text-green-700' : 'text-stone-400'} 
+                                        strokeWidth={isActive ? 2.5 : 2} 
+                                    />
+                                    {/* Show notification badge only for Home icon in Farmer role */}
+                                    {user.role === 'Farmer' && item.label === 'Home' && (
+                                        <NotificationBadge count={unreadCount} />
+                                    )}
+                                </div>
                             </div>
                             
                             {/* Label */}

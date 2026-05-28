@@ -47,7 +47,6 @@ const PaymentSuccess = () => {
         return () => clearTimeout(timeoutRef.current); // now actually clears the right timeout
     }, [issued_permit_id]);
 
-    console.log(paymentData)
     return (
         <div className="min-h-screen bg-stone-50/50 flex items-center justify-center p-6">
             <div className={`max-w-md w-full bg-white border border-stone-200 rounded-none ${status === 'success' ? 'p-0 shadow-2xl' : 'p-8 lg:p-12'} space-y-8 overflow-hidden transition-all duration-500`}>

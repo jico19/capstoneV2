@@ -69,7 +69,6 @@ const QRScannerPage = () => {
 
     const handleScanSuccess = async (result) => {
         await stopCamera();
-        console.log("Scan Success:", result);
         setScannedResult(result);
     };
 

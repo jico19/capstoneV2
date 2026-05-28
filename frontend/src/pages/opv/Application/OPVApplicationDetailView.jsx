@@ -53,9 +53,7 @@ const OPVApplicationDetail = () => {
             toast.success("Validation Complete", {
                 description: "Health documents uploaded and application validated."
             })
-            console.log(res.data)
         } catch (error) {
-            console.log(error)
             toast.error("Validation Failed", {
                 description: "Could not complete the validation process."
             })

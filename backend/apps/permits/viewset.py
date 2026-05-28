@@ -8,10 +8,10 @@ from . import serializers
 from . import models
 from . import services
 import uuid
-from apps.api.models import Notification
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import PermitApplicationFilter
-from apps.api.models import AuditTrail
+from apps.api.models import User, Notification, AuditTrail
+from apps.sms.services import send_sms
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 
@@ -269,26 +269,25 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             issued_permit_instance = get_object_or_404(
                 models.IssuedPermit, qr_token = pk
             )
+            print(issued_permit_instance)
             application_instance = issued_permit_instance.application
 
             # Check if permit is released (paid)
-            if application_instance.status != models.PermitApplication.Status.RELEASED:
-                 return Response({
-                    "error": "This permit has not been released. Payment may be pending or the application is still in process."
-                }, status=status.HTTP_400_BAD_REQUEST)
+
 
             # Check if permit has expired
             if issued_permit_instance.valid_until < timezone.now().date():
-                 # Audit failure
-                 AuditTrail.objects.create(
-                    who_performed = request.user,
-                    what_performed = f"[FIELD INSPECTION] - Security QR Code scan failed for Application #{application_instance.application_id}. Result: EXPIRED.",
-                    when_performed = timezone.now(),
-                 )
-                 return Response({
-                    "error": "This permit has expired. Transport is no longer authorized.",
-                    "expired_at": issued_permit_instance.valid_until
-                }, status=status.HTTP_400_BAD_REQUEST)
+                # Audit failure
+                AuditTrail.objects.create(
+                who_performed = request.user,
+                what_performed = f"[FIELD INSPECTION] - Security QR Code scan failed for Application #{application_instance.application_id}. Result: EXPIRED.",
+                when_performed = timezone.now(),
+                )
+                         
+                return Response({
+                "error": "This permit has expired. Transport is no longer authorized.",
+                "expired_at": issued_permit_instance.valid_until
+            }, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = self.get_serializer(application_instance)
 
@@ -298,6 +297,22 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
                 what_performed = f"[FIELD INSPECTION] - Security QR Code scan performed for Application #{application_instance.application_id}. Result: VERIFIED.",
                 when_performed = timezone.now(),
             )
+
+            # 1. Notify Agri and Opv via system notifications
+            admin_users = User.objects.filter(role__in=['Agri', 'Opv'])
+            for admin in admin_users:
+                Notification.objects.create(
+                    recipient=admin,
+                    type=Notification.Type.INFO,
+                    title="Permit Scanned",
+                    message=f"Permit #{application_instance.application_id} has been scanned and verified by {request.user.get_full_name() or request.user.username}."
+                )
+
+            # 2. Notify Farmer via SMS
+            farmer = application_instance.farmer
+            if farmer.phone_no:
+                sms_message = f"LivestockPass: Your permit #{application_instance.application_id} was scanned and verified on {timezone.now().strftime('%Y-%m-%d %H:%M')}. Safe travels!"
+                send_sms(farmer.phone_no, sms_message)
             
             data = serializer.data
             data['valid_until'] = issued_permit_instance.valid_until

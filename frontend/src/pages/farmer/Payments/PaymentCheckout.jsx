@@ -16,7 +16,6 @@ const PaymentCheckout = () => {
 
     const { data: application, isLoading: isApplicationLoading, isError } = useApplicationDetail(id)
 
-    console.log(application)
 
     const document_price = [
         { "doc_name": "Veterinary Health Certificate", "price": 50.00 },

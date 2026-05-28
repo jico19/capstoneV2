@@ -23,6 +23,7 @@ const VerifyApplication = () => {
     const [application, setApplication] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isError, setIsError] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
     const [location, setLocation] = useState({ lat: 0, lng: 0 })
 
     const { createLog } = useInspectorLogs()
@@ -44,7 +45,6 @@ const VerifyApplication = () => {
                 );
             }
 
-            // 2. Fetch Permit Data
             try {
                 const res = await api.get(`/application/${token}/verify/`)
                 setApplication(res.data)
@@ -52,8 +52,16 @@ const VerifyApplication = () => {
             } catch (err) {
                 setIsError(true)
                 setIsLoading(false)
-                toast.error("Invalid Code", {
-                    description: "This permit could not be verified."
+                
+                const backendError = err.response?.data?.error
+                const displayMessage = typeof backendError === 'string' 
+                    ? backendError 
+                    : "This permit could not be verified."
+                
+                setErrorMessage(displayMessage)
+                
+                toast.error("Verification Failed", {
+                    description: displayMessage
                 })
             }
         }
@@ -88,7 +96,7 @@ const VerifyApplication = () => {
                 <div className="space-y-2">
                     <h2 className="text-xl font-black text-red-700 uppercase tracking-tighter leading-none">Invalid Permit</h2>
                     <p className="text-xs font-bold text-stone-500 uppercase tracking-widest leading-relaxed">
-                        This QR code is either fake, expired, or has been revoked. Do not allow transport.
+                        {errorMessage || "This QR code is either fake, expired, or has been revoked. Do not allow transport."}
                     </p>
                 </div>
                 <button 

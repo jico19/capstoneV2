@@ -35,7 +35,6 @@ const FarmerDashboard = () => {
 
     const { kpis, recent_applications } = metrics;
 
-    console.log(recent_applications)
 
     return (
         <div className="p-4 md:p-8 space-y-8 bg-stone-50/50 min-h-full">

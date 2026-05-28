@@ -9,7 +9,6 @@ export const useApplication = (limit = 10, offset = 0, status) => {
             const res = await api.get('/application/', {
                 params: { limit, offset, status }
             })
-            console.log(res.data)
             return res.data
         },
         placeholderData: keepPreviousData,
@@ -44,7 +43,6 @@ export const useOCRUpdate = () => {
     return useMutation({
         mutationFn: async ({ id, data }) => {
             const res = await api.patch(`/ocr-validation/${id}/`, data)
-            console.log(res.data)
             return res.data
         }, onSuccess: () => {
             toast.success('Successfully Updated.')
@@ -66,7 +64,6 @@ export const useCreateApplicataion = () => {
             toast.success('Successfully submitted your application.')
             query.invalidateQueries({ queryKey: ['application'] })
         }, onError: (error) => {
-            console.log(error)
             toast.error("There is something wrong...")
         }
     })
@@ -95,7 +92,6 @@ export const useGetPermit = (id) => {
     return useQuery({
         queryKey: ['docs', id],
         queryFn: async () => {
-            console.log(typeof (id))
             const res = await api.get(`/issued-permit/${id}/`)
             return res.data
         }

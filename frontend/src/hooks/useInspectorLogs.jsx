@@ -9,7 +9,6 @@ export const useInspectorLogs = () => {
         queryKey: ['inspector-logs'],
         queryFn: async () => {
             const res = await api.get('/inspector/');
-            console.log(res.data)
             return res.data;
         }
     });
@@ -46,7 +45,6 @@ export const useInspectorLogs = () => {
             queryClient.invalidateQueries({ queryKey: ['inspector-logs'] });
         },
         onError: (error) => {
-            console.error(error);
             toast.error("Failed to log inspection.");
         }
     });

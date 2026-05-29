@@ -133,9 +133,15 @@ class NotificationViewSets(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return models.Notification.objects.none()
 
-        return models.Notification.objects.filter(
+        queryset = models.Notification.objects.filter(
             recipient=user
         )
+
+        is_read = self.request.query_params.get('is_read')
+        if is_read is not None:
+            queryset = queryset.filter(is_read=is_read.lower() == 'true')
+
+        return queryset
         
     @action(detail=False, methods=['get'])
     def mark_all_read(self, request):

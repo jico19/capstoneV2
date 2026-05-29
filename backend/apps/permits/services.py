@@ -14,13 +14,27 @@ def create_permit(files, application, user):
     if not files:
         raise ValidationError("No documents uploaded. Please upload the required documents.")
 
+    required_common = ['traders_pass', 'handlers_license', 'transport_carrier_reg']
+    for req in required_common:
+        if req not in files:
+            raise ValidationError(f"Missing required document: {req.replace('_', ' ').title()}")
+
+    origins = list(application.origins.all()) 
+    for i in range(len(origins)):
+        if f'origin_{i}_cis' not in files:
+            raise ValidationError(f"Missing Certificate of Inspection and Stewardship (CIS) for origin #{i+1}")
+        if f'origin_{i}_endorsement_cert' not in files:
+            raise ValidationError(f"Missing Barangay Endorsement Certificate for origin #{i+1}")
+
     document_ids = []
     
     # Map temporary origin index from request to actual DB ID
     # Since we saved the application and origins first, we can map them
-    origins = list(application.origins.all()) 
-
     for key, file in files.items():
+        # Check file size (30MB limit)
+        if file.size > 30 * 1024 * 1024:
+            raise ValidationError(f"File {file.name} exceeds the 30MB size limit.")
+
         # key format: 'traders_pass', 'origin_<temp_index>_<doc_type>'
         if key.startswith('origin_'):
             parts = key.split('_')
@@ -55,14 +69,25 @@ def resubmit_permit(files, application, user):
     Updates existing documents linked to origins.
     """
     document_ids = []
+    origins = list(application.origins.all())
+
+    if not origins:
+        raise ValidationError("Application has no transport origins. Cannot resubmit documents.")
 
     for key, file in files.items():
-        parts = key.split('_')
-        if len(parts) < 3: continue
-        origin_id = parts[1]
-        doc_type = '_'.join(parts[2:])
+        if file.size > 30 * 1024 * 1024:
+            raise ValidationError(f"File {file.name} exceeds the 30MB size limit.")
 
-        origin = get_object_or_404(models.TransportOrigin, id=origin_id, application=application)
+        if key.startswith('origin_'):
+            parts = key.split('_')
+            if len(parts) < 3: continue
+            origin_id = parts[1]
+            doc_type = '_'.join(parts[2:])
+            origin = get_object_or_404(models.TransportOrigin, id=origin_id, application=application)
+        else:
+            # Common documents linked to the first origin
+            doc_type = key
+            origin = origins[0]
         
         doc, created = models.SubmittedDocument.objects.update_or_create(
             origin=origin,
@@ -88,13 +113,17 @@ def create_approve_opv_validation(application_id: int, files, staff, data):
     if not files or len(files) < 2:
         raise ValidationError("No documents uploaded. Please upload the required documents.")
     
+    for key, file in files.items():
+        if file.size > 30 * 1024 * 1024:
+            raise ValidationError(f"File {file.name} exceeds the 30MB size limit.")
+    
     try:
         opv_validation, created = models.OPVValidation.objects.update_or_create(
             application_id=application_id,  # lookup field — find by this
             defaults={
                 "opv_staff": staff,
                 "status": models.OPVValidation.Status.VALIDATED,
-                "remarks": data['remarks'],
+                "remarks": data.get('remarks', ''),
                 "veterinary_health_certificate": files['veterinary_health_certificate'],
                 "transportation_pass": files['transportation_pass'],
             }
@@ -104,15 +133,19 @@ def create_approve_opv_validation(application_id: int, files, staff, data):
 
 def create_reject_opv_validation(application_id: int, data: dict, staff):
     try:
-        validation_obj = models.OPVValidation.objects.create(
+        validation_obj, created = models.OPVValidation.objects.update_or_create(
             application_id = application_id,
-            opv_staff = staff,
-            status = models.OPVValidation.Status.REJECTED,
-            remarks = data['remarks'],
+            defaults={
+                "opv_staff": staff,
+                "status": models.OPVValidation.Status.REJECTED,
+                "remarks": data.get('remarks', ''),
+                "veterinary_health_certificate": None,
+                "transportation_pass": None,
+            }
         )
         return validation_obj
-    except Exception:
-        raise ValidationError("error creating opv validation model.")
+    except Exception as e:
+        raise ValidationError(f"error creating opv validation model: {e}")
 
 # Status Helper
 def handle_application_status_change(application, new_status, reason=None):
@@ -130,6 +163,11 @@ def handle_application_status_change(application, new_status, reason=None):
             Notification.Type.WARNING,
             'Application Rejected',
             f'Your application #{app_id} was rejected. Reason: {reason}.',
+        ),
+        Status.RESUBMISSION: (
+            Notification.Type.WARNING,
+            'Correction Required',
+            f'Your application #{app_id} needs corrections. Please check the remarks: {reason}.',
         ),
         Status.PAYMENT_PENDING: (
             Notification.Type.INFO,

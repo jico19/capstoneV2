@@ -52,10 +52,11 @@ class TransportOriginListSerializer(serializers.ModelSerializer):
 
 class TransportOriginWriteSerializer(serializers.ModelSerializer):
     """Used for nested creation/updates"""
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = TransportOrigin
         fields = ["id", "barangay", "number_of_pigs"]
-        extra_kwargs = {'id': {'read_only': False, 'required': False}}
 
 
 # ─────────────────────────────────────────

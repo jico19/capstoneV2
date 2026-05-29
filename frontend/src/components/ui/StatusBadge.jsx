@@ -21,12 +21,9 @@ const StatusBadge = ({ status }) => {
             // ACTION REQUIRED / PENDING (Amber)
             case 'PAYMENT_PENDING':
             case 'SUBMITTED':
-                return "bg-amber-50 text-amber-700 border-amber-500";
-            
-            // REJECTED / ERROR (Red)
             case 'OPV_REJECTED':
             case 'RESUBMISSION':
-                return "bg-red-50 text-red-700 border-red-600";
+                return "bg-amber-50 text-amber-700 border-amber-500";
             
             // IN PROGRESS / SYSTEM REVIEW (Sky)
             case 'FORWARDED_TO_OPV':
@@ -57,7 +54,7 @@ const StatusBadge = ({ status }) => {
             'MANUAL': 'Needs Review',
             'FORWARDED_TO_OPV': 'OPV Review',
             'OPV_VALIDATED': 'OPV Approved',
-            'OPV_REJECTED': 'OPV Rejected',
+            'OPV_REJECTED': 'Correction Required',
             'PERMIT_ISSUED': 'Permit Ready',
             'PAYMENT_PENDING': 'Awaiting Payment',
             'RELEASED': 'Released'

@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from "/src/hooks/useApplications"
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
-import { ArrowLeft, FileText } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
 import OPVApprovalControls from "./OPVApprovalControl"
 import { api } from "/src/lib/api"
@@ -63,6 +63,18 @@ const OPVApplicationDetail = () => {
     const onReject = async (data) => {
         try {
             await api.post(`opv/${id}/reject/`, data)
+            query.invalidateQueries({ queryKey: ['application'] })
+            toast.success("Application Rejected", {
+                description: "The application has been permanently rejected."
+            })
+        } catch (error) {
+            toast.error("Action Failed")
+        }
+    }
+
+    const onResubmit = async (data) => {
+        try {
+            await api.post(`opv/${id}/resubmit/`, data)
             query.invalidateQueries({ queryKey: ['application'] })
             toast.success("Application Returned", {
                 description: "The farmer has been notified to fix the details."
@@ -127,6 +139,7 @@ const OPVApplicationDetail = () => {
                             <OPVApprovalControls
                                 onApprove={onApprove}
                                 onReject={onReject}
+                                onResubmit={onResubmit}
                             />
                         </div>
                     ) : (

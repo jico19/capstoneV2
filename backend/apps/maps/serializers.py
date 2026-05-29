@@ -47,6 +47,7 @@ class HogSurveyWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = HogSurvey
         fields = [
+            "id",
             "barangay",
             "inahin", "barako", "fattener", "grower", "bulaw", "starter",
             "total_pigs", "survey_date",

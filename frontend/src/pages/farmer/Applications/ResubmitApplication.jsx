@@ -74,7 +74,7 @@ const ResubmitApplication = () => {
         </div>
     );
 
-    if (isError || (application && application.status !== "RESUBMISSION")) {
+    if (isError || (application && !["RESUBMISSION", "OPV_REJECTED"].includes(application.status))) {
         return (
             <div className="max-w-3xl mx-auto p-12 bg-white">
                 <div className="bg-red-50 border border-red-100 p-10 flex flex-col items-center text-center space-y-4">

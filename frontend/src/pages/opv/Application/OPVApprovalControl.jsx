@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
  * Friendly-first design with natural language and industrial flat UI.
  * Validation Logic: Documents are only required for Approval. Remarks are required for both.
  */
-const OPVApprovalControls = ({ onApprove, onReject }) => {
+const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
     const { register, trigger, getValues, setError, watch, formState: { errors, isSubmitting } } = useForm();
 
     const documents = [
@@ -27,6 +27,14 @@ const OPVApprovalControls = ({ onApprove, onReject }) => {
         const isRemarksValid = await trigger('remarks');
         if (isRemarksValid) {
             onReject(getValues());
+        }
+    };
+
+    const handleResubmitClick = async () => {
+        // Only trigger validation for remarks
+        const isRemarksValid = await trigger('remarks');
+        if (isRemarksValid) {
+            onResubmit(getValues());
         }
     };
 
@@ -121,10 +129,20 @@ const OPVApprovalControls = ({ onApprove, onReject }) => {
                     type="button"
                     disabled={isSubmitting}
                     onClick={handleRejectClick}
-                    className="w-full sm:w-auto border border-red-100 bg-red-50 hover:bg-red-100 text-red-700 px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto border border-red-200 bg-white hover:bg-red-50 text-red-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
                 >
                     <XCircle size={18} strokeWidth={3} />
-                    Send Back for Correction
+                    Permanent Reject
+                </button>
+
+                <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={handleResubmitClick}
+                    className="w-full sm:w-auto border border-amber-100 bg-amber-50 hover:bg-amber-100 text-amber-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                >
+                    <MessageSquare size={18} strokeWidth={3} />
+                    Return for Correction
                 </button>
 
                 <button

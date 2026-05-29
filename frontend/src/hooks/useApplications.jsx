@@ -9,6 +9,7 @@ export const useApplication = (limit = 10, offset = 0, status) => {
             const res = await api.get('/application/', {
                 params: { limit, offset, status }
             })
+            console.log(res.data)
             return res.data
         },
         placeholderData: keepPreviousData,
@@ -81,7 +82,7 @@ export const useResubmitApplication = () => {
             queryClient.invalidateQueries({ queryKey: ['application'] })
         },
         onError: (error) => {
-            console.error(error)
+            console.error(error.response)
             const detail = error.response?.data?.detail || "Could not resubmit application."
             toast.error(detail)
         }

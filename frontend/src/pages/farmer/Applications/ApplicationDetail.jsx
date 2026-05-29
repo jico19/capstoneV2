@@ -60,7 +60,7 @@ const ApplicationDetail = () => {
                 <div className="space-y-12 md:space-y-20">
                     <ApplicationHeader data={application} />
                     
-                    {application.status === "RESUBMISSION" && (
+                    {(application.status === "RESUBMISSION" || application.status === "OPV_REJECTED") && (
                         <div className="bg-amber-50 border border-amber-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="space-y-2">
                                 <h3 className="text-sm font-black text-amber-800 uppercase tracking-widest">Action Required</h3>

@@ -10,11 +10,11 @@ from apps.maps.models import Barangay
 class TestOPVIntelligence:
     def test_opv_dashboard_returns_unified_data(self):
         client = APIClient()
-        user = User.objects.create_user(username='opv_user', role='Opv', password='password')
+        user = User.objects.create_user(username='opv_user', role='Opv', password='password', phone_no='09999999999')
         client.force_authenticate(user=user)
         
         # Setup data: 1 validated application with 10 pigs from "Barangay A" to "Manila"
-        farmer = User.objects.create_user(username='farmer', role='Farmer')
+        farmer = User.objects.create_user(username='farmer', role='Farmer', phone_no='09888888888')
         b1 = Barangay.objects.create(name='Barangay A')
         app = PermitApplication.objects.create(
             farmer=farmer, 

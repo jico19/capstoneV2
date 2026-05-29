@@ -2,12 +2,12 @@ import { useQueryClient, useMutation, useQuery, keepPreviousData } from "@tansta
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
-export const useApplication = (limit = 10, offset = 0, status) => {
+export const useApplication = (limit = 10, offset = 0, status, search) => {
     return useQuery({
-        queryKey: ['application', limit, offset, status],
+        queryKey: ['application', limit, offset, status, search],
         queryFn: async () => {
             const res = await api.get('/application/', {
-                params: { limit, offset, status }
+                params: { limit, offset, status, search }
             })
             console.log(res.data)
             return res.data

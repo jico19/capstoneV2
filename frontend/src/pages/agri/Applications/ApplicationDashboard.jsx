@@ -17,7 +17,7 @@ const ApplicationDashboard = () => {
     const [offset, setOffset] = useState(0);
     const { data, isLoading, isError } = useApplication(limit, offset);
     const navigate = useNavigate();
-    console.log(data.results)
+    
     const applications = data?.results || [];
   
     const count = data?.count || 0;

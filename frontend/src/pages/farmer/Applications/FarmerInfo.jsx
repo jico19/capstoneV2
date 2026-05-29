@@ -62,7 +62,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                     <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Transport Date</label>
                     <div className="relative">
                         <Calendar className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                        <input type="date" className={inputClass} {...register('transport_date', { required: true })} />
+                        <input type="date" min={new Date().toISOString().split('T')[0]} className={inputClass} {...register('transport_date', { required: true })} />
                     </div>
                 </div>
             </div>

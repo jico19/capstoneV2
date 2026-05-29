@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApplication } from "/src/hooks/useApplications";
 import {
@@ -29,13 +29,13 @@ const FarmerApplicationDashboard = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
-    const { data, isLoading, isError } = useApplication(limit, offset, statusFilter);
+
+    const { data, isLoading, isError, isFetching } = useApplication(limit, offset, statusFilter, searchQuery);
     const navigate = useNavigate();
     const applications = data?.results || [];
     const count = data?.count || 0;
 
-    // TODO: Implement server-side or custom client-side search/filter logic here
-    // Currently mapping directly to raw applications from the hook.
+
 
     const summary = useMemo(() => {
         if (!applications) return { total: 0, active: 0, pending: 0 };
@@ -118,16 +118,6 @@ const FarmerApplicationDashboard = () => {
 
                 {/* 3.1 Unified Toolbar */}
                 <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-col lg:flex-row gap-4 justify-between items-center">
-                    <div className="relative w-full lg:w-96">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by ID or Destination..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-10 pl-10 pr-4 bg-white border border-stone-200 rounded-none text-sm font-medium focus:outline-none focus:border-green-700 placeholder:text-stone-300"
-                        />
-                    </div>
 
                     <div className="flex items-center gap-2 w-full lg:w-auto">
                         <div className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 flex-1 lg:flex-none">

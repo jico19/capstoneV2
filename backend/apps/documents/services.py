@@ -1,5 +1,6 @@
 import csv
 import logging
+import os
 from datetime import timedelta
 from io import BytesIO, StringIO
 
@@ -54,6 +55,10 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             BORDER_COLOR = colors.HexColor('#e7e5e4')   # Stone-200
             ACCENT_BG = colors.HexColor('#f5f5f4')      # Stone-100
 
+            ASSET_DIR = os.path.join(settings.BASE_DIR, 'asset')
+            OFFICIAL_LOGO = os.path.join(ASSET_DIR, 'sariaya-official-logo.jpg')
+            AGRI_LOGO = os.path.join(ASSET_DIR, 'sariaya-agri-logo.jpg')
+
             # 1. Page Background & Border
             p.setFillColor(colors.white)
             p.rect(0, 0, width, height, fill=True, stroke=False)
@@ -63,19 +68,28 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             p.rect(0, 0, 0.5*cm, height, fill=True, stroke=False)
 
             # 2. Header Section
+            # Draw Logos
+            logo_size = 2.2*cm
+            if os.path.exists(OFFICIAL_LOGO):
+                p.drawImage(OFFICIAL_LOGO, 1.5*cm, height - 2.8*cm, width=logo_size, height=logo_size, mask='auto')
+            
+            if os.path.exists(AGRI_LOGO):
+                p.drawImage(AGRI_LOGO, width - 1.5*cm - logo_size, height - 2.8*cm, width=logo_size, height=logo_size, mask='auto')
+
+            # Header Text (Centered)
             p.setFillColor(TEXT_MAIN)
-            p.setFont('Helvetica-Bold', 24)
-            p.drawString(1.5*cm, height - 3*cm, "LIVESTOCK TRANSPORT PERMIT")
+            p.setFont('Helvetica-Bold', 20)
+            p.drawCentredString(width/2, height - 1.2*cm, "LIVESTOCK TRANSPORT PERMIT")
 
             p.setFont('Helvetica', 10)
             p.setFillColor(TEXT_MUTED)
-            p.drawString(1.5*cm, height - 3.6*cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
-            p.drawString(1.5*cm, height - 4.1*cm, "SARIAYA, QUEZON PROVINCE, PHILIPPINES")
+            p.drawCentredString(width/2, height - 1.8*cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
+            p.drawCentredString(width/2, height - 2.3*cm, "SARIAYA, QUEZON PROVINCE, PHILIPPINES")
 
             # Reference Number Badge
             badge_width = 6.5*cm
             badge_x = width - badge_width - 1.5*cm  # 1.5cm margin from right edge
-            badge_y = height - 3.5*cm
+            badge_y = height - 4.8*cm
 
             p.setFillColor(ACCENT_BG)
             p.rect(badge_x, badge_y, badge_width, 1.5*cm, fill=True, stroke=False)
@@ -104,14 +118,14 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             # Row 1: Farmer & Application ID
             draw_info_row(
                 1.5*cm,
-                height - 6.5*cm,
+                height - 7.5*cm,
                 "Registered Farmer",
                 (application.farmer.get_full_name() or application.farmer.username).upper(),
                 w=11*cm
             )
             draw_info_row(
                 13*cm,
-                height - 6.5*cm,
+                height - 7.5*cm,
                 "System ID",
                 application.application_id,
                 w=6.5*cm
@@ -120,14 +134,14 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             # Row 2: Origins & Destination
             draw_info_row(
                 1.5*cm,
-                height - 8.2*cm,
+                height - 9.2*cm,
                 "Origin Barangay(s)",
                 origin_barangays,
                 w=11*cm
             )
             draw_info_row(
                 13*cm,
-                height - 8.2*cm,
+                height - 9.2*cm,
                 "Destination",
                 application.destination,
                 w=6.5*cm
@@ -136,21 +150,21 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             # Row 3: Livestock Count & Dates
             draw_info_row(
                 1.5*cm,
-                height - 9.9*cm,
+                height - 10.9*cm,
                 "Total Quantity (Swine)",
                 f"{total_pigs} PIGS",
                 w=6*cm
             )
             draw_info_row(
                 8*cm,
-                height - 9.9*cm,
+                height - 10.9*cm,
                 "Transport Date",
                 application.transport_date.strftime('%B %d, %Y'),
                 w=5.5*cm
             )
             draw_info_row(
                 14*cm,
-                height - 9.9*cm,
+                height - 10.9*cm,
                 "Valid Until",
                 issued_permit.valid_until.strftime('%B %d, %Y'),
                 w=5.5*cm
@@ -159,7 +173,7 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             # Row 4: Purpose
             draw_info_row(
                 1.5*cm,
-                height - 11.6*cm,
+                height - 12.6*cm,
                 "Authorized Purpose",
                 application.purpose or "LIVESTOCK TRADE/TRANSPORT",
                 w=18*cm
@@ -257,23 +271,34 @@ def generate_collection_report_pdf(start_date, end_date):
 
     # Branding Colors
     PRIMARY_GREEN = colors.HexColor('#166534')
+    TEXT_MAIN = colors.HexColor('#1c1917')      # Stone-900
+    TEXT_MUTED = colors.HexColor('#57534e')     # Stone-600
 
-    # Header
-    p.setFillColor(PRIMARY_GREEN)
-    p.rect(0, height - 3*cm, width, 3*cm, fill=True, stroke=False)
+    ASSET_DIR = os.path.join(settings.BASE_DIR, 'asset')
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, 'sariaya-official-logo.jpg')
+    AGRI_LOGO = os.path.join(ASSET_DIR, 'sariaya-agri-logo.jpg')
 
-    p.setFillColor(colors.white)
-    p.setFont('Helvetica-Bold', 18)
-    p.drawString(1*cm, height - 1.2*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE")
+    # Header Section
+    logo_size = 2.0*cm
+    if os.path.exists(OFFICIAL_LOGO):
+        p.drawImage(OFFICIAL_LOGO, 1*cm, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+    
+    if os.path.exists(AGRI_LOGO):
+        p.drawImage(AGRI_LOGO, width - 1*cm - logo_size, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+
+    # Header Text (Centered)
+    p.setFillColor(TEXT_MAIN)
+    p.setFont('Helvetica-Bold', 16)
+    p.drawCentredString(width/2, height - 1.2*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE")
 
     p.setFont('Helvetica', 10)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(width/2, height - 1.8*cm, "COLLECTION REPORT")
+    
     date_range_str = f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     if start_date == end_date:
         date_range_str = start_date.strftime('%B %d, %Y')
-
-    p.drawString(1*cm, height - 1.8*cm, "COLLECTION REPORT")
-    p.setFont('Helvetica-Bold', 10)
-    p.drawString(1*cm, height - 2.4*cm, f"PERIOD: {date_range_str.upper()}")
+    p.drawCentredString(width/2, height - 2.3*cm, f"PERIOD: {date_range_str.upper()}")
 
     # Table Data
     data = [["REF #", "FARMER", "GATEWAY", "DATE", "AMOUNT"]]
@@ -339,20 +364,32 @@ def generate_inspector_report_pdf(start_date, end_date):
 
     # Branding Colors
     PRIMARY_PURPLE = colors.HexColor('#6b21a8')  # High contrast purple
+    TEXT_MAIN = colors.HexColor('#1c1917')      # Stone-900
+    TEXT_MUTED = colors.HexColor('#57534e')     # Stone-600
 
-    # Header
-    p.setFillColor(PRIMARY_PURPLE)
-    p.rect(0, height - 3*cm, width, 3*cm, fill=True, stroke=False)
+    ASSET_DIR = os.path.join(settings.BASE_DIR, 'asset')
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, 'sariaya-official-logo.jpg')
+    AGRI_LOGO = os.path.join(ASSET_DIR, 'sariaya-agri-logo.jpg')
 
-    p.setFillColor(colors.white)
-    p.setFont('Helvetica-Bold', 18)
-    p.drawString(1*cm, height - 1.2*cm, "SARIAYA MUNICIPAL FIELD VERIFICATION")
+    # Header Section
+    logo_size = 2.0*cm
+    if os.path.exists(OFFICIAL_LOGO):
+        p.drawImage(OFFICIAL_LOGO, 1*cm, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+    
+    if os.path.exists(AGRI_LOGO):
+        p.drawImage(AGRI_LOGO, width - 1*cm - logo_size, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+
+    # Header Text (Centered)
+    p.setFillColor(TEXT_MAIN)
+    p.setFont('Helvetica-Bold', 16)
+    p.drawCentredString(width/2, height - 1.2*cm, "SARIAYA MUNICIPAL FIELD VERIFICATION")
 
     p.setFont('Helvetica', 10)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(width/2, height - 1.8*cm, "INSPECTOR DUTY LOGS")
+    
     date_range_str = f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
-    p.drawString(1*cm, height - 1.8*cm, "INSPECTOR DUTY LOGS")
-    p.setFont('Helvetica-Bold', 10)
-    p.drawString(1*cm, height - 2.4*cm, f"AUDIT PERIOD: {date_range_str.upper()}")
+    p.drawCentredString(width/2, height - 2.3*cm, f"AUDIT PERIOD: {date_range_str.upper()}")
 
     # Table Data
     data = [["ID", "INSPECTOR", "FARMER", "TIMESTAMP", "REMARKS"]]
@@ -413,24 +450,36 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
+    # Branding Colors
     PRIMARY_GREEN = colors.HexColor('#166534')
+    TEXT_MAIN = colors.HexColor('#1c1917')      # Stone-900
+    TEXT_MUTED = colors.HexColor('#57534e')     # Stone-600
 
-    # Header block
-    p.setFillColor(PRIMARY_GREEN)
-    p.rect(0, height - 3*cm, width, 3*cm, fill=True, stroke=False)
+    ASSET_DIR = os.path.join(settings.BASE_DIR, 'asset')
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, 'sariaya-official-logo.jpg')
+    AGRI_LOGO = os.path.join(ASSET_DIR, 'sariaya-agri-logo.jpg')
 
-    p.setFillColor(colors.white)
-    p.setFont('Helvetica-Bold', 18)
-    p.drawString(1*cm, height - 1.2*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE")
+    # Header Section
+    logo_size = 2.0*cm
+    if os.path.exists(OFFICIAL_LOGO):
+        p.drawImage(OFFICIAL_LOGO, 1*cm, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+    
+    if os.path.exists(AGRI_LOGO):
+        p.drawImage(AGRI_LOGO, width - 1*cm - logo_size, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+
+    # Header Text (Centered)
+    p.setFillColor(TEXT_MAIN)
+    p.setFont('Helvetica-Bold', 16)
+    p.drawCentredString(width/2, height - 1.2*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE")
 
     p.setFont('Helvetica', 10)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(width/2, height - 1.8*cm, "PERMIT ISSUANCE SUMMARY")
+    
     date_range_str = f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     if start_date == end_date:
         date_range_str = start_date.strftime('%B %d, %Y')
-
-    p.drawString(1*cm, height - 1.8*cm, "PERMIT ISSUANCE SUMMARY")
-    p.setFont('Helvetica-Bold', 10)
-    p.drawString(1*cm, height - 2.4*cm, f"PERIOD: {date_range_str.upper()}")
+    p.drawCentredString(width/2, height - 2.3*cm, f"PERIOD: {date_range_str.upper()}")
 
     # Build table rows: one row per issued permit
     data = [["PERMIT #", "FARMER", "ORIGIN", "DESTINATION", "PIGS", "DATE"]]
@@ -513,24 +562,36 @@ def generate_barangay_distribution_pdf(start_date, end_date):
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
+    # Branding Colors
     ACCENT_BLUE = colors.HexColor('#1e3a5f')
+    TEXT_MAIN = colors.HexColor('#1c1917')      # Stone-900
+    TEXT_MUTED = colors.HexColor('#57534e')     # Stone-600
 
-    # Header block
-    p.setFillColor(ACCENT_BLUE)
-    p.rect(0, height - 3*cm, width, 3*cm, fill=True, stroke=False)
+    ASSET_DIR = os.path.join(settings.BASE_DIR, 'asset')
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, 'sariaya-official-logo.jpg')
+    AGRI_LOGO = os.path.join(ASSET_DIR, 'sariaya-agri-logo.jpg')
 
-    p.setFillColor(colors.white)
-    p.setFont('Helvetica-Bold', 18)
-    p.drawString(1*cm, height - 1.2*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE")
+    # Header Section
+    logo_size = 2.0*cm
+    if os.path.exists(OFFICIAL_LOGO):
+        p.drawImage(OFFICIAL_LOGO, 1*cm, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+    
+    if os.path.exists(AGRI_LOGO):
+        p.drawImage(AGRI_LOGO, width - 1*cm - logo_size, height - 2.5*cm, width=logo_size, height=logo_size, mask='auto')
+
+    # Header Text (Centered)
+    p.setFillColor(TEXT_MAIN)
+    p.setFont('Helvetica-Bold', 16)
+    p.drawCentredString(width/2, height - 1.2*cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE")
 
     p.setFont('Helvetica', 10)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(width/2, height - 1.8*cm, "BARANGAY VOLUME DISTRIBUTION")
+    
     date_range_str = f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     if start_date == end_date:
         date_range_str = start_date.strftime('%B %d, %Y')
-
-    p.drawString(1*cm, height - 1.8*cm, "BARANGAY VOLUME DISTRIBUTION")
-    p.setFont('Helvetica-Bold', 10)
-    p.drawString(1*cm, height - 2.4*cm, f"PERIOD: {date_range_str.upper()}")
+    p.drawCentredString(width/2, height - 2.3*cm, f"PERIOD: {date_range_str.upper()}")
 
     # Build table
     data = [["BARANGAY", "TOTAL APPLICATIONS", "TOTAL PIGS TRANSPORTED"]]

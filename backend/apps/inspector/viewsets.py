@@ -64,6 +64,11 @@ class InspectorLogViewSets(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             log_instance = serializer.save(inspector=request.user)
 
+            # --- Update Permit Status ---
+            application = log_instance.application
+            application.is_checked = True
+            application.save()
+
             # --- Send Notifications ---
             # 1. Notify the Farmer
             Notification.objects.create(

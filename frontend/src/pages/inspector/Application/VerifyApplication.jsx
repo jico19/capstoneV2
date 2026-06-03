@@ -12,22 +12,22 @@ import { toast } from "sonner"
 import DateFormatter from "../../../components/ui/DateFormatter"
 import { useInspectorLogs } from "/src/hooks/useInspectorLogs"
 
-/**
- * Verify Application Page
- * Inspector-specific view for checking permit validity after QR scan.
- * Minimalist, industrial design focused on speed and clarity in the field.
- */
+
 const VerifyApplication = () => {
     const { token } = useParams()
     const navigate = useNavigate()
     const [application, setApplication] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isError, setIsError] = useState(false)
+    const [isAlreadyChecked, setIsAlreadyChecked] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
     const [location, setLocation] = useState({ lat: 0, lng: 0 })
 
     const { createLog } = useInspectorLogs()
     const { register, handleSubmit, formState: { isSubmitting } } = useForm()
+
+    // Derived states
+    const isValid = !!application && application.status !== 'RELEASED' && !application.is_checked;
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -48,6 +48,9 @@ const VerifyApplication = () => {
             try {
                 const res = await api.get(`/application/${token}/verify/`)
                 setApplication(res.data)
+                if (res.data.is_checked) {
+                    setIsAlreadyChecked(true)
+                }
                 setIsLoading(false)
             } catch (err) {
                 setIsError(true)
@@ -109,9 +112,6 @@ const VerifyApplication = () => {
         </div>
     )
 
-    const isExpired = application.valid_until && new Date(application.valid_until) < new Date(new Date().setHours(0,0,0,0))
-    const isValid = ['RELEASED', 'PAID'].includes(application.status) && !isExpired
-
     return (
         <div className="max-w-xl mx-auto p-4 md:p-8 min-h-screen bg-white font-sans">
             {/* Header */}
@@ -122,12 +122,32 @@ const VerifyApplication = () => {
                 <ArrowLeft size={16} /> Cancel
             </button>
 
+            {/* Warning Banner for Already Checked Permits */}
+            {isAlreadyChecked && (
+                <div className="bg-amber-50 border border-amber-200 p-6 mb-8 flex items-start gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="bg-amber-100 p-2 rounded-full">
+                        <AlertTriangle className="text-amber-700" size={24} />
+                    </div>
+                    <div className="space-y-1">
+                        <h3 className="text-sm font-black uppercase tracking-tighter text-amber-800">Already Verified</h3>
+                        <p className="text-[11px] font-bold text-amber-700/80 uppercase tracking-widest leading-relaxed">
+                            This permit was already recorded at a checkpoint. It cannot be rescanned for a new inspection.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="mb-10 flex justify-between items-end border-b border-stone-100 pb-6">
                 <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Security Check</p>
                     <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter">Verification</h1>
                 </div>
-                {isValid ? (
+                {isAlreadyChecked ? (
+                    <div className="bg-amber-50 border border-amber-600 px-3 py-1 flex items-center gap-1.5 text-amber-700">
+                        <AlertTriangle size={14} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Logged</span>
+                    </div>
+                ) : isValid ? (
                     <div className="bg-green-50 border border-green-600 px-3 py-1 flex items-center gap-1.5 text-green-700">
                         <CheckCircle2 size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Valid</span>
@@ -135,7 +155,7 @@ const VerifyApplication = () => {
                 ) : (
                     <div className="bg-red-50 border border-red-600 px-3 py-1 flex items-center gap-1.5 text-red-700">
                         <XCircle size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{isExpired ? 'Expired' : 'Invalid'}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Invalid</span>
                     </div>
                 )}
             </div>
@@ -228,11 +248,15 @@ const VerifyApplication = () => {
 
                     <button
                         type="submit"
-                        disabled={isSubmitting || !isValid}
-                        className="w-full bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-widest text-xs h-14 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                        disabled={isSubmitting || !isValid || isAlreadyChecked}
+                        className="w-full bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-widest text-xs h-14 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:bg-stone-100 disabled:text-stone-400 disabled:border-stone-200"
                     >
                         {isSubmitting ? (
                             <span className="loading loading-spinner loading-sm"></span>
+                        ) : isAlreadyChecked ? (
+                            <>
+                                <ShieldCheck size={16} /> Already Logged
+                            </>
                         ) : (
                             <>
                                 <CheckCircle2 size={16} /> Record Inspection

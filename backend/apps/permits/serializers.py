@@ -89,6 +89,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id", "application_id", "farmer_name", "status", "status_display", "number_of_pigs",
             "destination", "transport_date", "purpose", "all_documents", "origins", "created_at",
+            "is_checked",
         ]
 
     def get_farmer_name(self, obj):

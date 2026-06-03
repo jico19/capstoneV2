@@ -315,6 +315,16 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
                 "expired_at": issued_permit_instance.valid_until
             }, status=status.HTTP_400_BAD_REQUEST)
 
+            # Check if permit has already been checked/scanned
+            # We allow 200 OK here so the inspector can see WHO the permit belongs to,
+            # but the is_checked flag will tell the frontend to disable the submit button.
+            if application_instance.is_checked:
+                serializer = self.get_serializer(application_instance)
+                data = serializer.data
+                data['valid_until'] = issued_permit_instance.valid_until
+                data['is_checked'] = True
+                return Response(data, status=status.HTTP_200_OK)
+
             serializer = self.get_serializer(application_instance)
 
             # --- Formal Audit Entry ---

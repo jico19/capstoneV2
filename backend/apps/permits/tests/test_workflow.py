@@ -60,17 +60,26 @@ class TestPermitWorkflow:
         # 1. Farmer Create Application
         api_client.force_authenticate(user=farmer_user)
         url = reverse('permitapplication-list')
+        
+        # We need fresh files for each field to avoid "The submitted file is empty" 
+        # when the same SimpleUploadedFile is used multiple times in a multipart request.
+        def get_fresh_file():
+            dummy_image.seek(0)
+            return SimpleUploadedFile(dummy_image.name, dummy_image.read(), content_type=dummy_image.content_type)
+        
+        dummy_image.seek(0)
+        
         data = {
             'destination': 'Lucena',
-            'transport_date': '2026-06-01',
+            'transport_date': '2026-06-10',
             'purpose': 'Slaughter',
             'origins[0][barangay]': barangay.id,
             'origins[0][number_of_pigs]': 5,
-            'traders_pass': dummy_image,
-            'handlers_license': dummy_image,
-            'transport_carrier_reg': dummy_image,
-            'origin_0_cis': dummy_image,
-            'origin_0_endorsement_cert': dummy_image
+            'traders_pass': get_fresh_file(),
+            'handlers_license': get_fresh_file(),
+            'transport_carrier_reg': get_fresh_file(),
+            'origin_0_cis': get_fresh_file(),
+            'origin_0_endorsement_cert': get_fresh_file()
         }
         response = api_client.post(url, data, format='multipart')
         assert response.status_code == 201
@@ -99,7 +108,7 @@ class TestPermitWorkflow:
         url = reverse('permitapplication-resubmit', kwargs={'pk': app_id})
         data = {
             'destination': 'Lucena City',
-            'transport_date': '2026-06-01',
+            'transport_date': '2026-06-10',
             'purpose': 'Slaughter',
             'origins[0][id]': application.origins.first().id,
             'origins[0][barangay]': barangay.id,

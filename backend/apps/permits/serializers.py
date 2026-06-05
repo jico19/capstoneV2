@@ -41,6 +41,12 @@ class SubmittedDocumentListSerializer(serializers.ModelSerializer):
         model = SubmittedDocument
         fields = ["id", "document_type", "document_type_display", "file", "ocr", "uploaded_at"]
 
+class SubmittedDocumentWriteSerializer(serializers.ModelSerializer):
+    """Used for document creation and validation"""
+    class Meta:
+        model = SubmittedDocument
+        fields = ["origin", "document_type", "file"]
+
 class TransportOriginListSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/<id>/ (nested)"""
     barangay_name = serializers.CharField(source='barangay.name', read_only=True)

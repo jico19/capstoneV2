@@ -85,7 +85,6 @@ const LoginPage = () => {
                 <div className="w-full max-w-sm space-y-10">
 
                     <div className="space-y-2">
-                        <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-1">Secure Sign In</p>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none">Welcome Back</h1>
                         <p className="text-gray-500 font-medium">Please sign in to access your permit records.</p>
                     </div>

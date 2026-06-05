@@ -34,7 +34,7 @@ class TestPermitSecurity:
         app = PermitApplication.objects.create(
             farmer=farmer_user, 
             destination='Lucena', 
-            transport_date='2026-06-01',
+            transport_date='2026-06-10',
             status=PermitApplication.Status.SUBMITTED
         )
         
@@ -49,7 +49,7 @@ class TestPermitSecurity:
         app = PermitApplication.objects.create(
             farmer=other_farmer, 
             destination='Lucena', 
-            transport_date='2026-06-01'
+            transport_date='2026-06-10'
         )
         
         api_client.force_authenticate(user=farmer_user)
@@ -63,7 +63,7 @@ class TestPermitSecurity:
         app = PermitApplication.objects.create(
             farmer=farmer_user, 
             destination='Lucena', 
-            transport_date='2026-06-01',
+            transport_date='2026-06-10',
             status=PermitApplication.Status.SUBMITTED
         )
         

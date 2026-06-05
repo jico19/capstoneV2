@@ -1,5 +1,5 @@
 # permit related services
-from . import models
+from . import models, serializers
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from apps.api.models import Notification
@@ -31,10 +31,6 @@ def create_permit(files, application, user):
     # Map temporary origin index from request to actual DB ID
     # Since we saved the application and origins first, we can map them
     for key, file in files.items():
-        # Check file size (30MB limit)
-        if file.size > 30 * 1024 * 1024:
-            raise ValidationError(f"File {file.name} exceeds the 30MB size limit.")
-
         # key format: 'traders_pass', 'origin_<temp_index>_<doc_type>'
         if key.startswith('origin_'):
             parts = key.split('_')
@@ -46,12 +42,14 @@ def create_permit(files, application, user):
             doc_type = key
             origin = origins[0]
         
-        data = models.SubmittedDocument.objects.create(
-            origin=origin,
-            document_type=doc_type,
-            file=file
-        )
-        document_ids.append(data.id)
+        serializer = serializers.SubmittedDocumentWriteSerializer(data={
+            'origin': origin.id,
+            'document_type': doc_type,
+            'file': file
+        })
+        serializer.is_valid(raise_exception=True)
+        doc = serializer.save()
+        document_ids.append(doc.id)
         
     Notification.objects.create(
         type=Notification.Type.INFO,
@@ -75,9 +73,6 @@ def resubmit_permit(files, application, user):
         raise ValidationError("Application has no transport origins. Cannot resubmit documents.")
 
     for key, file in files.items():
-        if file.size > 30 * 1024 * 1024:
-            raise ValidationError(f"File {file.name} exceeds the 30MB size limit.")
-
         if key.startswith('origin_'):
             parts = key.split('_')
             if len(parts) < 3: continue
@@ -89,15 +84,28 @@ def resubmit_permit(files, application, user):
             doc_type = key
             origin = origins[0]
         
-        doc, created = models.SubmittedDocument.objects.update_or_create(
-            origin=origin,
-            document_type=doc_type,
-            defaults={'file': file}
-        )
+        # Check if document already exists
+        existing_doc = models.SubmittedDocument.objects.filter(origin=origin, document_type=doc_type).first()
+        
+        if existing_doc:
+            serializer = serializers.SubmittedDocumentWriteSerializer(existing_doc, data={
+                'origin': origin.id,
+                'document_type': doc_type,
+                'file': file
+            })
+        else:
+            serializer = serializers.SubmittedDocumentWriteSerializer(data={
+                'origin': origin.id,
+                'document_type': doc_type,
+                'file': file
+            })
+            
+        serializer.is_valid(raise_exception=True)
+        doc = serializer.save()
         document_ids.append(doc.id)
 
-        if not created:
-             models.OCRValidationResult.objects.filter(document=doc).delete()
+        # Clear OCR results for updated documents
+        models.OCRValidationResult.objects.filter(document=doc).delete()
 
     for d_id in document_ids:
         transaction.on_commit(lambda d_id=d_id: extract_document_info.enqueue(d_id))

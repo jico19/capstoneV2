@@ -9,11 +9,11 @@ from django.core.exceptions import ValidationError
 
 
 def validate_file_size(value):
-    """Validator to ensure file size does not exceed 30MB."""
+    """Validator to ensure file size does not exceed 10MB."""
     filesize = value.size
     
-    if filesize > 30 * 1024 * 1024:
-        raise ValidationError("The maximum file size that can be uploaded is 30MB")
+    if filesize > 10 * 1024 * 1024:
+        raise ValidationError("The maximum file size that can be uploaded is 10MB")
     else:
         return value
 
@@ -48,6 +48,7 @@ class PermitApplication(models.Model):
     is_issued = models.BooleanField(default=False)
     issued_at = models.DateTimeField(null=True, blank=True)
     is_checked = models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     submitted_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)

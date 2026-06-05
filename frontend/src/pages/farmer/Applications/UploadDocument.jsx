@@ -64,7 +64,28 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
 const FileUpload = ({ id, label, desc, register, errors, watch, hasFile }) => (
     <div className="relative">
         <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-none cursor-pointer transition-colors ${hasFile(id) ? "border-green-600 bg-green-50" : errors[id] ? "border-red-600 bg-red-50" : "border-gray-300 hover:border-green-600 hover:bg-gray-50"}`}>
-            <input type="file" className="hidden" accept=".pdf, image/*" {...register(id, { required: `${label} is required` })} />
+            <input 
+                type="file" 
+                className="hidden" 
+                accept=".pdf, .jpg, .jpeg, .png" 
+                {...register(id, { 
+                    required: `${label} is required`,
+                    validate: {
+                        lessThan10MB: (files) => {
+                            if (!files?.[0]) return true;
+                            const isUnderLimit = files[0].size <= 10 * 1024 * 1024;
+                            return isUnderLimit || "This file is too big. Please use a file smaller than 10MB.";
+                        },
+                        acceptedFormats: (files) => {
+                            if (!files?.[0]) return true;
+                            const fileName = files[0].name.toLowerCase();
+                            const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
+                            const isValid = allowedExtensions.some(ext => fileName.endsWith(ext));
+                            return isValid || "Please upload a PDF or a photo (JPG, PNG).";
+                        }
+                    }
+                })} 
+            />
             {hasFile(id) ? (
                 <>
                     <CheckCircle2 className="text-green-600 mb-2" size={24} />

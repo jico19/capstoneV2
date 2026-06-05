@@ -23,6 +23,7 @@ const CreateApplication = () => {
         handleSubmit,
         reset,
         watch,
+        trigger,
         formState: { errors, isSubmitting }
     } = useForm();
 
@@ -69,8 +70,11 @@ const CreateApplication = () => {
         navigate('/farmer/');
     };
 
-    const nextStep = async () => {
-        setStep((prev) => prev + 1);
+    const nextStep = async (fieldsToValidate) => {
+        const isValid = await trigger(fieldsToValidate);
+        if (isValid) {
+            setStep((prev) => prev + 1);
+        }
     };
 
     const prevStep = () => setStep((prev) => prev - 1);
@@ -121,7 +125,16 @@ const CreateApplication = () => {
                         <FarmerInfo
                             register={register}
                             errors={errors}
-                            nextStep={() => nextStep(['origin_barangay', 'destination', 'number_of_pigs', 'transport_date', 'purpose'])}
+                            nextStep={() => {
+                                const step1Fields = [
+                                    'destination', 
+                                    'transport_date', 
+                                    'purpose',
+                                    ...origins.map(o => `barangay_${o.id}`),
+                                    ...origins.map(o => `pigs_${o.id}`)
+                                ];
+                                nextStep(step1Fields);
+                            }}
                             origins={origins}
                             addOrigin={addOrigin}
                             removeOrigin={removeOrigin}
@@ -134,7 +147,18 @@ const CreateApplication = () => {
                             errors={errors}
                             watch={watch}
                             prevStep={prevStep}
-                            nextStep={() => nextStep()}
+                            nextStep={() => {
+                                const step2Fields = [
+                                    'traders_pass', 
+                                    'handlers_license', 
+                                    'transport_carrier_reg',
+                                    ...origins.flatMap(o => [
+                                        `origin_${o.id}_cis`, 
+                                        `origin_${o.id}_endorsement_cert`
+                                    ])
+                                ];
+                                nextStep(step2Fields);
+                            }}
                             origins={origins}
                         />
                     )}

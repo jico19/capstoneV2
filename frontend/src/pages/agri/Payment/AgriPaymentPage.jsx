@@ -22,11 +22,8 @@ const AgriPaymentPage = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
     const { data, isLoading, isError, generateReport } = usePayment(limit, offset);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     
     const today = new Date().toISOString().split('T')[0];
-    const [startDate, setStartDate] = useState(today);
-    const [endDate, setEndDate] = useState(today);
 
     const payments = data?.results || [];
     const count = data?.count || 0;
@@ -37,20 +34,9 @@ const AgriPaymentPage = () => {
         return {
             total: payments.reduce((acc, curr) => acc + curr.amount, 0),
             online: payments.filter(p => p.method === 'ONLINE').length,
-            offline: payments.filter(p => p.method === 'OFFLINE').length
         };
     }, [payments]);
 
-    const handleGenerateReport = () => {
-        if (!startDate || !endDate) return;
-        generateReport.mutate({ start_date: startDate, end_date: endDate }, {
-            onSuccess: () => {
-                setIsModalOpen(false);
-            }
-        });
-    };
-
-    const isInvalidRange = startDate > endDate;
 
     if (isLoading) {
         return (
@@ -84,18 +70,10 @@ const AgriPaymentPage = () => {
                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Payment History</h1>
                     <p className="text-gray-500 text-sm font-medium mt-1">Audit trail for all municipal livestock permit fees.</p>
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                    <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="btn btn-primary flex-1 md:flex-none rounded-none normal-case px-8 font-black uppercase tracking-wider text-xs bg-green-600 hover:bg-green-700 border-none text-white"
-                    >
-                        <Download size={14} className="mr-2" /> Generate Report
-                    </button>
-                </div>
             </div>
 
             {/* 2. KPI Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <KPICard
                     title="Total collections"
                     value={`₱${stats.total.toLocaleString()}`}
@@ -111,15 +89,6 @@ const AgriPaymentPage = () => {
                     icon={CreditCard}
                     colorClass="bg-blue-50 text-blue-600"
                 />
-
-                <KPICard
-                    title="Cashier (Offline)"
-                    value={stats.offline}
-                    subtitle="Payments done through cashier"
-                    icon={HandCoins}
-                    colorClass="bg-amber-50 text-amber-600"
-                />
-
             </div>
 
             {/* 3. Main Ledger Table */}
@@ -200,88 +169,6 @@ const AgriPaymentPage = () => {
                     onPageChange={setOffset} 
                 />
             </div>
-
-            {/* 4. Date Range Selection Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-none w-full max-w-lg p-8 space-y-6 border border-gray-200 shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tighter flex items-center gap-2">
-                                <Calendar size={20} className="text-green-600" />
-                                Custom Report Period
-                            </h2>
-                            <button 
-                                onClick={() => setIsModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-900 transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">From Date</label>
-                                    <input 
-                                        type="date" 
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full border border-gray-200 px-4 py-3 text-sm font-mono font-bold focus:outline-none focus:border-green-600 transition-colors"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">To Date</label>
-                                    <input 
-                                        type="date" 
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="w-full border border-gray-200 px-4 py-3 text-sm font-mono font-bold focus:outline-none focus:border-green-600 transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            {isInvalidRange && (
-                                <div className="bg-red-50 border border-red-100 p-4 flex items-start gap-3">
-                                    <AlertCircle size={16} className="text-red-600 mt-0.5" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-red-600 tracking-wider">Invalid Date Range</p>
-                                        <p className="text-[10px] text-red-500 font-medium leading-tight">The "From" date cannot be later than the "To" date. Please adjust your selection.</p>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            <div className="bg-gray-50 p-4 border border-gray-100">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Selected Range Preview</p>
-                                <div className="flex items-center gap-3 text-sm font-mono font-black text-gray-700">
-                                    <span>{startDate || '...'}</span>
-                                    <ArrowRight size={14} className="text-gray-300" />
-                                    <span>{endDate || '...'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3 pt-4">
-                            <button 
-                                onClick={() => setIsModalOpen(false)}
-                                className="flex-1 px-4 py-3 text-xs font-black uppercase tracking-wider border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={handleGenerateReport}
-                                disabled={isInvalidRange || !startDate || !endDate || generateReport.isPending}
-                                className="flex-1 px-4 py-3 text-xs font-black uppercase tracking-wider bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-300 transition-colors flex items-center justify-center gap-2"
-                            >
-                                {generateReport.isPending ? (
-                                    <><Loader2 size={14} className="animate-spin" /> Preparing Report</>
-                                ) : (
-                                    <><Download size={14} /> Export PDF Report</>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

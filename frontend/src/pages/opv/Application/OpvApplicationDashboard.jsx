@@ -19,13 +19,14 @@ import Pagination from "../../../components/ui/Pagination";
 const OpvApplicationDashboard = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
-    const [search, setSearch] = useState("");
     
     // We fetch only applications relevant to OPV. 
     // The backend ViewSet handles the role-based filtering, 
     // but we can pass status filters if needed.
-    const { data, isLoading, isError } = useApplication(limit, offset);
+    const { data: application, isLoading, isError } = useApplication(limit, offset);
     const navigate = useNavigate();
+
+    console.log(application)
 
     if (isLoading) {
         return (
@@ -41,15 +42,15 @@ const OpvApplicationDashboard = () => {
             <div className="max-w-5xl mx-auto p-12 bg-white">
                 <div className="bg-red-50 border border-red-100 p-10 flex flex-col items-center text-center space-y-4">
                     <h2 className="text-xl font-black text-red-700 uppercase tracking-tighter">Sync Failure</h2>
-                    <p className="text-xs font-bold text-stone-500 uppercase tracking-widest leading-relaxed">Could not retrieve the validation registry.</p>
+                    <p className="text-xs font-bold text-stone-500 uppercase tracking-widest leading-relaxed">Could not retrieve the applications registry.</p>
                     <button onClick={() => window.location.reload()} className="bg-stone-800 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest">Retry Connection</button>
                 </div>
             </div>
         );
     }
 
-    const applications = data?.results || [];
-    const count = data?.count || 0;
+    const applications = application?.results || [];
+    const count = application?.count || 0;
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 bg-white min-h-screen font-sans">
@@ -57,22 +58,8 @@ const OpvApplicationDashboard = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-stone-100 pb-8">
                 <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Veterinary Office</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Validation Registry</h1>
-                </div>
-                
-                {/* Search & Filter - Industrial Style */}
-                <div className="flex items-center gap-2">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                        <input 
-                            type="text" 
-                            placeholder="SEARCH BY ID OR FARMER..." 
-                            className="bg-stone-50 border border-stone-200 px-10 py-3 text-[10px] font-black uppercase tracking-widest focus:border-green-700 outline-none w-64 transition-all"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                </div>
+                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Permit Applications</h1>
+                </div>                    
             </div>
 
             {/* Registry Table Section */}

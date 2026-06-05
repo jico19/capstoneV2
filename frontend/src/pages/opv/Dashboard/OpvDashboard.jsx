@@ -48,12 +48,6 @@ const OpvDashboard = () => {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 leading-none text-green-700">Operational Intelligence</p>
                     <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none italic">OPV Dashboard</h1>
                 </div>
-                <button 
-                    onClick={() => navigate('/opv/application')}
-                    className="bg-green-700 hover:bg-green-800 text-white px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-3"
-                >
-                    <FileSignature size={16} /> Manage Applications <ArrowRight size={14} />
-                </button>
             </div>
 
             {/* KPI Cards: Primary Operational Metrics */}
@@ -95,7 +89,7 @@ const OpvDashboard = () => {
                 <div className="bg-stone-50 border border-stone-200 p-8 md:p-12 rounded-none">
                     <div className="mb-10 border-l-4 border-green-700 pl-6 space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Workflow Statistics</p>
-                        <h2 className="text-2xl font-black text-stone-800 uppercase tracking-tighter leading-tight">Daily.Throughput</h2>
+                        <h2 className="text-2xl font-black text-stone-800 uppercase tracking-tighter leading-tight">Daily Throughput</h2>
                     </div>
                     <div className="bg-white p-6 border border-stone-100">
                         <BarChartComponent
@@ -114,7 +108,7 @@ const OpvDashboard = () => {
                     <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
                         <div className="mb-8 border-l-4 border-green-700 pl-4 space-y-1">
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Geographic Source</p>
-                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Top.Origin.Areas</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Top Barangay Areas</h3>
                         </div>
                         <div className="bg-white p-6 border border-stone-100">
                             <BarChartComponent
@@ -131,7 +125,7 @@ const OpvDashboard = () => {
                     <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
                         <div className="mb-8 border-l-4 border-blue-700 pl-4 space-y-1">
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Traffic Hotspots</p>
-                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Destination.Trends</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Destination Trends</h3>
                         </div>
                         <div className="bg-white p-6 border border-stone-100">
                             <BarChartComponent

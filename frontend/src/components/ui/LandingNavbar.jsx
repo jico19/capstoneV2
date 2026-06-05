@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LandingButton from "/src/components/ui/LandingButton";
-import logoSrc from "/src/assets/farmpass-logo.png";
+import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
 const NAV_LINKS = [
   { key: "home", label: "Home" },
@@ -49,7 +49,9 @@ export default function LandingNavbar({ activePage = "home", children }) {
           href="/"
           className="animate-navbar-drop-logo flex items-center gap-[10px] no-underline shrink-0 max-[910px]:absolute max-[910px]:left-1/2 max-[910px]:-translate-x-1/2"
         >
-          <img src={logoSrc} alt="FarmPass" className="w-9 h-9 rounded-[4px] shrink-0 object-contain" />
+          <div className="flex items-center -space-x-2">
+            <img src={AgriLogo} alt="Sariaya" className="w-8 h-8 rounded-full shrink-0 object-cover border border-stone-100" />
+          </div>
           <span className="font-archivo text-[25px] text-[#1b6b3a] tracking-[0.01em] max-[910px]:hidden">
             FarmPass
           </span>

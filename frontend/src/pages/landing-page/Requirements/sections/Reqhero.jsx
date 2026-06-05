@@ -1,3 +1,5 @@
+import AgriLogo from "../../../../assets/sariaya-agri-logo.jpg";
+
 export default function ReqHero() {
   return (
     <section className="relative bg-brand-primary px-10 pt-20 pb-28 overflow-hidden text-center max-[640px]:px-6 max-[640px]:pt-16 max-[640px]:pb-24">
@@ -21,8 +23,8 @@ export default function ReqHero() {
       <div className="relative z-[1]">
 
         {/* Badge */}
-        <div className="animate-fade-up-1 inline-flex items-center gap-2 px-4 py-[6px] bg-brand-amber/12 border border-brand-amber/30 rounded-full font-jakarta text-[0.72rem] font-bold text-brand-amber tracking-[0.08em] uppercase mb-6">
-          <span className="animate-pulse-dot w-[7px] h-[7px] bg-brand-amber rounded-full" />
+        <div className="animate-fade-up-1 inline-flex items-center gap-2.5 px-3 py-[6px] bg-brand-amber/12 border border-brand-amber/30 rounded-full font-jakarta text-[0.72rem] font-bold text-brand-amber tracking-[0.08em] uppercase mb-6">
+          <img src={AgriLogo} alt="Sariaya Logo" className="w-5 h-5 rounded-full object-cover" />
           Livestock Transport Permit
         </div>
 

@@ -4,6 +4,7 @@ import { ShieldCheck, UserPlus, ArrowRight, Lock, Phone, CheckCircle2, X, Refres
 import { useState, useRef, useEffect } from "react";
 import { api } from "/src/lib/api";
 import { toast } from "sonner";
+import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
 /**
  * OTP Verification Modal Component
@@ -241,9 +242,7 @@ const RegisterPage = () => {
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-12">
-                        <div className="bg-white p-2.5">
-                            <ShieldCheck className="text-green-600" size={28} strokeWidth={2.5} />
-                        </div>
+                        <img src={AgriLogo} alt="Sariaya Agri Logo" className="w-10 h-10 rounded-full object-cover border border-white/20" />
                         <span className="text-white font-black text-2xl tracking-tighter">
                             Livestock<span className="text-green-100">Pass</span>
                         </span>

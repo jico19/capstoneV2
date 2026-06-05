@@ -4,6 +4,7 @@ import MailIcon     from "/src/assets/home-icons/mail.png";
 import LocationIcon from "/src/assets/home-icons/location.png";
 import WebIcon      from "/src/assets/home-icons/web.png";
 import LogoImg      from "/src/assets/farmpass-logo.png";
+import AgriLogo     from "/src/assets/sariaya-agri-logo.jpg";
 
 const NAV_LINKS = [
   { label: "Home",         path: "/"             },
@@ -46,8 +47,11 @@ export default function Footer() {
         <div className="max-[1024px]:col-span-2 max-[600px]:col-span-1">
 
           {/* Logo */}
-          <div className="flex items-center gap-[10px] mb-5">
-            <img src={LogoImg} alt="FarmPass" className="w-[38px] h-[38px] rounded-[8px] object-contain shrink-0" />
+          <div className="flex items-center gap-[12px] mb-5">
+            <div className="flex items-center -space-x-3">
+              <img src={LogoImg} alt="FarmPass" className="w-[42px] h-[42px] rounded-full object-contain shrink-0 bg-white p-0.5 z-[1] border border-white/10" />
+              <img src={AgriLogo} alt="Sariaya Agri" className="w-[38px] h-[38px] rounded-full object-cover shrink-0 border border-white/10" />
+            </div>
             <span className="font-archivo text-[20px] text-white tracking-[0.01em]">FarmPass</span>
           </div>
 

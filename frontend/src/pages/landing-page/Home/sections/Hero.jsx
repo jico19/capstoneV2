@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import LandingButton from "/src/components/ui/LandingButton";
 import MockupImage from "/src/assets/home-icons/mock-up.png";
+import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
 export default function Hero() {
   const navigate = useNavigate();
@@ -27,8 +28,8 @@ export default function Hero() {
         <div className="flex flex-col">
 
           {/* Badge */}
-          <div className="animate-hero-badge opacity-0 inline-flex items-center gap-2 px-4 py-[7px] bg-[#f5a623]/12 border border-[#f5a623]/30 rounded-full text-[12px] font-semibold text-brand-amber tracking-[0.05em] uppercase w-fit mb-7 max-[900px]:mx-auto">
-            <span className="animate-hero-pulse w-[7px] h-[7px] bg-brand-amber rounded-full" />
+          <div className="animate-hero-badge opacity-0 inline-flex items-center gap-2.5 px-3 py-[6px] bg-[#f5a623]/12 border border-[#f5a623]/30 rounded-full text-[12px] font-semibold text-brand-amber tracking-[0.05em] uppercase w-fit mb-7 max-[900px]:mx-auto">
+            <img src={AgriLogo} alt="Sariaya Logo" className="w-5 h-5 rounded-full object-cover" />
             Official Livestock Permit System
           </div>
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import useAuthStore from "/src/store/authContext";
 import { Lock, User, ShieldCheck, ArrowRight, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
+import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
 /**
  * Login Page
@@ -42,9 +43,7 @@ const LoginPage = () => {
                 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-10">
-                        <div className="bg-green-600 p-2.5">
-                            <ShieldCheck className="text-white" size={28} strokeWidth={2.5} />
-                        </div>
+                        <img src={AgriLogo} alt="Sariaya Logo" className="w-10 h-10 rounded-full object-cover border border-green-200" />
                         <span className="text-gray-900 font-black text-2xl tracking-tighter">
                             Livestock<span className="text-green-600">Pass</span>
                         </span>

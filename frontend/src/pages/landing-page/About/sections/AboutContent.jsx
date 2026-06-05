@@ -1,4 +1,5 @@
 import useScrollReveal from "../../../../hooks/useScrollReveal";
+import AgriLogo from "../../../../assets/sariaya-agri-logo.jpg";
 
 const WHY_FEATURES = [
   "Enabling 24/7 online application submission from anywhere",
@@ -85,9 +86,12 @@ export default function AboutContent() {
 
           {/* RIGHT — Office + SDGs */}
           <div ref={officeRef} className="reveal-block">
-            <h2 className="font-archivo text-[clamp(1.25rem,2vw,2rem)] text-brand-primary tracking-[-0.02em] leading-[1.2] pb-3 border-b-2 border-[#e2ece6] mb-4">
-              About Sariaya Agriculture Office
-            </h2>
+            <div className="flex items-center gap-4 pb-3 border-b-2 border-[#e2ece6] mb-4">
+              <img src={AgriLogo} alt="Sariaya Agri" className="w-10 h-10 rounded-full object-cover" />
+              <h2 className="font-archivo text-[clamp(1.25rem,2vw,2rem)] text-brand-primary tracking-[-0.02em] leading-[1.2]">
+                About Sariaya Agriculture Office
+              </h2>
+            </div>
             <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-[#444] leading-[1.8] mb-4">
               The Municipal Agriculture Office of Sariaya, Quezon plays a vital role in supporting the local
               agricultural sector, including livestock farming. The office is responsible for:

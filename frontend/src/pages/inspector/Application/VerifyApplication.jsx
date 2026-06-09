@@ -29,6 +29,9 @@ const VerifyApplication = () => {
     // Derived states
     const isValid = !!application && application.status !== 'RELEASED' && !application.is_checked;
 
+    console.log(application)
+
+
     useEffect(() => {
         const fetchDetails = async () => {
             // 1. Get GPS Location for the audit trail
@@ -55,14 +58,14 @@ const VerifyApplication = () => {
             } catch (err) {
                 setIsError(true)
                 setIsLoading(false)
-                
+
                 const backendError = err.response?.data?.error
-                const displayMessage = typeof backendError === 'string' 
-                    ? backendError 
+                const displayMessage = typeof backendError === 'string'
+                    ? backendError
                     : "This permit could not be verified."
-                
+
                 setErrorMessage(displayMessage)
-                
+
                 toast.error("Verification Failed", {
                     description: displayMessage
                 })
@@ -102,8 +105,8 @@ const VerifyApplication = () => {
                         {errorMessage || "This QR code is either fake, expired, or has been revoked. Do not allow transport."}
                     </p>
                 </div>
-                <button 
-                    onClick={() => navigate('/inspector/scan')} 
+                <button
+                    onClick={() => navigate('/inspector/scan')}
                     className="w-full bg-stone-800 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest"
                 >
                     Try Another Code
@@ -222,9 +225,9 @@ const VerifyApplication = () => {
                                         )}
                                     </div>
                                 </div>
-                                <a 
-                                    href={doc.file} 
-                                    target="_blank" 
+                                <a
+                                    href={doc.file}
+                                    target="_blank"
                                     rel="noreferrer"
                                     className="p-2 border border-stone-200 hover:bg-stone-100 text-stone-600"
                                 >

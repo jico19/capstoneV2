@@ -15,22 +15,24 @@ export const useGetMaps = () => {
 }
 
 
-export const useGetHogSurvey = (startMonth, endMonth, season) => {
+export const useGetHogSurvey = (startMonth, endMonth, season, year) => {
     // Only fetch if:
     // 1. A specific season is selected (wet/dry)
     // 2. OR both months are empty (initial full year view)
     // 3. OR both months are selected (complete custom range)
-    const isReady = (season !== 'all') || (!startMonth && !endMonth) || (!!startMonth && !!endMonth);
+    // 4. OR a year is selected
+    const isReady = (season !== 'all') || (!startMonth && !endMonth) || (!!startMonth && !!endMonth) || !!year;
 
     return useQuery({
-        // The array MUST include months and season so React Query knows to re-fetch when they change
-        queryKey: ['hog-survey', startMonth, endMonth, season],
+        // The array MUST include months, season and year so React Query knows to re-fetch when they change
+        queryKey: ['hog-survey', startMonth, endMonth, season, year],
         queryFn: async () => {
             // Build the params dynamically
             const params = {};
             if (startMonth) params.start_month = startMonth;
             if (endMonth) params.end_month = endMonth;
             if (season) params.season = season;
+            if (year) params.year = year;
 
             // Artificial delay to showcase the loading state
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -43,6 +45,17 @@ export const useGetHogSurvey = (startMonth, endMonth, season) => {
         placeholderData: keepPreviousData,
         enabled: isReady,
         staleTime: 1000 * 60 * 5, // treat data as fresh for 5 mins
+    })
+}
+
+export const useGetHogSurveyYears = () => {
+    return useQuery({
+        queryKey: ['hog-survey-years'],
+        queryFn: async () => {
+            const res = await api.get('/hog-survey/years/');
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 60, // Years don't change often, keep for 1 hour
     })
 }
 
@@ -66,4 +79,23 @@ export const useGetCheckpoints = () => {
         },
         staleTime: 1000 * 60 * 5,
     })
+}
+
+export const useUploadHogSurvey = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.post('/hog-survey/upload_csv/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['hog-survey'] });
+        },
+    });
 }

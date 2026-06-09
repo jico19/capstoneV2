@@ -1,7 +1,8 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import MainMap from "./MainMap"
-import { useGetHogSurvey, useGetMaps } from "/src/hooks/useMaps"
-import { Map as MapIcon, Info, Activity, AlertTriangle, Search, TrendingUp, BarChart3 } from "lucide-react"
+import { useGetHogSurvey, useGetMaps, useGetHogSurveyYears } from "/src/hooks/useMaps"
+import { Map as MapIcon, Info, Activity, AlertTriangle, Search, TrendingUp, BarChart3, Upload } from "lucide-react"
+import HogSurveyUploadModal from "/src/components/HogSurveyUploadModal"
 
 /**
  * Pig Map - Redesigned for Farmer-Friendly clarity and Minimalist Design System
@@ -10,8 +11,10 @@ const AgriMapPage = () => {
     const [startMonth, setStartMonth] = useState('')
     const [endMonth, setEndMonth] = useState('')
     const [selectedSeason, setSelectedSeason] = useState('all')
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString())
     const [activeFilters, setActiveFilters] = useState(['Low', 'Medium', 'High', 'Very High', 'None'])
     const [selectedBarangay, setSelectedBarangay] = useState(null)
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
     const mapRef = useRef(null)
 
     const toggleFilter = (level) => {
@@ -23,12 +26,24 @@ const AgriMapPage = () => {
     }
 
     const { data: map, isLoading: mapLoading, isError: mapError } = useGetMaps()
+    const { data: availableYears, isLoading: yearsLoading } = useGetHogSurveyYears()
+
+    // Update selectedYear when availableYears is loaded if current selectedYear is not in availableYears
+    useEffect(() => {
+        if (availableYears && availableYears.length > 0) {
+            const yearStrings = availableYears.map(y => y.toString());
+            if (!yearStrings.includes(selectedYear)) {
+                setSelectedYear(yearStrings[0]);
+            }
+        }
+    }, [availableYears]);
+
     const {
         data: survey,
         isLoading: surveyLoading,
         isError: surveyError,
         isFetching: surveyFetching
-    } = useGetHogSurvey(startMonth, endMonth, selectedSeason)
+    } = useGetHogSurvey(startMonth, endMonth, selectedSeason, selectedYear)
 
     const handleSearch = (barangayName) => {
         if (barangayName) {
@@ -40,6 +55,10 @@ const AgriMapPage = () => {
         setStartMonth('')
         setEndMonth('')
         setSelectedSeason('all')
+        const defaultYear = availableYears && availableYears.length > 0 
+            ? availableYears[0].toString() 
+            : new Date().getFullYear().toString();
+        setSelectedYear(defaultYear)
         setSelectedBarangay(null)
     }
 
@@ -48,7 +67,7 @@ const AgriMapPage = () => {
         "July", "August", "September", "October", "November", "December"
     ];
 
-    if (mapLoading || surveyLoading) {
+    if (mapLoading || surveyLoading || yearsLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen space-y-4 bg-white">
                 <span className="loading loading-spinner loading-lg text-green-600"></span>
@@ -58,6 +77,10 @@ const AgriMapPage = () => {
             </div>
         );
     }
+
+    const years = availableYears && availableYears.length > 0 
+        ? availableYears.map(y => y.toString()) 
+        : [new Date().getFullYear().toString()];
 
     if (mapError || surveyError) {
         return (
@@ -87,6 +110,14 @@ const AgriMapPage = () => {
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight">Pig Population Map</h1>
                     </div>
                     <p className="text-gray-500 text-sm font-medium">See how many pigs are in each area of Sariaya</p>
+                    
+                    <button 
+                        onClick={() => setIsUploadModalOpen(true)}
+                        className="mt-4 flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-stone-800 transition-colors"
+                    >
+                        <Upload size={14} />
+                        Upload Survey Data
+                    </button>
                 </div>
 
                 <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white border border-gray-100 p-3">
@@ -119,6 +150,19 @@ const AgriMapPage = () => {
                             <option value="all">Full Year</option>
                             <option value="wet">Wet Season (Jun-Nov)</option>
                             <option value="dry">Dry Season (Dec-May)</option>
+                        </select>
+                    </div>
+
+                    {/* Year Selection */}
+                    <div className="px-2 border-b sm:border-b-0 sm:border-r border-gray-100">
+                        <select
+                            className="w-full bg-white px-2 py-2 font-black text-[10px] uppercase tracking-widest focus:outline-none focus:border-green-600 rounded-none cursor-pointer"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                        >
+                            {years.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
                         </select>
                     </div>
 
@@ -262,6 +306,11 @@ const AgriMapPage = () => {
                     />
                 </div>
             </div>
+            
+            <HogSurveyUploadModal 
+                isOpen={isUploadModalOpen} 
+                onClose={() => setIsUploadModalOpen(false)} 
+            />
         </div>
     )
 }

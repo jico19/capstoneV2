@@ -9,6 +9,7 @@ from django.db.models import Avg
 from rest_framework.permissions import IsAuthenticated
 
 from django.db.models import Sum, Q
+import numpy as np
 
 
 class BarangayViewSets(viewsets.ModelViewSet):
@@ -50,15 +51,17 @@ class BarangayViewSets(viewsets.ModelViewSet):
             total_transported=Sum("number_of_pigs")
         )
 
+        # Convert volume_data to a dictionary for faster lookups
+        volume_map = {
+            v["origin_barangay__name"]: v["total_transported"] for v in volume_data
+        }
+
         volume_payload = []
         # Get all barangays to ensure we return 0 for those with no transport activity
         all_barangays = models.Barangay.objects.all()
 
         for b in all_barangays:
-            match = next(
-                (v for v in volume_data if v["origin_barangay__name"] == b.name), None
-            )
-            total = match["total_transported"] if match else 0
+            total = volume_map.get(b.name, 0)
 
             # Classification for Transport Volume
             if total == 0:
@@ -173,22 +176,48 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         return response
 
     @action(detail=False, methods=["get"])
+    def years(self, request):
+        """
+        API Endpoint: GET /api/hog-survey/years/
+        Returns a list of unique years present in the survey data.
+        """
+        years = (
+            models.HogSurvey.objects.filter(survey_date__isnull=False)
+            .values_list("survey_date__year", flat=True)
+            .distinct()
+            .order_by("-survey_date__year")
+        )
+        return Response(list(years))
+
+    @action(detail=False, methods=["get"])
     def survey_data(self, request):
         """
-        API Endpoint: GET /api/current-density/?month={n}&season={wet|dry}
-        Returns aggregated pig density per barangay for the Leaflet heatmap,
+        API Endpoint: GET /api/current-density/?month={n}&season={wet|dry}&year={YYYY}
+        Returns aggregated pig population per barangay for the Leaflet heatmap,
         including type breakdown and historical trends.
         """
         target_month = request.query_params.get("month")
         start_month = request.query_params.get("start_month")
         end_month = request.query_params.get("end_month")
         target_season = request.query_params.get("season")
+        target_year = request.query_params.get("year")
 
         # Start with all survey records
         queryset = self.get_queryset()
 
+        # If no specific filters, we default to the latest year available
+        if not any([target_month, start_month, target_season, target_year]):
+            latest_survey = queryset.order_by("-survey_date").first()
+            if latest_survey:
+                target_year = latest_survey.survey_date.year
+
         # 1. Filter current period
         current_queryset = queryset
+
+        if target_year:
+            current_queryset = current_queryset.filter(
+                survey_date__year=int(target_year)
+            )
 
         if target_month:
             current_queryset = current_queryset.filter(
@@ -216,35 +245,32 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
                     survey_date__month__in=[12, 1, 2, 3, 4, 5]
                 )
 
-        # 2. Aggregate current data (BREAKDOWN included)
+        # 2. Aggregate current data (SUM for total population)
+        # Using Sum instead of Avg because "At a Glance" needs the total population
         aggregated_data = current_queryset.values(
             "barangay__name", "barangay__latitude", "barangay__longitude"
         ).annotate(
-            avg_pigs=Avg("total_pigs"),
-            avg_inahin=Avg("inahin"),
-            avg_barako=Avg("barako"),
-            avg_fattener=Avg("fattener"),
-            avg_grower=Avg("grower"),
-            avg_bulaw=Avg("bulaw"),
-            avg_starter=Avg("starter"),
+            total_pigs_sum=Sum("total_pigs"),
+            inahin_sum=Sum("inahin"),
+            barako_sum=Sum("barako"),
+            fattener_sum=Sum("fattener"),
+            grower_sum=Sum("grower"),
+            bulaw_sum=Sum("bulaw"),
+            starter_sum=Sum("starter"),
         )
-
-        # 3. Handle Historical Trends (Space for ML placeholder)
-        # For simplicity, we compare to the previous month's total average across the same queryset
-        # In a real ML scenario, this 'trend' would be replaced by a prediction model output.
 
         heatmap_payload = []
         for entry in aggregated_data:
-            pigs = int(entry["avg_pigs"] or 0)
+            pigs = int(entry["total_pigs_sum"] or 0)
 
-            # Density Classification
+            # Density Classification (Thresholds can be adjusted for Sum)
             if pigs == 0:
                 density = "None"
-            elif pigs < 50:
+            elif pigs < 100:
                 density = "Low"
-            elif pigs < 200:
-                density = "Medium"
             elif pigs < 500:
+                density = "Medium"
+            elif pigs < 1500:
                 density = "High"
             else:
                 density = "Very High"
@@ -257,16 +283,15 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
                     "total_pigs": pigs,
                     "density_level": density,
                     "breakdown": {
-                        "inahin": int(entry["avg_inahin"] or 0),
-                        "barako": int(entry["avg_barako"] or 0),
-                        "fattener": int(entry["avg_fattener"] or 0),
-                        "grower": int(entry["avg_grower"] or 0),
-                        "bulaw": int(entry["avg_bulaw"] or 0),
-                        "starter": int(entry["avg_starter"] or 0),
+                        "inahin": int(entry["inahin_sum"] or 0),
+                        "barako": int(entry["barako_sum"] or 0),
+                        "fattener": int(entry["fattener_sum"] or 0),
+                        "grower": int(entry["grower_sum"] or 0),
+                        "bulaw": int(entry["bulaw_sum"] or 0),
+                        "starter": int(entry["starter_sum"] or 0),
                     },
-                    # Placeholder for Trend / Future ML Forecast
-                    "trend": "stable",  # Default to stable; logic for 'up'/'down' can be added here
-                    "is_prediction": False,  # Flag to distinguish between real data and ML forecast later
+                    "trend": "stable",
+                    "is_prediction": False,
                 }
             )
 

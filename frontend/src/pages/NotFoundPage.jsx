@@ -11,7 +11,7 @@ const NotFoundPage = () => {
     return (
         <div className="min-h-screen bg-stone-50 flex items-center justify-center p-6">
             <div className="max-w-md w-full bg-white border border-stone-200 p-10 lg:p-16 text-center space-y-8 rounded-none">
-                
+
                 {/* 1. Visual Icon */}
                 <div className="flex justify-center">
                     <div className="p-6 bg-stone-50 border border-stone-200 text-stone-300 rounded-none relative">
@@ -34,8 +34,8 @@ const NotFoundPage = () => {
 
                 {/* 3. Action Button */}
                 <div className="pt-4">
-                    <Link 
-                        to="/" 
+                    <Link
+                        to="/"
                         className="inline-flex items-center justify-center gap-2 w-full bg-green-700 hover:bg-green-600 text-white px-8 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors"
                     >
                         <ArrowLeft size={16} />
@@ -46,7 +46,7 @@ const NotFoundPage = () => {
                 {/* 4. Support Metadata */}
                 <div className="pt-4 border-t border-stone-100">
                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-300">
-                        LivestockPass Municipal Portal
+                        FarmPass Municipal Portal
                     </p>
                 </div>
             </div>

@@ -7,6 +7,7 @@ from .services import send_sms
 
 logger = logging.getLogger(__name__)
 
+
 @task()
 def send_via_status(application_id, attempt=3):
     """
@@ -26,55 +27,66 @@ def send_via_status(application_id, attempt=3):
 
     phone_no = application.farmer.phone_no
     current_status = application.status
-    masked_phone = f"{phone_no[:4]}****{phone_no[-2:]}" if len(phone_no) > 6 else phone_no
+    masked_phone = (
+        f"{phone_no[:4]}****{phone_no[-2:]}" if len(phone_no) > 6 else phone_no
+    )
 
     # Guard: Check if an SMS for this specific status has already been sent to this number
     already_sent = SMSLog.objects.filter(
         phone_number=phone_no,
         status_captured=current_status,
-        message_type=SMSLog.Type.NOTIFICATION
+        message_type=SMSLog.Type.NOTIFICATION,
     ).exists()
 
     if already_sent:
-        logger.info(f"SMS already sent for {application.application_id} status {current_status}. Skipping.")
+        logger.info(
+            f"SMS already sent for {application.application_id} status {current_status}. Skipping."
+        )
         return
 
-    logger.info(f"Preparing status update for {application.application_id} (Status: {current_status})")
-    
+    logger.info(
+        f"Preparing status update for {application.application_id} (Status: {current_status})"
+    )
+
     message = ""
     Status = permits.PermitApplication.Status
 
     if current_status == Status.OPV_VALIDATED:
-        message = f"LIVESTOCKPASS: Your application {application.application_id} has been validated by the Office of the Provincial Veterinarian. Please wait for further updates regarding permit issuance."
+        message = f"FarmPass: Your application {application.application_id} has been validated by the Office of the Provincial Veterinarian. Please wait for further updates regarding permit issuance."
     elif current_status == Status.OPV_REJECTED:
-        message = f"LIVESTOCKPASS: Your application {application.application_id} has been rejected by the OPV. Please log in to your portal account to view the remarks."
+        message = f"FarmPass: Your application {application.application_id} has been rejected by the OPV. Please log in to your portal account to view the remarks."
     elif current_status == Status.RESUBMISSION:
-        message = f"LIVESTOCKPASS: Your application {application.application_id} requires resubmission. Please check the remarks in your portal account and update your application."
+        message = f"FarmPass: Your application {application.application_id} requires resubmission. Please check the remarks in your portal account and update your application."
     elif current_status in [Status.PERMIT_ISSUED, Status.PAYMENT_PENDING]:
-        message = f"LIVESTOCKPASS: Your permit for application {application.application_id} has been issued and is now awaiting payment. Please settle the fees to release your permit."
+        message = f"FarmPass: Your permit for application {application.application_id} has been issued and is now awaiting payment. Please settle the fees to release your permit."
     elif current_status == Status.RELEASED:
-        message = f"LIVESTOCKPASS: Your permit for application {application.application_id} has been released. You may now download and use your permit. Thank you!"
+        message = f"FarmPass: Your permit for application {application.application_id} has been released. You may now download and use your permit. Thank you!"
 
     if message:
-        success = send_sms(
-            phone_number=phone_no,
-            message=message
-        )
+        success = send_sms(phone_number=phone_no, message=message)
 
         if success:
             # Create a SMS Log with the captured status
             SMSLog.objects.create(
                 phone_number=phone_no,
                 message_type=SMSLog.Type.NOTIFICATION,
-                status_captured=current_status
+                status_captured=current_status,
             )
-            logger.info(f"Successfully sent and logged status update for {application.application_id}")
+            logger.info(
+                f"Successfully sent and logged status update for {application.application_id}"
+            )
         else:
             # Handle failure with retry
             MAX_ATTEMPTS = 3
             if attempt < MAX_ATTEMPTS:
                 wait_time = 60 * attempt  # 60s, 120s
-                logger.warning(f"SMS delivery failed for {application.application_id} to {masked_phone}. Retrying in {wait_time}s... (Attempt {attempt})")
-                send_via_status.using(run_after=timedelta(seconds=wait_time)).enqueue(application_id)
+                logger.warning(
+                    f"SMS delivery failed for {application.application_id} to {masked_phone}. Retrying in {wait_time}s... (Attempt {attempt})"
+                )
+                send_via_status.using(run_after=timedelta(seconds=wait_time)).enqueue(
+                    application_id
+                )
             else:
-                logger.error(f"Max attempts reached for SMS status update on application {application.application_id}")
+                logger.error(
+                    f"Max attempts reached for SMS status update on application {application.application_id}"
+                )

@@ -20,7 +20,7 @@
 ```markdown
 # Git Commit Conventions
 
-This document defines the standard for commit messages in the **LivestockPass** project. Following these rules ensures a clean, searchable history and provides a clear audit trail for the Sariaya Municipal Agriculture Office.
+This document defines the standard for commit messages in the **FarmPass** project. Following these rules ensures a clean, searchable history and provides a clear audit trail for the Sariaya Municipal Agriculture Office.
 
 ## 🏗️ The Format
 
@@ -69,7 +69,7 @@ Include the Task or Ticket ID in brackets at the end of the subject line (e.g., 
 
 ## 💡 Why Good Logs Matter
 
-1. **Auditability:** LivestockPass is used for government permits. We need to know exactly when and why logic changes.
+1. **Auditability:** FarmPass is used for government permits. We need to know exactly when and why logic changes.
 2. **Searchability:** Easily find when a feature was introduced or a bug was fixed using `git log --grep`.
 3. **Collaboration:** Clear messages help the team understand your intent without reading every line of code.
 4. **Automation:** Consistent formats allow for automated changelog generation and release notes.

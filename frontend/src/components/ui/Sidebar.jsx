@@ -27,13 +27,12 @@ const SidebarItem = ({ icon: Icon, label, to, badgeCount = 0 }) => {
     const isActive = location.pathname === to;
 
     return (
-        <Link 
-            to={to} 
-            className={`flex items-center gap-3 px-6 py-3 transition-colors duration-150 relative ${
-                isActive 
-                ? "bg-green-50 text-green-700 border-r-2 border-green-700" 
+        <Link
+            to={to}
+            className={`flex items-center gap-3 px-6 py-3 transition-colors duration-150 relative ${isActive
+                ? "bg-green-50 text-green-700 border-r-2 border-green-700"
                 : "text-stone-600 border-r-2 border-transparent hover:bg-stone-50 hover:text-stone-900"
-            }`}
+                }`}
         >
             <div className="relative">
                 <Icon size={18} className={isActive ? "text-green-700" : "text-stone-400"} />
@@ -58,12 +57,12 @@ const MenuSection = ({ title, children }) => (
 );
 
 const Sidebar = ({ children }) => {
-    const { user, isAuthenticated, logout} = useAuthStore();
+    const { user, isAuthenticated, logout } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
 
     const isMobileFirstRole = user && (user.role === 'Farmer' || user.role === 'Inspector');
-    
+
     // Fetch unread notification count for the badge
     const { data: unreadCount = 0 } = useGetUnreadNotificationCount();
 
@@ -74,41 +73,41 @@ const Sidebar = ({ children }) => {
             case 'Farmer':
                 return (
                     <MenuSection title="Farmer Services">
-                        <SidebarItem icon={LayoutDashboard} label="Home Dashboard" to='/farmer/'/>
-                        <SidebarItem icon={FilesIcon} label="My Applications" to='/farmer/application'/>
-                        <SidebarItem icon={FilePlus2} label="Apply for Permit" to='/farmer/application/create/'/>
-                        <SidebarItem icon={Bell} label="Your Messages" to="/farmer/notification/" badgeCount={unreadCount}/>
-                        <SidebarItem icon={Settings} label="Your Settings" to="/farmer/settings/"/>
+                        <SidebarItem icon={LayoutDashboard} label="Home Dashboard" to='/farmer/' />
+                        <SidebarItem icon={FilesIcon} label="My Applications" to='/farmer/application' />
+                        <SidebarItem icon={FilePlus2} label="Apply for Permit" to='/farmer/application/create/' />
+                        <SidebarItem icon={Bell} label="Your Messages" to="/farmer/notification/" badgeCount={unreadCount} />
+                        <SidebarItem icon={Settings} label="Your Settings" to="/farmer/settings/" />
                     </MenuSection>
                 );
             case 'Agri':
                 return (
                     <MenuSection title="Agri Office">
-                        <SidebarItem icon={LayoutDashboard} label="Overview" to='/agri/'/>
-                        <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application'/>
-                        <SidebarItem icon={CreditCard} label="Payments"to='/agri/payment' />
-                        <SidebarItem icon={Map} label="Map" to='/agri/map/pig-density/'/>
-                        <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/'/>
-                        <SidebarItem icon={BarChart3} label="Reports" to='/agri/reports/'/>
-                        <SidebarItem icon={Settings} label="Settings" to='/agri/settings/'/>
+                        <SidebarItem icon={LayoutDashboard} label="Overview" to='/agri/' />
+                        <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application' />
+                        <SidebarItem icon={CreditCard} label="Payments" to='/agri/payment' />
+                        <SidebarItem icon={Map} label="Map" to='/agri/map/pig-density/' />
+                        <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/' />
+                        <SidebarItem icon={BarChart3} label="Reports" to='/agri/reports/' />
+                        <SidebarItem icon={Settings} label="Settings" to='/agri/settings/' />
                     </MenuSection>
                 );
             case 'Opv':
                 return (
                     <MenuSection title="Staff Portal">
-                        <SidebarItem icon={LayoutDashboard} label="Overview" to="/opv/"/>
-                        <SidebarItem icon={FilesIcon} label="Applications" to="/opv/application/"/>
-                        <SidebarItem icon={Settings} label="Settings" to="/opv/settings/"/>
+                        <SidebarItem icon={LayoutDashboard} label="Overview" to="/opv/" />
+                        <SidebarItem icon={FilesIcon} label="Applications" to="/opv/application/" />
+                        <SidebarItem icon={Settings} label="Settings" to="/opv/settings/" />
                     </MenuSection>
                 );
             case 'Inspector':
                 return (
                     <MenuSection title="Field Check">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/inspector/"/>
-                        <SidebarItem icon={QrCode} label="Scan QR Code" to='/inspector/scan/'/>
-                        <SidebarItem icon={History} label="Inspection History" to='/inspector/history/'/>
-                        <SidebarItem icon={Bell} label="Notifications" to='/inspector/notification/' badgeCount={unreadCount}/>
-                        <SidebarItem icon={Settings} label="Settings" to='/inspector/settings/'/>
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/inspector/" />
+                        <SidebarItem icon={QrCode} label="Scan QR Code" to='/inspector/scan/' />
+                        <SidebarItem icon={History} label="Inspection History" to='/inspector/history/' />
+                        <SidebarItem icon={Bell} label="Notifications" to='/inspector/notification/' badgeCount={unreadCount} />
+                        <SidebarItem icon={Settings} label="Settings" to='/inspector/settings/' />
                     </MenuSection>
                 );
             case 'Admin':
@@ -120,7 +119,7 @@ const Sidebar = ({ children }) => {
                     </MenuSection>
                 );
             default:
-                return <SidebarItem icon={LayoutDashboard} label="Home" to="/"/>;
+                return <SidebarItem icon={LayoutDashboard} label="Home" to="/" />;
         }
     };
 
@@ -137,7 +136,7 @@ const Sidebar = ({ children }) => {
                             <Menu size={24} />
                         </label>
                         <div className="flex-1 ml-2 font-black text-green-700 tracking-tighter text-xl">
-                            LivestockPass
+                            FarmPass
                         </div>
                     </header>
                 )}
@@ -146,22 +145,21 @@ const Sidebar = ({ children }) => {
                 {isMobileFirstRole && (
                     <header className="navbar lg:hidden bg-white border-b border-stone-100 px-6">
                         <div className="flex-1 font-black text-green-700 tracking-tighter text-xl">
-                            LivestockPass
+                            FarmPass
                         </div>
-                        
+
                         <div className="flex items-center gap-4">
                             {/* Notification Bell with Badge */}
-                            <Link 
+                            <Link
                                 to={`/${user.role.toLowerCase()}/notification/`}
-                                className={`relative p-2 transition-colors ${
-                                    location.pathname.includes('/notification/') ? 'text-green-700' : 'text-stone-400'
-                                }`}
+                                className={`relative p-2 transition-colors ${location.pathname.includes('/notification/') ? 'text-green-700' : 'text-stone-400'
+                                    }`}
                             >
                                 <Bell size={20} />
                                 <NotificationBadge count={unreadCount} />
                             </Link>
 
-                            <button 
+                            <button
                                 onClick={() => {
                                     logout()
                                     navigate('/')
@@ -192,7 +190,7 @@ const Sidebar = ({ children }) => {
                     {/* App Branding */}
                     <div className="px-6 pt-10 pb-6">
                         <h1 className="text-xl font-black text-stone-900 flex items-center gap-1 leading-none tracking-tighter">
-                            Livestock<span className="text-green-700">Pass</span>
+                            Farm<span className="text-green-700">Pass</span>
                         </h1>
                         <p className="text-[11px] font-black text-stone-400 mt-2 tracking-widest uppercase">
                             Municipal Service Portal
@@ -208,7 +206,7 @@ const Sidebar = ({ children }) => {
 
                     {/* Sidebar Footer */}
                     <div className="p-4 border-t border-stone-100">
-                        <button 
+                        <button
                             onClick={() => {
                                 logout()
                                 navigate('/')

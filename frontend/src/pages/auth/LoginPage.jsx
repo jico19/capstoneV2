@@ -22,7 +22,7 @@ const LoginPage = () => {
         try {
             await login(data);
             toast.success("Welcome Back", {
-                description: "You have successfully signed in to LivestockPass.",
+                description: "You have successfully signed in to FarmPass.",
             });
             navigate("/");
         } catch (err) {
@@ -40,7 +40,7 @@ const LoginPage = () => {
             <div className="hidden md:flex md:w-1/2 bg-green-50 p-12 flex-col justify-between relative overflow-hidden border-r border-gray-100">
                 {/* Minimalist Decoration */}
                 <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-green-100/50 rounded-none rotate-12"></div>
-                
+
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-10">
                         <img src={AgriLogo} alt="Sariaya Logo" className="w-10 h-10 rounded-full object-cover border border-green-200" />
@@ -48,7 +48,7 @@ const LoginPage = () => {
                             Livestock<span className="text-green-600">Pass</span>
                         </span>
                     </div>
-                    
+
                     <div className="space-y-4">
                         <h2 className="text-5xl font-black text-gray-900 leading-[0.95] tracking-tight max-w-md">
                             Your Simple Way to <br />
@@ -99,9 +99,8 @@ const LoginPage = () => {
                                     <input
                                         type="text"
                                         {...register("username", { required: "Please enter your username." })}
-                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${
-                                            errors.username ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
-                                        }`}
+                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
+                                            }`}
                                         placeholder="e.g. juan_farmer"
                                     />
                                 </div>
@@ -118,9 +117,8 @@ const LoginPage = () => {
                                     <input
                                         type="password"
                                         {...register("password", { required: "Please enter your password." })}
-                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${
-                                            errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
-                                        }`}
+                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
+                                            }`}
                                         placeholder="••••••••"
                                     />
                                 </div>

@@ -82,7 +82,7 @@ const PaymentSuccess = () => {
                                     Payment Successful
                                 </h1>
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-green-100/70">
-                                    LivestockPass Secure Transaction
+                                    FarmPass Secure Transaction
                                 </p>
                             </div>
                         </div>
@@ -139,7 +139,7 @@ const PaymentSuccess = () => {
                         {/* Footer Logo */}
                         <div className="p-6 border-t border-stone-100 bg-white flex items-center justify-center gap-2 opacity-30 grayscale">
                             <FileCheck2 size={16} className="text-stone-800" />
-                            <span className="text-[10px] font-black text-stone-800 uppercase tracking-[0.3em]">LivestockPass</span>
+                            <span className="text-[10px] font-black text-stone-800 uppercase tracking-[0.3em]">FarmPass</span>
                         </div>
                     </div>
                 )}
@@ -175,7 +175,7 @@ const PaymentSuccess = () => {
                 {status !== 'success' && (
                     <div className="pt-4 border-t border-stone-100 flex items-center justify-center gap-2">
                         <FileCheck2 size={14} className="text-stone-300" />
-                        <span className="text-[9px] font-black text-stone-300 uppercase tracking-[0.2em]">LivestockPass Secure Payment</span>
+                        <span className="text-[9px] font-black text-stone-300 uppercase tracking-[0.2em]">FarmPass Secure Payment</span>
                     </div>
                 )}
             </div>

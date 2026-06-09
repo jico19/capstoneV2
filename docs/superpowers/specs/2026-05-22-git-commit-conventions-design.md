@@ -4,7 +4,7 @@
 **Status:** Approved
 
 ## Goal
-Establish a professional, consistent, and traceable commit history for the LivestockPass project. This ensures that the Sariaya Municipal Agriculture Office has a clear audit trail and developers can easily navigate the codebase's evolution.
+Establish a professional, consistent, and traceable commit history for the FarmPass project. This ensures that the Sariaya Municipal Agriculture Office has a clear audit trail and developers can easily navigate the codebase's evolution.
 
 ## Convention: Conventional Commits + IDs
 

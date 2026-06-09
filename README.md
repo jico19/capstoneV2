@@ -1,11 +1,11 @@
-# 🐖 LivestockPass
+# 🐖 FarmPass
 ### **Digital Permit & Hog Management System for Sariaya**
 
-LivestockPass is a modern, paperless platform built specifically for the **Sariaya Municipal Agriculture Office**. It simplifies the process of getting, checking, and managing livestock transport permits, making it easier for farmers and faster for government staff.
+FarmPass is a modern, paperless platform built specifically for the **Sariaya Municipal Agriculture Office**. It simplifies the process of getting, checking, and managing livestock transport permits, making it easier for farmers and faster for government staff.
 
 ---
 
-## ✨ How LivestockPass Helps You
+## ✨ How FarmPass Helps You
 
 ### 🌾 For Farmers: Apply from Anywhere
 *   **No More Paperwork:** Upload your clearances and licenses directly from your phone or computer.

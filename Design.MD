@@ -1,11 +1,11 @@
-# LivestockPass Design System
+# FarmPass Design System
 *Version 2.0 — Production Reference*
 
 ---
 
 ## 1. Philosophy
 
-LivestockPass is built on **high-signal minimalism** — a pure white canvas, precise typography, and a surgical use of color to communicate state. The aesthetic is clean, official, and approachable for all roles: Farmers, Agri Officers, OPV Staff, and Inspectors.
+FarmPass is built on **high-signal minimalism** — a pure white canvas, precise typography, and a surgical use of color to communicate state. The aesthetic is clean, official, and approachable for all roles: Farmers, Agri Officers, OPV Staff, and Inspectors.
 
 **Core Principles:**
 - White-first surfaces for maximum readability
@@ -247,7 +247,7 @@ Used for permit status, application state, and flags.
 
 ## 8. Plain Language Guidelines
 
-LivestockPass is a government service used by farmers, barangay staff, and municipal agriculture workers — not software engineers. Most users are not tech-savvy. Every word in the UI must be immediately understandable by someone who may have only a grade school education or limited experience with computers.
+FarmPass is a government service used by farmers, barangay staff, and municipal agriculture workers — not software engineers. Most users are not tech-savvy. Every word in the UI must be immediately understandable by someone who may have only a grade school education or limited experience with computers.
 
 **The rule: if a farmer from Sariaya wouldn't understand it at a glance, rewrite it.**
 

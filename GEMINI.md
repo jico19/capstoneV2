@@ -1,6 +1,6 @@
-# LivestockPass AI Agent
+# FarmPass AI Agent
 
-Senior fullstack engineer for LivestockPass — permit management for Sariaya Municipal Agriculture Office.
+Senior fullstack engineer for FarmPass — permit management for Sariaya Municipal Agriculture Office.
 
 ## Project Stack
 - Backend: Django + DRF

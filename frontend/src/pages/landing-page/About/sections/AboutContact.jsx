@@ -123,60 +123,10 @@ export default function AboutContact() {
         </div>
 
         {/* Two-column layout */}
-        <div className="flex gap-8 items-stretch max-[900px]:flex-col">
-
-          {/* LEFT */}
-          <div ref={formRef} className="reveal-block flex-1 min-w-0 w-full bg-white/[0.05] border border-white/[0.10] rounded-[1.2rem] p-8 box-border backdrop-blur-sm flex flex-col max-[640px]:p-6">
-            <h2 className="font-archivo text-[clamp(1.3rem,2.2vw,1.7rem)] text-white tracking-[-0.02em] mb-6">
-              Send Us a Message
-            </h2>
-
-            {submitted ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4">
-                <div className="animate-success-pop w-16 h-16 bg-brand-mint/15 border-[1.5px] border-brand-mint rounded-full flex items-center justify-center text-[1.5rem] text-brand-mint mx-auto mb-4">✓</div>
-                <h3 className="font-archivo text-[1.4rem] text-white mb-2">Message Sent!</h3>
-                <p className="font-jakarta text-[0.95rem] text-white/50">We'll get back to you within 24 hours during office hours.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 flex-1">
-                <input type="text" name="name" value={form.name} onChange={handleChange}
-                  placeholder="Full Name" className={inputCls} />
-                <input type="text" name="contact" value={form.contact} onChange={handleChange}
-                  placeholder="Email Address" className={inputCls} />
-                <select name="subject" value={form.subject} onChange={handleChange}
-                  className={`${inputCls} cursor-pointer pr-10 appearance-none`}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat", backgroundPosition: "right 1rem center",
-                    color: form.subject === "" ? "rgba(255,255,255,0.30)" : "#fff",
-                  }}>
-                  <option value="" disabled style={{ background: "#1b4332" }}>Subject</option>
-                  {SUBJECTS.map(s => <option key={s} value={s} style={{ background: "#1b4332" }}>{s}</option>)}
-                </select>
-                <textarea name="message" value={form.message} onChange={handleChange}
-                  placeholder="Your Message" rows={5}
-                  className={`${inputCls} resize-none flex-1 min-h-[8rem]`} />
-
-                <LandingButton
-                  label="Send Message →"
-                  bgColor="#f5a623"
-                  textColor="#1b4332"
-                  baseColor="#5a3b00"
-                  disabled={!form.name || !form.contact || !form.subject || !form.message}
-                  onClick={handleSubmit}
-                  style={{ marginTop: "0.25rem" }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT */}
-          <div ref={rightRef} className="reveal-block flex-1 min-w-0 w-full flex flex-col gap-4 box-border">
+          <div ref={rightRef} className="grid grid-cols-2 gap-4 reveal-block min-w-0 w-full box-border">
             {CARDS.map((card, i) => <ContactCard key={i} card={card} />)}
           </div>
-
         </div>
-      </div>
 
       {/* Wave bottom */}
       <div className="leading-[0] relative z-[1]">

@@ -358,7 +358,7 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
             application_instance = issued_permit_instance.application
 
             # Check if permit is released (paid)
-
+            # TODO: Uncomment this later
             # Check if permit has expired
             if issued_permit_instance.valid_until < timezone.now().date():
                 # Audit failure
@@ -376,11 +376,10 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Check if permit has already been checked/scanned
-            # We allow 200 OK here so the inspector can see WHO the permit belongs to,
-            # but the is_checked flag will tell the frontend to disable the submit button.
             if application_instance.is_checked:
-                serializer = self.get_serializer(application_instance)
+                serializer = self.get_serializer(
+                    application_instance, context={"request": request}
+                )
                 data = serializer.data
                 data["valid_until"] = issued_permit_instance.valid_until
                 data["is_checked"] = True

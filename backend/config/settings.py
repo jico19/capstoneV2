@@ -197,7 +197,7 @@ SMS_PASSWORD = os.environ.get("SMS_PASSWORD")
 TASKS = {
     "default": {"BACKEND": "django_tasks_db.DatabaseBackend", "QUEUES": ["default"]}
 }
-
+            
 
 # DJANGO CACHE
 CACHES = {

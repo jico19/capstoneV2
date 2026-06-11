@@ -66,6 +66,7 @@ export const useCreateApplicataion = () => {
             query.invalidateQueries({ queryKey: ['application'] })
         }, onError: (error) => {
             toast.error("There is something wrong...")
+            console.log(error.response)
         }
     })
 }

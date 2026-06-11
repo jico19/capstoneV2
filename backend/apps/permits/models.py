@@ -37,7 +37,7 @@ class PermitApplication(models.Model):
         PAYMENT_PENDING     = 'PAYMENT_PENDING',     'Payment pending'
         RELEASED            = 'RELEASED',            'Released' 
 
-    application_id  = models.CharField(max_length=12, unique=True, editable=False, default=document_id)
+    application_id  = models.CharField(max_length=32, unique=True, editable=False, default=document_id)
     farmer = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=50, choices=Status.choices, default=Status.DRAFT)
 

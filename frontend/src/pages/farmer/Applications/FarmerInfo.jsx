@@ -7,7 +7,8 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
     if (isLoading) return <div className="p-10 text-center font-bold text-gray-400 uppercase tracking-widest text-xs">Loading Map Data...</div>;
     if (isError) return <div className="p-10 text-center text-red-600 font-bold bg-red-50 uppercase tracking-widest text-xs">Failed to load barangay data.</div>;
 
-    const inputClass = "w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900";
+    const inputClass = (error) => `w-full pl-10 pr-4 py-3 bg-white border ${error ? 'border-red-600' : 'border-gray-200'} rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900`;
+    const selectClass = (error) => `w-full px-4 py-3 bg-white border ${error ? 'border-red-600' : 'border-gray-200'} rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900`;
 
     return (
         <div className="space-y-8">
@@ -31,14 +32,16 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Barangay</label>
-                                <select {...register(`barangay_${origin.id}`, { required: true })} className={inputClass}>
+                                <select {...register(`barangay_${origin.id}`, { required: true })} className={selectClass(errors[`barangay_${origin.id}`])}>
                                     <option value="">-- SELECT --</option>
                                     {map?.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                                 </select>
+                                {errors[`barangay_${origin.id}`] && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Required</p>}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Number of Pigs</label>
-                                <input type="number" {...register(`pigs_${origin.id}`, { required: true })} className={inputClass} placeholder="0" />
+                                <input type="number" {...register(`pigs_${origin.id}`, { required: true })} className={selectClass(errors[`pigs_${origin.id}`])} placeholder="0" />
+                                {errors[`pigs_${origin.id}`] && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Required</p>}
                             </div>
                         </div>
                     </div>
@@ -55,21 +58,24 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                     <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Destination</label>
                     <div className="relative">
                         <Navigation className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                        <input type="text" className={inputClass} {...register('destination', { required: true })} />
+                        <input type="text" className={inputClass(errors.destination)} {...register('destination', { required: true })} />
                     </div>
+                    {errors.destination && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Destination is required</p>}
                 </div>
                 <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Transport Date</label>
                     <div className="relative">
                         <Calendar className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                        <input type="date" min={new Date().toISOString().split('T')[0]} className={inputClass} {...register('transport_date', { required: true })} />
+                        <input type="date" min={new Date().toISOString().split('T')[0]} className={inputClass(errors.transport_date)} {...register('transport_date', { required: true })} />
                     </div>
+                    {errors.transport_date && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Date is required</p>}
                 </div>
             </div>
 
             <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Purpose</label>
-                <textarea className={`${inputClass} min-h-[100px]`} {...register('purpose', { required: true })} />
+                <textarea className={`${inputClass(errors.purpose).replace('pl-10', 'px-4')} min-h-[100px]`} {...register('purpose', { required: true })} />
+                {errors.purpose && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Purpose is required</p>}
             </div>
 
             <div className="flex justify-end pt-6 border-t border-gray-100">

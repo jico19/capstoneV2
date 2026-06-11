@@ -6,6 +6,7 @@ import ReviewApplication from "./ReviewApplication";
 import { Check, ArrowRight } from "lucide-react";
 import { useCreateApplicataion } from "/src/hooks/useApplications";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 /**
  * Create Application Flow
@@ -70,10 +71,12 @@ const CreateApplication = () => {
         navigate('/farmer/');
     };
 
-    const nextStep = async (fieldsToValidate) => {
+    const nextStep = async (fieldsToValidate, errorMsg = "Please fill in all required details.") => {
         const isValid = await trigger(fieldsToValidate);
         if (isValid) {
             setStep((prev) => prev + 1);
+        } else {
+            toast.error(errorMsg);
         }
     };
 
@@ -133,7 +136,7 @@ const CreateApplication = () => {
                                     ...origins.map(o => `barangay_${o.id}`),
                                     ...origins.map(o => `pigs_${o.id}`)
                                 ];
-                                nextStep(step1Fields);
+                                nextStep(step1Fields, "Please fill in all required transport details.");
                             }}
                             origins={origins}
                             addOrigin={addOrigin}
@@ -157,7 +160,7 @@ const CreateApplication = () => {
                                         `origin_${o.id}_endorsement_cert`
                                     ])
                                 ];
-                                nextStep(step2Fields);
+                                nextStep(step2Fields, "Please upload all required documents.");
                             }}
                             origins={origins}
                         />

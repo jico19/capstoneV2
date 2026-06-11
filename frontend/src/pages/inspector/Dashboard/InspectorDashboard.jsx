@@ -1,13 +1,14 @@
-import { 
-    Scan, 
-    Calendar, 
-    ShieldCheck, 
+import {
+    Scan,
+    Calendar,
+    ShieldCheck,
     Clock,
     History
 } from "lucide-react";
 import { useGetInspectorDashboard } from "/src/hooks/useDashboard";
 import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
+import LineChartComponent from "/src/components/charts/LineChart";
 import { useNavigate } from "react-router-dom";
 
 
@@ -77,18 +78,35 @@ const InspectorDashboard = () => {
             </div>
 
             {/* Verification Trend Chart */}
-            <div className="bg-white border border-gray-200 p-10 rounded-none">
-                <div className="mb-10 border-l-2 border-blue-600 pl-6 space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Activity Monitoring</p>
-                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Scan.History</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white border border-gray-200 p-10 rounded-none">
+                    <div className="mb-10 border-l-2 border-blue-600 pl-6 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Activity Monitoring</p>
+                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Scan History</h2>
+                    </div>
+                    <BarChartComponent
+                        data={charts.activity_trend}
+                        xKey="date"
+                        yKey="count"
+                        height={300}
+                        barColor="#16a34a"
+                    />
                 </div>
-                <BarChartComponent
-                    data={charts.activity_trend}
-                    xKey="date"
-                    yKey="count"
-                    height={300}
-                    barColor="#16a34a"
-                />
+
+                <div className="bg-white border border-gray-200 p-10 rounded-none">
+                    <div className="mb-10 border-l-2 border-green-600 pl-6 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Shift Optimization</p>
+                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Peak.Activity</h2>
+                    </div>
+                    <LineChartComponent
+                        data={charts.peak_activity}
+                        xKey="hour"
+                        yKey="count"
+                        height={300}
+                        lineColor="#15803d"
+                    />
+                    <p className="mt-4 text-[10px] font-medium text-gray-500 uppercase tracking-wide">Verification scans per hour (all-time).</p>
+                </div>
             </div>
 
         </div>

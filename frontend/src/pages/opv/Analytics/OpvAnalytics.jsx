@@ -68,6 +68,24 @@ const OpvAnalytics = () => {
 
             {/* Analysis Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Rejection Reasons Bar Chart */}
+                <div className="bg-stone-50 border border-stone-200 p-8 rounded-none lg:col-span-2">
+                    <div className="mb-8 border-l-4 border-red-700 pl-4 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Failure Analysis</p>
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Rejection.Reasons</h3>
+                    </div>
+                    <div className="bg-white p-6 border border-stone-100">
+                        <BarChartComponent
+                            data={charts.rejection_reasons}
+                            xKey="reason"
+                            yKey="count"
+                            height={300}
+                            barColor="#b91c1c"
+                        />
+                    </div>
+                    <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Primary causes for permit application refusal (30d).</p>
+                </div>
+
                 {/* Origins Bar Chart */}
                 <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
                     <div className="mb-8 border-l-4 border-green-700 pl-4 space-y-1">

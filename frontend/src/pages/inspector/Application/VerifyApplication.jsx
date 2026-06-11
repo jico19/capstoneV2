@@ -27,9 +27,8 @@ const VerifyApplication = () => {
     const { register, handleSubmit, formState: { isSubmitting } } = useForm()
 
     // Derived states
-    const isValid = !!application && application.status !== 'RELEASED' && !application.is_checked;
+    const isValid = application && application.status === 'RELEASED' && !application.is_checked;
 
-    console.log(application)
 
 
     useEffect(() => {
@@ -214,7 +213,7 @@ const VerifyApplication = () => {
                                 <div className="space-y-1">
                                     <p className="text-xs font-bold text-stone-800 uppercase tracking-tighter">{doc.document_type_display}</p>
                                     <div className="flex items-center gap-1.5">
-                                        {doc.ocr?.status === 'PASSED' ? (
+                                        {['PASSED', 'OVERRIDDEN'].includes(doc.ocr?.status) ? (
                                             <span className="flex items-center gap-1 text-[9px] font-black text-green-700 uppercase tracking-widest">
                                                 <ShieldCheck size={12} /> System Verified
                                             </span>

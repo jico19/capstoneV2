@@ -4,7 +4,7 @@ from apps.permits import models as permits
 from apps.maps import models as maps
 from apps.inspector import models as inspector
 from django.db.models import Count, Q, Avg, Sum
-from django.db.models.functions import TruncDate, TruncMonth
+from django.db.models.functions import TruncDate, TruncMonth, ExtractHour
 from django.utils import timezone
 from datetime import timedelta
 
@@ -167,6 +167,73 @@ class OPVDashboardView(views.APIView):
             }
         }, status=status.HTTP_200_OK)
 
+class OPVAnalyticsView(views.APIView):
+    """
+    Tactical analytics for OPV Staff.
+    Focuses on volume, rejection trends, and geographic patterns.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        # 1. Pipeline KPIs
+        pending_validation = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
+        opv_processed_30 = permits.OPVValidation.objects.filter(validated_at__gte=thirty_days_ago)
+        total_validated_30 = opv_processed_30.count()
+        total_rejected_30 = opv_processed_30.filter(status=permits.OPVValidation.Status.REJECTED).count()
+        total_passed_30 = opv_processed_30.filter(status=permits.OPVValidation.Status.VALIDATED).count()
+        
+        rejection_rate = (total_rejected_30 / total_validated_30 * 100) if total_validated_30 > 0 else 0
+        pass_rate = (total_passed_30 / total_validated_30 * 100) if total_validated_30 > 0 else 0
+
+        # Total Volume (Pigs)
+        validated_apps_30 = permits.PermitApplication.objects.filter(
+            created_at__gte=thirty_days_ago,
+            status__in=[
+                permits.PermitApplication.Status.OPV_VALIDATED,
+                permits.PermitApplication.Status.PERMIT_ISSUED,
+                permits.PermitApplication.Status.PAYMENT_PENDING,
+                permits.PermitApplication.Status.RELEASED
+            ]
+        )
+        total_volume = validated_apps_30.aggregate(total=Sum('origins__number_of_pigs'))['total'] or 0
+
+        # 2. Charts: Rejection Reasons (Top 5)
+        rejection_reasons = (
+            opv_processed_30.filter(status=permits.OPVValidation.Status.REJECTED)
+            .values('remarks')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:5]
+        )
+
+        # 3. Tactical Charts (Top 5)
+        top_barangays = (
+            validated_apps_30.values('origins__barangay__name')
+            .annotate(count=Sum('origins__number_of_pigs'))
+            .order_by('-count')[:5]
+        )
+        
+        top_destinations = (
+            validated_apps_30.values('destination')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:5]
+        )
+
+        return Response({
+            "kpis": {
+                "active_queue": pending_validation,
+                "rejection_rate": round(rejection_rate, 1),
+                "pass_rate": round(pass_rate, 1),
+                "total_volume": total_volume,
+            },
+            "charts": {
+                "rejection_reasons": [{"reason": item['remarks'], "count": item['count']} for item in rejection_reasons if item['remarks']],
+                "top_barangays": [{"name": item['origins__barangay__name'], "count": item['count']} for item in top_barangays if item['origins__barangay__name']],
+                "top_destinations": [{"name": item['destination'], "count": item['count']} for item in top_destinations]
+            }
+        }, status=status.HTTP_200_OK)
+
 class InspectorDashboardView(views.APIView):
     """
     Dashboard metrics for Inspectors.
@@ -196,6 +263,22 @@ class InspectorDashboardView(views.APIView):
             .values('date').annotate(count=Count('id')).order_by('date')
         )
 
+        # 3. Charts: Peak Activity (Hourly scans for current inspector)
+        # Using extraction of hour from scanned_at
+        peak_activity = (
+            my_logs.annotate(hour=ExtractHour('scanned_at'))
+            .values('hour')
+            .annotate(count=Count('id'))
+            .order_by('hour')
+        )
+        
+        # Ensure all 24 hours are represented for a smooth line chart
+        hour_map = {item['hour']: item['count'] for item in peak_activity}
+        full_peak_activity = [
+            {"hour": f"{h:02d}:00", "count": hour_map.get(h, 0)}
+            for h in range(24)
+        ]
+
         return Response({
             "kpis": {
                 "my_total_scans": total_scans,
@@ -204,6 +287,7 @@ class InspectorDashboardView(views.APIView):
             },
             "charts": {
                 "activity_trend": activity_trend,
+                "peak_activity": full_peak_activity,
             },
             "recent_activity": my_logs.order_by('-scanned_at')[:5].values('application__application_id', 'scanned_at')
         }, status=status.HTTP_200_OK)

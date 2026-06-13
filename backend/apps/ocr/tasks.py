@@ -60,10 +60,16 @@ def extract_document_info(document_id: int, attempt=3):
             'OCREngine': 2
         }
 
-        # read the document
-        with doc.file.open('rb') as f:
-            files = {'file': (doc.file.name, f)}
-            response = requests.post(url=api_url, data=payload, files=files, timeout=30)
+        # Handle Cloudinary (URL) or Local (File)
+        file_url = doc.file.url
+        if file_url.startswith('http'):
+            payload['url'] = file_url
+            response = requests.post(url=api_url, data=payload, timeout=30)
+        else:
+            # read the document
+            with doc.file.open('rb') as f:
+                files = {'file': (doc.file.name, f)}
+                response = requests.post(url=api_url, data=payload, files=files, timeout=30)
 
         # Handle 429 Too Many Requests
         if response.status_code == 429:

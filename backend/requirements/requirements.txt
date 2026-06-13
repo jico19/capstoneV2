@@ -26,8 +26,6 @@ pandas==3.0.2
 pillow==12.2.0
 pluggy==1.6.0
 prompt_toolkit==3.0.52
-psycopg==3.3.4
-psycopg-binary==3.3.4
 psycopg2-binary==2.9.12
 Pygments==2.20.0
 PyJWT==2.12.1

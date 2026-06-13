@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     "django_tasks",
     "django_extensions",
     "django_filters",
+    "cloudinary_storage",
+    "cloudinary",
     # My Apps
     "apps.api",
     "apps.maps",
@@ -239,3 +241,12 @@ LOGGING = {
 
 # settings.py
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # Adjust this number to fit your data size
+
+# Cloudinary Configuration
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

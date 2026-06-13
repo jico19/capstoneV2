@@ -163,6 +163,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Default Vite port
+    'https://farm-pass-smoky.vercel.app',
 ]
 
 SIMPLE_JWT = {

@@ -22,6 +22,7 @@ export const useApplicationDetail = (id) => {
         queryKey: ['application', id],
         queryFn: async () => {
             const res = await api.get(`/application/${id}/`)
+            console.log(res.data)
             return res.data
         },
         enabled: !!id,

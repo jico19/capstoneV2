@@ -1,0 +1,210 @@
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+from datetime import timedelta
+
+load_dotenv()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+
+ALLOWED_HOSTS = []
+
+
+# Application definition
+
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
+    "django_tasks_db",
+    "django_tasks",
+    "django_extensions",
+    "django_filters",
+    # My Apps
+    "apps.api",
+    "apps.maps",
+    "apps.permits",
+    "apps.payment",
+    "apps.ocr",
+    "apps.documents",
+    "apps.dashboard",
+    "apps.inspector",
+    "apps.sms",
+]
+
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "config.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "config.wsgi.application"
+
+
+# Database
+# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#         "OPTIONS": {
+#             "timeout": 30,
+#         },
+#     }
+# }
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get('DB_NAME'),
+        "USER": os.environ.get('DB_USER'),
+        "PASSWORD": os.environ.get('DB_PASSWORD'),
+        "HOST": os.environ.get('DB_HOST'),
+        "PORT": os.environ.get('DB_PORT'),
+    }
+}
+
+
+# Password validation
+# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+
+# Internationalization
+# https://docs.djangoproject.com/en/6.0/topics/i18n/
+
+LANGUAGE_CODE = "en-us"
+
+TIME_ZONE = "Asia/Manila"
+
+USE_I18N = True
+
+USE_TZ = True
+
+# User Settings
+AUTH_USER_MODEL = "api.User"
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/6.0/howto/static-files/
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
+
+# DRF SETTINGS
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {"anon": "10/minute", "user": "100/minute"},
+}
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Default Vite port
+]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "TOKEN_OBTAIN_SERIALIZER": "apps.api.serializers.CustomTokenObtainSerializer",
+}
+
+# SECRETS
+OCR_URL = os.environ.get("OCR_API_URL")
+OCR_API_KEY = os.environ.get("OCR_API_KEY")
+
+PAYMONGO_SECRET_KEY = os.environ.get("PAYMONGO_TEST_SECRET_KEY")
+PAYMONGO_PUBLIC_KEY = os.environ.get("PAYMONGO_TEST_PUBLIC_KEY")
+PAYMONGO_URL = os.environ.get("PAYMONGO_URL")
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
+
+# SMS SECRETS
+SMS_BASE_URL = os.environ.get("SMS_BASE_URL")
+SMS_USERNAME = os.environ.get("SMS_USERNAME")
+SMS_PASSWORD = os.environ.get("SMS_PASSWORD")
+
+
+# DJANGO TASK
+TASKS = {
+    "default": {"BACKEND": "django_tasks_db.DatabaseBackend", "QUEUES": ["default"]}
+}
+
+
+# DJANGO CACHE
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
+# settings.py
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # Adjust this number to fit your data size

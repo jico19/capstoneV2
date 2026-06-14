@@ -5,7 +5,6 @@ import PaymentIcon from "/src/assets/requirements-icons/payment-icon.png";
 const FEES = [
   { doc: "Veterinary Health Certificate", fee: "₱50.00" },
   { doc: "Animal Inspection Certificate", fee: "₱50.00" },
-  { doc: "MAO Certificate",               fee: "₱50.00" },
   { doc: "Shipping Permit",               fee: "₱50.00" },
 ];
 

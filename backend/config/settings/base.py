@@ -2,7 +2,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
-import dj_database_url
 
 load_dotenv()
 
@@ -19,7 +18,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["capstonev2-gnmi.onrender.com"]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -39,8 +38,6 @@ INSTALLED_APPS = [
     "django_tasks",
     "django_extensions",
     "django_filters",
-    "cloudinary_storage",
-    "cloudinary",
     # My Apps
     "apps.api",
     "apps.maps",
@@ -56,7 +53,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -89,8 +85,26 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#         "OPTIONS": {
+#             "timeout": 30,
+#         },
+#     }
+# }
 
-DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get('DB_NAME'),
+        "USER": os.environ.get('DB_USER'),
+        "PASSWORD": os.environ.get('DB_PASSWORD'),
+        "HOST": os.environ.get('DB_HOST'),
+        "PORT": os.environ.get('DB_PORT'),
+    }
+}
 
 
 # Password validation
@@ -133,8 +147,6 @@ AUTH_USER_MODEL = "api.User"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Set the static files storage to WhiteNoise's compressed version
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
@@ -157,8 +169,6 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Default Vite port
-    "https://farm-pass-smoky.vercel.app",
-    "https://farmpass-ph.me",
 ]
 
 SIMPLE_JWT = {
@@ -198,19 +208,3 @@ CACHES = {
 
 # settings.py
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # Adjust this number to fit your data size
-
-# Cloudinary Configuration
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
-    "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
-    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
-}
-
-STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}

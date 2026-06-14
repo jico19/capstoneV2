@@ -26,7 +26,7 @@ const OpvApplicationDashboard = () => {
     const { data: application, isLoading, isError } = useApplication(limit, offset);
     const navigate = useNavigate();
 
-    console.log(application)
+    // console.log(application)
 
     if (isLoading) {
         return (

@@ -30,7 +30,7 @@ export default function Hero() {
           {/* Badge */}
           <div className="animate-hero-badge opacity-0 inline-flex items-center gap-2.5 px-3 py-[6px] bg-[#f5a623]/12 border border-[#f5a623]/30 rounded-full text-[12px] font-semibold text-brand-amber tracking-[0.05em] uppercase w-fit mb-7 max-[900px]:mx-auto">
             <img src={AgriLogo} alt="Sariaya Logo" className="w-5 h-5 rounded-full object-cover" />
-            Official Livestock Permit System
+            Official Farm Permit System
           </div>
 
           {/* Title */}

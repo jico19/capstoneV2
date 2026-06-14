@@ -45,7 +45,7 @@ const LoginPage = () => {
                     <div className="flex items-center gap-3 mb-10">
                         <img src={AgriLogo} alt="Sariaya Logo" className="w-10 h-10 rounded-full object-cover border border-green-200" />
                         <span className="text-gray-900 font-black text-2xl tracking-tighter">
-                            Livestock<span className="text-green-600">Pass</span>
+                            Farm<span className="text-green-600">Pass</span>
                         </span>
                     </div>
 

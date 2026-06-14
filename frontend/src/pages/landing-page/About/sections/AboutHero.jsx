@@ -37,7 +37,7 @@ export default function AboutHero() {
         </p>
 
         <div className="animate-about-fade-4 flex justify-center flex-wrap gap-3">
-          {["🏛 Sariaya, Quezon", "🤖 AI-Powered System", "🐄 Livestock Transport"].map(pill => (
+          {["🏛 Sariaya, Quezon", "🐄 Livestock Transport"].map(pill => (
             <span key={pill} className="font-jakarta text-[0.82rem] font-semibold text-white/75 bg-white/[0.07] border border-white/12 rounded-full px-4 py-[6px]">
               {pill}
             </span>

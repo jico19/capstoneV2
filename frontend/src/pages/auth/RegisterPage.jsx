@@ -244,7 +244,7 @@ const RegisterPage = () => {
                     <div className="flex items-center gap-3 mb-12">
                         <img src={AgriLogo} alt="Sariaya Agri Logo" className="w-10 h-10 rounded-full object-cover border border-white/20" />
                         <span className="text-white font-black text-2xl tracking-tighter">
-                            Livestock<span className="text-green-100">Pass</span>
+                            Farm<span className="text-green-100">Pass</span>
                         </span>
                     </div>
 
@@ -408,4 +408,4 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-
+

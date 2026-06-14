@@ -19,9 +19,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = [
-    'capstonev2-gnmi.onrender.com'
-]
+ALLOWED_HOSTS = ["capstonev2-gnmi.onrender.com"]
 
 
 # Application definition
@@ -58,7 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware", 
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -92,11 +90,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 
-DATABASES = {
-    "default": dj_database_url.parse(
-        os.environ["DATABASE_URL"]
-    )
-}
+DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
 
 
 # Password validation
@@ -163,7 +157,8 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Default Vite port
-    'https://farm-pass-smoky.vercel.app',
+    "https://farm-pass-smoky.vercel.app",
+    "https://farmpass-ph.me",
 ]
 
 SIMPLE_JWT = {
@@ -245,9 +240,9 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # Adjust this number to fit your data size
 
 # Cloudinary Configuration
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
 
 STORAGES = {

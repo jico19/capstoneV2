@@ -73,7 +73,7 @@ const Sidebar = ({ children }) => {
             case 'Farmer':
                 return (
                     <MenuSection title="Farmer Services">
-                        <SidebarItem icon={LayoutDashboard} label="Home Dashboard" to='/farmer/' />
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/farmer/' />
                         <SidebarItem icon={FilesIcon} label="My Applications" to='/farmer/application' />
                         <SidebarItem icon={FilePlus2} label="Apply for Permit" to='/farmer/application/create/' />
                         <SidebarItem icon={Bell} label="Your Messages" to="/farmer/notification/" badgeCount={unreadCount} />

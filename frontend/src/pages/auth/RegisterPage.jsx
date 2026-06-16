@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
-import { ShieldCheck, UserPlus, ArrowRight, Lock, Phone, CheckCircle2, X, RefreshCw, Smartphone } from "lucide-react";
+import { ShieldCheck, UserPlus, ArrowRight, Lock, Phone, CheckCircle2, X, RefreshCw, Smartphone, AlertCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { api } from "/src/lib/api";
 import { toast } from "sonner";
@@ -12,18 +12,21 @@ import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
  */
 const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isResending }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [modalError, setModalError] = useState(null);
     const inputRefs = useRef([]);
 
-    // Reset OTP when modal opens
+    // Reset OTP and errors when modal opens
     useEffect(() => {
         if (isOpen) {
             setOtp(['', '', '', '', '', '']);
+            setModalError(null);
             setTimeout(() => inputRefs.current[0]?.focus(), 100);
         }
     }, [isOpen]);
 
     const handleChange = (element, index) => {
         if (isNaN(element.value)) return false;
+        if (modalError) setModalError(null);
 
         const newOtp = [...otp];
         newOtp[index] = element.value;
@@ -52,10 +55,14 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
         inputRefs.current[Math.min(data.length, 5)].focus();
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const fullOtp = otp.join('');
         if (fullOtp.length === 6) {
-            onVerify(fullOtp);
+            try {
+                await onVerify(fullOtp);
+            } catch (err) {
+                setModalError("Invalid code. Please try again.");
+            }
         } else {
             toast.error("Please enter the full 6-digit code");
         }
@@ -89,20 +96,25 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                         </p>
                     </div>
 
-                    {/* 6-Digit Input Grid */}
-                    <div className="flex justify-between gap-2" onPaste={handlePaste}>
-                        {otp.map((data, index) => (
-                            <input
-                                key={index}
-                                type="text"
-                                maxLength="1"
-                                ref={(el) => (inputRefs.current[index] = el)}
-                                value={data}
-                                onChange={(e) => handleChange(e.target, index)}
-                                onKeyDown={(e) => handleKeyDown(e, index)}
-                                className="w-10 h-14 sm:w-12 sm:h-16 text-2xl font-black text-center border-2 border-stone-100 bg-stone-50 focus:bg-white focus:border-green-600 outline-none transition-all"
-                            />
-                        ))}
+                    <div className="space-y-4">
+                        {/* 6-Digit Input Grid */}
+                        <div className="flex justify-between gap-2" onPaste={handlePaste}>
+                            {otp.map((data, index) => (
+                                <input
+                                    key={index}
+                                    type="text"
+                                    maxLength="1"
+                                    ref={(el) => (inputRefs.current[index] = el)}
+                                    value={data}
+                                    onChange={(e) => handleChange(e.target, index)}
+                                    onKeyDown={(e) => handleKeyDown(e, index)}
+                                    className={`w-10 h-14 sm:w-12 sm:h-16 text-2xl font-black text-center border-2 bg-stone-50 focus:bg-white focus:border-green-600 outline-none transition-all ${modalError ? 'border-red-600 bg-red-50 text-red-900' : 'border-stone-100'}`}
+                                />
+                            ))}
+                        </div>
+                        {modalError && (
+                            <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{modalError}</p>
+                        )}
                     </div>
 
                     <div className="space-y-4 pt-4">
@@ -111,7 +123,12 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                             disabled={isVerifying || otp.join('').length < 6}
                             className="w-full py-4 bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {isVerifying ? <span className="loading loading-spinner loading-xs"></span> : "Verify Account"}
+                            {isVerifying ? (
+                                <>
+                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span>Verifying...</span>
+                                </>
+                            ) : "Verify Account"}
                         </button>
 
                         <div className="flex flex-col gap-2">
@@ -121,8 +138,17 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                                 disabled={isResending}
                                 className="text-stone-900 font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:opacity-70 transition-opacity"
                             >
-                                {isResending ? <RefreshCw size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                                Resend New Code
+                                {isResending ? (
+                                    <>
+                                        <RefreshCw size={12} className="animate-spin" />
+                                        <span>Sending...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw size={12} />
+                                        <span>Resend New Code</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -150,9 +176,12 @@ const RegisterPage = () => {
     const [showOTPModal, setShowOTPModal] = useState(false)
     const [isSendingOTP, setIsSendingOTP] = useState(false)
     const [isVerifyingOTP, setIsVerifyingOTP] = useState(false)
+    const [globalError, setGlobalError] = useState(null)
+    const [isRegistered, setIsRegistered] = useState(false)
 
     // Handle the final registration process
     const onRegister = async (data) => {
+        setGlobalError(null);
         try {
             await api.post('/user/', {
                 username: data.username,
@@ -161,12 +190,13 @@ const RegisterPage = () => {
                 first_name: data.first_name,
                 last_name: data.last_name
             })
+            setIsRegistered(true);
             toast.success("Account Created", {
-                description: "You can now sign in with your new credentials."
+                description: "You can now log in with your new details."
             });
-            navigate('/login')
         } catch(error) {
             console.error(error.response)
+            setGlobalError(error.response?.data?.error || "Could not create your account.");
             toast.error("Registration Failed", {
                 description: error.response?.data?.error || "Could not create your account."
             });
@@ -178,6 +208,7 @@ const RegisterPage = () => {
         const phone = data?.phone || getValues("phone");
         if (!phone) return;
 
+        setGlobalError(null);
         setIsSendingOTP(true);
         try {
             await api.post('/user/send_otp/', {
@@ -189,6 +220,7 @@ const RegisterPage = () => {
             setShowOTPModal(true); // Open the modal on success
         } catch(error) {
             console.error(error)
+            setGlobalError("Failed to send verification code. Please check your number.");
             toast.error("Failed to Send Code", {
                 description: "Please check your phone number and try again."
             });
@@ -214,12 +246,58 @@ const RegisterPage = () => {
             });
         } catch (error) {
             console.error(error.response)
-            toast.error("Invalid Code", {
-                description: "The verification code you entered is incorrect."
-            });
+            // Re-throw so modal can catch and show its own error
+            throw error;
         } finally {
             setIsVerifyingOTP(false);
         }
+    }
+
+    const clearError = () => {
+        if (globalError) setGlobalError(null);
+    }
+
+    if (isRegistered) {
+        return (
+            <div className="min-h-screen flex flex-col md:flex-row bg-white font-sans overflow-x-hidden">
+                {/* Left Side: Branding and Benefits (Keep same for consistency) */}
+                <div className="hidden md:flex md:w-5/12 bg-green-600 p-12 flex-col justify-between relative overflow-hidden border-r border-stone-100">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 -mr-32 -mt-32 rotate-45"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-12">
+                            <img src={AgriLogo} alt="Sariaya Agri Logo" className="w-10 h-10 rounded-full object-cover border border-white/20" />
+                            <span className="text-white font-black text-2xl tracking-tighter">Farm<span className="text-green-100">Pass</span></span>
+                        </div>
+                        <div className="space-y-6">
+                            <h2 className="text-4xl font-black text-white leading-tight tracking-tight uppercase">Success! <br /><span className="text-green-200 text-5xl">Welcome</span> <br />Farmer.</h2>
+                        </div>
+                    </div>
+                    <div className="relative z-10 border-t border-white/20 pt-8">
+                        <p className="text-green-100 text-[10px] font-black uppercase tracking-[0.2em]">Sariaya Municipal Agriculture Office</p>
+                    </div>
+                </div>
+
+                {/* Right Side: Success Content */}
+                <div className="flex-1 flex items-center justify-center p-6 md:p-16 bg-white">
+                    <div className="w-full max-w-sm text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                        <div className="flex justify-center">
+                            <div className="bg-green-50 p-6 border-2 border-green-100">
+                                <CheckCircle2 size={64} className="text-green-600" strokeWidth={3} />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <h1 className="text-4xl font-black text-stone-900 uppercase tracking-tighter">Registration Complete</h1>
+                            <p className="text-stone-500 font-medium text-sm leading-relaxed">Your account has been successfully created. You can now use your details to log in and apply for permits.</p>
+                        </div>
+                        <div className="pt-6">
+                            <Link to="/login" className="w-full bg-green-700 hover:bg-green-800 text-white py-5 px-10 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-700/20">
+                                Go to Login Page <ArrowRight size={18} strokeWidth={3} />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -288,76 +366,145 @@ const RegisterPage = () => {
                     <div className="space-y-2">
                         <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-1">Join the Network</p>
                         <h1 className="text-4xl font-black text-stone-900 tracking-tight leading-none uppercase">Create Account</h1>
-                        <p className="text-stone-500 font-medium">Join our digital network to start your applications.</p>
+                        <p className="text-stone-500 font-medium text-sm">Follow these 3 simple steps to join.</p>
                     </div>
 
-                    <form onSubmit={isOTPVerified ? handleSubmit(onRegister) : handleSubmit(onSendOTP)} className="space-y-8">
-
-                        <div className="space-y-6">
-                            {/* Name Section */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">First Name</label>
-                                    <input
-                                        type="text"
-                                        {...register("first_name", { required: "Required" })}
-                                        className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.first_name ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
-                                        placeholder="JUAN"
-                                    />
+                    {/* Simple Step Progress Indicator */}
+                    <div className="flex items-center gap-4 bg-stone-50 border border-stone-100 p-4">
+                        {[
+                            { id: 1, label: "Details", active: !isOTPVerified },
+                            { id: 2, label: "Verify", active: showOTPModal || (isOTPVerified && !isSubmitting) },
+                            { id: 3, label: "Finish", active: isOTPVerified }
+                        ].map((step, idx) => (
+                            <div key={idx} className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 flex items-center justify-center text-[10px] font-black border-2 transition-colors ${
+                                    step.active ? "bg-green-600 border-green-600 text-white" : "bg-white border-stone-200 text-stone-300"
+                                }`}>
+                                    {isOTPVerified && step.id < 3 ? <CheckCircle2 size={12} strokeWidth={3} /> : step.id}
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Last Name</label>
-                                    <input
-                                        type="text"
-                                        {...register("last_name", { required: "Required" })}
-                                        className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.last_name ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
-                                        placeholder="DELA CRUZ"
-                                    />
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${step.active ? "text-stone-900" : "text-stone-300"}`}>
+                                    {step.label}
+                                </span>
+                                {idx < 2 && <div className="flex-1 h-px bg-stone-200"></div>}
+                            </div>
+                        ))}
+                    </div>
+
+                    <form onSubmit={isOTPVerified ? handleSubmit(onRegister) : handleSubmit(onSendOTP)} className="space-y-10">
+
+                        {/* Global Error Banner */}
+                        {globalError && (
+                            <div className="bg-red-50 border-l-4 border-red-600 p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={18} />
+                                <div>
+                                    <p className="text-xs font-black text-red-700 uppercase tracking-widest leading-none mb-1">Registration Error</p>
+                                    <p className="text-xs font-medium text-red-600">{globalError}</p>
                                 </div>
                             </div>
+                        )}
 
-                            {/* Username & Phone */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Username</label>
-                                    <input
-                                        type="text"
-                                        {...register("username", { required: "Required" })}
-                                        className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
-                                        placeholder="FARMER_USER"
-                                    />
+                        <div className="space-y-8">
+                            {/* Part 1: Who are you? */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
+                                    <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 1</span>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Your Identity</h3>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Phone Number</label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your First Name</label>
                                         <input
-                                            type="tel"
-                                            {...register("phone", { required: "Required" })}
-                                            className={`w-full p-4 pl-12 rounded-none border-2 focus:ring-0 outline-none transition-colors text-sm font-bold font-mono ${isOTPVerified ? 'bg-green-50 border-green-200 text-green-700' : 'bg-stone-50 border-stone-100 focus:border-green-600'}`}
-                                            placeholder="09XXXXXXXXX"
+                                            type="text"
+                                            {...register("first_name", { required: "Please enter your first name" })}
+                                            onChange={clearError}
+                                            className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.first_name ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
+                                            placeholder="Example: JUAN"
                                             readOnly={isOTPVerified}
                                         />
-                                        {isOTPVerified && (
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-600">
-                                                <CheckCircle2 size={18} strokeWidth={3} />
-                                            </div>
-                                        )}
+                                        {errors.first_name && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.first_name.message}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Last Name</label>
+                                        <input
+                                            type="text"
+                                            {...register("last_name", { required: "Please enter your last name" })}
+                                            onChange={clearError}
+                                            className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.last_name ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
+                                            placeholder="Example: DELA CRUZ"
+                                            readOnly={isOTPVerified}
+                                        />
+                                        {errors.last_name && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.last_name.message}</p>}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Password Field */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Choose Password</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                                    <input
-                                        type="password"
-                                        {...register("password", { required: "Required" })}
-                                        className={`w-full p-4 pl-12 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
-                                        placeholder="••••••••"
-                                    />
+                            {/* Part 2: Reach you? */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
+                                    <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 2</span>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">How can we reach you?</h3>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Login Name</label>
+                                        <input
+                                            type="text"
+                                            {...register("username", { required: "Choose a login name" })}
+                                            onChange={clearError}
+                                            className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
+                                            placeholder="Example: juan_sariaya"
+                                            readOnly={isOTPVerified}
+                                        />
+                                        {errors.username && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.username.message}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Mobile Number</label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                                            <input
+                                                type="tel"
+                                                {...register("phone", { required: "Mobile number is required" })}
+                                                onChange={clearError}
+                                                className={`w-full p-4 pl-12 rounded-none border-2 focus:ring-0 outline-none transition-colors text-sm font-bold font-mono ${isOTPVerified ? 'bg-green-50 border-green-200 text-green-700' : 'bg-stone-50 border-stone-100 focus:border-green-600'}`}
+                                                placeholder="09XXXXXXXXX"
+                                                readOnly={isOTPVerified}
+                                            />
+                                            {isOTPVerified && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-600">
+                                                    <CheckCircle2 size={18} strokeWidth={3} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        {errors.phone && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.phone.message}</p>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Part 3: Secure? */}
+                            <div className={`space-y-4 transition-opacity duration-300 ${isOTPVerified ? "opacity-100" : "opacity-40"}`}>
+                                <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
+                                    <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 3</span>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Secure Your Account</h3>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Create a Secure Password</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+                                        <input
+                                            type="password"
+                                            {...register("password", { required: "Create a password to keep your account safe" })}
+                                            onChange={clearError}
+                                            className={`w-full p-4 pl-12 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
+                                            placeholder="At least 8 characters"
+                                            disabled={!isOTPVerified}
+                                        />
+                                    </div>
+                                    {errors.password && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.password.message}</p>}
+                                    {isOTPVerified && (
+                                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-2 flex items-center gap-1">
+                                            <CheckCircle2 size={12} strokeWidth={3} /> Phone Verified. You can now set your password.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -375,10 +522,13 @@ const RegisterPage = () => {
                                 }`}
                             >
                                 {isSubmitting || isSendingOTP ? (
-                                    <span className="loading loading-spinner loading-sm"></span>
+                                    <>
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                        <span>{isOTPVerified ? "Creating Account..." : "Sending Code..."}</span>
+                                    </>
                                 ) : (
                                     <>
-                                        {isOTPVerified ? "Finalize Registration" : "Verify Phone Number"}
+                                        {isOTPVerified ? "Complete Registration" : "Verify Phone Number"}
                                         {isOTPVerified ? <CheckCircle2 size={20} strokeWidth={3} /> : <ArrowRight size={20} strokeWidth={3} />}
                                     </>
                                 )}
@@ -408,4 +558,3 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-

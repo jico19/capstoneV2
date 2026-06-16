@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import useAuthStore from "/src/store/authContext";
-import { Lock, User, ShieldCheck, ArrowRight, ClipboardCheck } from "lucide-react";
+import { Lock, User, ShieldCheck, ArrowRight, ClipboardCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
 /**
@@ -17,17 +18,21 @@ const LoginPage = () => {
     } = useForm();
     const login = useAuthStore((s) => s.login);
     const navigate = useNavigate();
+    const [apiError, setApiError] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     const onSubmit = async (data) => {
+        setApiError(null);
         try {
             await login(data);
             toast.success("Welcome Back", {
-                description: "You have successfully signed in to FarmPass.",
+                description: "You have successfully logged in to FarmPass.",
             });
             navigate("/");
         } catch (err) {
             console.error("Login failed", err);
-            toast.error("Sign In Failed", {
+            setApiError("Incorrect username or password. Please try again.");
+            toast.error("Log In Failed", {
                 description: "Please check your details and try again.",
             });
         }
@@ -35,8 +40,7 @@ const LoginPage = () => {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white font-sans">
-
-            {/* Left Side: Branding/Context (Friendly & Clean) */}
+            {/* ... left side branding ... */}
             <div className="hidden md:flex md:w-1/2 bg-green-50 p-12 flex-col justify-between relative overflow-hidden border-r border-gray-100">
                 {/* Minimalist Decoration */}
                 <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-green-100/50 rounded-none rotate-12"></div>
@@ -67,7 +71,7 @@ const LoginPage = () => {
                                 <ClipboardCheck className="text-green-600" size={24} />
                             </div>
                             <div>
-                                <p className="text-gray-900 font-black text-sm uppercase tracking-tight leading-none">Fast Approval</p>
+                                <p className="text-gray-900 font-black text-sm uppercase tracking-tight leading-none">Quick Approval</p>
                                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Digital Processing</p>
                             </div>
                         </div>
@@ -85,10 +89,20 @@ const LoginPage = () => {
 
                     <div className="space-y-2">
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none">Welcome Back</h1>
-                        <p className="text-gray-500 font-medium">Please sign in to access your permit records.</p>
+                        <p className="text-gray-500 font-medium">Please log in to see your permit records.</p>
                     </div>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                        {/* Global Error Banner */}
+                        {apiError && (
+                            <div className="bg-red-50 border-l-4 border-red-600 p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={18} />
+                                <div>
+                                    <p className="text-xs font-black text-red-700 uppercase tracking-widest leading-none mb-1">Log In Failed</p>
+                                    <p className="text-xs font-medium text-red-600">{apiError}</p>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-5">
                             {/* Username Field */}
@@ -99,6 +113,7 @@ const LoginPage = () => {
                                     <input
                                         type="text"
                                         {...register("username", { required: "Please enter your username." })}
+                                        onChange={() => apiError && setApiError(null)}
                                         className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
                                             }`}
                                         placeholder="e.g. juan_farmer"
@@ -115,12 +130,20 @@ const LoginPage = () => {
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                     <input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         {...register("password", { required: "Please enter your password." })}
-                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
+                                        onChange={() => apiError && setApiError(null)}
+                                        className={`w-full p-4 pl-12 pr-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
                                             }`}
                                         placeholder="••••••••"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-stone-900 transition-colors focus:outline-none"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
                                 </div>
                                 {errors.password && (
                                     <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mt-1">{errors.password.message}</p>
@@ -135,10 +158,13 @@ const LoginPage = () => {
                             className="w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-none font-black text-sm uppercase tracking-widest transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
                         >
                             {isSubmitting ? (
-                                <span className="loading loading-spinner loading-sm"></span>
+                                <>
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                    <span>Logging In...</span>
+                                </>
                             ) : (
                                 <>
-                                    Sign In to Portal <ArrowRight size={20} strokeWidth={3} />
+                                    Log In to FarmPass <ArrowRight size={20} strokeWidth={3} />
                                 </>
                             )}
                         </button>

@@ -2,10 +2,12 @@ from django.db import models
 from apps.permits.models import IssuedPermit
 from apps.api.models import User
 from django.utils import timezone
-from nanoid import generate
+import secrets
 
 def reference_num():
-    return f"PAY-{timezone.now().year}-{generate(size=6, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')}"
+    # Generate a cryptographically secure 6-character alphanumeric code
+    random_suffix = "".join(secrets.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ') for _ in range(6))
+    return f"PAY-{timezone.now().year}-{random_suffix}"
 
 class PaymentHistory(models.Model):
     class Method(models.TextChoices):

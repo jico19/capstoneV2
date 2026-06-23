@@ -9,7 +9,6 @@ from django.db.models import Avg
 from rest_framework.permissions import IsAuthenticated
 
 from django.db.models import Sum, Q
-import numpy as np
 
 
 class BarangayViewSets(viewsets.ModelViewSet):

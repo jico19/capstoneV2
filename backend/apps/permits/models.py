@@ -4,7 +4,7 @@ from apps.maps.models import Barangay
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 from datetime import timedelta
-from nanoid import generate
+import secrets
 from django.core.exceptions import ValidationError
 
 
@@ -21,7 +21,8 @@ def document_id():
     '''
         Unique ID for each application, format: LP-2024-ABC123 (LP = Livestock Permit, 2024 = current year, ABC123 = random alphanumeric string)
     '''
-    return f"LP-{timezone.now().year}-{generate(size=6, alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')}"
+    random_suffix = "".join(secrets.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ') for _ in range(6))
+    return f"LP-{timezone.now().year}-{random_suffix}"
 
 class PermitApplication(models.Model):
     class Status(models.TextChoices):

@@ -42,7 +42,7 @@ def send_sms(phone_number, message):
             timeout=15  # Slightly longer timeout for network reliability
         )
         
-        if res.status_code == 201:
+        if res.status_code in [201, 202]:
             logger.info(f"SMS successfully sent to {masked_phone}")
             return True
         else:

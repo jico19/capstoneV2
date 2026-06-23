@@ -16,7 +16,7 @@ const CATEGORIES = [
     title: "Documents & Requirements",
     items: [
       { q: "What documents do I need?",
-        a: "You need 6 documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Immediate Slaughter (if applicable), Endorsement Form and Pagpapatunay. All must be in PDF, JPG, or PNG format (max 5MB each)." },
+        a: "You need 5 documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Immediate Slaughter (if applicable), and Barangay Endorsement (Pagpapatunay). All must be in PDF, JPG, or PNG format (max 5MB each)." },
       { q: "How long are documents valid?",
         a: "Handler's License and Transport Carrier Registration must be current. Trader's Pass must be within 60 days from issue date. Always check validity before uploading." },
     ],
@@ -36,7 +36,7 @@ const CATEGORIES = [
     title: "Fees & Payment",
     items: [
       { q: "How much does a permit cost?",
-        a: "Standard permit fees:\n• VHC (Veterinary Health Certificate) – ₱50\n• Animal Inspection Certificate – ₱50\n• MAO Certificate – ₱50\n• Shipping Permit – ₱50\n\nTotal: ₱200 per application." },
+        a: "Standard permit fees:\n• Veterinary Health Certificate – ₱50\n• Transportation Pass – ₱50\n• Sariaya Transportation Permit – ₱50\n\nTotal: ₱150 per application." },
       { q: "What payment methods are accepted?",
         a: "Online: GCash, PayMaya, Bank Transfer\nIn-Person: Cash at Sariaya Agriculture Office (Mon–Fri, 8AM–5PM)" },
       { q: "When do I need to pay?",

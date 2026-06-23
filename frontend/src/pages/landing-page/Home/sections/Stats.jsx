@@ -70,7 +70,7 @@ export default function Stats() {
       <div className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: "repeating-linear-gradient(-60deg, transparent, transparent 30px, rgba(255,255,255,0.02) 30px, rgba(255,255,255,0.02) 31px)" }} />
 
-      <div className="relative z-[1] max-w-[1200px] mx-auto px-10 grid grid-cols-4 max-[768px]:grid-cols-2 max-[768px]:px-6 max-[480px]:grid-cols-2">
+      <div className="relative z-[1] max-w-[1200px] mx-auto px-10 grid grid-cols-3 max-[768px]:grid-cols-2 max-[768px]:px-6 max-[480px]:grid-cols-2">
         {STATS.map((stat, i) => (
           <StatItem key={i} {...stat} animate={animate} />
         ))}

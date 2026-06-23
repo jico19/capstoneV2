@@ -23,10 +23,10 @@ export default function ReqHero() {
       <div className="relative z-[1]">
 
         {/* Badge */}
-        <div className="animate-fade-up-1 inline-flex items-center gap-2.5 px-3 py-[6px] bg-brand-amber/12 border border-brand-amber/30 rounded-full font-jakarta text-[0.72rem] font-bold text-brand-amber tracking-[0.08em] uppercase mb-6">
+        {/* <div className="animate-fade-up-1 inline-flex items-center gap-2.5 px-3 py-[6px] bg-brand-amber/12 border border-brand-amber/30 rounded-full font-jakarta text-[0.72rem] font-bold text-brand-amber tracking-[0.08em] uppercase mb-6">
           <img src={AgriLogo} alt="Sariaya Logo" className="w-5 h-5 rounded-full object-cover" />
           Livestock Transport Permit
-        </div>
+        </div> */}
 
         {/* Title */}
         <h1 className="animate-fade-up-2 font-archivo text-[clamp(1.8rem,4vw,3.2rem)] text-white leading-[1.1] tracking-[-0.02em] mb-4">
@@ -40,7 +40,7 @@ export default function ReqHero() {
 
         {/* Stat pills */}
         <div className="animate-fade-up-4 flex justify-center flex-wrap gap-3">
-          {["📄 6 Documents Required", "₱200 Total Fees", "⏱ 15–30 min Processing"].map(pill => (
+          {["6 Documents Required", "₱200 Total Fees", "15–30 min Processing"].map(pill => (
             <span key={pill} className="font-jakarta text-[0.82rem] font-semibold text-white/75 bg-white/[0.07] border border-white/12 rounded-full px-4 py-[6px]">
               {pill}
             </span>
@@ -51,7 +51,7 @@ export default function ReqHero() {
       {/* Wave */}
       <div className="absolute bottom-0 left-0 right-0 leading-[0]">
         <svg viewBox="0 0 1440 80" fill="none" preserveAspectRatio="none" className="w-full h-20 block">
-          <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8faf8"/>
+          <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8faf8" />
         </svg>
       </div>
     </section>

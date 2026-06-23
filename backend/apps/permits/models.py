@@ -112,7 +112,9 @@ class OPVValidation(models.Model):
 
     
     def __str__(self):
-        return f"OPV → {self.application.id} - {self.opv_staff.username} - {self.status}"
+        # Fallback to "System" if the OPV staff is None (e.g. deleted user)
+        staff = self.opv_staff.username if self.opv_staff else "System"
+        return f"OPV → {self.application.id} - {staff} - {self.status}"
 
 class OCRValidationResult(models.Model):
     class ValidationStatus(models.TextChoices):
@@ -163,5 +165,8 @@ class IssuedPermit(models.Model):
             self.valid_until = base_date + timedelta(days=3)
         super().save(*args, **kwargs)
 
-    def __str__(self):        return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {self.issued_by.username}"
+    def __str__(self):
+        # Fallback to "System" if the issuing user is None (e.g. deleted user)
+        issuer = self.issued_by.username if self.issued_by else "System"
+        return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {issuer}"
 

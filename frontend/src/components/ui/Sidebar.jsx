@@ -69,6 +69,7 @@ const Sidebar = ({ children }) => {
     const renderMenuByRole = () => {
         if (!isAuthenticated) return <SidebarItem icon={LayoutDashboard} label="Public Info" to="/" />;
 
+        
         switch (user.role) {
             case 'Farmer':
                 return (

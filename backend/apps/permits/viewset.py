@@ -267,11 +267,14 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
 
         application_instance = self.get_object()
 
-        # Guard: Only allow resubmission if status is RESUBMISSION
-        if application_instance.status != models.PermitApplication.Status.RESUBMISSION:
+        # Guard: Only allow resubmission if status is RESUBMISSION or OPV_REJECTED
+        if application_instance.status not in [
+            models.PermitApplication.Status.RESUBMISSION,
+            models.PermitApplication.Status.OPV_REJECTED
+        ]:
             return Response(
                 {
-                    "error": f"Cannot resubmit an application with status '{application_instance.status}'. Status must be 'RESUBMISSION'."
+                    "error": f"Cannot resubmit an application with status '{application_instance.status}'."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

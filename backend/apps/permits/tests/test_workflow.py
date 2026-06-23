@@ -69,9 +69,13 @@ class TestPermitWorkflow:
         
         dummy_image.seek(0)
         
+        from django.utils import timezone
+        from datetime import timedelta
+        future_date = (timezone.now() + timedelta(days=2)).strftime('%Y-%m-%d')
+
         data = {
             'destination': 'Lucena',
-            'transport_date': '2026-06-10',
+            'transport_date': future_date,
             'purpose': 'Slaughter',
             'origins[0][barangay]': barangay.id,
             'origins[0][number_of_pigs]': 5,
@@ -108,7 +112,7 @@ class TestPermitWorkflow:
         url = reverse('permitapplication-resubmit', kwargs={'pk': app_id})
         data = {
             'destination': 'Lucena City',
-            'transport_date': '2026-06-10',
+            'transport_date': future_date,
             'purpose': 'Slaughter',
             'origins[0][id]': application.origins.first().id,
             'origins[0][barangay]': barangay.id,

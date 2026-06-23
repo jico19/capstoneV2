@@ -1,8 +1,8 @@
-import AboutHero    from "./sections/AboutHero";
+import AboutHero from "./sections/AboutHero";
 import AboutContent from "./sections/AboutContent";
 import AboutContact from "./sections/AboutContact";
-import AboutTeam    from "./sections/AboutTeam";
-import AboutMap     from "./sections/AboutMap";
+import AboutTeam from "./sections/AboutTeam";
+import AboutMap from "./sections/AboutMap";
 
 export default function LandingAbout() {
   return (
@@ -10,7 +10,7 @@ export default function LandingAbout() {
       <AboutHero />
       <AboutContent />
       <AboutContact />
-      <AboutTeam />
+      {/* <AboutTeam /> */}
       <AboutMap />
     </div>
   );

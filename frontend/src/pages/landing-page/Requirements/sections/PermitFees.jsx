@@ -4,8 +4,8 @@ import PaymentIcon from "/src/assets/requirements-icons/payment-icon.png";
 
 const FEES = [
   { doc: "Veterinary Health Certificate", fee: "₱50.00" },
-  { doc: "Animal Inspection Certificate", fee: "₱50.00" },
-  { doc: "Shipping Permit",               fee: "₱50.00" },
+  { doc: "Transportation Pass",           fee: "₱50.00" },
+  { doc: "Sariaya Transportation Permit", fee: "₱50.00" },
 ];
 
 export default function PermitFees() {
@@ -52,7 +52,7 @@ export default function PermitFees() {
               ))}
               <tr className="bg-brand-amber/[0.06] border-t border-brand-amber/20">
                 <td className="px-5 py-[0.9rem] text-[clamp(0.9rem,1.3vw,1rem)] text-white"><strong>Total</strong></td>
-                <td className="px-5 py-[0.9rem] text-[clamp(0.9rem,1.3vw,1rem)] text-brand-amber font-bold"><strong>₱200.00</strong></td>
+                <td className="px-5 py-[0.9rem] text-[clamp(0.9rem,1.3vw,1rem)] text-brand-amber font-bold"><strong>₱150.00</strong></td>
               </tr>
             </tbody>
           </table>

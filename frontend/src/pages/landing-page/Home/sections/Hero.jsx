@@ -28,10 +28,10 @@ export default function Hero() {
         <div className="flex flex-col">
 
           {/* Badge */}
-          <div className="animate-hero-badge opacity-0 inline-flex items-center gap-2.5 px-3 py-[6px] bg-[#f5a623]/12 border border-[#f5a623]/30 rounded-full text-[12px] font-semibold text-brand-amber tracking-[0.05em] uppercase w-fit mb-7 max-[900px]:mx-auto">
+          {/* <div className="animate-hero-badge opacity-0 inline-flex items-center gap-2.5 px-3 py-[6px] bg-[#f5a623]/12 border border-[#f5a623]/30 rounded-full text-[12px] font-semibold text-brand-amber tracking-[0.05em] uppercase w-fit mb-7 max-[900px]:mx-auto">
             <img src={AgriLogo} alt="Sariaya Logo" className="w-5 h-5 rounded-full object-cover" />
             Official Farm Permit System
-          </div>
+          </div> */}
 
           {/* Title */}
           <h1 className="animate-hero-title opacity-0 font-archivo text-[clamp(36px,4.5vw,58px)] leading-[1.08] text-white mb-6 tracking-[-0.02em]">
@@ -60,7 +60,7 @@ export default function Hero() {
             >
               Learn More
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </button>
           </div>
@@ -68,7 +68,7 @@ export default function Hero() {
           {/* Trust row */}
           <div className="animate-hero-trust opacity-0 flex items-center gap-[14px] max-[900px]:justify-center">
             <div className="flex">
-              {["F","J","M","R"].map((l, i) => (
+              {["F", "J", "M", "R"].map((l, i) => (
                 <div key={i} className="w-8 h-8 rounded-full border-2 border-brand-primary flex items-center justify-center font-archivo text-[11px] text-[#9ce4c5] -ml-2 first:ml-0 relative"
                   style={{ zIndex: 4 - i, background: "linear-gradient(135deg,#1b6b3a,#0a2a1a)" }}>
                   {l}
@@ -119,7 +119,7 @@ export default function Hero() {
       {/* Wave */}
       <div className="relative z-[1] leading-[0] mt-auto">
         <svg viewBox="0 0 1440 80" fill="none" preserveAspectRatio="none" className="w-full h-[80px] block">
-          <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8faf8"/>
+          <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8faf8" />
         </svg>
       </div>
     </section>

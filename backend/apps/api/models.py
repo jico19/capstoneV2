@@ -73,4 +73,6 @@ class AuditTrail(models.Model):
     when_performed = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"AuditTrails -> #{self.pk} - {self.who_performed.username}"
+        # Fallback to "System" if the performing user is None (e.g. deleted user or automated task)
+        who = self.who_performed.username if self.who_performed else "System"
+        return f"AuditTrails -> #{self.pk} - {who}"

@@ -73,4 +73,4 @@ class AuditTrail(models.Model):
     when_performed = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"AuditTrails -> #{self.pk} - {self.who_performed.get_full_name() or self.who_performed.username}"
+        return f"AuditTrails -> #{self.pk} - {self.who_performed.username}"

@@ -57,7 +57,8 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             BORDER_COLOR = colors.HexColor("#e7e5e4")  # Stone-200
             ACCENT_BG = colors.HexColor("#f5f5f4")  # Stone-100
 
-            ASSET_DIR = os.path.join(settings.BASE_DIR, "asset")
+            # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+            ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
             OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
             AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
 
@@ -334,7 +335,8 @@ def generate_collection_report_pdf(start_date, end_date):
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
 
-    ASSET_DIR = os.path.join(settings.BASE_DIR, "asset")
+    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
 
@@ -453,7 +455,8 @@ def generate_inspector_report_pdf(start_date, end_date):
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
 
-    ASSET_DIR = os.path.join(settings.BASE_DIR, "asset")
+    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
 
@@ -570,7 +573,8 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
 
-    ASSET_DIR = os.path.join(settings.BASE_DIR, "asset")
+    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
 
@@ -709,7 +713,9 @@ def generate_barangay_distribution_pdf(start_date, end_date):
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
 
-    ASSET_DIR = os.path.join(settings.BASE_DIR, "asset")
+    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    # This prevents looking inside backend/config/asset which doesn't exist.
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
 

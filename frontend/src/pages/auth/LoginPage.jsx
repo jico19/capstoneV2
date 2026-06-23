@@ -110,10 +110,13 @@ const LoginPage = () => {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-900">Your Username</label>
                                 <div className="relative">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    {/* Register the input field. Pass custom onChange into register options to prevent overriding react-hook-form's own onChange handler. */}
                                     <input
                                         type="text"
-                                        {...register("username", { required: "Please enter your username." })}
-                                        onChange={() => apiError && setApiError(null)}
+                                        {...register("username", {
+                                            required: "Please enter your username.",
+                                            onChange: () => apiError && setApiError(null)
+                                        })}
                                         className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
                                             }`}
                                         placeholder="e.g. juan_farmer"
@@ -129,10 +132,13 @@ const LoginPage = () => {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-900">Your Password</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    {/* Register the input field. Pass custom onChange into register options to prevent overriding react-hook-form's own onChange handler. */}
                                     <input
                                         type={showPassword ? "text" : "password"}
-                                        {...register("password", { required: "Please enter your password." })}
-                                        onChange={() => apiError && setApiError(null)}
+                                        {...register("password", {
+                                            required: "Please enter your password.",
+                                            onChange: () => apiError && setApiError(null)
+                                        })}
                                         className={`w-full p-4 pl-12 pr-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
                                             }`}
                                         placeholder="••••••••"

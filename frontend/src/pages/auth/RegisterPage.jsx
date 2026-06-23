@@ -413,10 +413,13 @@ const RegisterPage = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your First Name</label>
+                                        {/* Register first name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
-                                            {...register("first_name", { required: "Please enter your first name" })}
-                                            onChange={clearError}
+                                            {...register("first_name", { 
+                                                required: "Please enter your first name",
+                                                onChange: clearError
+                                            })}
                                             className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.first_name ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
                                             placeholder="Example: JUAN"
                                             readOnly={isOTPVerified}
@@ -425,10 +428,13 @@ const RegisterPage = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Last Name</label>
+                                        {/* Register last name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
-                                            {...register("last_name", { required: "Please enter your last name" })}
-                                            onChange={clearError}
+                                            {...register("last_name", { 
+                                                required: "Please enter your last name",
+                                                onChange: clearError
+                                            })}
                                             className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.last_name ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
                                             placeholder="Example: DELA CRUZ"
                                             readOnly={isOTPVerified}
@@ -447,10 +453,13 @@ const RegisterPage = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Login Name</label>
+                                        {/* Register login name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
-                                            {...register("username", { required: "Choose a login name" })}
-                                            onChange={clearError}
+                                            {...register("username", { 
+                                                required: "Choose a login name",
+                                                onChange: clearError
+                                            })}
                                             className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
                                             placeholder="Example: juan_sariaya"
                                             readOnly={isOTPVerified}
@@ -461,10 +470,13 @@ const RegisterPage = () => {
                                         <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Mobile Number</label>
                                         <div className="relative">
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                                            {/* Register mobile phone input. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                             <input
                                                 type="tel"
-                                                {...register("phone", { required: "Mobile number is required" })}
-                                                onChange={clearError}
+                                                {...register("phone", { 
+                                                    required: "Mobile number is required",
+                                                    onChange: clearError
+                                                })}
                                                 className={`w-full p-4 pl-12 rounded-none border-2 focus:ring-0 outline-none transition-colors text-sm font-bold font-mono ${isOTPVerified ? 'bg-green-50 border-green-200 text-green-700' : 'bg-stone-50 border-stone-100 focus:border-green-600'}`}
                                                 placeholder="09XXXXXXXXX"
                                                 readOnly={isOTPVerified}
@@ -490,10 +502,13 @@ const RegisterPage = () => {
                                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Create a Secure Password</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+                                        {/* Register password input. The field validation is conditional: it's required only after OTP has been verified and the field is enabled. */}
                                         <input
                                             type="password"
-                                            {...register("password", { required: "Create a password to keep your account safe" })}
-                                            onChange={clearError}
+                                            {...register("password", { 
+                                                required: isOTPVerified ? "Create a password to keep your account safe" : false,
+                                                onChange: clearError
+                                            })}
                                             className={`w-full p-4 pl-12 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
                                             placeholder="At least 8 characters"
                                             disabled={!isOTPVerified}

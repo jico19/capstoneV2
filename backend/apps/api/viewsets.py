@@ -97,23 +97,18 @@ class UserViewSets(viewsets.ModelViewSet):
         if phone_no.startswith("09"):
             normalized_phone = "+63" + phone_no[1:]
 
+        from apps.sms.services import send_sms
+
         try:
             # Generate and cache OTP tied to the normalized phone number
             otp = generate_otp(normalized_phone)
 
-            res = requests.post(
-                f"{settings.SMS_BASE_URL}/messages",
-                auth=(settings.SMS_USERNAME, settings.SMS_PASSWORD),
-                json={
-                    "textMessage": {
-                        "text": f"Your FarmPass OTP is: {otp}. Valid for 5 minutes."
-                    },
-                    "phoneNumbers": [normalized_phone],
-                },
-                timeout=10,
+            success = send_sms(
+                phone_number=normalized_phone,
+                message=f"Your FarmPass OTP is: {otp}. Valid for 5 minutes."
             )
 
-            if res.status_code == 202:
+            if success:
                 return Response(
                     {"msg": f"OTP successfully sent to {phone_no}"},
                     status=status.HTTP_200_OK,

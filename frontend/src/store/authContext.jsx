@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 
 
@@ -21,7 +20,7 @@ const useAuthStore = create(
                     // const response = await api.post('/login', credentials);
                     // const userData = response.data;
                     const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/login/`, credentials)
-                    const decoded = jwtDecode(res.data.access)
+                    const decoded = JSON.parse(atob(res.data.access.split('.')[1]))
                     const user = {
                         id: decoded.id,
                         username: decoded.username,

@@ -21,7 +21,7 @@ const NotificationPage = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
     const [filter, setFilter] = useState('ALL'); // ALL, UNREAD, READ
-    const { data, isLoading, isError } = useGetNotification(limit, offset)
+    const { data, isLoading, isError } = useGetNotification(limit, offset, filter)
     const query = useQueryClient()
 
     if (isLoading) {
@@ -46,11 +46,10 @@ const NotificationPage = () => {
     const notifications = data?.results || [];
     const count = data?.count || 0;
 
-    const filteredNotifications = notifications.filter(n => {
-        if (filter === 'UNREAD') return !n.is_read;
-        if (filter === 'READ') return n.is_read;
-        return true;
-    });
+    const handleFilterChange = (newFilter) => {
+        setFilter(newFilter);
+        setOffset(0);
+    };
 
     const markAllAsRead = async () => {
         try {
@@ -78,7 +77,7 @@ const NotificationPage = () => {
                     {['ALL', 'UNREAD', 'READ'].map(f => (
                         <button 
                             key={f}
-                            onClick={() => setFilter(f)}
+                            onClick={() => handleFilterChange(f)}
                             className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${
                                 filter === f ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-400 border-stone-200'
                             }`}
@@ -91,13 +90,13 @@ const NotificationPage = () => {
 
             {/* List */}
             <div className="divide-y divide-stone-100">
-                {filteredNotifications.length === 0 ? (
+                {notifications.length === 0 ? (
                     <div className="py-20 flex flex-col items-center text-stone-300">
                         <Inbox size={40} />
                         <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-stone-400">Nothing here</p>
                     </div>
                 ) : (
-                    filteredNotifications.map(n => <NotificationItem key={n.id} notif={n} />)
+                    notifications.map(n => <NotificationItem key={n.id} notif={n} />)
                 )}
             </div>
 

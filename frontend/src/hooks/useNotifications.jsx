@@ -3,12 +3,18 @@ import { api } from "../lib/api";
 
 
 
-export const useGetNotification = (limit = 10, offset = 0) => {
+export const useGetNotification = (limit = 10, offset = 0, filter = 'ALL') => {
     return useQuery({
-        queryKey: ['notification', limit, offset],
+        queryKey: ['notification', limit, offset, filter],
         queryFn: async () => {
+            const params = { limit, offset };
+            if (filter === 'UNREAD') {
+                params.is_read = 'false';
+            } else if (filter === 'READ') {
+                params.is_read = 'true';
+            }
             const res = await api.get('/notification/', {
-                params: { limit, offset }
+                params
             })
             return res.data
         },

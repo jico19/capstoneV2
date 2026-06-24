@@ -40,7 +40,8 @@ def send_sms_update_approve(sender, instance, created, **kwargs):
     # OR if an existing instance changed its status to a monitored one.
     if created or (old_status != instance.status):
         if instance.status in monitored_statuses:
-            send_via_status.enqueue(instance.id)
+            from django.db import transaction
+            transaction.on_commit(lambda: send_via_status.enqueue(instance.id))
 
 
 

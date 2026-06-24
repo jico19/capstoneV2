@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from "/src/hooks/useApplications"
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
-import { ArrowLeft, FileText } from "lucide-react"
+import { ArrowLeft, FileText, HandCoins, Download } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
@@ -73,6 +73,40 @@ const ApplicationDetail = () => {
                                 className="bg-amber-600 hover:bg-amber-700 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto"
                             >
                                 Resubmit Now
+                            </button>
+                        </div>
+                    )}
+
+                    {application.status === "PAYMENT_PENDING" && (
+                        <div className="bg-green-50 border border-green-200 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-black text-green-800 uppercase tracking-widest">Payment Required</h3>
+                                <p className="text-xs font-bold text-green-700/70 uppercase tracking-widest leading-relaxed max-w-xl">
+                                    Your application has been approved. Please complete the permit fee payment to release and download your transport permit.
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => navigate(`/farmer/payment/checkout/${id}`)}
+                                className="bg-green-700 hover:bg-green-600 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
+                            >
+                                <HandCoins size={14} /> Pay Fee (₱150)
+                            </button>
+                        </div>
+                    )}
+
+                    {['PAID', 'RELEASED'].includes(application.status) && (
+                        <div className="bg-stone-900 border border-stone-850 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 text-white">
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-green-400">Permit Issued</h3>
+                                <p className="text-xs font-bold text-stone-300 uppercase tracking-widest leading-relaxed max-w-xl">
+                                    Your transport permit is fully active and ready to use. Download or view the PDF copy here.
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => navigate(`/farmer/application/download/${id}`)}
+                                className="bg-green-700 hover:bg-green-600 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
+                            >
+                                <Download size={14} /> Get Permit PDF
                             </button>
                         </div>
                     )}

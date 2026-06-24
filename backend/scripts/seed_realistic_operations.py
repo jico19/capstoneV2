@@ -22,6 +22,18 @@ fake = Faker()
 def run():
     print("Starting operational mock data generation...")
 
+    # Disconnect signals to prevent side effects and background tasks during mock data generation
+    from django.db.models.signals import post_save, pre_save
+    from apps.sms.signals import send_sms_update_approve, capture_old_status
+    from apps.permits.signals import trigger_ocr_flow, trigger_opv_flow, trigger_payment_flow
+    from apps.permits.models import PermitApplication, SubmittedDocument, OPVValidation, IssuedPermit
+
+    post_save.disconnect(send_sms_update_approve, sender=PermitApplication)
+    pre_save.disconnect(capture_old_status, sender=PermitApplication)
+    post_save.disconnect(trigger_ocr_flow, sender=SubmittedDocument)
+    post_save.disconnect(trigger_opv_flow, sender=OPVValidation)
+    post_save.disconnect(trigger_payment_flow, sender=IssuedPermit)
+
     # 1. Clean up existing operational data
     # (Leaving Barangays and existing HogSurveys alone, but we will add more recent surveys)
     print("Cleaning up old operational records...")

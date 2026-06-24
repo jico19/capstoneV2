@@ -212,31 +212,62 @@ const FarmerApplicationDashboard = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-right">
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                                <ActionGroup
-                                                    buttons={[
-                                                        {
-                                                            icon: Eye,
-                                                            label: "View",
-                                                            onclick: () => navigate(`/farmer/application/detail/${app.id}`),
-                                                            disable: false
-                                                        },
-                                                        {
-                                                            icon: HandCoins,
-                                                            label: "Pay",
-                                                            onclick: () => navigate(`/farmer/payment/checkout/${app.id}`),
-                                                            disable: app.status !== 'PAYMENT_PENDING'
-                                                        },
-                                                        {
-                                                            icon: Download,
-                                                            label: "Get",
-                                                            onclick: () => navigate(`/farmer/application/download/${app.id}`),
-                                                            disable: !['PAID', 'RELEASED'].includes(app.status)
-                                                        },
-                                                    ]}
-                                                />
-                                            </div>
-                                        </td>
+                                             <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end gap-2">
+                                                 {app.status === 'PAYMENT_PENDING' ? (
+                                                     <>
+                                                         <button
+                                                             onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
+                                                             className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5 shadow-sm"
+                                                         >
+                                                             <HandCoins size={12} /> Pay Fee
+                                                         </button>
+                                                         <button
+                                                             onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                                             className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                                                         >
+                                                             <Eye size={12} /> View
+                                                         </button>
+                                                     </>
+                                                 ) : ['PAID', 'RELEASED'].includes(app.status) ? (
+                                                     <>
+                                                         <button
+                                                             onClick={() => navigate(`/farmer/application/download/${app.id}`)}
+                                                             className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5 shadow-sm"
+                                                         >
+                                                             <Download size={12} /> Get Permit
+                                                         </button>
+                                                         <button
+                                                             onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                                             className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                                                         >
+                                                             <Eye size={12} /> View
+                                                         </button>
+                                                     </>
+                                                 ) : ['RESUBMISSION', 'OPV_REJECTED'].includes(app.status) ? (
+                                                     <>
+                                                         <button
+                                                             onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
+                                                             className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5 shadow-sm"
+                                                         >
+                                                             Fix/Resubmit
+                                                         </button>
+                                                         <button
+                                                             onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                                             className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                                                         >
+                                                             <Eye size={12} /> View
+                                                         </button>
+                                                     </>
+                                                 ) : (
+                                                     <button
+                                                         onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                                         className="px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                                                     >
+                                                         <Eye size={12} /> View Details
+                                                     </button>
+                                                 )}
+                                             </div>
+                                         </td>
                                     </tr>
                                 ))
                             )}

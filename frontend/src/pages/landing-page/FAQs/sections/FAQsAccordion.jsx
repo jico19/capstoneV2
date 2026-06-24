@@ -4,52 +4,78 @@ const CATEGORIES = [
   {
     title: "Getting Started",
     items: [
-      { q: "What is FarmPass?",
-        a: "FarmPass is a web-based livestock transport permit issuance system for Sariaya Municipal Agriculture Office. It uses OCR document validation, Machine Learning fraud detection, and Geospatial monitoring to process permits quickly and securely — all online, 24/7." },
-      { q: "Who can use FarmPass?",
-        a: "Licensed traders, haulers, and livestock owners can use FarmPass to apply for transport permits. All users must have valid licenses and register an account to access the system." },
-      { q: "Is FarmPass free to use?",
-        a: "Creating an account is FREE. You only pay the standard government permit fees when you apply for a transport permit." },
+      {
+        q: "What is FarmPass?",
+        a: "FarmPass is a web-based livestock transport permit issuance system for Sariaya Municipal Agriculture Office. It uses OCR document validation, and Geospatial monitoring to process permits quickly and securely — all online, 24/7."
+      },
+      {
+        q: "Who can use FarmPass?",
+        a: "Licensed traders, haulers, and livestock owners can use FarmPass to apply for transport permits. All users must have valid licenses and register an account to access the system."
+      },
+      {
+        q: "Is FarmPass free to use?",
+        a: "Creating an account is FREE. You only pay the standard government permit fees when you apply for a transport permit."
+      },
     ],
   },
   {
     title: "Documents & Requirements",
     items: [
-      { q: "What documents do I need?",
-        a: "You need 5 documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Immediate Slaughter (if applicable), and Barangay Endorsement (Pagpapatunay). All must be in PDF, JPG, or PNG format (max 5MB each)." },
-      { q: "How long are documents valid?",
-        a: "Handler's License and Transport Carrier Registration must be current. Trader's Pass must be within 60 days from issue date. Always check validity before uploading." },
+      {
+        q: "What documents do I need?",
+        a: "You need 5 documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Immediate Slaughter (if applicable), and Barangay Endorsement (Pagpapatunay). All must be in PDF, JPG, or PNG format (max 5MB each)."
+      },
+      {
+        q: "How long are documents valid?",
+        a: "Handler's License and Transport Carrier Registration must be current. Trader's Pass must be within 60 days from issue date. Always check validity before uploading."
+      },
     ],
   },
   {
     title: "Application Process",
     items: [
-      { q: "How long does approval take?",
-        a: "15–30 minutes during office hours (Mon–Fri, 8AM–5PM). The system validates documents automatically, then staff reviews your application. You'll receive SMS updates on status changes." },
-      { q: "Can I track my application?",
-        a: "Yes! Login and go to \"My Applications\" or use your tracking number (sent via SMS) to see real-time status: Submitted → Under Review → Approved/Rejected." },
-      { q: "What if my application is rejected?",
-        a: "You'll receive an SMS with the rejection reason. Fix the issues and submit a new application. Rejected applications don't incur charges — you only pay after approval." },
+      {
+        q: "How long does approval take?",
+        a: "15–30 minutes during office hours (Mon–Fri, 8AM–5PM). The system validates documents automatically, then staff reviews your application. You'll receive SMS updates on status changes."
+      },
+      {
+        q: "Can I track my application?",
+        a: "Yes! Login and go to \"My Applications\" or use your tracking number (sent via SMS) to see real-time status: Submitted → Under Review → Approved/Rejected."
+      },
+      {
+        q: "What if my application is rejected?",
+        a: "You'll receive an SMS with the rejection reason. Fix the issues and submit a new application. Rejected applications don't incur charges — you only pay after approval."
+      },
     ],
   },
   {
     title: "Fees & Payment",
     items: [
-      { q: "How much does a permit cost?",
-        a: "Standard permit fees:\n• Veterinary Health Certificate – ₱50\n• Transportation Pass – ₱50\n• Sariaya Transportation Permit – ₱50\n\nTotal: ₱150 per application." },
-      { q: "What payment methods are accepted?",
-        a: "Online: GCash, PayMaya, Bank Transfer\nIn-Person: Cash at Sariaya Agriculture Office (Mon–Fri, 8AM–5PM)" },
-      { q: "When do I need to pay?",
-        a: "Payment is required AFTER you submit your application. Process: Submit → Pay → Approved → Receive Permit." },
+      {
+        q: "How much does a permit cost?",
+        a: "Standard permit fees:\n• Veterinary Health Certificate – ₱50\n• Transportation Pass – ₱50\n• Sariaya Transportation Permit – ₱50\n\nTotal: ₱150 per application."
+      },
+      {
+        q: "What payment methods are accepted?",
+        a: "Online: GCash, PayMaya, Bank Transfer\nIn-Person: Cash at Sariaya Agriculture Office (Mon–Fri, 8AM–5PM)"
+      },
+      {
+        q: "When do I need to pay?",
+        a: "Payment is required AFTER you submit your application. Process: Submit → Pay → Approved → Receive Permit."
+      },
     ],
   },
   {
     title: "Technical",
     items: [
-      { q: "Can I use this on my phone?",
-        a: "Yes! FarmPass is a Progressive Web App that works on phones, tablets, and computers. You can even install it on your home screen for an app-like experience." },
-      { q: "Is my information secure?",
-        a: "Yes! We use secure servers, access controls, and comply with the Data Privacy Act. Your information is never shared with third parties." },
+      {
+        q: "Can I use this on my phone?",
+        a: "Yes! FarmPass is a Progressive Web App that works on phones, tablets, and computers. You can even install it on your home screen for an app-like experience."
+      },
+      {
+        q: "Is my information secure?",
+        a: "Yes! We use secure servers, access controls, and comply with the Data Privacy Act. Your information is never shared with third parties."
+      },
     ],
   },
 ];

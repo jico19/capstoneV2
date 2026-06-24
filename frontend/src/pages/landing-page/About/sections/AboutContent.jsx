@@ -20,15 +20,21 @@ const OFFICE_RESPONSIBILITIES = [
 ];
 
 const SDGS = [
-  { code: "SDG 2",  title: "Zero Hunger",
+  {
+    code: "SDG 2", title: "Zero Hunger",
     desc: "Protecting the food supply chain by ensuring safe, legal livestock transport and preventing disease spread.",
-    color: "#f5a623" },
-  { code: "SDG 9",  title: "Industry, Innovation & Infrastructure",
-    desc: "Modernizing agricultural government services with AI/ML technology.",
-    color: "#4db8e8" },
-  { code: "SDG 16", title: "Peace, Justice & Strong Institutions",
-    desc: "Increasing transparency, reducing corruption, and building accountable institutions.",
-    color: "#52b788" },
+    color: "#f5a623"
+  },
+  {
+    code: "SDG 9", title: "Industry, Innovation & Infrastructure",
+    desc: "Building resilient digital infrastructure for efficient and transparent livestock permit management in local government.",
+    color: "#4db8e8"
+  },
+  {
+    code: "SDG 16", title: "Peace, Justice & Strong Institutions",
+    desc: "Increasing transparency and building accountable institutions.",
+    color: "#52b788"
+  },
 ];
 
 function CheckList({ items }) {
@@ -46,7 +52,7 @@ function CheckList({ items }) {
 
 export default function AboutContent() {
   const missionRef = useScrollReveal({ threshold: 0.1 });
-  const officeRef  = useScrollReveal({ threshold: 0.1 });
+  const officeRef = useScrollReveal({ threshold: 0.1 });
 
   return (
     <section className="bg-brand-bg py-16 relative overflow-hidden max-[640px]:py-12

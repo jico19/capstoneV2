@@ -74,7 +74,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-sm border border-stone-200 shadow-2xl relative animate-in zoom-in-95 duration-200">
                 {/* Close Button */}
-                <button 
+                <button
                     onClick={onClose}
                     className="absolute right-4 top-4 text-stone-400 hover:text-stone-900 transition-colors"
                 >
@@ -170,7 +170,7 @@ const RegisterPage = () => {
         formState: { errors, isSubmitting },
     } = useForm();
     const navigate = useNavigate();
-    
+
     // UI States
     const [isOTPVerified, setIsOTPVerified] = useState(false)
     const [showOTPModal, setShowOTPModal] = useState(false)
@@ -194,14 +194,14 @@ const RegisterPage = () => {
             toast.success("Account Created", {
                 description: "You can now log in with your new details."
             });
-        } catch(error) {
+        } catch (error) {
             console.error(error.response)
             setGlobalError(error.response?.data?.error || "Could not create your account.");
             toast.error("Registration Failed", {
                 description: error.response?.data?.error || "Could not create your account."
             });
         }
-    };  
+    };
 
     // Triggered when user clicks "Send Code" or Resend
     const onSendOTP = async (data) => {
@@ -218,7 +218,7 @@ const RegisterPage = () => {
                 description: "Please check your phone for the 6-digit code."
             });
             setShowOTPModal(true); // Open the modal on success
-        } catch(error) {
+        } catch (error) {
             console.error(error)
             setGlobalError("Failed to send verification code. Please check your number.");
             toast.error("Failed to Send Code", {
@@ -237,7 +237,7 @@ const RegisterPage = () => {
         try {
             await api.post('/user/verify_otp/', {
                 otp: code,
-                phone_no: phone_no 
+                phone_no: phone_no
             })
             setIsOTPVerified(true)
             setShowOTPModal(false) // Close modal on success
@@ -304,7 +304,7 @@ const RegisterPage = () => {
         <div className="min-h-screen flex flex-col md:flex-row bg-white font-sans overflow-x-hidden">
 
             {/* OTP Modal */}
-            <OTPModal 
+            <OTPModal
                 isOpen={showOTPModal}
                 onClose={() => setShowOTPModal(false)}
                 phone={getValues("phone")}
@@ -343,7 +343,7 @@ const RegisterPage = () => {
                         ].map((item, i) => (
                             <li key={i} className="flex gap-5">
                                 <div className="h-8 w-8 bg-white/20 border border-white/30 flex-shrink-0 flex items-center justify-center font-black text-white text-sm italic">
-                                    0{i+1}
+                                    0{i + 1}
                                 </div>
                                 <div>
                                     <p className="text-white font-black text-sm uppercase tracking-tight">{item.title}</p>
@@ -377,9 +377,8 @@ const RegisterPage = () => {
                             { id: 3, label: "Finish", active: isOTPVerified }
                         ].map((step, idx) => (
                             <div key={idx} className="flex items-center gap-2 flex-1">
-                                <div className={`w-6 h-6 flex items-center justify-center text-[10px] font-black border-2 transition-colors ${
-                                    step.active ? "bg-green-600 border-green-600 text-white" : "bg-white border-stone-200 text-stone-300"
-                                }`}>
+                                <div className={`w-6 h-6 flex items-center justify-center text-[10px] font-black border-2 transition-colors ${step.active ? "bg-green-600 border-green-600 text-white" : "bg-white border-stone-200 text-stone-300"
+                                    }`}>
                                     {isOTPVerified && step.id < 3 ? <CheckCircle2 size={12} strokeWidth={3} /> : step.id}
                                 </div>
                                 <span className={`text-[10px] font-black uppercase tracking-widest ${step.active ? "text-stone-900" : "text-stone-300"}`}>
@@ -416,7 +415,7 @@ const RegisterPage = () => {
                                         {/* Register first name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
-                                            {...register("first_name", { 
+                                            {...register("first_name", {
                                                 required: "Please enter your first name",
                                                 onChange: clearError
                                             })}
@@ -431,7 +430,7 @@ const RegisterPage = () => {
                                         {/* Register last name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
-                                            {...register("last_name", { 
+                                            {...register("last_name", {
                                                 required: "Please enter your last name",
                                                 onChange: clearError
                                             })}
@@ -452,11 +451,11 @@ const RegisterPage = () => {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Login Name</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Your Username</label>
                                         {/* Register login name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
-                                            {...register("username", { 
+                                            {...register("username", {
                                                 required: "Choose a login name",
                                                 onChange: clearError
                                             })}
@@ -473,7 +472,7 @@ const RegisterPage = () => {
                                             {/* Register mobile phone input. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                             <input
                                                 type="tel"
-                                                {...register("phone", { 
+                                                {...register("phone", {
                                                     required: "Mobile number is required",
                                                     onChange: clearError
                                                 })}
@@ -505,7 +504,7 @@ const RegisterPage = () => {
                                         {/* Register password input. The field validation is conditional: it's required only after OTP has been verified and the field is enabled. */}
                                         <input
                                             type="password"
-                                            {...register("password", { 
+                                            {...register("password", {
                                                 required: isOTPVerified ? "Create a password to keep your account safe" : false,
                                                 onChange: clearError
                                             })}
@@ -530,11 +529,10 @@ const RegisterPage = () => {
                                 id="submit-registration"
                                 type="submit"
                                 disabled={isSubmitting || isSendingOTP}
-                                className={`w-full py-5 rounded-none font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${
-                                    isOTPVerified 
-                                    ? "bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20" 
-                                    : "bg-stone-900 hover:bg-black text-white"
-                                }`}
+                                className={`w-full py-5 rounded-none font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${isOTPVerified
+                                        ? "bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20"
+                                        : "bg-stone-900 hover:bg-black text-white"
+                                    }`}
                             >
                                 {isSubmitting || isSendingOTP ? (
                                     <>

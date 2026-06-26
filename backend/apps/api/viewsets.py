@@ -110,6 +110,15 @@ class UserViewSets(viewsets.ModelViewSet):
         if phone_no.startswith("09"):
             normalized_phone = "+63" + phone_no[1:]
 
+        # Check if phone number is already registered in the system
+        if len(phone_no) >= 9:
+            core_phone = phone_no[-9:]
+            if models.User.objects.filter(phone_no__contains=core_phone).exists():
+                return Response(
+                    {"error": "This mobile number is already registered to another account."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         from apps.sms.services import send_sms
 
         try:

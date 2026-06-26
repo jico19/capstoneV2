@@ -167,9 +167,28 @@ const RegisterPage = () => {
         register,
         handleSubmit,
         getValues,
+        setValue,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm();
     const navigate = useNavigate();
+
+    const watchedPhone = watch("phone");
+    const watchedFirstName = watch("first_name");
+    const watchedLastName = watch("last_name");
+    const [isUsernameDirty, setIsUsernameDirty] = useState(false);
+
+    useEffect(() => {
+        if (!isUsernameDirty) {
+            const first = (watchedFirstName || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+            const last = (watchedLastName || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (first || last) {
+                setValue("username", `${first}${last}`);
+            } else {
+                setValue("username", "");
+            }
+        }
+    }, [watchedFirstName, watchedLastName, isUsernameDirty, setValue]);
 
     // UI States
     const [isOTPVerified, setIsOTPVerified] = useState(false)
@@ -407,7 +426,7 @@ const RegisterPage = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 1</span>
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Your Identity</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Your Details</h3>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -447,7 +466,7 @@ const RegisterPage = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 2</span>
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">How can we reach you?</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Contact Info</h3>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -457,12 +476,16 @@ const RegisterPage = () => {
                                             type="text"
                                             {...register("username", {
                                                 required: "Choose a login name",
-                                                onChange: clearError
+                                                onChange: (e) => {
+                                                    setIsUsernameDirty(true);
+                                                    clearError();
+                                                }
                                             })}
                                             className={`w-full p-4 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
                                             placeholder="Example: juan_sariaya"
                                             readOnly={isOTPVerified}
                                         />
+                                        <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-1">This is created automatically from your name.</p>
                                         {errors.username && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.username.message}</p>}
                                     </div>
                                     <div className="space-y-2">
@@ -474,18 +497,35 @@ const RegisterPage = () => {
                                                 type="tel"
                                                 {...register("phone", {
                                                     required: "Mobile number is required",
+                                                    pattern: {
+                                                        value: /^(?:\+639|639|09)\d{9}$/,
+                                                        message: "Enter a valid mobile number (e.g. 09123456789)"
+                                                    },
                                                     onChange: clearError
                                                 })}
-                                                className={`w-full p-4 pl-12 rounded-none border-2 focus:ring-0 outline-none transition-colors text-sm font-bold font-mono ${isOTPVerified ? 'bg-green-50 border-green-200 text-green-700' : 'bg-stone-50 border-stone-100 focus:border-green-600'}`}
+                                                className={`w-full p-4 pl-12 pr-10 rounded-none border-2 focus:ring-0 outline-none transition-colors text-sm font-bold font-mono ${isOTPVerified ? 'bg-green-50 border-green-200 text-green-700' : 'bg-stone-50 border-stone-100 focus:border-green-600'}`}
                                                 placeholder="09XXXXXXXXX"
                                                 readOnly={isOTPVerified}
                                             />
+                                            {watchedPhone && !isOTPVerified && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setValue("phone", "");
+                                                        clearError();
+                                                    }}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-900 transition-colors flex items-center justify-center"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            )}
                                             {isOTPVerified && (
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-600">
                                                     <CheckCircle2 size={18} strokeWidth={3} />
                                                 </div>
                                             )}
                                         </div>
+                                        <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-1">We will send a 6-digit text code to this number.</p>
                                         {errors.phone && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.phone.message}</p>}
                                     </div>
                                 </div>
@@ -495,7 +535,7 @@ const RegisterPage = () => {
                             <div className={`space-y-4 transition-opacity duration-300 ${isOTPVerified ? "opacity-100" : "opacity-40"}`}>
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 3</span>
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Secure Your Account</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Choose Password</h3>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Create a Secure Password</label>
@@ -506,6 +546,10 @@ const RegisterPage = () => {
                                             type="password"
                                             {...register("password", {
                                                 required: isOTPVerified ? "Create a password to keep your account safe" : false,
+                                                minLength: {
+                                                    value: 8,
+                                                    message: "Password must be at least 8 characters"
+                                                },
                                                 onChange: clearError
                                             })}
                                             className={`w-full p-4 pl-12 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
@@ -513,6 +557,7 @@ const RegisterPage = () => {
                                             disabled={!isOTPVerified}
                                         />
                                     </div>
+                                    <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-1">Write this down so you do not forget it.</p>
                                     {errors.password && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.password.message}</p>}
                                     {isOTPVerified && (
                                         <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-2 flex items-center gap-1">

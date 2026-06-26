@@ -44,13 +44,13 @@ const useAuthStore = create(
             // Logout Action
             logout: () => {
                 set({ user: null, isAuthenticated: false });
-                localStorage.clear()
+                sessionStorage.clear()
                 // Optional: clear tokens from cookies/localstorage if not using persist
             },
         }),
         {
-            name: 'auth-context', // unique name for localStorage
-            storage: createJSONStorage(() => localStorage),
+            name: 'auth-context', // unique name for sessionStorage
+            storage: createJSONStorage(() => sessionStorage),
         }
     )
 );

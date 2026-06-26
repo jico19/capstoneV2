@@ -14,7 +14,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
         <div className="space-y-8">
             <div className="border-b border-gray-100 pb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
-                <h2 className="text-xl font-black text-gray-900 uppercase">Transport Details</h2>
+                <h2 className="text-xl font-black text-gray-900 uppercase">Where & When are you travelling?</h2>
             </div>
 
             {/* Origins Section */}
@@ -22,7 +22,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                 {origins.map((origin, index) => (
                     <div key={origin.id} className="p-4 border border-gray-100 bg-gray-50/50 space-y-4">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Origin #{index + 1}</h3>
+                            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Starting Location #{index + 1}</h3>
                             {origins.length > 1 && (
                                 <button type="button" onClick={() => removeOrigin(origin.id)} className="text-red-600 hover:text-red-700">
                                     <Trash2 size={16} />
@@ -31,7 +31,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Barangay</label>
+                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Select Barangay</label>
                                 <select {...register(`barangay_${origin.id}`, { required: true })} className={selectClass(errors[`barangay_${origin.id}`])}>
                                     <option value="">-- SELECT --</option>
                                     {map?.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -39,7 +39,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                 {errors[`barangay_${origin.id}`] && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Required</p>}
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Number of Pigs</label>
+                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">How many pigs?</label>
                                 <input type="number" {...register(`pigs_${origin.id}`, { required: true })} className={selectClass(errors[`pigs_${origin.id}`])} placeholder="0" />
                                 {errors[`pigs_${origin.id}`] && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Required</p>}
                             </div>
@@ -48,14 +48,14 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                 ))}
                 
                 <button type="button" onClick={addOrigin} className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:border-green-600 hover:text-green-600">
-                    <Plus size={16} /> Add Another Origin
+                    <Plus size={16} /> Add Another Starting Location
                 </button>
             </div>
 
             {/* Common Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Destination</label>
+                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Where are they going? (Destination)</label>
                     <div className="relative">
                         <Navigation className="absolute left-3 top-3.5 text-gray-400" size={18} />
                         <input type="text" className={inputClass(errors.destination)} {...register('destination', { required: true })} />
@@ -63,7 +63,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                     {errors.destination && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Destination is required</p>}
                 </div>
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Transport Date</label>
+                    <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Date of travel</label>
                     <div className="relative">
                         <Calendar className="absolute left-3 top-3.5 text-gray-400" size={18} />
                         <input type="date" min={new Date().toISOString().split('T')[0]} className={inputClass(errors.transport_date)} {...register('transport_date', { required: true })} />
@@ -73,13 +73,13 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
             </div>
 
             <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Purpose</label>
+                <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Reason for travel (e.g. Slaughter, Breeding, Sale)</label>
                 <textarea className={`${inputClass(errors.purpose).replace('pl-10', 'px-4')} min-h-[100px]`} {...register('purpose', { required: true })} />
-                {errors.purpose && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Purpose is required</p>}
+                {errors.purpose && <p className="text-[8px] font-bold text-red-600 uppercase tracking-widest">Reason is required</p>}
             </div>
 
             <div className="flex justify-end pt-6 border-t border-gray-100">
-                <button type="button" onClick={nextStep} className="w-full md:w-auto bg-green-600 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none">Next Step</button>
+                <button type="button" onClick={nextStep} className="w-full md:w-auto bg-green-600 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none">Proceed to Documents</button>
             </div>
         </div>
     );

@@ -5,21 +5,21 @@ import {
     FileSignature,
     ArrowRight,
     Truck,
-    Percent
+    Percent,
+    AlertTriangle
 } from "lucide-react";
 import { useGetOPVDashboard } from "/src/hooks/useDashboard";
 import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
-import { useNavigate } from "react-router-dom";
+
 
 /**
  * OPV Staff Dashboard Overview (Unified)
- * High-signal minimalist overview of the Veterinary Office performance.
- * Merges workload monitoring with tactical livestock movement analytics.
+ * High-signal overview of the Veterinary Office performance.
+ * Merges workload monitoring, biosecurity compliance, and tactical livestock movement analytics.
  */
 const OpvDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetOPVDashboard();
-    const navigate = useNavigate();
 
     if (isLoading) {
         return (
@@ -67,9 +67,9 @@ const OpvDashboard = () => {
                     colorClass="bg-green-50 text-green-700"
                 />
                 <KPICard
-                    title="Total Volume"
+                    title="Swine Volume"
                     value={kpis.total_volume}
-                    subtitle="Pigs transported (30d)"
+                    subtitle="Pigs validated (30d)"
                     icon={Truck}
                     colorClass="bg-stone-50 text-stone-700"
                 />
@@ -85,7 +85,7 @@ const OpvDashboard = () => {
 
             {/* Main Content Area: Workload & Movement */}
             <div className="space-y-8">
-                {/* Validation History Chart */}
+                {/* Daily Throughput Chart */}
                 <div className="bg-stone-50 border border-stone-200 p-8 md:p-12 rounded-none">
                     <div className="mb-10 border-l-4 border-green-700 pl-6 space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Workflow Statistics</p>
@@ -102,13 +102,31 @@ const OpvDashboard = () => {
                     </div>
                 </div>
 
-                {/* Tactical Analytics Grid */}
+                {/* Failure Analysis and Geographic Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Rejection Reasons Bar Chart */}
+                    <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
+                        <div className="mb-8 border-l-4 border-red-700 pl-4 space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Failure Analysis</p>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Rejection Reasons</h3>
+                        </div>
+                        <div className="bg-white p-6 border border-stone-100">
+                            <BarChartComponent
+                                data={charts.rejection_reasons}
+                                xKey="reason"
+                                yKey="count"
+                                height={250}
+                                barColor="#b91c1c"
+                            />
+                        </div>
+                        <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Primary causes for permit application refusal (30d).</p>
+                    </div>
+
                     {/* Origins Bar Chart */}
                     <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
                         <div className="mb-8 border-l-4 border-green-700 pl-4 space-y-1">
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Geographic Source</p>
-                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Top Barangay Areas</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Top Barangay Areas (Swine Count)</h3>
                         </div>
                         <div className="bg-white p-6 border border-stone-100">
                             <BarChartComponent
@@ -119,13 +137,14 @@ const OpvDashboard = () => {
                                 barColor="#15803d"
                             />
                         </div>
+                        <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Swine volume distribution by top 5 origin barangays.</p>
                     </div>
 
-                    {/* Destinations Bar Chart */}
-                    <div className="bg-stone-50 border border-stone-200 p-8 rounded-none">
+                    {/* Destinations Bar Chart - Spans Full Width on lg */}
+                    <div className="bg-stone-50 border border-stone-200 p-8 rounded-none lg:col-span-2">
                         <div className="mb-8 border-l-4 border-blue-700 pl-4 space-y-1">
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none">Traffic Hotspots</p>
-                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Destination Trends</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-stone-800">Destination Trends (Swine Count)</h3>
                         </div>
                         <div className="bg-white p-6 border border-stone-100">
                             <BarChartComponent
@@ -136,6 +155,7 @@ const OpvDashboard = () => {
                                 barColor="#1d4ed8"
                             />
                         </div>
+                        <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Most frequent shipment endpoints by livestock headcount.</p>
                     </div>
                 </div>
             </div>

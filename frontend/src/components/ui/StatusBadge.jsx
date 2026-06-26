@@ -47,17 +47,17 @@ const StatusBadge = ({ status }) => {
         
         // Custom labels for better UX based on role-agnostic plain language
         const labels = {
-            'DRAFT': 'Draft',
-            'SUBMITTED': 'Sent',
-            'RESUBMISSION': 'Needs Update',
-            'OCR_VALIDATED': 'Auto Checked',
-            'MANUAL': 'Needs Review',
-            'FORWARDED_TO_OPV': 'OPV Review',
-            'OPV_VALIDATED': 'OPV Approved',
-            'OPV_REJECTED': 'Correction Required',
-            'PERMIT_ISSUED': 'Permit Ready',
+            'DRAFT': 'Draft (Unsent)',
+            'SUBMITTED': 'Sent (Received)',
+            'RESUBMISSION': 'Needs Corrections',
+            'OCR_VALIDATED': 'Checking Documents',
+            'MANUAL': 'Under Review',
+            'FORWARDED_TO_OPV': 'Under Vet Review',
+            'OPV_VALIDATED': 'Approved by Vet',
+            'OPV_REJECTED': 'Rejected by Vet',
+            'PERMIT_ISSUED': 'Awaiting Payment',
             'PAYMENT_PENDING': 'Awaiting Payment',
-            'RELEASED': 'Released'
+            'RELEASED': 'Active (Ready)'
         };
 
         return labels[text] || text.replace(/_/g, " ");

@@ -9,7 +9,6 @@ import { useGetInspectorDashboard } from "/src/hooks/useDashboard";
 import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
 import LineChartComponent from "/src/components/charts/LineChart";
-import { useNavigate } from "react-router-dom";
 
 
 /**
@@ -96,7 +95,7 @@ const InspectorDashboard = () => {
                 <div className="bg-white border border-gray-200 p-10 rounded-none">
                     <div className="mb-10 border-l-2 border-green-600 pl-6 space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Shift Optimization</p>
-                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Peak.Activity</h2>
+                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Peak Activity</h2>
                     </div>
                     <LineChartComponent
                         data={charts.peak_activity}
@@ -109,6 +108,43 @@ const InspectorDashboard = () => {
                 </div>
             </div>
 
+            {/* Recent Checkpoint Activity Ledger */}
+            <div className="bg-white border border-gray-200 p-10 rounded-none">
+                <div className="mb-8 border-l-2 border-indigo-600 pl-6 space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty Ledger</p>
+                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Recent Cargo Inspections</h2>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-gray-200">
+                                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Permit ID</th>
+                                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Scan Timestamp</th>
+                                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Destination</th>
+                                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Cargo Size</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {metrics.recent_activity?.length > 0 ? (
+                                metrics.recent_activity.map((log, index) => (
+                                    <tr key={`${log.application_id}-${index}`} className="hover:bg-gray-50/50">
+                                        <td className="py-4 text-xs font-black text-blue-700 uppercase tracking-tight">{log.application_id}</td>
+                                        <td className="py-4 text-xs text-gray-500 font-mono">{log.scanned_at}</td>
+                                        <td className="py-4 text-xs font-bold text-gray-800 uppercase">{log.destination}</td>
+                                        <td className="py-4 text-xs font-black text-gray-900 text-right">{log.total_pigs} pigs</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="py-8 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        No recent inspections recorded.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };

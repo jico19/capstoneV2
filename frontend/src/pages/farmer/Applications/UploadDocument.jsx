@@ -8,26 +8,26 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
     };
 
     const commonDocs = [
-        { id: 'traders_pass', label: "Trader's Pass", desc: "LGU Issued Pass" },
-        { id: 'handlers_license', label: "Handler's License", desc: "Valid certification" },
-        { id: 'transport_carrier_reg', label: "Carrier Registration", desc: "Vehicle OR/CR" },
+        { id: 'traders_pass', label: "Trader's Pass", desc: "LGU permit to buy/sell livestock" },
+        { id: 'handlers_license', label: "Handler's License", desc: "Bureau of Animal Industry (BAI) license" },
+        { id: 'transport_carrier_reg', label: "Vehicle Registration (OR/CR)", desc: "Official Receipt & Certificate of Registration" },
     ];
 
     const originDocs = [
-        { id: 'cis', label: "CIS", desc: "Barangay-issued" },
-        { id: 'endorsement_cert', label: "Endorsement", desc: "Barangay Clearance" }
+        { id: 'cis', label: "CIS (Certificate of Inspection)", desc: "Barangay-issued swine health document" },
+        { id: 'endorsement_cert', label: "Barangay Endorsement", desc: "Barangay clearance to move livestock" }
     ];
 
     return (
         <div className="space-y-12">
             <div className="border-b border-gray-100 pb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 2</p>
-                <h2 className="text-xl font-black text-gray-900 uppercase">Required Documents</h2>
+                <h2 className="text-xl font-black text-gray-900 uppercase">Upload Documents</h2>
             </div>
 
             {/* Common Docs */}
             <div className="space-y-4">
-                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Shared Documents</h3>
+                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Seller & Vehicle Documents</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {commonDocs.map((doc) => (
                         <FileUpload key={doc.id} id={doc.id} label={doc.label} desc={doc.desc} register={register} errors={errors} watch={watch} hasFile={hasFile} />
@@ -37,10 +37,10 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
 
             {/* Origin Docs */}
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Origin-Specific Documents</h3>
+                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Barangay Certificates (By Starting Location)</h3>
                 {origins.map((origin, index) => (
                     <div key={origin.id} className="p-4 bg-stone-50 border border-stone-100 space-y-4">
-                        <p className="text-[10px] font-black text-stone-700 uppercase">Barangay Origin #{index + 1}</p>
+                        <p className="text-[10px] font-black text-stone-700 uppercase">Documents for Starting Location #{index + 1}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {originDocs.map(doc => {
                                 const fieldName = `origin_${origin.id}_${doc.id}`;
@@ -55,7 +55,7 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
 
             <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 border-t border-gray-100 gap-4 mt-8">
                 <button type="button" className="w-full sm:w-auto border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors" onClick={prevStep}>Back</button>
-                <button type="button" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors" onClick={nextStep}>Review Application</button>
+                <button type="button" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors" onClick={nextStep}>Review & Submit</button>
             </div>
         </div>
     );
@@ -67,7 +67,7 @@ const FileUpload = ({ id, label, desc, register, errors, watch, hasFile }) => (
             <input 
                 type="file" 
                 className="hidden" 
-                accept=".pdf, .jpg, .jpeg, .png" 
+                accept=".jpg, .jpeg, .png" 
                 {...register(id, { 
                     required: `${label} is required`,
                     validate: {
@@ -79,9 +79,9 @@ const FileUpload = ({ id, label, desc, register, errors, watch, hasFile }) => (
                         acceptedFormats: (files) => {
                             if (!files?.[0]) return true;
                             const fileName = files[0].name.toLowerCase();
-                            const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
+                            const allowedExtensions = ['.jpg', '.jpeg', '.png'];
                             const isValid = allowedExtensions.some(ext => fileName.endsWith(ext));
-                            return isValid || "Please upload a PDF or a photo (JPG, PNG).";
+                            return isValid || "Only photo uploads (JPG or PNG) are allowed. Please take a photo of your document to upload it.";
                         }
                     }
                 })} 

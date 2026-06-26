@@ -12,6 +12,8 @@ class HogSurveyService:
     def import_csv(file_obj):
         # Read the file content as text
         try:
+            # Reset pointer first in case it was already read
+            file_obj.seek(0)
             # Handle Django uploaded file which might be open in binary mode
             content = file_obj.read()
             if isinstance(content, bytes):
@@ -38,10 +40,15 @@ class HogSurveyService:
             raise ValueError(f"Missing columns: {', '.join(missing)}")
 
         records_to_create = []
+        records_to_update = []
         errors = []
 
         # Pre-fetch all barangays to avoid multiple queries.
         barangay_map = {b.name.lower(): b for b in Barangay.objects.all()}
+
+        parsed_rows = []
+        dates_in_csv = set()
+        barangays_in_csv = set()
 
         # csv readers are 1-based, and headers are row 1.
         for index, row in enumerate(reader):
@@ -73,24 +80,80 @@ class HogSurveyService:
                     except ValueError:
                         return 0
 
-                # Prepare the HogSurvey record for bulk creation.
-                records_to_create.append(HogSurvey(
-                    barangay=barangay,
-                    survey_date=survey_date,
-                    inahin=safe_int(row.get('inahin')),
-                    barako=safe_int(row.get('barako')),
-                    fattener=safe_int(row.get('fattener')),
-                    grower=safe_int(row.get('grower')),
-                    starter=safe_int(row.get('starter')),
-                    bulaw=safe_int(row.get('bulaw')),
-                    total_pigs=safe_int(row.get('total_pigs'))
-                ))
+                inahin = safe_int(row.get('inahin'))
+                barako = safe_int(row.get('barako'))
+                fattener = safe_int(row.get('fattener'))
+                grower = safe_int(row.get('grower'))
+                starter = safe_int(row.get('starter'))
+                bulaw = safe_int(row.get('bulaw'))
+
+                # Use total_pigs from CSV, or calculate if missing/zero/incorrect
+                total_pigs = safe_int(row.get('total_pigs'))
+                calculated_total = inahin + barako + fattener + grower + starter + bulaw
+                if total_pigs == 0 or total_pigs != calculated_total:
+                    total_pigs = calculated_total
+
+                parsed_rows.append({
+                    'barangay': barangay,
+                    'survey_date': survey_date,
+                    'inahin': inahin,
+                    'barako': barako,
+                    'fattener': fattener,
+                    'grower': grower,
+                    'starter': starter,
+                    'bulaw': bulaw,
+                    'total_pigs': total_pigs,
+                })
+                dates_in_csv.add(survey_date)
+                barangays_in_csv.add(barangay)
             except Exception as e:
                 errors.append(f"Row {row_num}: {str(e)}")
 
-        # Use an atomic transaction and bulk_create for performance.
-        if records_to_create:
-            with transaction.atomic():
-                HogSurvey.objects.bulk_create(records_to_create)
+        # Fetch existing surveys matching the (barangay, date) criteria
+        existing_surveys = HogSurvey.objects.filter(
+            barangay__in=list(barangays_in_csv),
+            survey_date__in=list(dates_in_csv)
+        )
+        existing_map = {(s.barangay_id, s.survey_date): s for s in existing_surveys}
 
-        return len(records_to_create), errors
+        for row in parsed_rows:
+            key = (row['barangay'].id, row['survey_date'])
+            if key in existing_map:
+                existing = existing_map[key]
+                existing.inahin += row['inahin']
+                existing.barako += row['barako']
+                existing.fattener += row['fattener']
+                existing.grower += row['grower']
+                existing.starter += row['starter']
+                existing.bulaw += row['bulaw']
+                existing.total_pigs += row['total_pigs']
+                
+                if existing not in records_to_update:
+                    records_to_update.append(existing)
+            else:
+                new_record = HogSurvey(
+                    barangay=row['barangay'],
+                    survey_date=row['survey_date'],
+                    inahin=row['inahin'],
+                    barako=row['barako'],
+                    fattener=row['fattener'],
+                    grower=row['grower'],
+                    starter=row['starter'],
+                    bulaw=row['bulaw'],
+                    total_pigs=row['total_pigs']
+                )
+                records_to_create.append(new_record)
+                existing_map[key] = new_record  # Prevent adding duplicate new records in same file
+
+        # Save to database
+        if records_to_create or records_to_update:
+            with transaction.atomic():
+                if records_to_update:
+                    HogSurvey.objects.bulk_update(
+                        records_to_update, 
+                        fields=['inahin', 'barako', 'fattener', 'grower', 'starter', 'bulaw', 'total_pigs']
+                    )
+                if records_to_create:
+                    HogSurvey.objects.bulk_create(records_to_create)
+
+        return len(records_to_create) + len(records_to_update), errors

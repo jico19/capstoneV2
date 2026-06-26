@@ -243,8 +243,9 @@ const VerifyApplication = () => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-stone-600">Inspector Notes</label>
                         <textarea
                             {...register('notes')}
+                            disabled={isSubmitting}
                             placeholder="Add observations or issues found..."
-                            className="w-full p-4 bg-white border border-stone-200 focus:border-green-700 outline-none text-sm font-medium resize-none h-32 placeholder:text-stone-300"
+                            className="w-full p-4 bg-white border border-stone-200 focus:border-green-700 outline-none text-sm font-medium resize-none h-32 placeholder:text-stone-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                     </div>
 

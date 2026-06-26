@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CheckCircle2, CheckCircle, XCircle, MessageSquare, UploadCloud} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -7,7 +8,9 @@ import { useForm } from 'react-hook-form';
  * Validation Logic: Documents are only required for Approval. Remarks are required for both.
  */
 const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
-    const { register, trigger, getValues, setError, watch, formState: { errors, isSubmitting } } = useForm();
+    const { register, trigger, getValues, setError, watch, formState: { errors } } = useForm();
+    const [activeAction, setActiveAction] = useState(null);
+    const isProcessing = activeAction !== null;
 
     const documents = [
         { id: 'veterinary_health_certificate', label: "Health Certificate", desc: "Official Vet Clearance" },
@@ -23,22 +26,39 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
     };
 
     const handleRejectClick = async () => {
+        if (isProcessing) return;
         // Only trigger validation for remarks
         const isRemarksValid = await trigger('remarks');
         if (isRemarksValid) {
-            onReject(getValues());
+            setActiveAction('reject');
+            try {
+                await onReject(getValues());
+            } catch (error) {
+                console.error("Reject error", error);
+            } finally {
+                setActiveAction(null);
+            }
         }
     };
 
     const handleResubmitClick = async () => {
+        if (isProcessing) return;
         // Only trigger validation for remarks
         const isRemarksValid = await trigger('remarks');
         if (isRemarksValid) {
-            onResubmit(getValues());
+            setActiveAction('resubmit');
+            try {
+                await onResubmit(getValues());
+            } catch (error) {
+                console.error("Resubmit error", error);
+            } finally {
+                setActiveAction(null);
+            }
         }
     };
 
     const handleApproveClick = async () => {
+        if (isProcessing) return;
         // 1. Validate Remarks
         const isRemarksValid = await trigger('remarks');
         
@@ -53,7 +73,14 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
         });
 
         if (isRemarksValid && isDocsValid) {
-            onApprove(getValues());
+            setActiveAction('approve');
+            try {
+                await onApprove(getValues());
+            } catch (error) {
+                console.error("Approve error", error);
+            } finally {
+                setActiveAction(null);
+            }
         }
     };
 
@@ -71,7 +98,8 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
 
                 <textarea
                     {...register('remarks', { required: "Please enter notes before taking action." })}
-                    className="w-full min-h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                    disabled={isProcessing}
+                    className="w-full min-h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Write your notes here..."
                 />
                 {errors.remarks && <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{errors.remarks.message}</p>}
@@ -91,13 +119,15 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
                     {documents.map((doc) => (
                         <div key={doc.id} className="relative">
                             <label
-                                className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-none cursor-pointer transition-colors
-                                ${hasFile(doc.id) ? "border-green-600 bg-green-50" : errors[doc.id] ? "border-red-600 bg-red-50" : "border-gray-300 hover:border-green-600 hover:bg-gray-50"}`}
+                                className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-none transition-colors
+                                ${hasFile(doc.id) ? "border-green-600 bg-green-50" : errors[doc.id] ? "border-red-600 bg-red-50" : "border-gray-300 hover:border-green-600 hover:bg-gray-50"}
+                                ${isProcessing ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer"}`}
                             >
                                 <input
                                     type="file"
                                     className="hidden"
                                     accept=".pdf, image/*"
+                                    disabled={isProcessing}
                                     {...register(doc.id)}
                                 />
 
@@ -127,31 +157,43 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
                 <button
                     type="button"
-                    disabled={isSubmitting}
+                    disabled={isProcessing}
                     onClick={handleRejectClick}
-                    className="w-full sm:w-auto border border-red-200 bg-white hover:bg-red-50 text-red-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto border border-red-200 bg-white hover:bg-red-50 text-red-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <XCircle size={18} strokeWidth={3} />
+                    {activeAction === 'reject' ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                    ) : (
+                        <XCircle size={18} strokeWidth={3} />
+                    )}
                     Permanent Reject
                 </button>
 
                 <button
                     type="button"
-                    disabled={isSubmitting}
+                    disabled={isProcessing}
                     onClick={handleResubmitClick}
-                    className="w-full sm:w-auto border border-amber-100 bg-amber-50 hover:bg-amber-100 text-amber-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto border border-amber-100 bg-amber-50 hover:bg-amber-100 text-amber-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <MessageSquare size={18} strokeWidth={3} />
+                    {activeAction === 'resubmit' ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                    ) : (
+                        <MessageSquare size={18} strokeWidth={3} />
+                    )}
                     Return for Correction
                 </button>
 
                 <button
                     type="button"
-                    disabled={isSubmitting}
+                    disabled={isProcessing}
                     onClick={handleApproveClick}
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <CheckCircle size={18} strokeWidth={3} />
+                    {activeAction === 'approve' ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                    ) : (
+                        <CheckCircle size={18} strokeWidth={3} />
+                    )}
                     Confirm Health Validation
                 </button>
             </div>

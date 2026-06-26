@@ -19,6 +19,7 @@ const AgriPermitDetail = () => {
     const [activeModal, setActiveModal] = useState(null)
     const [ocrID, setOcrID] = useState(0)
     const [docID, setDocID] = useState(0)
+    const [isIssuingPermit, setIsIssuingPermit] = useState(false)
     const { id } = useParams();
     const navigate = useNavigate();
     const { data: application, isLoading, isError } = useApplicationDetail(id);
@@ -93,6 +94,7 @@ const AgriPermitDetail = () => {
     };
 
     const issue_permit_handler = async (id) => {
+        setIsIssuingPermit(true);
         try {
             await api.post('/issued-permit/', {
                 application_id: id
@@ -105,6 +107,8 @@ const AgriPermitDetail = () => {
             toast.error("Issuance Failed", {
                 description: error.response?.data?.error || "Could not issue the official permit."
             })
+        } finally {
+            setIsIssuingPermit(false);
         }
     }
 
@@ -164,10 +168,15 @@ const AgriPermitDetail = () => {
                                     <p className="text-sm text-gray-600 font-medium">Health validation is complete. You can now issue the final permit.</p>
                                 </div>
                                 <button
-                                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-12 py-5 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-colors"
+                                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-12 py-5 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={isIssuingPermit}
                                     onClick={() => issue_permit_handler(application.id)}
                                 >
-                                    <CheckCircle size={20} />
+                                    {isIssuingPermit ? (
+                                        <span className="loading loading-spinner loading-xs"></span>
+                                    ) : (
+                                        <CheckCircle size={20} />
+                                    )}
                                     Issue Official Permit
                                 </button>
                              </div>

@@ -75,9 +75,10 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
                 </button>
                 <button
                     type="submit"
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     disabled={isSubmitting}
                 >
+                    {isSubmitting && <span className="loading loading-spinner loading-xs"></span>}
                     {isSubmitting ? "SUBMITTING..." : "SUBMIT APPLICATION"}
                 </button>
             </div>

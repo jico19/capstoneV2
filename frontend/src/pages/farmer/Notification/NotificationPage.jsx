@@ -21,6 +21,7 @@ const NotificationPage = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
     const [filter, setFilter] = useState('ALL'); // ALL, UNREAD, READ
+    const [isMarkingRead, setIsMarkingRead] = useState(false);
     const { data, isLoading, isError } = useGetNotification(limit, offset, filter)
     const query = useQueryClient()
 
@@ -52,6 +53,7 @@ const NotificationPage = () => {
     };
 
     const markAllAsRead = async () => {
+        setIsMarkingRead(true);
         try {
             await api.get('/notification/mark_all_read/')
             query.invalidateQueries({ queryKey: ['notification']})
@@ -63,6 +65,8 @@ const NotificationPage = () => {
             toast.error("Action Failed", {
                 description: "Could not update messages."
             })
+        } finally {
+            setIsMarkingRead(false);
         }
     };
 
@@ -110,8 +114,17 @@ const NotificationPage = () => {
             {/* Footer Actions */}
             {notifications.some(n => !n.is_read) && (
                 <div className="p-4 border-t border-stone-100">
-                    <button onClick={markAllAsRead} className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                        <CheckCheck size={14} /> Mark All Read
+                    <button 
+                        onClick={markAllAsRead} 
+                        disabled={isMarkingRead}
+                        className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isMarkingRead ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                        ) : (
+                            <CheckCheck size={14} />
+                        )}
+                        Mark All Read
                     </button>
                 </div>
             )}

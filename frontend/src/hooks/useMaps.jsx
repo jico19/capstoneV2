@@ -96,6 +96,7 @@ export const useUploadHogSurvey = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['hog-survey'] });
+            queryClient.invalidateQueries({ queryKey: ['hog-survey-years'] });
         },
     });
 }

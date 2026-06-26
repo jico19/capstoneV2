@@ -33,9 +33,22 @@ class UserViewSets(viewsets.ModelViewSet):
             return models.User.objects.none()
 
         if user.role == "Admin":
-            return models.User.objects.all()
-        # Non-admin users can only see their own profile
-        return models.User.objects.filter(id=user.id)
+            qs = models.User.objects.all()
+        elif user.role == "Agri":
+            qs = models.User.objects.filter(role="Farmer")
+        else:
+            return models.User.objects.filter(id=user.id)
+
+        search = self.request.query_params.get("search")
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(username__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(phone_no__icontains=search)
+            )
+        return qs
 
     @action(detail=False, methods=["post"], permission_classes=[])
     def verify_otp(self, request):

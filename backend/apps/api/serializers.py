@@ -20,6 +20,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'barangay',
             'barangay_name',
             'receive_sms',
+            'is_active',
         ]
 
 class UserWriteSeiralizer(serializers.ModelSerializer):
@@ -34,6 +35,7 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
             'address',
             'barangay',
             'receive_sms',
+            'is_active',
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'required': False}

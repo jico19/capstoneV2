@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { Eye, Inbox, FileText, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { Eye, Inbox, FileText, AlertCircle, Clock, CheckCircle, Search } from "lucide-react";
 import DateFormatter from "../../../components/ui/DateFormatter";
 import ActionGroup from "/src/components/ui/ActionButton";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { useApplication } from "/src/hooks/useApplications";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Pagination from "../../../components/ui/Pagination";
 import KPICard from "../../../components/ui/KPICard";
 
@@ -15,7 +15,23 @@ import KPICard from "../../../components/ui/KPICard";
 const ApplicationDashboard = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
-    const { data, isLoading, isError } = useApplication(limit, offset);
+    const [searchInput, setSearchInput] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Debounce search query changes
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setSearchQuery(searchInput);
+            setOffset(0);
+        }, 350);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchInput]);
+
+    const { data, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery);
+    const { data: unfilteredData } = useApplication(1000, 0);
     const navigate = useNavigate();
     
     const applications = data?.results || [];
@@ -24,13 +40,13 @@ const ApplicationDashboard = () => {
 
     // Workflow Summary logic
     const summary = useMemo(() => {
-        if (!applications) return { needsReview: 0, pendingPayment: 0, completed: 0 };
+        const allApps = unfilteredData?.results || [];
         return {
-            needsReview: applications.filter(app => ['MANUAL', 'PENDING_AGRI'].includes(app.status)).length,
-            atHealthOffice: applications.filter(app => ['PENDING_OPV', 'OPV_VALIDATED'].includes(app.status)).length,
-            readyForPermit: applications.filter(app => ['PAID', 'RELEASED'].includes(app.status)).length
+            needsReview: allApps.filter(app => ['MANUAL', 'PENDING_AGRI'].includes(app.status)).length,
+            atHealthOffice: allApps.filter(app => ['PENDING_OPV', 'OPV_VALIDATED'].includes(app.status)).length,
+            readyForPermit: allApps.filter(app => ['PAID', 'RELEASED'].includes(app.status)).length
         };
-    }, [applications]);
+    }, [unfilteredData]);
 
     if (isLoading) {
         return (
@@ -87,6 +103,23 @@ const ApplicationDashboard = () => {
                     icon={CheckCircle}
                     colorClass="bg-green-50 text-green-600"
                 />
+            </div>
+
+            {/* Search Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pb-2">
+                <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Search ID, Farmer name..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
+                    />
+                    {isFetching && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
+                    )}
+                </div>
             </div>
 
             {/* 3. Table Container */}

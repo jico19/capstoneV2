@@ -26,11 +26,25 @@ import Pagination from "../../../components/ui/Pagination";
 const FarmerApplicationDashboard = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
+    const [searchInput, setSearchInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
+    // Debounce search query changes
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setSearchQuery(searchInput);
+            setOffset(0);
+        }, 350);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchInput]);
+
 
     const { data, isLoading, isError, isFetching } = useApplication(limit, offset, statusFilter, searchQuery);
+    const { data: unfilteredData } = useApplication(1000, 0);
     const navigate = useNavigate();
     const applications = data?.results || [];
     const count = data?.count || 0;
@@ -38,17 +52,16 @@ const FarmerApplicationDashboard = () => {
 
 
     const summary = useMemo(() => {
-        if (!applications) return { total: 0, active: 0, pending: 0 };
-
+        const allApps = unfilteredData?.results || [];
         return {
-            total: count,
-            active: applications.filter(app => ['PAID', 'RELEASED'].includes(app.status) && !app.is_checked).length,
-            pending: applications.filter(app => ['PAYMENT_PENDING', 'DRAFT'].includes(app.status)).length
+            total: unfilteredData?.count || 0,
+            active: allApps.filter(app => ['PAID', 'RELEASED'].includes(app.status) && !app.is_checked).length,
+            pending: allApps.filter(app => ['PAYMENT_PENDING', 'DRAFT'].includes(app.status)).length
         };
-    }, [applications, count]);
+    }, [unfilteredData]);
 
     const clearFilters = () => {
-        setSearchQuery("");
+        setSearchInput("");
         setStatusFilter("");
     };
 
@@ -117,10 +130,23 @@ const FarmerApplicationDashboard = () => {
             <div className="bg-white border border-stone-200 rounded-none">
 
                 {/* 3.1 Unified Toolbar */}
-                <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-col lg:flex-row gap-4 justify-between items-center">
+                <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                    <div className="relative w-full sm:w-80">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search by Permit ID..."
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
+                        />
+                        {isFetching && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
+                        )}
+                    </div>
 
-                    <div className="flex items-center gap-2 w-full lg:w-auto">
-                        <div className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 flex-1 lg:flex-none">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 flex-1 sm:flex-none">
                             <Filter size={14} className="text-stone-400" />
                             <select
                                 value={statusFilter}
@@ -141,7 +167,7 @@ const FarmerApplicationDashboard = () => {
                             </select>
                         </div>
 
-                        {(searchQuery || statusFilter !== "ALL") && (
+                        {(searchQuery || statusFilter !== "") && (
                             <button
                                 onClick={clearFilters}
                                 className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-red-600 transition-colors"

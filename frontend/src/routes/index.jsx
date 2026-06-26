@@ -34,6 +34,7 @@ import AgriMapPage from "../pages/agri/Map/DensityMap/AgriMapPage";
 import AgriPaymentPage from "../pages/agri/Payment/AgriPaymentPage";
 import AgriReportsPage from "../pages/agri/Reports/AgriReportsPage";
 import AuditTrailPage from "../pages/agri/Audit/AuditTrailPage";
+import FarmerManagementPage from "../pages/agri/FarmerManagementPage";
 
 
 // Opv
@@ -99,6 +100,7 @@ const router = createBrowserRouter([
             { path: 'payment/', element: <AgriPaymentPage /> },
             { path: 'reports/', element: <AgriReportsPage /> },
             { path: 'audit-trail/', element: <AuditTrailPage /> },
+            { path: 'farmers/', element: <FarmerManagementPage /> },
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'settings/', element: <SettingsPage /> },
         ]

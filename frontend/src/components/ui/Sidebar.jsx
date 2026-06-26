@@ -13,6 +13,7 @@ import {
     Menu,
     FilesIcon,
     FileText,
+    Users,
 } from "lucide-react";
 import useAuthStore from "../../store/authContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -86,6 +87,7 @@ const Sidebar = ({ children }) => {
                     <MenuSection title="Agri Office">
                         <SidebarItem icon={LayoutDashboard} label="Overview" to='/agri/' />
                         <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application' />
+                        <SidebarItem icon={Users} label="Farmers" to='/agri/farmers/' />
                         <SidebarItem icon={CreditCard} label="Payments" to='/agri/payment' />
                         <SidebarItem icon={Map} label="Map" to='/agri/map/pig-density/' />
                         <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/' />

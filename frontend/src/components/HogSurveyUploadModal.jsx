@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, X, CheckCircle2, AlertCircle, FileText, Loader2 } from 'lucide-react';
 import { useUploadHogSurvey } from '../hooks/useMaps';
+import { toast } from 'sonner';
 
 /**
  * Modal for uploading hog survey CSV files.
@@ -19,7 +20,7 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
         if (selectedFile && selectedFile.name.endsWith('.csv')) {
             setFile(selectedFile);
         } else {
-            alert('Please select a valid CSV file.');
+            toast.error('Please select a valid CSV file.');
         }
     };
 

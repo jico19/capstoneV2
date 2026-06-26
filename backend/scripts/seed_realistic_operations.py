@@ -491,8 +491,8 @@ def run():
                         pay_status = PaymentHistory.Status.SUCCESS if is_paid else PaymentHistory.Status.PENDING
                         pay_method_val = random.choice(['gcash', 'paymaya', 'card']) if pay_method == IssuedPermit.PaymentMethodChoices.ONLINE else 'gcash'
                         
-                        # Amount: e.g. base 150 PHP + 15 PHP per pig
-                        amount = 150 + (total_pigs * 15)
+                        # Amount: Flat 150 PHP
+                        amount = 150
                         
                         pay_officer = random.choice(agri_officers) if pay_method == IssuedPermit.PaymentMethodChoices.OFFLINE else None
 

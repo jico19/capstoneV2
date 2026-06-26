@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
     FileSignature, 
     Eye, 
@@ -19,11 +19,25 @@ import Pagination from "../../../components/ui/Pagination";
 const OpvApplicationDashboard = () => {
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
+    const [searchInput, setSearchInput] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Debounce search query changes
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setSearchQuery(searchInput);
+            setOffset(0);
+        }, 350);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchInput]);
     
     // We fetch only applications relevant to OPV. 
     // The backend ViewSet handles the role-based filtering, 
     // but we can pass status filters if needed.
-    const { data: application, isLoading, isError } = useApplication(limit, offset);
+    const { data: application, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery);
     const navigate = useNavigate();
 
     // console.log(application)
@@ -60,6 +74,23 @@ const OpvApplicationDashboard = () => {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Veterinary Office</p>
                     <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Permit Applications</h1>
                 </div>                    
+            </div>
+
+            {/* Search Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Search ID, Farmer name..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
+                    />
+                    {isFetching && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
+                    )}
+                </div>
             </div>
 
             {/* Registry Table Section */}

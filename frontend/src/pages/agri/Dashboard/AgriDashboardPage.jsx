@@ -2,18 +2,13 @@ import {
     CreditCard,
     AlertCircle,
     Clock,
-    TrendingUp,
-    BarChart3,
-    Activity,
-    FilesIcon,
-    Map
+    Activity
 } from 'lucide-react';
 import KPICard from '../../../components/ui/KPICard';
 import { useGetAgriDashboard } from '/src/hooks/useDashboard';
 import LineChartComponent from '/src/components/charts/LineChart';
 import PieChartComponent from '/src/components/charts/PieChart';
 import BarChartComponent from '/src/components/charts/BarChart';
-import { Link } from 'react-router-dom';
 
 
 /**
@@ -58,40 +53,8 @@ const AgriOfficerKPIDashboard = () => {
                     <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>
-
-            {/* Quick Actions Shortcuts Grid */}
-            <div className="space-y-2">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Quick Shortcuts</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Link to="/agri/application" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
-                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
-                            <FilesIcon size={20} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Review Requests</span>
-                    </Link>
-                    <Link to="/agri/payment" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
-                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
-                            <CreditCard size={20} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Confirm Payments</span>
-                    </Link>
-                    <Link to="/agri/map/pig-density/" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
-                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
-                            <Map size={20} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Swine Density Map</span>
-                    </Link>
-                    <Link to="/agri/reports/" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
-                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
-                            <BarChart3 size={20} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Download Reports</span>
-                    </Link>
-                </div>
-            </div>
-
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <KPICard
                     title="Manual Review"
                     value={kpis.pending_agri_review}
@@ -112,13 +75,6 @@ const AgriOfficerKPIDashboard = () => {
                     subtitle="Pending permit fee"
                     icon={CreditCard}
                     colorClass="bg-amber-50 text-amber-600"
-                />
-                <KPICard
-                    title="Registered Swine"
-                    value={kpis.total_pigs_registered}
-                    subtitle="Swine headcount in surveys"
-                    icon={Activity}
-                    colorClass="bg-green-50 text-green-600"
                 />
             </div>
 
@@ -145,7 +101,7 @@ const AgriOfficerKPIDashboard = () => {
                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Application Breakdown</p>
                         <h2 className="text-xl font-black text-gray-900 uppercase">Status</h2>
                     </div>
-                    <PieChartComponent 
+                    <PieChartComponent
                         data={charts.status_distribution}
                         nameKey="status"
                         valueKey="count"

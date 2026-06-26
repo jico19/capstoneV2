@@ -50,18 +50,53 @@ sariaya_barangays = [
 
 @transaction.atomic
 def run():
-    # print(len(sariaya_barangays))
-
-    with open ('./datasets/barangays-municity-1323-sariaya.json', 'r') as file:
+    with open('./datasets/barangays-municity-1323-sariaya.json', 'r') as file:
         data = json.load(file)
 
-        for barangay in range(0, len(sariaya_barangays)):
-            print(data["features"][barangay]["properties"]['NAME_3'])
-            Barangay.objects.create(
-                name = data["features"][barangay]["properties"]['NAME_3'],
-                latitude = sariaya_barangays[barangay]['lat'],
-                longitude = sariaya_barangays[barangay]['lng'],
-                geojson = data["features"][barangay]["geometry"]['coordinates']
+    # Index features by their lowercase trimmed names
+    features_by_name = {
+        f["properties"]['NAME_3'].strip().lower(): f 
+        for f in data["features"]
+    }
+
+    # Map name aliases in python list to their names in GeoJSON
+    alias_map = {
+        "mamala 1": "mamala i",
+        "mamala 2": "mamala ii",
+        "santo cristo": "sampaloc santo cristo",
+        "talaan pantoc": "talaanpantoc",
+    }
+
+    for b_info in sariaya_barangays:
+        raw_name = b_info['name']
+        lookup_name = alias_map.get(raw_name.lower(), raw_name.lower())
+        
+        # Clean up encoding issue with Castanas
+        if "casta" in lookup_name:
+            # Match casta* to Castañas
+            matched_key = None
+            for key in features_by_name:
+                if "casta" in key:
+                    matched_key = key
+                    break
+            if matched_key:
+                lookup_name = matched_key
+
+        feature = features_by_name.get(lookup_name)
+        if feature:
+            geojson_name = feature["properties"]['NAME_3']
+            print(f"Mapping and seeding coordinates for: {geojson_name}")
+            Barangay.objects.update_or_create(
+                name=geojson_name,
+                defaults={
+                    'latitude': b_info['lat'],
+                    'longitude': b_info['lng'],
+                    'geojson': feature["geometry"]['coordinates']
+                }
             )
-        print("Done creating barangay.")
+        else:
+            print(f"WARNING: No GeoJSON feature found for name: {raw_name}")
+
+    print("Done creating/updating barangay.")
+
 

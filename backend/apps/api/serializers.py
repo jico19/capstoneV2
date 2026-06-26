@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import InvalidToken
 from . import models
 
 
@@ -81,3 +82,11 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
 
         
         return token
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        try:
+            return super().validate(attrs)
+        except models.User.DoesNotExist:
+            raise InvalidToken("User for this token does not exist.")

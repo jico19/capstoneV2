@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 from apps.api.models import User
 from django.core.cache import cache
 from unittest.mock import patch
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class UserOTPTests(APITestCase):
     def setUp(self):
@@ -94,3 +95,30 @@ class UserOTPTests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], "OTP has expired or hasn't been requested.")
+
+
+class UserTokenRefreshTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='temp_user',
+            password='password123',
+            phone_no='09111111111'
+        )
+        self.refresh = RefreshToken.for_user(self.user)
+
+    def test_refresh_token_valid_user(self):
+        url = reverse('token_refresh')
+        data = {'refresh': str(self.refresh)}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+
+    def test_refresh_token_deleted_user(self):
+        # Delete user to simulate a stale refresh token
+        self.user.delete()
+        
+        url = reverse('token_refresh')
+        data = {'refresh': str(self.refresh)}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data['code'], 'token_not_valid')

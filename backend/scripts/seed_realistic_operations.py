@@ -87,6 +87,15 @@ def run():
             print(f"Using existing user: {username} ({role})")
         return user
 
+    def get_logical_checkpoint(destination):
+        dest_lower = destination.lower()
+        if any(keyword in dest_lower for keyword in ["manila", "batangas", "laguna", "cavite", "pasay", "lipa", "pampanga"]):
+            return {"name": "Lutucan Checkpoint", "lat": 13.9654, "long": 121.5103}
+        elif "tayabas" in dest_lower:
+            return {"name": "Bucal Checkpoint", "lat": 13.9893, "long": 121.5231}
+        else:
+            return {"name": "Castañas Checkpoint", "lat": 13.9328, "long": 121.5287}
+
     # Create administrative, opv, inspector and farmer users
     agri_officers = [
         create_mock_user("agri_user123", "Agri", "Armando", "Agripino"),
@@ -120,9 +129,9 @@ def run():
     # 2. Add Recent Hog Surveys (2025 and 2026) to continue trends
     print("Generating Hog Surveys for 2025 and 2026...")
     survey_dates = [
-        datetime.date(2025, 3, 15),
-        datetime.date(2025, 9, 15),
-        datetime.date(2026, 3, 15),
+        datetime.date(2025, 3, 31),
+        datetime.date(2025, 9, 30),
+        datetime.date(2026, 3, 31),
     ]
 
     new_surveys = []
@@ -137,22 +146,53 @@ def run():
             base_starter = latest_survey.starter
             base_bulaw = latest_survey.bulaw
         else:
-            base_inahin = random.randint(5, 20)
-            base_barako = random.randint(1, 4)
-            base_fattener = random.randint(15, 45)
-            base_grower = random.randint(10, 50)
-            base_starter = random.randint(20, 60)
-            base_bulaw = random.randint(8, 30)
+            base_inahin = random.randint(1, 5)
+            base_barako = random.randint(0, 1)
+            base_fattener = random.randint(5, 20)
+            base_grower = random.randint(5, 15)
+            base_starter = random.randint(5, 20)
+            base_bulaw = random.randint(2, 10)
 
         for s_date in survey_dates:
-            # Add dynamic seasonal and growth changes (+/- 12%)
-            multiplier = random.uniform(0.88, 1.15)
-            inahin = max(1, int(base_inahin * multiplier))
-            barako = max(1, int(base_barako * multiplier))
-            fattener = max(2, int(base_fattener * multiplier))
-            grower = max(2, int(base_grower * multiplier))
-            starter = max(2, int(base_starter * multiplier))
-            bulaw = max(1, int(base_bulaw * multiplier))
+            quarter = (s_date.month - 1) // 3 + 1
+            # Add dynamic seasonal and growth changes (+/- 10%)
+            multiplier = random.uniform(0.90, 1.10)
+            
+            inahin_mult = 1.0
+            barako_mult = 1.0
+            fattener_mult = 1.0
+            grower_mult = 1.0
+            starter_mult = 1.0
+            
+            if quarter == 1:  # March 31
+                starter_mult = 1.0
+                grower_mult = 0.95
+                fattener_mult = 1.0
+            elif quarter == 2:  # June 30
+                starter_mult = 1.30
+                grower_mult = 1.10
+                inahin_mult = 0.90
+            elif quarter == 3:  # September 30
+                starter_mult = 0.85
+                grower_mult = 1.25
+                fattener_mult = 1.20
+            elif quarter == 4:  # December 31
+                starter_mult = 0.80
+                grower_mult = 0.90
+                inahin_mult = 1.15
+                barako_mult = 1.10
+
+            inahin = max(0, int(base_inahin * multiplier * inahin_mult))
+            barako = max(0, int(base_barako * multiplier * barako_mult))
+            fattener = max(0, int(base_fattener * multiplier * fattener_mult))
+            grower = max(0, int(base_grower * multiplier * grower_mult))
+            starter = max(0, int(base_starter * multiplier * starter_mult))
+            bulaw = max(0, int(base_bulaw * multiplier))
+            
+            # Enforce biological consistency
+            if inahin > 0:
+                barako = max(barako, max(1, int(inahin * 0.08)))
+                
             total = inahin + barako + fattener + grower + starter + bulaw
 
             new_surveys.append(HogSurvey(
@@ -486,12 +526,11 @@ def run():
                                 message_type=SMSLog.Type.NOTIFICATION,
                                 status_captured="success",
                                 send_at=payment_time
-                            )
-
-                            # 6. Checkpoint Verification (Inspector Logs)
+                            )                            # 6. Checkpoint Verification (Inspector Logs)
                             # Only if status is RELEASED and transport date is in the past
                             is_past_transport = (transport_date < datetime.date(2026, 6, 24))
                             
+                            scan_time = None
                             # Let's say 85% of past transport permits got inspected at checkpoints
                             if is_past_transport and random.random() < 0.85:
                                 scan_time = datetime.datetime.combine(
@@ -500,7 +539,7 @@ def run():
                                 )
                                 scan_time = timezone.make_aware(scan_time)
                                 inspector = random.choice(inspectors)
-                                checkpoint = random.choice(checkpoint_locations)
+                                checkpoint = get_logical_checkpoint(dest)
                                 
                                 # Add minor location jitter (normal distribution around base coords)
                                 jitter_lat = random.normalvariate(0, 0.0002)
@@ -510,10 +549,12 @@ def run():
                                     inspector=inspector,
                                     application=app,
                                     notes=f"Inspected at {checkpoint['name']}. Checked {total_pigs} hogs. All documents validated.",
-                                    scanned_at=scan_time,
                                     lat=checkpoint['lat'] + jitter_lat,
                                     longi=checkpoint['long'] + jitter_lng
                                 )
+                                
+                                # scanned_at is auto_now_add=True, so we update it via raw SQL update to bypass it
+                                InspectorLogs.objects.filter(pk=log_instance.pk).update(scanned_at=scan_time)
                                 
                                 # Set checked status
                                 app.is_checked = True
@@ -543,12 +584,22 @@ def run():
                                         message=f"Inspector {inspector.username} has just recorded a field verification for Application #{app.pk}.",
                                         sent_at=scan_time
                                     )
-
+ 
             # Finally: Update status and timestamps to past date bypass auto_now_add using raw SQL update
+            final_updated_at = created_at
+            if status != 'DRAFT':
+                final_updated_at = submitted_at
+                if has_opv:
+                    final_updated_at = opv_time
+                    if has_permit:
+                        final_updated_at = payment_time if is_paid else issued_time
+                        if status == 'RELEASED' and is_past_transport and app.is_checked and scan_time:
+                            final_updated_at = scan_time
+
             PermitApplication.objects.filter(pk=app.pk).update(
                 status=status,
                 created_at=created_at,
-                updated_at=created_at if not submitted_at else (submitted_at + timedelta(hours=2)),
+                updated_at=final_updated_at,
                 submitted_at=submitted_at
             )
             created_count += 1

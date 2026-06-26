@@ -168,6 +168,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "TOKEN_OBTAIN_SERIALIZER": "apps.api.serializers.CustomTokenObtainSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "apps.api.serializers.CustomTokenRefreshSerializer",
 }
 
 # SECRETS

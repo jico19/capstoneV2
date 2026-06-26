@@ -43,7 +43,7 @@ const useAuthStore = create(
 
             // Logout Action
             logout: () => {
-                set({ user: null, isAuthenticated: false });
+                set({ user: null, access: null, refresh: null, isAuthenticated: false });
                 sessionStorage.clear()
                 // Optional: clear tokens from cookies/localstorage if not using persist
             },

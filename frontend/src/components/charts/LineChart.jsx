@@ -24,8 +24,21 @@ const LineChartComponent = ({
     // Simple date formatter for the axis
     const formatDate = (dateString) => {
         if (!dateString) return "";
+        
+        // If it's a string, ensure it has a date-like pattern (contains a dash/slash)
+        // to prevent JS from parsing things like "Barangay 5" as dates.
+        if (typeof dateString === 'string' && !dateString.includes('-') && !dateString.includes('/')) {
+            return dateString;
+        }
+
         const date = new Date(dateString);
-        if (isNaN(date)) return dateString;
+        if (isNaN(date.getTime())) return dateString;
+        
+        // Format year-month (e.g. "2026-06") as "MMM YYYY"
+        if (typeof dateString === 'string' && dateString.length === 7 && dateString.includes('-')) {
+            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 

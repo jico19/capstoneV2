@@ -42,7 +42,7 @@ const FarmerApplicationDashboard = () => {
 
         return {
             total: count,
-            active: applications.filter(app => ['PAID', 'RELEASED'].includes(app.status)).length,
+            active: applications.filter(app => ['PAID', 'RELEASED'].includes(app.status) && !app.is_checked).length,
             pending: applications.filter(app => ['PAYMENT_PENDING', 'DRAFT'].includes(app.status)).length
         };
     }, [applications, count]);
@@ -127,18 +127,17 @@ const FarmerApplicationDashboard = () => {
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 className="text-xs font-black uppercase tracking-widest text-stone-600 bg-transparent focus:outline-none cursor-pointer w-full"
                             >
-                                <option value="">All Status</option>
-                                <option value="DRAFT">Draft</option>
-                                <option value="SUBMITTED">Submitted</option>
-                                <option value="RESUBMISSION">Resubmission</option>
-                                <option value="OCR_VALIDATED">OCR Validated</option>
-                                <option value="MANUAL">Manual Review</option>
-                                <option value="FORWARDED_TO_OPV">Forwarded to OPV</option>
-                                <option value="OPV_VALIDATED">OPV Validated</option>
-                                <option value="OPV_REJECTED">OPV Rejected</option>
-                                <option value="PERMIT_ISSUED">Permit Issued</option>
-                                <option value="PAYMENT_PENDING">Payment Pending</option>
-                                <option value="RELEASED">Released</option>
+                                <option value="">All Permits</option>
+                                <option value="DRAFT">Draft (Unsent)</option>
+                                <option value="SUBMITTED">Sent (Received)</option>
+                                <option value="RESUBMISSION">Needs Corrections</option>
+                                <option value="OCR_VALIDATED">Checking Documents</option>
+                                <option value="MANUAL">Under Office Review</option>
+                                <option value="FORWARDED_TO_OPV">Under Vet Review</option>
+                                <option value="OPV_VALIDATED">Approved by Vet</option>
+                                <option value="OPV_REJECTED">Rejected by Vet</option>
+                                <option value="PAYMENT_PENDING">Awaiting Payment</option>
+                                <option value="RELEASED">Active / Released</option>
                             </select>
                         </div>
 

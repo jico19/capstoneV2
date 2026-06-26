@@ -2,12 +2,18 @@ import {
     CreditCard,
     AlertCircle,
     Clock,
-    TrendingUp
+    TrendingUp,
+    BarChart3,
+    Activity,
+    FilesIcon,
+    Map
 } from 'lucide-react';
 import KPICard from '../../../components/ui/KPICard';
 import { useGetAgriDashboard } from '/src/hooks/useDashboard';
 import LineChartComponent from '/src/components/charts/LineChart';
 import PieChartComponent from '/src/components/charts/PieChart';
+import BarChartComponent from '/src/components/charts/BarChart';
+import { Link } from 'react-router-dom';
 
 
 /**
@@ -53,6 +59,37 @@ const AgriOfficerKPIDashboard = () => {
                 </div>
             </div>
 
+            {/* Quick Actions Shortcuts Grid */}
+            <div className="space-y-2">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Quick Shortcuts</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Link to="/agri/application" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
+                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
+                            <FilesIcon size={20} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Review Requests</span>
+                    </Link>
+                    <Link to="/agri/payment" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
+                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
+                            <CreditCard size={20} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Confirm Payments</span>
+                    </Link>
+                    <Link to="/agri/map/pig-density/" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
+                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
+                            <Map size={20} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Swine Density Map</span>
+                    </Link>
+                    <Link to="/agri/reports/" className="bg-stone-50 border border-stone-200 hover:border-green-600 p-6 flex flex-col items-center text-center justify-center space-y-3 group transition-colors">
+                        <div className="p-3 bg-white border border-stone-100 text-stone-500 group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700 transition-colors">
+                            <BarChart3 size={20} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-700 group-hover:text-green-700">Download Reports</span>
+                    </Link>
+                </div>
+            </div>
+
             {/* KPI Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
@@ -77,28 +114,28 @@ const AgriOfficerKPIDashboard = () => {
                     colorClass="bg-amber-50 text-amber-600"
                 />
                 <KPICard
-                    title="Digital Verification"
-                    value={kpis.digital_verification_rate}
-                    subtitle="AI-assisted validation"
-                    icon={TrendingUp}
+                    title="Registered Swine"
+                    value={kpis.total_pigs_registered}
+                    subtitle="Swine headcount in surveys"
+                    icon={Activity}
                     colorClass="bg-green-50 text-green-600"
-                    isPercent={true}
                 />
             </div>
 
             {/* Main Visual Data Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Density Trend - Spans 2 cols on Large */}
+                {/* Density Tracking - Spans 2 cols on Large */}
                 <div className="xl:col-span-2 bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
                     <div className="mb-8 border-l-4 border-green-600 pl-6">
-                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Density Tracking</p>
-                        <h2 className="text-xl font-black text-gray-900 uppercase">Barangay Trends</h2>
+                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Surveillance Density</p>
+                        <h2 className="text-xl font-black text-gray-900 uppercase">Swine Count by Barangay</h2>
                     </div>
-                    <LineChartComponent
+                    <BarChartComponent
                         data={charts.density_trend}
-                        xKey="date"
-                        yKey="avg"
+                        xKey="name"
+                        yKey="count"
                         height={350}
+                        barColor="#16a34a"
                     />
                 </div>
 
@@ -116,18 +153,33 @@ const AgriOfficerKPIDashboard = () => {
                     />
                 </div>
 
-                {/* Submission Rate - Full width on XL */}
-                <div className="xl:col-span-3 bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
+                {/* Swine Transport Volume (Time series) - Spans 2 cols on XL */}
+                <div className="xl:col-span-2 bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
                     <div className="mb-8 border-l-4 border-blue-600 pl-6">
                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Throughput Analysis</p>
-                        <h2 className="text-xl font-black text-gray-900 uppercase">Submission Rate</h2>
+                        <h2 className="text-xl font-black text-gray-900 uppercase">Swine Transport Volume</h2>
                     </div>
                     <LineChartComponent
                         data={charts.submission_trend}
                         xKey="date"
                         yKey="count"
-                        height={350}
+                        height={300}
                         lineColor="#2563eb"
+                    />
+                </div>
+
+                {/* Revenue Collection Trend - Spans 1 col on XL */}
+                <div className="bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
+                    <div className="mb-8 border-l-4 border-amber-600 pl-6">
+                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Finance Monitor</p>
+                        <h2 className="text-xl font-black text-gray-900 uppercase">Revenue Collected (PHP)</h2>
+                    </div>
+                    <LineChartComponent
+                        data={charts.revenue_trend}
+                        xKey="date"
+                        yKey="amount"
+                        height={300}
+                        lineColor="#d97706"
                     />
                 </div>
             </div>

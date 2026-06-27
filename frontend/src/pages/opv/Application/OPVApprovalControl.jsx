@@ -155,7 +155,7 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
 
             {/* 3. Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
-                <button
+                {/* <button
                     type="button"
                     disabled={isProcessing}
                     onClick={handleRejectClick}
@@ -167,7 +167,7 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
                         <XCircle size={18} strokeWidth={3} />
                     )}
                     Permanent Reject
-                </button>
+                </button> */}
 
                 <button
                     type="button"

@@ -16,7 +16,80 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Table, TableStyle
+from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+class NumberedCanvas(canvas.Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+        self.report_title = "Report"
+        self.report_subtitle = ""
+        self.date_range_str = ""
+        self.footer_text = ""
+        self.primary_color = colors.HexColor("#166534")
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_elements(num_pages)
+            super().showPage()
+        super().save()
+
+    def draw_page_elements(self, page_count):
+        self.saveState()
+        width, height = self._pagesize
+        
+        # 1. Running Header on later pages (Page 2+)
+        if self._pageNumber > 1:
+            self.setFont("Helvetica-Bold", 8)
+            self.setFillColor(colors.HexColor("#1c1917"))
+            self.drawString(1 * cm, height - 1.5 * cm, f"SARIAYA MUNICIPAL AGRICULTURE OFFICE • {self.report_title.upper()}")
+            
+            self.setFont("Helvetica", 8)
+            self.setFillColor(colors.HexColor("#57534e"))
+            self.drawRightString(width - 1 * cm, height - 1.5 * cm, f"Period: {self.date_range_str}")
+            
+            # Divider line
+            self.setStrokeColor(colors.HexColor("#e7e5e4"))
+            self.setLineWidth(0.5)
+            self.line(1 * cm, height - 1.8 * cm, width - 1 * cm, height - 1.8 * cm)
+            
+        # 2. Running Footer on all pages
+        # Divider line above footer
+        self.setStrokeColor(colors.HexColor("#e7e5e4"))
+        self.setLineWidth(0.5)
+        self.line(1 * cm, 1.8 * cm, width - 1 * cm, 1.8 * cm)
+        
+        # Footer text
+        self.setFont("Helvetica-Oblique", 8)
+        self.setFillColor(colors.HexColor("#78716c"))
+        self.drawString(1 * cm, 1.2 * cm, self.footer_text)
+        
+        # Page numbers
+        self.setFont("Helvetica", 8)
+        self.setFillColor(colors.HexColor("#78716c"))
+        self.drawRightString(width - 1 * cm, 1.2 * cm, f"Page {self._pageNumber} of {page_count}")
+        
+        self.restoreState()
+
+
+def make_numbered_canvas(report_title, report_subtitle, date_range_str, footer_text, primary_color):
+    class CustomNumberedCanvas(NumberedCanvas):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.report_title = report_title
+            self.report_subtitle = report_subtitle
+            self.date_range_str = date_range_str
+            self.footer_text = footer_text
+            self.primary_color = primary_color
+    return CustomNumberedCanvas
+
 
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
@@ -327,60 +400,89 @@ def generate_collection_report_pdf(start_date, end_date):
     total_amount = payments.aggregate(Sum("amount"))["amount__sum"] or 0
 
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-
-    # Branding Colors
-    PRIMARY_GREEN = colors.HexColor("#166534")
-    TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
-    TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
-
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
-    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
-
-    # Header Section
-    logo_size = 2.0 * cm
-    if os.path.exists(OFFICIAL_LOGO):
-        p.drawImage(
-            OFFICIAL_LOGO,
-            1 * cm,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    if os.path.exists(AGRI_LOGO):
-        p.drawImage(
-            AGRI_LOGO,
-            width - 1 * cm - logo_size,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE"
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1 * cm,
+        rightMargin=1 * cm,
+        topMargin=2.5 * cm,
+        bottomMargin=2.2 * cm,
     )
-
-    p.setFont("Helvetica", 10)
-    p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "COLLECTION REPORT")
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'HeaderTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=15,
+        leading=18,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#1c1917")
+    )
+    subtitle_style = ParagraphStyle(
+        'HeaderSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=13,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
+    period_style = ParagraphStyle(
+        'HeaderPeriod',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
 
     date_range_str = (
         f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     )
     if start_date == end_date:
         date_range_str = start_date.strftime("%B %d, %Y")
-    p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"PERIOD: {date_range_str.upper()}"
-    )
+
+    # Branding Colors
+    PRIMARY_GREEN = colors.HexColor("#166534")
+
+    # Logos
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
+    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+
+    official_img = ""
+    if os.path.exists(OFFICIAL_LOGO):
+        official_img = Image(OFFICIAL_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    agri_img = ""
+    if os.path.exists(AGRI_LOGO):
+        agri_img = Image(AGRI_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    middle_flowables = [
+        Paragraph("SARIAYA MUNICIPAL AGRICULTURE OFFICE", title_style),
+        Spacer(1, 4),
+        Paragraph("COLLECTION REPORT", subtitle_style),
+        Spacer(1, 2),
+        Paragraph(f"PERIOD: {date_range_str.upper()}", period_style)
+    ]
+
+    header_table = Table([[official_img, middle_flowables, agri_img]], colWidths=[2.2 * cm, 14.6 * cm, 2.2 * cm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    story = [
+        header_table,
+        Spacer(1, 1.5 * cm)
+    ]
 
     # Table Data
     data = [["REF #", "FARMER", "GATEWAY", "DATE", "AMOUNT"]]
@@ -399,7 +501,7 @@ def generate_collection_report_pdf(start_date, end_date):
     data.append(["", "", "", "TOTAL:", f"P{total_amount:,.2f}"])
 
     # Table Styling
-    table = Table(data, colWidths=[3 * cm, 7 * cm, 3 * cm, 3 * cm, 3 * cm])
+    table = Table(data, colWidths=[3 * cm, 7 * cm, 3 * cm, 3 * cm, 3 * cm], repeatRows=1)
     style = TableStyle(
         [
             ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_GREEN),
@@ -415,22 +517,17 @@ def generate_collection_report_pdf(start_date, end_date):
         ]
     )
     table.setStyle(style)
+    story.append(table)
 
-    # Place Table
-    tw, th = table.wrapOn(p, width, height)
-    table.drawOn(p, 1 * cm, height - 5 * cm - th)
-
-    # Footer
-    p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
-    p.drawString(
-        1 * cm,
-        1 * cm,
-        f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    canvas_factory = make_numbered_canvas(
+        report_title="Collection Report",
+        report_subtitle="COLLECTION REPORT",
+        date_range_str=date_range_str,
+        footer_text=f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        primary_color=PRIMARY_GREEN
     )
 
-    p.showPage()
-    p.save()
+    doc.build(story, canvasmaker=canvas_factory)
 
     buffer.seek(0)
     return buffer
@@ -447,106 +544,140 @@ def generate_inspector_report_pdf(start_date, end_date):
     )
 
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-
-    # Branding Colors
-    PRIMARY_PURPLE = colors.HexColor("#6b21a8")  # High contrast purple
-    TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
-    TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
-
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
-    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
-
-    # Header Section
-    logo_size = 2.0 * cm
-    if os.path.exists(OFFICIAL_LOGO):
-        p.drawImage(
-            OFFICIAL_LOGO,
-            1 * cm,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    if os.path.exists(AGRI_LOGO):
-        p.drawImage(
-            AGRI_LOGO,
-            width - 1 * cm - logo_size,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL FIELD VERIFICATION"
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1 * cm,
+        rightMargin=1 * cm,
+        topMargin=2.5 * cm,
+        bottomMargin=2.2 * cm,
     )
-
-    p.setFont("Helvetica", 10)
-    p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "INSPECTOR DUTY LOGS")
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'HeaderTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=15,
+        leading=18,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#1c1917")
+    )
+    subtitle_style = ParagraphStyle(
+        'HeaderSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=13,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
+    period_style = ParagraphStyle(
+        'HeaderPeriod',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
+    
+    body_style = ParagraphStyle(
+        'TableBody',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#1c1917")
+    )
 
     date_range_str = (
         f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     )
-    p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"AUDIT PERIOD: {date_range_str.upper()}"
-    )
+    if start_date == end_date:
+        date_range_str = start_date.strftime("%B %d, %Y")
+
+    # Branding Colors
+    PRIMARY_PURPLE = colors.HexColor("#6b21a8")
+
+    # Logos
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
+    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+
+    official_img = ""
+    if os.path.exists(OFFICIAL_LOGO):
+        official_img = Image(OFFICIAL_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    agri_img = ""
+    if os.path.exists(AGRI_LOGO):
+        agri_img = Image(AGRI_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    middle_flowables = [
+        Paragraph("SARIAYA MUNICIPAL FIELD VERIFICATION", title_style),
+        Spacer(1, 4),
+        Paragraph("INSPECTOR DUTY LOGS", subtitle_style),
+        Spacer(1, 2),
+        Paragraph(f"AUDIT PERIOD: {date_range_str.upper()}", period_style)
+    ]
+
+    header_table = Table([[official_img, middle_flowables, agri_img]], colWidths=[2.2 * cm, 14.6 * cm, 2.2 * cm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    story = [
+        header_table,
+        Spacer(1, 1.5 * cm)
+    ]
 
     # Table Data
     data = [["ID", "INSPECTOR", "FARMER", "TIMESTAMP", "REMARKS"]]
     for log in logs:
+        remarks_p = Paragraph(log.notes or "VERIFIED", body_style)
         data.append(
             [
                 f"LOG-{log.id}",
                 log.inspector.username.upper(),
                 log.application.farmer.get_full_name().upper()[:15],
                 log.scanned_at.strftime("%Y-%m-%d %H:%M"),
-                (
-                    (log.notes[:30] + "...")
-                    if len(log.notes) > 30
-                    else (log.notes or "VERIFIED")
-                ),
+                remarks_p,
             ]
         )
 
     # Table Styling
-    table = Table(data, colWidths=[2.5 * cm, 3.5 * cm, 4.5 * cm, 4 * cm, 4.5 * cm])
+    table = Table(data, colWidths=[2.5 * cm, 3.5 * cm, 4.5 * cm, 4 * cm, 4.5 * cm], repeatRows=1)
     style = TableStyle(
         [
             ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_PURPLE),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, 0), 9),
             ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("FONTSIZE", (0, 1), (-1, -1), 8),
+            ("FONTSIZE", (0, 1), (-2, -1), 8),
         ]
     )
     table.setStyle(style)
+    story.append(table)
 
-    tw, th = table.wrapOn(p, width, height)
-    table.drawOn(p, 1 * cm, height - 4.5 * cm - th)
-
-    # Footer
-    p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
-    p.drawString(
-        1 * cm,
-        1 * cm,
-        f"Official Audit Document • Generated {timezone.now().strftime('%Y-%m-%d')}",
+    canvas_factory = make_numbered_canvas(
+        report_title="Inspector Duty Logs",
+        report_subtitle="INSPECTOR DUTY LOGS",
+        date_range_str=date_range_str,
+        footer_text=f"Official Audit Document • Generated {timezone.now().strftime('%Y-%m-%d')}",
+        primary_color=PRIMARY_PURPLE
     )
 
-    p.showPage()
-    p.save()
+    doc.build(story, canvasmaker=canvas_factory)
 
     buffer.seek(0)
     return buffer
@@ -565,60 +696,89 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
     )
 
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-
-    # Branding Colors
-    PRIMARY_GREEN = colors.HexColor("#166534")
-    TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
-    TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
-
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
-    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
-
-    # Header Section
-    logo_size = 2.0 * cm
-    if os.path.exists(OFFICIAL_LOGO):
-        p.drawImage(
-            OFFICIAL_LOGO,
-            1 * cm,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    if os.path.exists(AGRI_LOGO):
-        p.drawImage(
-            AGRI_LOGO,
-            width - 1 * cm - logo_size,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE"
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1 * cm,
+        rightMargin=1 * cm,
+        topMargin=2.5 * cm,
+        bottomMargin=2.2 * cm,
     )
-
-    p.setFont("Helvetica", 10)
-    p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "PERMIT ISSUANCE SUMMARY")
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'HeaderTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=15,
+        leading=18,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#1c1917")
+    )
+    subtitle_style = ParagraphStyle(
+        'HeaderSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=13,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
+    period_style = ParagraphStyle(
+        'HeaderPeriod',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
 
     date_range_str = (
         f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     )
     if start_date == end_date:
         date_range_str = start_date.strftime("%B %d, %Y")
-    p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"PERIOD: {date_range_str.upper()}"
-    )
+
+    # Branding Colors
+    PRIMARY_GREEN = colors.HexColor("#166534")
+
+    # Logos
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
+    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+
+    official_img = ""
+    if os.path.exists(OFFICIAL_LOGO):
+        official_img = Image(OFFICIAL_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    agri_img = ""
+    if os.path.exists(AGRI_LOGO):
+        agri_img = Image(AGRI_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    middle_flowables = [
+        Paragraph("SARIAYA MUNICIPAL AGRICULTURE OFFICE", title_style),
+        Spacer(1, 4),
+        Paragraph("PERMIT ISSUANCE SUMMARY", subtitle_style),
+        Spacer(1, 2),
+        Paragraph(f"PERIOD: {date_range_str.upper()}", period_style)
+    ]
+
+    header_table = Table([[official_img, middle_flowables, agri_img]], colWidths=[2.2 * cm, 14.6 * cm, 2.2 * cm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    story = [
+        header_table,
+        Spacer(1, 1.5 * cm)
+    ]
 
     # Build table rows: one row per issued permit
     data = [["PERMIT #", "FARMER", "ORIGIN", "DESTINATION", "PIGS", "DATE"]]
@@ -626,13 +786,11 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
         application = issued.application
         origins = application.origins.all()
 
-        # Summarize the origin: one barangay, or "Multiple" if more than one
         if origins.count() == 1:
             origin_label = origins.first().barangay.name
         else:
             origin_label = f"Multiple ({origins.count()})"
 
-        # Sum total pigs across all origins
         total_pigs = sum(o.number_of_pigs for o in origins)
 
         data.append(
@@ -650,7 +808,7 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
     data.append(["", "", "", f"TOTAL: {total_permits} permits", "", ""])
 
     table = Table(
-        data, colWidths=[3.5 * cm, 4.5 * cm, 3.5 * cm, 3.5 * cm, 1.5 * cm, 3 * cm]
+        data, colWidths=[3 * cm, 4.5 * cm, 3.5 * cm, 3.5 * cm, 1.5 * cm, 3 * cm], repeatRows=1
     )
     style = TableStyle(
         [
@@ -668,20 +826,18 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
         ]
     )
     table.setStyle(style)
+    story.append(table)
 
-    tw, th = table.wrapOn(p, width - 2 * cm, height)
-    table.drawOn(p, 1 * cm, height - 4.5 * cm - th)
-
-    p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
-    p.drawString(
-        1 * cm,
-        1 * cm,
-        f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    canvas_factory = make_numbered_canvas(
+        report_title="Permit Issuance Summary",
+        report_subtitle="PERMIT ISSUANCE SUMMARY",
+        date_range_str=date_range_str,
+        footer_text=f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        primary_color=PRIMARY_GREEN
     )
 
-    p.showPage()
-    p.save()
+    doc.build(story, canvasmaker=canvas_factory)
+
     buffer.seek(0)
     return buffer
 
@@ -705,61 +861,89 @@ def generate_barangay_distribution_pdf(start_date, end_date):
     )
 
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-
-    # Branding Colors
-    ACCENT_BLUE = colors.HexColor("#1e3a5f")
-    TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
-    TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
-
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
-    # This prevents looking inside backend/config/asset which doesn't exist.
-    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
-
-    # Header Section
-    logo_size = 2.0 * cm
-    if os.path.exists(OFFICIAL_LOGO):
-        p.drawImage(
-            OFFICIAL_LOGO,
-            1 * cm,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    if os.path.exists(AGRI_LOGO):
-        p.drawImage(
-            AGRI_LOGO,
-            width - 1 * cm - logo_size,
-            height - 2.5 * cm,
-            width=logo_size,
-            height=logo_size,
-            mask="auto",
-        )
-
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE"
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1 * cm,
+        rightMargin=1 * cm,
+        topMargin=2.5 * cm,
+        bottomMargin=2.2 * cm,
     )
-
-    p.setFont("Helvetica", 10)
-    p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "BARANGAY VOLUME DISTRIBUTION")
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'HeaderTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=15,
+        leading=18,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#1c1917")
+    )
+    subtitle_style = ParagraphStyle(
+        'HeaderSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=13,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
+    period_style = ParagraphStyle(
+        'HeaderPeriod',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        alignment=1,  # Center
+        textColor=colors.HexColor("#57534e")
+    )
 
     date_range_str = (
         f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
     )
     if start_date == end_date:
         date_range_str = start_date.strftime("%B %d, %Y")
-    p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"PERIOD: {date_range_str.upper()}"
-    )
+
+    # Branding Colors
+    ACCENT_BLUE = colors.HexColor("#1e3a5f")
+
+    # Logos
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
+    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+
+    official_img = ""
+    if os.path.exists(OFFICIAL_LOGO):
+        official_img = Image(OFFICIAL_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    agri_img = ""
+    if os.path.exists(AGRI_LOGO):
+        agri_img = Image(AGRI_LOGO, width=2.0 * cm, height=2.0 * cm)
+
+    middle_flowables = [
+        Paragraph("SARIAYA MUNICIPAL AGRICULTURE OFFICE", title_style),
+        Spacer(1, 4),
+        Paragraph("BARANGAY VOLUME DISTRIBUTION", subtitle_style),
+        Spacer(1, 2),
+        Paragraph(f"PERIOD: {date_range_str.upper()}", period_style)
+    ]
+
+    header_table = Table([[official_img, middle_flowables, agri_img]], colWidths=[2.2 * cm, 14.6 * cm, 2.2 * cm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    story = [
+        header_table,
+        Spacer(1, 1.5 * cm)
+    ]
 
     # Build table
     data = [["BARANGAY", "TOTAL APPLICATIONS", "TOTAL PIGS TRANSPORTED"]]
@@ -776,7 +960,7 @@ def generate_barangay_distribution_pdf(start_date, end_date):
 
     data.append(["TOTAL", str(grand_total_apps), str(grand_total_pigs)])
 
-    table = Table(data, colWidths=[8 * cm, 5 * cm, 6 * cm])
+    table = Table(data, colWidths=[8 * cm, 5 * cm, 6 * cm], repeatRows=1)
     style = TableStyle(
         [
             ("BACKGROUND", (0, 0), (-1, 0), ACCENT_BLUE),
@@ -792,20 +976,18 @@ def generate_barangay_distribution_pdf(start_date, end_date):
         ]
     )
     table.setStyle(style)
+    story.append(table)
 
-    tw, th = table.wrapOn(p, width - 2 * cm, height)
-    table.drawOn(p, 1 * cm, height - 4.5 * cm - th)
-
-    p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
-    p.drawString(
-        1 * cm,
-        1 * cm,
-        f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    canvas_factory = make_numbered_canvas(
+        report_title="Barangay Volume Distribution",
+        report_subtitle="BARANGAY VOLUME DISTRIBUTION",
+        date_range_str=date_range_str,
+        footer_text=f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        primary_color=ACCENT_BLUE
     )
 
-    p.showPage()
-    p.save()
+    doc.build(story, canvasmaker=canvas_factory)
+
     buffer.seek(0)
     return buffer
 

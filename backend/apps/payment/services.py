@@ -3,10 +3,13 @@ import requests
 from django.conf import settings
 from apps.permits import models as permits
 from . import models
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from apps.api.utils import parse_date_range_strings
 from django.shortcuts import get_object_or_404
-from django.tasks import task
-
+from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
+from apps.documents.services import generate_permit_pdf
 
 def get_auth_header():
     key = settings.PAYMONGO_SECRET_KEY
@@ -62,8 +65,6 @@ def create_checkout_session(application_pk: int, total_price: float):
     data = res.json()["data"]
 
     # Create or update the payment history record
-    # We use update_or_create because issued_permit has a OneToOne relationship with PaymentHistory.
-    # If a user requests a checkout session again, we simply update it with the new session ID.
     models.PaymentHistory.objects.update_or_create(
         issued_permit=issued_permit_instance,
         defaults={
@@ -77,3 +78,94 @@ def create_checkout_session(application_pk: int, total_price: float):
     return {
         "checkout_url": data["attributes"]["checkout_url"],
     }
+
+def verify_paymongo_session(application_pk: int, user):
+    """
+    Calls PayMongo to check the actual status of the checkout session.
+    This endpoint verifies if a payment has been successfully made.
+    """
+    # 1. Fetch the application and its related permit
+    application = get_object_or_404(permits.PermitApplication, pk=application_pk)
+
+    # Ownership check
+    if user.role == 'Farmer' and application.farmer != user:
+        raise PermissionDenied("Unauthorized access to this application")
+    
+    # 2. Get the issued permit and its associated payment history
+    try:
+        issued_permit = application.issued_permit
+    except permits.IssuedPermit.DoesNotExist:
+        raise ValidationError("No permit has been issued for this application yet", code="not_found")
+
+    try:
+        payment_history = issued_permit.payment_history
+    except models.PaymentHistory.DoesNotExist:
+        raise ValidationError("No payment session found for this permit", code="not_found")
+
+    # 3. Verify the application is in the correct state for payment verification
+    # If it's already released, we can return success immediately
+    if application.status == permits.PermitApplication.Status.RELEASED:
+        return True, payment_history
+
+    if application.status != permits.PermitApplication.Status.PAYMENT_PENDING:
+        raise ValidationError(f"Application is not in payment pending state (Current status: {application.status})")
+
+    # 4. If we already know it's a success locally, skip the external API call
+    if payment_history.status == models.PaymentHistory.Status.SUCCESS:
+        return True, payment_history
+
+    # 5. Query PayMongo API for the checkout session details
+    url = f"{settings.PAYMONGO_URL}/checkout_sessions/{payment_history.paymongo_session_id}"
+    headers = get_auth_header()
+
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code != 200:
+        raise ValidationError("Failed to verify session with payment provider")
+
+    data = response.json().get('data', {})
+    attributes = data.get('attributes', {})
+
+    # 6. PROTOTYPE SIMULATION:
+    # For this prototype, we treat an 'active' session status as 'paid' to simulate a successful transaction.
+    payment_status = attributes.get('status')
+    
+    if payment_status == 'active':
+        with transaction.atomic():
+            # Re-fetch payment history with a lock to prevent concurrent update issues
+            payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
+            
+            if payment_history.status == models.PaymentHistory.Status.SUCCESS:
+                return True, payment_history
+            
+            # A. Update Payment History record
+            payment_history.status = models.PaymentHistory.Status.SUCCESS
+            payment_history.method = 'ONLINE'
+            payment_history.save()
+
+            # B. Update the Issued Permit state
+            issued_permit.is_paid = True
+            issued_permit.payment_method = 'ONLINE'
+            issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
+            issued_permit.save()
+
+            # C. Advance the Application status to RELEASED
+            from apps.permits.services import handle_application_status_change
+            handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
+
+            # D. Queue the background tasks for PDF generation
+            generate_permit_pdf.enqueue(permit_application_id=application.pk)     
+        
+        return True, payment_history
+    else:
+        return False, payment_history
+
+def generate_collection_report(user, start_date_str, end_date_str):
+    if user.role != 'Agri':
+        raise PermissionDenied("Only Agri officers can generate collection reports.")
+
+    from apps.documents.services import generate_collection_report_pdf
+
+    start_date, end_date = parse_date_range_strings(start_date_str, end_date_str)
+    pdf_buffer = generate_collection_report_pdf(start_date=start_date, end_date=end_date, requesting_user=user)
+    return pdf_buffer, start_date, end_date

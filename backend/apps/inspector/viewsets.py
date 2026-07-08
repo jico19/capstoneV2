@@ -1,17 +1,10 @@
 from rest_framework import viewsets, status
-from . import serializers
-from . import models
 from rest_framework.response import Response
-from apps.api.models import User, Notification
-
-
-
-from rest_framework.permissions import IsAuthenticated
-
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.http import FileResponse
-from django.utils import timezone
-from apps.documents.services import generate_inspector_report_pdf
+from . import models, serializers, services
 
 class InspectorLogViewSets(viewsets.ModelViewSet):
     queryset = models.InspectorLogs.objects.all()
@@ -24,29 +17,23 @@ class InspectorLogViewSets(viewsets.ModelViewSet):
         API Endpoint: GET /api/inspector/generate_report/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
         Generates and returns a PDF duty log for a date range.
         """
-        if request.user.role != 'Agri':
-            return Response({"error": "Unauthorized"}, status=403)
-
-        from datetime import datetime
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
-        
-        today = timezone.now().date()
-        start_date = today
-        end_date = today
-        
+
         try:
-            if start_date_str:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            if end_date_str:
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return Response({"error": "Invalid date format"}, status=400)
-
-        pdf_buffer = generate_inspector_report_pdf(start_date=start_date, end_date=end_date)
-        filename = f"INSPECTOR_LOGS_{start_date}_to_{end_date}.pdf"
-
-        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+            pdf_buffer, start_date, end_date = services.generate_duty_report(
+                user=request.user,
+                start_date_str=start_date_str,
+                end_date_str=end_date_str
+            )
+            filename = f"INSPECTOR_LOGS_{start_date}_to_{end_date}.pdf"
+            return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+        except PermissionDenied as e:
+            return Response({"error": e.detail if hasattr(e, "detail") else str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except ValidationError as e:
+            return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
         user = self.request.user
@@ -56,38 +43,24 @@ class InspectorLogViewSets(viewsets.ModelViewSet):
         return models.InspectorLogs.objects.filter(inspector=user)
 
     def create(self, request, *args, **kwargs):
-        if request.user.role != 'Inspector':
-            return Response({"error": "Only inspectors can log verification activity."}, status=status.HTTP_403_FORBIDDEN)
-        
         try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            log_instance = serializer.save(inspector=request.user)
-
-            # --- Update Permit Status ---
-            application = log_instance.application
-            application.is_checked = True
-            application.save()
-
-            # --- Send Notifications ---
-            # 1. Notify the Farmer
-            Notification.objects.create(
-                recipient=log_instance.application.farmer,
-                type=Notification.Type.INFO,
-                title="Checkpoint Verified",
-                message=f"Your transport permit (ID: {log_instance.application.application_id}) has been successfully verified by an inspector at a checkpoint."
+            data = services.create_inspector_log(
+                user=request.user,
+                request_data=request.data
             )
-
-            # 2. Notify Agri and OPV offices
-            staff_to_notify = User.objects.filter(role__in=['Agri', 'Opv'])
-            for staff in staff_to_notify:
-                Notification.objects.create(
-                    recipient=staff,
-                    type=Notification.Type.INFO,
-                    title="Field Inspection Activity",
-                    message=f"Inspector {request.user.get_full_name() or request.user.username} has just recorded a field verification for Application #{log_instance.application.application_id}."
-                )
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(data, status=status.HTTP_200_OK)
+        except PermissionDenied as e:
+            return Response(
+                {"error": e.detail if hasattr(e, "detail") else str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except ValidationError as e:
+            return Response(
+                {"error": e.detail if hasattr(e, "detail") else e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            return Response({"error": "Failed to record inspection", "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Failed to record inspection", "detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )

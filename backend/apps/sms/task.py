@@ -90,3 +90,11 @@ def send_via_status(application_id, attempt=3):
                 logger.error(
                     f"Max attempts reached for SMS status update on application {application.application_id}"
                 )
+
+
+@task()
+def send_scan_notification_sms(phone_number, application_id, timestamp_str):
+    """
+    Sends a verification scan SMS alert in the background.
+    """
+    send_sms(phone_number=phone_number, message=f"FarmPass: Your permit #{application_id} was scanned and verified on {timestamp_str}. Safe travels!")

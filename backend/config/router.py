@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from apps.permits import viewset as PermitViewSets
+from apps.permits import views as PermitViewSets
 from apps.maps import viewsets as MapsViewSets
 from apps.api import viewsets as UserViewSets
 from apps.payment import viewsets as PaymentViewSets

@@ -15,8 +15,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Table, TableStyle
+from reportlab.platypus import Table, TableStyle, Paragraph
 
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
@@ -311,20 +312,29 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             raise e
 
 
-def generate_collection_report_pdf(start_date, end_date):
+def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
     """
-    Generates a PDF report of all successful payments between two dates.
+    Generates an Executive Summary PDF report of collections between two dates.
+    Formats as an official Philippine LGU Memorandum Report.
     """
     payments = (
         PaymentHistory.objects.filter(
             status=PaymentHistory.Status.SUCCESS,
             created_at__date__range=[start_date, end_date],
         )
-        .select_related("issued_permit__application__farmer")
-        .order_by("created_at")
     )
 
     total_amount = payments.aggregate(Sum("amount"))["amount__sum"] or 0
+    total_transactions = payments.count()
+
+    # Breakdown by gateway
+    online_payments = payments.filter(method='ONLINE')
+    online_amount = online_payments.aggregate(Sum("amount"))["amount__sum"] or 0
+    online_count = online_payments.count()
+
+    manual_payments = payments.exclude(method='ONLINE')
+    manual_amount = manual_payments.aggregate(Sum("amount"))["amount__sum"] or 0
+    manual_count = manual_payments.count()
 
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
@@ -334,8 +344,10 @@ def generate_collection_report_pdf(start_date, end_date):
     PRIMARY_GREEN = colors.HexColor("#166534")
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
+    BORDER_COLOR = colors.HexColor("#d6d3d1")  # Stone-300
+    ACCENT_BG = colors.HexColor("#fafaf9")  # Stone-50
 
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    # Resolve the assets path relative to the backend project root
     ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
@@ -362,67 +374,173 @@ def generate_collection_report_pdf(start_date, end_date):
             mask="auto",
         )
 
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE"
-    )
-
-    p.setFont("Helvetica", 10)
+    # Header Text (Centered LGU Format)
     p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "COLLECTION REPORT")
+    p.setFont("Helvetica", 9)
+    p.drawCentredString(width / 2, height - 1.0 * cm, "Republic of the Philippines")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawCentredString(width / 2, height - 1.4 * cm, "PROVINCE OF QUEZON")
+    p.drawCentredString(width / 2, height - 1.8 * cm, "Municipality of Sariaya")
+    
+    p.setFont("Helvetica-Bold", 12)
+    p.setFillColor(PRIMARY_GREEN)
+    p.drawCentredString(width / 2, height - 2.3 * cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
+
+    p.setStrokeColor(PRIMARY_GREEN)
+    p.setLineWidth(1.5)
+    p.line(1 * cm, height - 2.6 * cm, width - 1 * cm, height - 2.6 * cm)
+
+    from_name = "ADMINISTRATIVE STAFF"
+    if requesting_user:
+        from_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 14)
+    p.drawCentredString(width / 2, height - 3.2 * cm, "COLLECTION SUMMARY REPORT")
 
     date_range_str = (
-        f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
+        f"{start_date.strftime('%B %d, %Y')} — {end_date.strftime('%B %d, %Y')}"
     )
     if start_date == end_date:
         date_range_str = start_date.strftime("%B %d, %Y")
+    p.setFont("Helvetica-Bold", 9)
+    p.setFillColor(TEXT_MUTED)
     p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"PERIOD: {date_range_str.upper()}"
+        width / 2, height - 3.7 * cm, f"PERIOD: {date_range_str.upper()}"
     )
 
-    # Table Data
-    data = [["REF #", "FARMER", "GATEWAY", "DATE", "AMOUNT"]]
-    for pay in payments:
-        data.append(
-            [
-                f"TRX-{pay.id}",
-                pay.issued_permit.application.farmer.get_full_name().upper()[:20],
-                pay.method.upper(),
-                pay.created_at.strftime("%Y-%m-%d"),
-                f"P{pay.amount:,.2f}",
-            ]
-        )
+    current_y = height - 4.2 * cm
 
-    # Summary Row
-    data.append(["", "", "", "TOTAL:", f"P{total_amount:,.2f}"])
+    # Section I: Summary of Key Metrics
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "I. SUMMARY OF KEY FINANCIAL METRICS")
+    current_y -= 0.4 * cm
 
-    # Table Styling
-    table = Table(data, colWidths=[3 * cm, 7 * cm, 3 * cm, 3 * cm, 3 * cm])
-    style = TableStyle(
-        [
-            ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_GREEN),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 10),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.whitesmoke),
-            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -2), 0.5, colors.grey),
-            ("ALIGN", (4, 1), (4, -1), "RIGHT"),
-        ]
-    )
-    table.setStyle(style)
+    metric_data = [
+        ["METRIC DESCRIPTION", "REPORTED VALUE"],
+        ["TOTAL REVENUE COLLECTED", f"PHP {total_amount:,.2f}"],
+        ["TOTAL SUCCESSFUL TRANSACTIONS", f"{total_transactions} payments"],
+    ]
+    metric_table = Table(metric_data, colWidths=[12 * cm, 6 * cm])
+    metric_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f5f5f4")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_MAIN),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+        ("TOPPADDING", (0, 0), (-1, 0), 6),
+        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+    ]))
+    m_tw, m_th = metric_table.wrapOn(p, width, height)
+    metric_table.drawOn(p, 1.5 * cm, current_y - m_th)
+    current_y -= (m_th + 0.6 * cm)
 
-    # Place Table
+    # Section II: Breakdown Table
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "II. DETAILED CHANNEL RECAPITULATION")
+    current_y -= 0.4 * cm
+
+    data = [
+        ["PAYMENT CHANNEL", "TRANSACTION COUNT", "TOTAL COLLECTED"],
+        ["ONLINE (PAYMONGO)", f"{online_count} payments", f"PHP {online_amount:,.2f}"],
+        ["OVER-THE-COUNTER (OTC)", f"{manual_count} payments", f"PHP {manual_amount:,.2f}"],
+        ["TOTAL COLLECTION", f"{total_transactions} payments", f"PHP {total_amount:,.2f}"]
+    ]
+    table = Table(data, colWidths=[8 * cm, 5 * cm, 5 * cm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_GREEN),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f5f5f4")),
+        ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+    ]))
     tw, th = table.wrapOn(p, width, height)
-    table.drawOn(p, 1 * cm, height - 5 * cm - th)
+    table.drawOn(p, 1.5 * cm, current_y - th)
+    current_y -= (th + 0.6 * cm)
+
+    # Section III: Certification
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "III. OFFICIAL OFFICE CERTIFICATION")
+    current_y -= 0.4 * cm
+
+    text = (
+        f"This certifies that for the period from {start_date.strftime('%B %d, %Y')} to "
+        f"{end_date.strftime('%B %d, %Y')}, a total of {total_transactions} payment transactions "
+        f"were processed, yielding an aggregate collection of PHP {total_amount:,.2f}. All online payments "
+        f"have been verified against the PayMongo checkout gateway, and manual payments have been "
+        f"reconciled with the Municipal Treasurer's collection registers."
+    )
+    summary_style = ParagraphStyle(
+        name='SummaryStyle_Collection',
+        fontName='Helvetica-Oblique',
+        fontSize=8.5,
+        leading=12,
+        textColor=TEXT_MAIN
+    )
+    p_summary = Paragraph(text, summary_style)
+    p_w, p_h = p_summary.wrap(17.2 * cm, height)
+    
+    padding = 10
+    box_h = p_h + padding * 2
+    
+    p.setFillColor(ACCENT_BG)
+    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
+    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
+    current_y -= (box_h + 1.2 * cm)
+
+    # Signatory Block
+    sig_y = current_y
+    if sig_y < 3.5 * cm:
+        p.showPage()
+        sig_y = height - 4.0 * cm
+    
+    # Prepared By
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(4.0 * cm, sig_y, "Prepared By:")
+    p.line(1.5 * cm, sig_y - 1.2 * cm, 6.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(4.0 * cm, sig_y - 1.6 * cm, from_name)
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(4.0 * cm, sig_y - 2.0 * cm, "Revenue Collector / Agri Staff")
+
+    # Certified Correct
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(10.0 * cm, sig_y, "Certified Correct By:")
+    p.line(7.5 * cm, sig_y - 1.2 * cm, 12.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(10.0 * cm, sig_y - 1.6 * cm, "ENGR. LEONARDO R. ABUSTAN")
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(10.0 * cm, sig_y - 2.0 * cm, "Municipal Agriculturist")
+
+    # Noted By
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(16.0 * cm, sig_y, "Noted By:")
+    p.line(13.5 * cm, sig_y - 1.2 * cm, 18.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(16.0 * cm, sig_y - 1.6 * cm, "GLORIA M. VALBUENA")
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(16.0 * cm, sig_y - 2.0 * cm, "Municipal Treasurer")
 
     # Footer
     p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
+    p.setFont("Helvetica-Oblique", 7.5)
     p.drawString(
         1 * cm,
         1 * cm,
@@ -431,31 +549,40 @@ def generate_collection_report_pdf(start_date, end_date):
 
     p.showPage()
     p.save()
-
     buffer.seek(0)
     return buffer
 
 
-def generate_inspector_report_pdf(start_date, end_date):
+def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
     """
-    Generates a PDF report of all field verifications performed by inspectors.
+    Generates an Executive Summary PDF report of inspector activity between two dates.
+    Formats as an official Philippine LGU Memorandum Report.
     """
     logs = (
         InspectorLogs.objects.filter(scanned_at__date__range=[start_date, end_date])
-        .select_related("inspector", "application__farmer")
-        .order_by("-scanned_at")
     )
+
+    total_verifications = logs.count()
+    active_inspectors = logs.values("inspector").distinct().count()
+    total_permits_checked = logs.values("application").distinct().count()
+
+    # Breakdown by inspector
+    inspector_counts = logs.values(
+        "inspector__username", "inspector__first_name", "inspector__last_name"
+    ).annotate(count=Count("id")).order_by("-count")[:5]
 
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
     # Branding Colors
-    PRIMARY_PURPLE = colors.HexColor("#6b21a8")  # High contrast purple
+    PRIMARY_PURPLE = colors.HexColor("#6b21a8")  # LGU Purple
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
+    BORDER_COLOR = colors.HexColor("#d6d3d1")  # Stone-300
+    ACCENT_BG = colors.HexColor("#fafaf9")  # Stone-50
 
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    # Resolve the assets path
     ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
@@ -482,87 +609,218 @@ def generate_inspector_report_pdf(start_date, end_date):
             mask="auto",
         )
 
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL FIELD VERIFICATION"
-    )
-
-    p.setFont("Helvetica", 10)
+    # Header Text (Centered LGU Format)
     p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "INSPECTOR DUTY LOGS")
+    p.setFont("Helvetica", 9)
+    p.drawCentredString(width / 2, height - 1.0 * cm, "Republic of the Philippines")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawCentredString(width / 2, height - 1.4 * cm, "PROVINCE OF QUEZON")
+    p.drawCentredString(width / 2, height - 1.8 * cm, "Municipality of Sariaya")
+    
+    p.setFont("Helvetica-Bold", 12)
+    p.setFillColor(PRIMARY_PURPLE)
+    p.drawCentredString(width / 2, height - 2.3 * cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
+
+    p.setStrokeColor(PRIMARY_PURPLE)
+    p.setLineWidth(1.5)
+    p.line(1 * cm, height - 2.6 * cm, width - 1 * cm, height - 2.6 * cm)
+
+    from_name = "FIELD SERVICE OFFICER"
+    if requesting_user:
+        from_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 14)
+    p.drawCentredString(width / 2, height - 3.2 * cm, "INSPECTION SUMMARY REPORT")
 
     date_range_str = (
-        f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
+        f"{start_date.strftime('%B %d, %Y')} — {end_date.strftime('%B %d, %Y')}"
     )
+    if start_date == end_date:
+        date_range_str = start_date.strftime("%B %d, %Y")
+    p.setFont("Helvetica-Bold", 9)
+    p.setFillColor(TEXT_MUTED)
     p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"AUDIT PERIOD: {date_range_str.upper()}"
+        width / 2, height - 3.7 * cm, f"PERIOD: {date_range_str.upper()}"
     )
 
-    # Table Data
-    data = [["ID", "INSPECTOR", "FARMER", "TIMESTAMP", "REMARKS"]]
-    for log in logs:
-        data.append(
-            [
-                f"LOG-{log.id}",
-                log.inspector.username.upper(),
-                log.application.farmer.get_full_name().upper()[:15],
-                log.scanned_at.strftime("%Y-%m-%d %H:%M"),
-                (
-                    (log.notes[:30] + "...")
-                    if len(log.notes) > 30
-                    else (log.notes or "VERIFIED")
-                ),
-            ]
-        )
+    current_y = height - 4.2 * cm
 
-    # Table Styling
-    table = Table(data, colWidths=[2.5 * cm, 3.5 * cm, 4.5 * cm, 4 * cm, 4.5 * cm])
-    style = TableStyle(
-        [
-            ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_PURPLE),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 9),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("FONTSIZE", (0, 1), (-1, -1), 8),
-        ]
-    )
-    table.setStyle(style)
+    # Section I: Summary of Key Metrics
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "I. SUMMARY OF KEY ENFORCEMENT METRICS")
+    current_y -= 0.4 * cm
 
+    metric_data = [
+        ["METRIC DESCRIPTION", "REPORTED VALUE"],
+        ["TOTAL FIELD SCANS LOGGED", f"{total_verifications} scans"],
+        ["ACTIVE ENFORCEMENT OFFICERS", f"{active_inspectors} active officers"],
+        ["UNIQUE PERMITS VERIFIED", f"{total_permits_checked} unique permits"],
+    ]
+    metric_table = Table(metric_data, colWidths=[12 * cm, 6 * cm])
+    metric_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f5f5f4")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_MAIN),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+        ("TOPPADDING", (0, 0), (-1, 0), 6),
+        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+    ]))
+    m_tw, m_th = metric_table.wrapOn(p, width, height)
+    metric_table.drawOn(p, 1.5 * cm, current_y - m_th)
+    current_y -= (m_th + 0.6 * cm)
+
+    # Section II: Breakdown Table
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "II. TOP VERIFYING ENFORCEMENT OFFICERS")
+    current_y -= 0.4 * cm
+
+    data = [["INSPECTOR USERNAME", "OFFICER FULL NAME", "VERIFICATIONS LOGGED"]]
+    for c in inspector_counts:
+        first = c.get("inspector__first_name") or ""
+        last = c.get("inspector__last_name") or ""
+        full = f"{first} {last}".strip() or "N/A"
+        data.append([
+            c["inspector__username"].upper(),
+            full.upper(),
+            f"{c['count']} verifications"
+        ])
+    if len(data) == 1:
+        data.append(["NO ACTIVITY", "NO ACTIVE INSPECTORS RECORDED", "0 verifications"])
+
+    table = Table(data, colWidths=[6 * cm, 7 * cm, 5 * cm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_PURPLE),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("ALIGN", (2, 1), (2, -1), "RIGHT"),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+    ]))
     tw, th = table.wrapOn(p, width, height)
-    table.drawOn(p, 1 * cm, height - 4.5 * cm - th)
+    table.drawOn(p, 1.5 * cm, current_y - th)
+    current_y -= (th + 0.6 * cm)
+
+    # Section III: Certification
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "III. OFFICIAL OFFICE CERTIFICATION")
+    current_y -= 0.4 * cm
+
+    text = (
+        f"This certifies that for the period from {start_date.strftime('%B %d, %Y')} to "
+        f"{end_date.strftime('%B %d, %Y')}, livestock inspectors logged a total of {total_verifications} "
+        f"checkpoint verifications across municipal transport corridors. A total of {active_inspectors} "
+        f"enforcement officers participated in duties, validating {total_permits_checked} unique transport permits "
+        f"via the FarmPass verification scan module."
+    )
+    summary_style = ParagraphStyle(
+        name='SummaryStyle_Inspector',
+        fontName='Helvetica-Oblique',
+        fontSize=8.5,
+        leading=12,
+        textColor=TEXT_MAIN
+    )
+    p_summary = Paragraph(text, summary_style)
+    p_w, p_h = p_summary.wrap(17.2 * cm, height)
+    
+    padding = 10
+    box_h = p_h + padding * 2
+    
+    p.setFillColor(ACCENT_BG)
+    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
+    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
+    current_y -= (box_h + 1.2 * cm)
+
+    # Signatory Block
+    sig_y = current_y
+    if sig_y < 3.5 * cm:
+        p.showPage()
+        sig_y = height - 4.0 * cm
+    
+    # Prepared By
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(4.0 * cm, sig_y, "Prepared By:")
+    p.line(1.5 * cm, sig_y - 1.2 * cm, 6.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(4.0 * cm, sig_y - 1.6 * cm, from_name)
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(4.0 * cm, sig_y - 2.0 * cm, "Livestock Inspector / Agri Officer")
+
+    # Certified Correct
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(10.0 * cm, sig_y, "Verified By:")
+    p.line(7.5 * cm, sig_y - 1.2 * cm, 12.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(10.0 * cm, sig_y - 1.6 * cm, "DR. RENATO C. ALPAY")
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(10.0 * cm, sig_y - 2.0 * cm, "Municipal Veterinarian / Agri Officer")
+
+    # Approved By
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(16.0 * cm, sig_y, "Approved By:")
+    p.line(13.5 * cm, sig_y - 1.2 * cm, 18.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(16.0 * cm, sig_y - 1.6 * cm, "ENGR. LEONARDO R. ABUSTAN")
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(16.0 * cm, sig_y - 2.0 * cm, "Municipal Agriculturist")
 
     # Footer
     p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
+    p.setFont("Helvetica-Oblique", 7.5)
     p.drawString(
         1 * cm,
         1 * cm,
-        f"Official Audit Document • Generated {timezone.now().strftime('%Y-%m-%d')}",
+        f"Official Audit Document • Generated {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
     )
 
     p.showPage()
     p.save()
-
     buffer.seek(0)
     return buffer
 
 
-def generate_permit_issuance_report_pdf(start_date, end_date):
+def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=None):
     """
-    Generates a PDF list of all issued permits in a given date range.
-    Shows permit number, farmer name, origin, destination, and pig count.
+    Generates an Executive Summary PDF report of issued permits between two dates.
+    Formats as an official Philippine LGU Memorandum Report.
     """
     permits = (
         IssuedPermit.objects.filter(date_issued__range=[start_date, end_date])
-        .select_related("application__farmer")
-        .prefetch_related("application__origins__barangay")
-        .order_by("-date_issued")
     )
+
+    total_permits = permits.count()
+    
+    # Aggregated livestock statistics
+    total_pigs = TransportOrigin.objects.filter(
+        application__issued_permit__in=permits
+    ).aggregate(Sum("number_of_pigs"))["number_of_pigs__sum"] or 0
+
+    active_routes = TransportOrigin.objects.filter(
+        application__issued_permit__in=permits
+    ).values("barangay").distinct().count()
+
+    # Breakdown by Origin Barangay
+    origin_counts = TransportOrigin.objects.filter(
+        application__issued_permit__in=permits
+    ).values("barangay__name").annotate(
+        permit_count=Count("application", distinct=True), 
+        pig_count=Sum("number_of_pigs")
+    ).order_by("-pig_count")[:5]
 
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
@@ -572,8 +830,10 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
     PRIMARY_GREEN = colors.HexColor("#166534")
     TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
     TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
+    BORDER_COLOR = colors.HexColor("#d6d3d1")  # Stone-300
+    ACCENT_BG = colors.HexColor("#fafaf9")  # Stone-50
 
-    # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
+    # Resolve the assets path
     ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
     OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
     AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
@@ -600,80 +860,176 @@ def generate_permit_issuance_report_pdf(start_date, end_date):
             mask="auto",
         )
 
-    # Header Text (Centered)
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(
-        width / 2, height - 1.2 * cm, "SARIAYA MUNICIPAL AGRICULTURE OFFICE"
-    )
-
-    p.setFont("Helvetica", 10)
+    # Header Text (Centered LGU Format)
     p.setFillColor(TEXT_MUTED)
-    p.drawCentredString(width / 2, height - 1.8 * cm, "PERMIT ISSUANCE SUMMARY")
+    p.setFont("Helvetica", 9)
+    p.drawCentredString(width / 2, height - 1.0 * cm, "Republic of the Philippines")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawCentredString(width / 2, height - 1.4 * cm, "PROVINCE OF QUEZON")
+    p.drawCentredString(width / 2, height - 1.8 * cm, "Municipality of Sariaya")
+    
+    p.setFont("Helvetica-Bold", 12)
+    p.setFillColor(PRIMARY_GREEN)
+    p.drawCentredString(width / 2, height - 2.3 * cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
+
+    p.setStrokeColor(PRIMARY_GREEN)
+    p.setLineWidth(1.5)
+    p.line(1 * cm, height - 2.6 * cm, width - 1 * cm, height - 2.6 * cm)
+
+    from_name = "ADMINISTRATIVE OFFICER"
+    if requesting_user:
+        from_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 14)
+    p.drawCentredString(width / 2, height - 3.2 * cm, "PERMIT ISSUANCE SUMMARY REPORT")
 
     date_range_str = (
-        f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
+        f"{start_date.strftime('%B %d, %Y')} — {end_date.strftime('%B %d, %Y')}"
     )
     if start_date == end_date:
         date_range_str = start_date.strftime("%B %d, %Y")
+    p.setFont("Helvetica-Bold", 9)
+    p.setFillColor(TEXT_MUTED)
     p.drawCentredString(
-        width / 2, height - 2.3 * cm, f"PERIOD: {date_range_str.upper()}"
+        width / 2, height - 3.7 * cm, f"PERIOD: {date_range_str.upper()}"
     )
 
-    # Build table rows: one row per issued permit
-    data = [["PERMIT #", "FARMER", "ORIGIN", "DESTINATION", "PIGS", "DATE"]]
-    for issued in permits:
-        application = issued.application
-        origins = application.origins.all()
+    current_y = height - 4.2 * cm
 
-        # Summarize the origin: one barangay, or "Multiple" if more than one
-        if origins.count() == 1:
-            origin_label = origins.first().barangay.name
-        else:
-            origin_label = f"Multiple ({origins.count()})"
+    # Section I: Summary of Key Metrics
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "I. SUMMARY OF KEY DISTRIBUTION METRICS")
+    current_y -= 0.4 * cm
 
-        # Sum total pigs across all origins
-        total_pigs = sum(o.number_of_pigs for o in origins)
+    metric_data = [
+        ["METRIC DESCRIPTION", "REPORTED VALUE"],
+        ["TOTAL TRANSPORT PERMITS ISSUED", f"{total_permits} issued permits"],
+        ["TOTAL LIVESTOCK VOLUME SHIPPED", f"{total_pigs} head (pigs)"],
+        ["ACTIVE TRANSPORT CORRIDOR ROUTES", f"{active_routes} routes"],
+    ]
+    metric_table = Table(metric_data, colWidths=[12 * cm, 6 * cm])
+    metric_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f5f5f4")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_MAIN),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+        ("TOPPADDING", (0, 0), (-1, 0), 6),
+        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+    ]))
+    m_tw, m_th = metric_table.wrapOn(p, width, height)
+    metric_table.drawOn(p, 1.5 * cm, current_y - m_th)
+    current_y -= (m_th + 0.6 * cm)
 
-        data.append(
-            [
-                issued.permit_number,
-                application.farmer.get_full_name().upper()[:18],
-                origin_label[:16],
-                application.destination[:16],
-                str(total_pigs),
-                issued.date_issued.strftime("%Y-%m-%d"),
-            ]
-        )
+    # Section II: Breakdown Table
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "II. TOP TRANSPORT ORIGINS BY VOLUME")
+    current_y -= 0.4 * cm
 
-    total_permits = len(data) - 1  # exclude header row
-    data.append(["", "", "", f"TOTAL: {total_permits} permits", "", ""])
+    data = [["ORIGIN BARANGAY", "PERMITS GRANTED", "PIGS SHIPPED"]]
+    for o in origin_counts:
+        data.append([
+            o["barangay__name"].upper(),
+            f"{o['permit_count']} permits",
+            f"{o['pig_count']} head"
+        ])
+    if len(data) == 1:
+        data.append(["NO TRANSPORT RECORDED", "0 permits", "0 head"])
 
-    table = Table(
-        data, colWidths=[3.5 * cm, 4.5 * cm, 3.5 * cm, 3.5 * cm, 1.5 * cm, 3 * cm]
+    table = Table(data, colWidths=[8 * cm, 5 * cm, 5 * cm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_GREEN),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+    ]))
+    tw, th = table.wrapOn(p, width, height)
+    table.drawOn(p, 1.5 * cm, current_y - th)
+    current_y -= (th + 0.6 * cm)
+
+    # Section III: Certification
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, "III. OFFICIAL OFFICE CERTIFICATION")
+    current_y -= 0.4 * cm
+
+    text = (
+        f"This certifies that for the period from {start_date.strftime('%B %d, %Y')} to "
+        f"{end_date.strftime('%B %d, %Y')}, the Municipal Agriculture Office issued a total of "
+        f"{total_permits} Livestock Transport Permits covering a total volume of {total_pigs} pigs "
+        f"transported across {active_routes} active origin barangay routes. All permits were issued "
+        f"subsequent to health certificate validation by the Office of the Provincial Veterinarian."
     )
-    style = TableStyle(
-        [
-            ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_GREEN),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 9),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
-            ("GRID", (0, 0), (-1, -2), 0.5, colors.HexColor("#e5e7eb")),
-            ("FONTSIZE", (0, 1), (-1, -1), 8),
-            ("ALIGN", (4, 0), (4, -1), "CENTER"),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f3f4f6")),
-            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-            ("ALIGN", (3, -1), (3, -1), "RIGHT"),
-        ]
+    summary_style = ParagraphStyle(
+        name='SummaryStyle_Permit',
+        fontName='Helvetica-Oblique',
+        fontSize=8.5,
+        leading=12,
+        textColor=TEXT_MAIN
     )
-    table.setStyle(style)
+    p_summary = Paragraph(text, summary_style)
+    p_w, p_h = p_summary.wrap(17.2 * cm, height)
+    
+    padding = 10
+    box_h = p_h + padding * 2
+    
+    p.setFillColor(ACCENT_BG)
+    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
+    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
+    current_y -= (box_h + 1.2 * cm)
 
-    tw, th = table.wrapOn(p, width - 2 * cm, height)
-    table.drawOn(p, 1 * cm, height - 4.5 * cm - th)
+    # Signatory Block
+    sig_y = current_y
+    if sig_y < 3.5 * cm:
+        p.showPage()
+        sig_y = height - 4.0 * cm
+    
+    # Prepared By
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(4.0 * cm, sig_y, "Prepared By:")
+    p.line(1.5 * cm, sig_y - 1.2 * cm, 6.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(4.0 * cm, sig_y - 1.6 * cm, from_name)
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(4.0 * cm, sig_y - 2.0 * cm, "Livestock Division Staff / Agri Officer")
 
+    # Certified Correct
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(10.0 * cm, sig_y, "Certified Correct By:")
+    p.line(7.5 * cm, sig_y - 1.2 * cm, 12.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(10.0 * cm, sig_y - 1.6 * cm, "DR. RENATO C. ALPAY")
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(10.0 * cm, sig_y - 2.0 * cm, "Municipal Veterinarian / Agri Officer")
+
+    # Approved By
+    p.setFillColor(TEXT_MAIN)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(16.0 * cm, sig_y, "Approved By:")
+    p.line(13.5 * cm, sig_y - 1.2 * cm, 18.5 * cm, sig_y - 1.2 * cm)
+    p.setFont("Helvetica-Bold", 8)
+    p.drawCentredString(16.0 * cm, sig_y - 1.6 * cm, "ENGR. LEONARDO R. ABUSTAN")
+    p.setFont("Helvetica", 7.5)
+    p.setFillColor(TEXT_MUTED)
+    p.drawCentredString(16.0 * cm, sig_y - 2.0 * cm, "Municipal Agriculturist")
+
+    # Footer
     p.setFillColor(colors.grey)
-    p.setFont("Helvetica-Oblique", 8)
+    p.setFont("Helvetica-Oblique", 7.5)
     p.drawString(
         1 * cm,
         1 * cm,

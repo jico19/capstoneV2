@@ -298,7 +298,7 @@ const RegisterPage = () => {
 
                 {/* Right Side: Success Content */}
                 <div className="flex-1 flex items-center justify-center p-6 md:p-16 bg-white">
-                    <div className="w-full max-w-sm text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="w-full max-w-sm text-center space-y-8">
                         <div className="flex justify-center">
                             <div className="bg-green-50 p-6 border-2 border-green-100">
                                 <CheckCircle2 size={64} className="text-green-600" strokeWidth={3} />
@@ -559,6 +559,24 @@ const RegisterPage = () => {
                                     </div>
                                     <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-1">Write this down so you do not forget it.</p>
                                     {errors.password && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.password.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-800">Confirm Your Password</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+                                        <input
+                                            type="password"
+                                            {...register("confirm_password", {
+                                                required: isOTPVerified ? "Please confirm your password" : false,
+                                                validate: (value) => !isOTPVerified || value === getValues("password") || "Passwords do not match",
+                                                onChange: clearError
+                                            })}
+                                            className={`w-full p-4 pl-12 bg-stone-50 border-2 rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.confirm_password ? 'border-red-600' : 'border-stone-100 focus:border-green-600'}`}
+                                            placeholder="Confirm your password"
+                                            disabled={!isOTPVerified}
+                                        />
+                                    </div>
+                                    {errors.confirm_password && <p className="text-[10px] font-bold text-red-600 uppercase mt-1">{errors.confirm_password.message}</p>}
                                     {isOTPVerified && (
                                         <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-2 flex items-center gap-1">
                                             <CheckCircle2 size={12} strokeWidth={3} /> Phone Verified. You can now set your password.

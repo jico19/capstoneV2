@@ -3,6 +3,8 @@ import io
 from django.db import transaction
 from .models import Barangay, HogSurvey
 from datetime import datetime
+from rest_framework.exceptions import ValidationError
+from apps.api.utils import parse_date_range_strings
 
 # Service class to handle business logic for Hog Surveys, including CSV imports.
 class HogSurveyService:
@@ -157,3 +159,191 @@ class HogSurveyService:
                     HogSurvey.objects.bulk_create(records_to_create)
 
         return len(records_to_create) + len(records_to_update), errors
+
+    @staticmethod
+    def calculate_transport_volume():
+        """
+        Calculates the total number of pigs being transported out of each barangay
+        based on active/released permits.
+        """
+        from apps.permits.models import PermitApplication
+        from django.db.models import Sum
+
+        # We only count permits that have reached 'Permit Issued' or later
+        active_permits = PermitApplication.objects.filter(
+            status__in=[
+                PermitApplication.Status.PERMIT_ISSUED,
+                PermitApplication.Status.PAYMENT_PENDING,
+                PermitApplication.Status.RELEASED,
+            ]
+        )
+
+        volume_data = active_permits.values("origin_barangay__name").annotate(
+            total_transported=Sum("number_of_pigs")
+        )
+
+        # Convert volume_data to a dictionary for faster lookups
+        volume_map = {
+            v["origin_barangay__name"]: v["total_transported"] for v in volume_data
+        }
+
+        volume_payload = []
+        # Get all barangays to ensure we return 0 for those with no transport activity
+        all_barangays = Barangay.objects.all()
+
+        for b in all_barangays:
+            total = volume_map.get(b.name, 0)
+
+            # Classification for Transport Volume
+            if total == 0:
+                level = "Stable"
+            elif total < 20:
+                level = "Light"
+            elif total < 100:
+                level = "Moderate"
+            elif total < 300:
+                level = "Heavy"
+            else:
+                level = "Congested"
+
+            volume_payload.append(
+                {
+                    "barangay": b.name,
+                    "total_transported": total,
+                    "volume_level": level,
+                    "latitude": b.latitude,
+                    "longitude": b.longitude,
+                }
+            )
+
+        return volume_payload
+
+    @staticmethod
+    def generate_export_csv_data(start_date_str, end_date_str):
+        """
+        Retrieves survey data and builds CSV rows list.
+        """
+        queryset = HogSurvey.objects.all().order_by("-survey_date")
+
+        start_date, end_date = parse_date_range_strings(
+            start_date_str, end_date_str, default_to_today=False
+        )
+
+        if start_date:
+            queryset = queryset.filter(survey_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(survey_date__lte=end_date)
+
+        rows = []
+        for s in queryset:
+            rows.append([
+                s.barangay.name,
+                s.survey_date,
+                s.inahin,
+                s.barako,
+                s.fattener,
+                s.grower,
+                s.bulaw,
+                s.starter,
+                s.total_pigs,
+            ])
+        return rows
+
+    @staticmethod
+    def get_aggregated_survey_data(target_month, start_month, end_month, target_season, target_year):
+        """
+        Aggregates pig population per barangay for heatmap.
+        """
+        from django.db.models import Sum, Q
+
+        queryset = HogSurvey.objects.all()
+
+        # If no specific filters, we default to the latest year available
+        if not any([target_month, start_month, target_season, target_year]):
+            latest_survey = queryset.order_by("-survey_date").first()
+            if latest_survey:
+                target_year = latest_survey.survey_date.year
+
+        current_queryset = queryset
+
+        if target_year:
+            current_queryset = current_queryset.filter(
+                survey_date__year=int(target_year)
+            )
+
+        if target_month:
+            current_queryset = current_queryset.filter(
+                survey_date__month=int(target_month)
+            )
+        elif start_month and end_month:
+            sm, em = int(start_month), int(end_month)
+            if sm <= em:
+                current_queryset = current_queryset.filter(
+                    survey_date__month__range=(sm, em)
+                )
+            else:
+                # Wrap around logic (e.g. Nov to Feb)
+                current_queryset = current_queryset.filter(
+                    Q(survey_date__month__gte=sm) | Q(survey_date__month__lte=em)
+                )
+        elif target_season:
+            season = target_season.lower()
+            if season == "wet":
+                current_queryset = current_queryset.filter(
+                    survey_date__month__in=[6, 7, 8, 9, 10, 11]
+                )
+            elif season == "dry":
+                current_queryset = current_queryset.filter(
+                    survey_date__month__in=[12, 1, 2, 3, 4, 5]
+                )
+
+        aggregated_data = current_queryset.values(
+            "barangay__name", "barangay__latitude", "barangay__longitude"
+        ).annotate(
+            total_pigs_sum=Sum("total_pigs"),
+            inahin_sum=Sum("inahin"),
+            barako_sum=Sum("barako"),
+            fattener_sum=Sum("fattener"),
+            grower_sum=Sum("grower"),
+            bulaw_sum=Sum("bulaw"),
+            starter_sum=Sum("starter"),
+        )
+
+        heatmap_payload = []
+        for entry in aggregated_data:
+            pigs = int(entry["total_pigs_sum"] or 0)
+
+            # Density Classification
+            if pigs == 0:
+                density = "None"
+            elif pigs < 100:
+                density = "Low"
+            elif pigs < 500:
+                density = "Medium"
+            elif pigs < 1500:
+                density = "High"
+            else:
+                density = "Very High"
+
+            heatmap_payload.append(
+                {
+                    "barangay": entry["barangay__name"],
+                    "latitude": entry["barangay__latitude"],
+                    "longitude": entry["barangay__longitude"],
+                    "total_pigs": pigs,
+                    "density_level": density,
+                    "breakdown": {
+                        "inahin": int(entry["inahin_sum"] or 0),
+                        "barako": int(entry["barako_sum"] or 0),
+                        "fattener": int(entry["fattener_sum"] or 0),
+                        "grower": int(entry["grower_sum"] or 0),
+                        "bulaw": int(entry["bulaw_sum"] or 0),
+                        "starter": int(entry["starter_sum"] or 0),
+                    },
+                    "trend": "stable",
+                    "is_prediction": False,
+                }
+            )
+
+        return heatmap_payload
+

@@ -9,6 +9,16 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
     queryset = models.IssuedPermit.objects.all()
     permission_classes = [IsAuthenticated]
 
+    def update(self, request, *args, **kwargs):
+        if request.user.role != "Agri":
+            raise PermissionDenied("Only Agri officers can update permits.")
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.role != "Agri":
+            raise PermissionDenied("Only Agri officers can update permits.")
+        return super().partial_update(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
             return serializers.IssuedPermitDetailSerializer
@@ -42,10 +52,13 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
             models.PermitApplication, pk=application_id
         )
 
+        permit_fee = request.data.get("permit_fee", 150.00)
+
         try:
             issued_permit = services.issue_permit(
                 application=application_instance,
-                user=request.user
+                user=request.user,
+                permit_fee=permit_fee
             )
             return Response(
                 {"msg": "Permit issued successfully!", "id": issued_permit.id},
@@ -131,3 +144,80 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class MunicipalConfigViewSets(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        """GET /api/municipal-config/"""
+        # Anyone authenticated can view the permit settings
+        fee = models.MunicipalConfig.get_fee()
+        config = models.MunicipalConfig.objects.first()
+        serializer = serializers.MunicipalConfigSerializer(config)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request):
+        """POST /api/municipal-config/"""
+        # Only Agri officers can change it
+        if request.user.role != "Agri":
+            raise PermissionDenied("Only Agri officers can configure permit settings.")
+        
+        vhc_fee = request.data.get("vet_health_cert_fee")
+        tp_fee = request.data.get("transport_pass_fee")
+        ltp_fee = request.data.get("local_transport_permit_fee")
+        validity = request.data.get("validity_days")
+
+        errors = {}
+        
+        def validate_positive_decimal(val, field_name):
+            if val is None:
+                errors[field_name] = "This field is required."
+                return None
+            try:
+                d_val = float(val)
+                if d_val < 0:
+                    raise ValueError()
+                return d_val
+            except ValueError:
+                errors[field_name] = "Must be a positive number."
+                return None
+
+        def validate_positive_integer(val, field_name):
+            if val is None:
+                errors[field_name] = "This field is required."
+                return None
+            try:
+                i_val = int(val)
+                if i_val <= 0:
+                    raise ValueError()
+                return i_val
+            except ValueError:
+                errors[field_name] = "Must be a positive integer greater than zero."
+                return None
+
+        vhc_val = validate_positive_decimal(vhc_fee, "vet_health_cert_fee")
+        tp_val = validate_positive_decimal(tp_fee, "transport_pass_fee")
+        ltp_val = validate_positive_decimal(ltp_fee, "local_transport_permit_fee")
+        validity_val = validate_positive_integer(validity, "validity_days")
+
+        if errors:
+            raise ValidationError(errors)
+
+        config = models.MunicipalConfig.objects.first()
+        if not config:
+            config = models.MunicipalConfig.objects.create(
+                vet_health_cert_fee=vhc_val,
+                transport_pass_fee=tp_val,
+                local_transport_permit_fee=ltp_val,
+                validity_days=validity_val
+            )
+        else:
+            config.vet_health_cert_fee = vhc_val
+            config.transport_pass_fee = tp_val
+            config.local_transport_permit_fee = ltp_val
+            config.validity_days = validity_val
+            config.save()
+
+        serializer = serializers.MunicipalConfigSerializer(config)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -145,3 +145,56 @@ class TestPermitWorkflow:
         application.refresh_from_db()
         assert application.status == PermitApplication.Status.PAYMENT_PENDING
         assert IssuedPermit.objects.filter(application=application).exists()
+
+    def test_hog_survey_deduction_and_restoration(self, farmer_user, barangay):
+        from apps.maps.models import HogSurvey
+        from apps.permits.models import TransportOrigin
+        from django.utils import timezone
+
+        # 1. Setup a baseline survey for the barangay
+        survey = HogSurvey.objects.create(
+            barangay=barangay,
+            survey_date=timezone.now().date(),
+            inahin=50,
+            barako=50,
+            fattener=50,
+            grower=50,
+            bulaw=50,
+            starter=50,
+            total_pigs=300
+        )
+
+        # 2. Create permit application
+        app = PermitApplication.objects.create(
+            farmer=farmer_user,
+            status=PermitApplication.Status.DRAFT,
+            destination='Manila',
+            transport_date=timezone.now().date(),
+            purpose='Slaughter'
+        )
+
+        # 3. Create transport origin with specific pig types
+        origin = TransportOrigin.objects.create(
+            application=app,
+            barangay=barangay,
+            inahin=5,
+            bulaw=10,
+            fattener=15
+        )
+
+        # 4. Verify survey counts were deducted
+        survey.refresh_from_db()
+        assert survey.inahin == 45
+        assert survey.bulaw == 40
+        assert survey.fattener == 35
+        assert survey.barako == 50  # Unchanged
+        assert survey.total_pigs == 270
+
+        # 5. Delete transport origin and check restoration
+        origin.delete()
+        survey.refresh_from_db()
+        assert survey.inahin == 50
+        assert survey.bulaw == 50
+        assert survey.fattener == 50
+        assert survey.total_pigs == 300
+

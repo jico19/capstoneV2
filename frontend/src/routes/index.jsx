@@ -35,6 +35,7 @@ import AgriPaymentPage from "../pages/agri/Payment/AgriPaymentPage";
 import AgriReportsPage from "../pages/agri/Reports/AgriReportsPage";
 import AuditTrailPage from "../pages/agri/Audit/AuditTrailPage";
 import FarmerManagementPage from "../pages/agri/FarmerManagementPage";
+import AgriSystemSettings from "../pages/agri/SystemSettings/AgriSystemSettings";
 
 
 // Opv
@@ -103,6 +104,7 @@ const router = createBrowserRouter([
             { path: 'farmers/', element: <FarmerManagementPage /> },
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'settings/', element: <SettingsPage /> },
+            { path: 'system-settings/', element: <AgriSystemSettings /> },
         ]
     },
     // opv route

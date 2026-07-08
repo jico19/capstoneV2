@@ -21,6 +21,13 @@ def create_checkout_session(application_pk: int, total_price: float):
     issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
 
     if issued_permit_instance.is_paid:
+        if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
+            with transaction.atomic():
+                from apps.permits.services import handle_application_status_change
+                handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
+                if not issued_permit_instance.permit_pdf:
+                    generate_permit_pdf.enqueue(permit_application_id=application.pk)
+            raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
         raise ValidationError('Already paid.')
 
     farmer = application.farmer

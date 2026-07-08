@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status, filters
+from django.db.models import Q
 from . import serializers
 from . import models
 from . import services
@@ -36,8 +37,12 @@ class UserViewSets(viewsets.ModelViewSet):
         if user.role == "Admin":
             return models.User.objects.all()
         elif user.role == "Agri":
-            return models.User.objects.filter(role="Farmer")
+            # Agri can see all Farmers AND their own profile
+            return models.User.objects.filter(
+                Q(role="Farmer") | Q(id=user.id)
+            )
         else:
+            # All other roles (OPV, Inspector, Farmer) can only see themselves
             return models.User.objects.filter(id=user.id)
 
     @action(detail=False, methods=["post"], permission_classes=[])

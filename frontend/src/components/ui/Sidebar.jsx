@@ -14,6 +14,7 @@ import {
     FilesIcon,
     FileText,
     Users,
+    SlidersHorizontal,
 } from "lucide-react";
 import useAuthStore from "../../store/authContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -92,6 +93,7 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={Map} label="Map" to='/agri/map/pig-density/' />
                         <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/' />
                         <SidebarItem icon={BarChart3} label="Reports" to='/agri/reports/' />
+                        <SidebarItem icon={SlidersHorizontal} label="System Settings" to='/agri/system-settings/' />
                         <SidebarItem icon={Settings} label="Settings" to='/agri/settings/' />
                     </MenuSection>
                 );

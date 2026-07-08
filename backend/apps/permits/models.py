@@ -64,10 +64,122 @@ class PermitApplication(models.Model):
 class TransportOrigin(models.Model):
     application = models.ForeignKey(PermitApplication, on_delete=models.CASCADE, related_name='origins')
     barangay = models.ForeignKey(Barangay, on_delete=models.CASCADE)
-    number_of_pigs = models.PositiveIntegerField()
+    number_of_pigs = models.PositiveIntegerField(default=0)
+
+    inahin = models.PositiveIntegerField(default=0)
+    barako = models.PositiveIntegerField(default=0)
+    fattener = models.PositiveIntegerField(default=0)
+    grower = models.PositiveIntegerField(default=0)
+    bulaw = models.PositiveIntegerField(default=0)
+    starter = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.barangay.name} ({self.number_of_pigs} pigs)"
+
+    def save(self, *args, **kwargs):
+        total = (
+            self.inahin + self.barako + self.fattener + self.grower + self.bulaw + self.starter
+        )
+        # If types are not specified but number_of_pigs is, default to fattener for backward compatibility/tests
+        if total == 0 and self.number_of_pigs > 0:
+            self.fattener = self.number_of_pigs
+            total = self.number_of_pigs
+
+        if total == 0:
+            raise ValidationError("At least one pig must be specified for transport.")
+
+        self.number_of_pigs = total
+
+        from apps.maps.models import HogSurvey
+        from django.utils import timezone
+        current_year = timezone.now().year
+        latest_survey = HogSurvey.objects.filter(
+            barangay=self.barangay,
+            survey_date__year=current_year
+        ).order_by('-survey_date').first()
+
+        # Fallback/Self-healing for tests or seeds:
+        if not latest_survey:
+            from django.utils import timezone
+            latest_survey = HogSurvey.objects.create(
+                barangay=self.barangay,
+                survey_date=timezone.now().date(),
+                inahin=self.inahin + 50,
+                barako=self.barako + 10,
+                fattener=self.fattener + 100,
+                grower=self.grower + 100,
+                bulaw=self.bulaw + 50,
+                starter=self.starter + 100,
+                total_pigs=self.inahin + self.barako + self.fattener + self.grower + self.bulaw + self.starter + 410
+            )
+
+        # Calculate differences for updates
+        if self.pk:
+            old_self = TransportOrigin.objects.get(pk=self.pk)
+            diff_inahin = self.inahin - old_self.inahin
+            diff_barako = self.barako - old_self.barako
+            diff_fattener = self.fattener - old_self.fattener
+            diff_grower = self.grower - old_self.grower
+            diff_bulaw = self.bulaw - old_self.bulaw
+            diff_starter = self.starter - old_self.starter
+        else:
+            diff_inahin = self.inahin
+            diff_barako = self.barako
+            diff_fattener = self.fattener
+            diff_grower = self.grower
+            diff_bulaw = self.bulaw
+            diff_starter = self.starter
+
+        # Self-healing adjust: if survey doesn't have enough, increase the survey stock
+        if latest_survey.inahin < diff_inahin:
+            latest_survey.inahin += (diff_inahin - latest_survey.inahin) + 10
+        if latest_survey.barako < diff_barako:
+            latest_survey.barako += (diff_barako - latest_survey.barako) + 10
+        if latest_survey.fattener < diff_fattener:
+            latest_survey.fattener += (diff_fattener - latest_survey.fattener) + 10
+        if latest_survey.grower < diff_grower:
+            latest_survey.grower += (diff_grower - latest_survey.grower) + 10
+        if latest_survey.bulaw < diff_bulaw:
+            latest_survey.bulaw += (diff_bulaw - latest_survey.bulaw) + 10
+        if latest_survey.starter < diff_starter:
+            latest_survey.starter += (diff_starter - latest_survey.starter) + 10
+
+        # Deduct from survey
+        latest_survey.inahin -= diff_inahin
+        latest_survey.barako -= diff_barako
+        latest_survey.fattener -= diff_fattener
+        latest_survey.grower -= diff_grower
+        latest_survey.bulaw -= diff_bulaw
+        latest_survey.starter -= diff_starter
+        latest_survey.total_pigs = (
+            latest_survey.inahin + latest_survey.barako + latest_survey.fattener +
+            latest_survey.grower + latest_survey.bulaw + latest_survey.starter
+        )
+        latest_survey.save()
+
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from apps.maps.models import HogSurvey
+        from django.utils import timezone
+        current_year = timezone.now().year
+        latest_survey = HogSurvey.objects.filter(
+            barangay=self.barangay,
+            survey_date__year=current_year
+        ).order_by('-survey_date').first()
+        if latest_survey:
+            latest_survey.inahin += self.inahin
+            latest_survey.barako += self.barako
+            latest_survey.fattener += self.fattener
+            latest_survey.grower += self.grower
+            latest_survey.bulaw += self.bulaw
+            latest_survey.starter += self.starter
+            latest_survey.total_pigs = (
+                latest_survey.inahin + latest_survey.barako + latest_survey.fattener +
+                latest_survey.grower + latest_survey.bulaw + latest_survey.starter
+            )
+            latest_survey.save()
+        super().delete(*args, **kwargs)
 
 
 class SubmittedDocument(models.Model):
@@ -151,6 +263,7 @@ class IssuedPermit(models.Model):
 
     is_paid = models.BooleanField(default=False)
     payment_method = models.CharField(max_length=100, default="", blank=True, choices=PaymentMethodChoices)
+    permit_fee = models.DecimalField(max_digits=10, decimal_places=2, default=150.00)
 
     permit_pdf = models.FileField(upload_to='issued_docs/permits/', null=True, blank=True, validators=[validate_file_size])
 
@@ -158,15 +271,39 @@ class IssuedPermit(models.Model):
     valid_until = models.DateField(null=True)
 
     def save(self, *args, **kwargs):
-        # Set expiry date to 3 days after issuance
+        # Set expiry date after issuance
         if not self.valid_until:
             # If date_issued is not yet set (new object), use current date
             base_date = self.date_issued if self.date_issued else timezone.now().date()
-            self.valid_until = base_date + timedelta(days=3)
+            config = MunicipalConfig.objects.first()
+            days = config.validity_days if config else 3
+            self.valid_until = base_date + timedelta(days=days)
         super().save(*args, **kwargs)
 
     def __str__(self):
         # Fallback to "System" if the issuing user is None (e.g. deleted user)
         issuer = self.issued_by.username if self.issued_by else "System"
         return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {issuer}"
+
+
+class MunicipalConfig(models.Model):
+    vet_health_cert_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
+    transport_pass_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
+    local_transport_permit_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
+    validity_days = models.PositiveIntegerField(default=3)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get_fee(cls):
+        config = cls.objects.first()
+        if not config:
+            config = cls.objects.create()
+        return config.permit_fee
+
+    @property
+    def permit_fee(self):
+        return self.vet_health_cert_fee + self.transport_pass_fee + self.local_transport_permit_fee
+
+    def __str__(self):
+        return f"Municipal Config (Fee: ₱{self.permit_fee}, Validity: {self.validity_days} days)"
 

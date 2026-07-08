@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
+import ConfirmationModal from "/src/components/ui/ConfirmationModal"
 
 
 /**
@@ -19,6 +20,7 @@ const OPVApplicationDetail = () => {
     const { id } = useParams()
     const navigate = useNavigate()
     const [selectedDocId, setSelectedDocId] = useState(null)
+    const [confirmModal, setConfirmModal] = useState(null)
     const { data: application, isLoading, isError } = useApplicationDetail(id)
     const query = useQueryClient()
 
@@ -41,47 +43,104 @@ const OPVApplicationDetail = () => {
     );
 
 
-    const onApprove = async (data) => {
-        try {
-            const formData = new FormData()
-            formData.append('remarks', data.remarks)
-            formData.append('veterinary_health_certificate', data.veterinary_health_certificate[0])
-            formData.append('transportation_pass', data.transportation_pass[0])
+    const onApprove = (data) => {
+        return new Promise((resolve, reject) => {
+            setConfirmModal({
+                title: "Confirm Health Validation?",
+                message: "Are you sure you want to approve this application and issue the health validation? This will allow the farmer to proceed to the payment step.",
+                yesText: "Yes, Validate",
+                yesVariant: "success",
+                type: "success",
+                onYes: async () => {
+                    try {
+                        const formData = new FormData()
+                        formData.append('remarks', data.remarks)
+                        formData.append('veterinary_health_certificate', data.veterinary_health_certificate[0])
+                        formData.append('transportation_pass', data.transportation_pass[0])
 
-            const res = await api.post(`opv/${id}/approve/`, formData)
-            query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Validation Complete", {
-                description: "Health documents uploaded and application validated."
+                        await api.post(`opv/${id}/approve/`, formData)
+                        query.invalidateQueries({ queryKey: ['application'] })
+                        toast.success("Validation Complete", {
+                            description: "Health documents uploaded and application validated."
+                        })
+                        resolve()
+                    } catch (error) {
+                        toast.error("Validation Failed", {
+                            description: "Could not complete the validation process."
+                        })
+                        reject(error)
+                    } finally {
+                        setConfirmModal(null)
+                    }
+                },
+                onClose: () => {
+                    resolve()
+                    setConfirmModal(null)
+                }
             })
-        } catch (error) {
-            toast.error("Validation Failed", {
-                description: "Could not complete the validation process."
-            })
-        }
+        })
     }
 
-    const onReject = async (data) => {
-        try {
-            await api.post(`opv/${id}/reject/`, data)
-            query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Application Rejected", {
-                description: "The application has been permanently rejected."
+    const onReject = (data) => {
+        return new Promise((resolve, reject) => {
+            setConfirmModal({
+                title: "Permanently Reject Application?",
+                message: "Are you sure you want to PERMANENTLY reject this livestock transport request? This action is irreversible and the farmer will have to restart the request process.",
+                yesText: "Yes, Reject",
+                yesVariant: "danger",
+                type: "danger",
+                onYes: async () => {
+                    try {
+                        await api.post(`opv/${id}/reject/`, data)
+                        query.invalidateQueries({ queryKey: ['application'] })
+                        toast.success("Application Rejected", {
+                            description: "The application has been permanently rejected."
+                        })
+                        resolve()
+                    } catch (error) {
+                        toast.error("Action Failed")
+                        reject(error)
+                    } finally {
+                        setConfirmModal(null)
+                    }
+                },
+                onClose: () => {
+                    resolve()
+                    setConfirmModal(null)
+                }
             })
-        } catch (error) {
-            toast.error("Action Failed")
-        }
+        })
     }
 
-    const onResubmit = async (data) => {
-        try {
-            await api.post(`opv/${id}/resubmit/`, data)
-            query.invalidateQueries({ queryKey: ['application'] })
-            toast.success("Application Returned", {
-                description: "The farmer has been notified to fix the details."
+    const onResubmit = (data) => {
+        return new Promise((resolve, reject) => {
+            setConfirmModal({
+                title: "Return Application for Correction?",
+                message: "Are you sure you want to return this application to the farmer for correction? The farmer will be notified of your remarks.",
+                yesText: "Yes, Return",
+                yesVariant: "warning",
+                type: "warning",
+                onYes: async () => {
+                    try {
+                        await api.post(`opv/${id}/resubmit/`, data)
+                        query.invalidateQueries({ queryKey: ['application'] })
+                        toast.success("Application Returned", {
+                            description: "The farmer has been notified to fix the details."
+                        })
+                        resolve()
+                    } catch (error) {
+                        toast.error("Action Failed")
+                        reject(error)
+                    } finally {
+                        setConfirmModal(null)
+                    }
+                },
+                onClose: () => {
+                    resolve()
+                    setConfirmModal(null)
+                }
             })
-        } catch (error) {
-            toast.error("Action Failed")
-        }
+        })
     }
 
     const viewDocument = (doc_id) => {
@@ -90,6 +149,19 @@ const OPVApplicationDetail = () => {
 
     return (
         <>
+            {confirmModal && (
+                <ConfirmationModal
+                    isOpen={!!confirmModal}
+                    onClose={confirmModal.onClose}
+                    onYes={confirmModal.onYes}
+                    title={confirmModal.title}
+                    message={confirmModal.message}
+                    yesText={confirmModal.yesText}
+                    yesVariant={confirmModal.yesVariant}
+                    type={confirmModal.type}
+                />
+            )}
+
             {selectedDocId && (
                 <DocumentViewModal 
                     doc_id={selectedDocId} 

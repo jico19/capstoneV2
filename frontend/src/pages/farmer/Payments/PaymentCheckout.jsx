@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react';
-import { api } from '/src/lib/api';
+import { api } from '../../../lib/api';
 import { useApplicationDetail } from '/src/hooks/useApplications';
 import { toast } from 'sonner';
 import ConfirmationModal from '/src/components/ui/ConfirmationModal';

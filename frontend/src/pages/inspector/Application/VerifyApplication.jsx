@@ -7,7 +7,7 @@ import {
     FileText, ExternalLink, ShieldCheck, AlertTriangle,
     Loader2
 } from "lucide-react"
-import { api } from "/src/lib/api"
+import { api } from "../../../lib/api"
 import { toast } from "sonner"
 import DateFormatter from "../../../components/ui/DateFormatter"
 import { useInspectorLogs } from "/src/hooks/useInspectorLogs"

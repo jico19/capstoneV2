@@ -49,9 +49,9 @@ export const useInspectorLogs = () => {
         }
     });
 
-    return { 
-        logs: logsQuery.data, 
-        isLoading: logsQuery.isLoading, 
+    return {
+        logs: logsQuery.data,
+        isLoading: logsQuery.isLoading,
         isError: logsQuery.isError,
         generateReport,
         createLog

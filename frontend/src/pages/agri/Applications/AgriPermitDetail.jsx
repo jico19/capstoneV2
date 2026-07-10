@@ -5,7 +5,7 @@ import DocumentList from "../../../components/ui/DocumentList";
 import OCRModal from "./OCRModal";
 import { useState, useEffect } from "react";
 import ApprovalControls from "./AGRIApprovalControls";
-import { api } from "/src/lib/api";
+import { api } from "../../../lib/api";
 import DocumentViewModal from "../../../components/ui/DocumentViewModal";
 import ApplicationHeader from "../../../components/ui/ApplicationHeader";
 import { useQueryClient } from "@tanstack/react-query";

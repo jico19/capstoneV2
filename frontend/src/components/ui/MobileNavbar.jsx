@@ -9,7 +9,7 @@ import {
     QrCode,
     History,
 } from 'lucide-react';
-import useAuthStore from '../../store/authContext';
+import useAuthStore from '../../store/authStore';
 import NotificationBadge from './NotificationBadge';
 import { useGetUnreadNotificationCount } from '../../hooks/useNotifications';
 

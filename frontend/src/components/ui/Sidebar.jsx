@@ -16,7 +16,7 @@ import {
     Users,
     SlidersHorizontal,
 } from "lucide-react";
-import useAuthStore from "../../store/authContext";
+import useAuthStore from "../../store/authStore";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import MobileNavbar from "./MobileNavbar";
 import { useGetUnreadNotificationCount } from "../../hooks/useNotifications";

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '/src/lib/api';
+import { api } from '../../../lib/api';
 import { toast } from 'sonner';
 import {
     SlidersHorizontal,
@@ -146,7 +146,7 @@ const AgriSystemSettings = () => {
             </div>
 
             <form onSubmit={handleSave}>
-                <div className="px-6 md:px-10 py-8 space-y-5 max-w-2xl">
+                <div className="px-6 md:px-10 py-8 space-y-5">
 
                     {/* Permit Fee Breakdown */}
                     <SectionCard

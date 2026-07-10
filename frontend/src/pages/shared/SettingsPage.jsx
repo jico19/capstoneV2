@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import useAuthStore from '/src/store/authContext';
-import { useProfile } from '/src/hooks/useProfile';
-import { useGetMaps } from '/src/hooks/useMaps';
+import useAuthStore from '../../store/authStore';
+import { useGetMaps } from '../../hooks/useMaps';
 import {
     Bell,
     Save,
@@ -10,6 +9,7 @@ import {
     UserCircle,
     MapPin,
 } from 'lucide-react';
+import { useProfile } from '/src/hooks/useProfile';
 
 /**
  * Universal Settings Page — Profile & Preferences only.
@@ -68,7 +68,7 @@ const SettingsPage = () => {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="px-6 md:px-10 py-8 space-y-5 max-w-2xl">
+                <div className="px-6 md:px-10 py-8 space-y-5">
 
                     {/* Personal Info */}
                     <section className="bg-white border border-stone-200 overflow-hidden">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '/src/lib/api';
-import { useGetMaps } from '/src/hooks/useMaps';
+import { api } from '../../lib/api';
+import { useGetMaps } from '../../hooks/useMaps';
 import { 
     Users, 
     Search, 

@@ -4,7 +4,7 @@ import {
     CheckCheck, Inbox, ChevronRight
 } from 'lucide-react';
 import { useGetNotification } from '/src/hooks/useNotifications';
-import { api } from '/src/lib/api';
+import { api } from '../../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import Pagination from '../../../components/ui/Pagination';
@@ -43,7 +43,7 @@ const NotificationPage = () => {
             </div>
         );
     }
-    
+
     const notifications = data?.results || [];
     const count = data?.count || 0;
 
@@ -56,7 +56,7 @@ const NotificationPage = () => {
         setIsMarkingRead(true);
         try {
             await api.get('/notification/mark_all_read/')
-            query.invalidateQueries({ queryKey: ['notification']})
+            query.invalidateQueries({ queryKey: ['notification'] })
             toast.success("Messages Updated", {
                 description: "All your messages have been marked as read."
             })
@@ -75,16 +75,15 @@ const NotificationPage = () => {
             {/* Header */}
             <header className="p-6 border-b border-stone-100 space-y-4">
                 <h1 className="text-xl font-black text-stone-900 uppercase tracking-tighter">Messages</h1>
-                
+
                 {/* Filters */}
                 <div className="flex gap-2">
                     {['ALL', 'UNREAD', 'READ'].map(f => (
-                        <button 
+                        <button
                             key={f}
                             onClick={() => handleFilterChange(f)}
-                            className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${
-                                filter === f ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-400 border-stone-200'
-                            }`}
+                            className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${filter === f ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-400 border-stone-200'
+                                }`}
                         >
                             {f}
                         </button>
@@ -114,8 +113,8 @@ const NotificationPage = () => {
             {/* Footer Actions */}
             {notifications.some(n => !n.is_read) && (
                 <div className="p-4 border-t border-stone-100">
-                    <button 
-                        onClick={markAllAsRead} 
+                    <button
+                        onClick={markAllAsRead}
                         disabled={isMarkingRead}
                         className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

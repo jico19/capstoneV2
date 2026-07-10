@@ -329,10 +329,38 @@ def run():
                 for bg in chosen_barangays:
                     num_pigs = random.randint(5, 30)
                     total_pigs += num_pigs
+
+                    # Distribute num_pigs across types
+                    rem = num_pigs
+                    fattener_count = random.randint(0, rem)
+                    rem -= fattener_count
+
+                    grower_count = random.randint(0, rem)
+                    rem -= grower_count
+
+                    bulaw_count = random.randint(0, rem)
+                    rem -= bulaw_count
+
+                    starter_count = random.randint(0, rem)
+                    rem -= starter_count
+
+                    inahin_count = random.randint(0, rem)
+                    rem -= inahin_count
+
+                    barako_count = rem
+
+                    if fattener_count + grower_count + bulaw_count + starter_count + inahin_count + barako_count == 0:
+                        fattener_count = num_pigs
+
                     origin = TransportOrigin.objects.create(
                         application=app,
                         barangay=bg,
-                        number_of_pigs=num_pigs
+                        fattener=fattener_count,
+                        grower=grower_count,
+                        bulaw=bulaw_count,
+                        starter=starter_count,
+                        inahin=inahin_count,
+                        barako=barako_count
                     )
                     origins.append(origin)
                 

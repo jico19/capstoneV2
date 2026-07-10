@@ -14,6 +14,7 @@ routers.register(r'opv', PermitViewSets.OPVValidationViewSets)
 routers.register(r'issued-permit', PermitViewSets.IssuedPermitViewSets)
 routers.register(r'ocr-validation', PermitViewSets.OCRValidationResultViewSets)
 routers.register(r'report', PermitViewSets.ReportViewSets, basename='report')
+routers.register(r'municipal-config', PermitViewSets.MunicipalConfigViewSets, basename='municipal-config')
 
 # map
 routers.register(r'barangay', MapsViewSets.BarangayViewSets)

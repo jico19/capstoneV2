@@ -9,7 +9,7 @@ import {
 import KPICard from '../../../components/ui/KPICard';
 import { useGetFarmerDashboard } from '/src/hooks/useDashboard';
 import { Link } from 'react-router-dom';
-import useAuthStore from '/src/store/authContext';
+import useAuthStore from '/src/store/authStore';
 import BarChartComponent from '/src/components/charts/BarChart';
 
 const FarmerDashboard = () => {

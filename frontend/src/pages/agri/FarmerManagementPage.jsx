@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '/src/lib/api';
-import { useGetMaps } from '/src/hooks/useMaps';
+import { api } from '../../lib/api';
+import { useGetMaps } from '../../hooks/useMaps';
 import { 
     Users, 
     Search, 
@@ -20,6 +20,7 @@ import {
 import Pagination from '../../components/ui/Pagination';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
 
 const parseValidationError = (err, fallback = "Action failed.") => {
     if (err.response?.data) {
@@ -375,11 +376,12 @@ const FarmerManagementPage = () => {
             <ConfirmationModal
                 isOpen={!!confirmDeleteUser}
                 onClose={() => setConfirmDeleteUser(null)}
-                onConfirm={executeDelete}
+                onYes={executeDelete}
                 title="Permanently Delete Account?"
                 message={confirmDeleteUser ? `Are you sure you want to PERMANENTLY delete the account of ${confirmDeleteUser.first_name} ${confirmDeleteUser.last_name}? This action is irreversible and might affect their existing permit applications.` : ""}
-                confirmText="Permanently Delete"
-                confirmButtonClass="bg-red-600 hover:bg-red-700"
+                yesText="Permanently Delete"
+                yesVariant="danger"
+                type="danger"
                 isSubmitting={deleteMutation.isPending}
             />
 
@@ -387,11 +389,12 @@ const FarmerManagementPage = () => {
             <ConfirmationModal
                 isOpen={!!confirmToggleStatusUser}
                 onClose={() => setConfirmToggleStatusUser(null)}
-                onConfirm={executeToggleStatus}
+                onYes={executeToggleStatus}
                 title="Confirm Account Status Change"
                 message={confirmToggleStatusUser ? `Are you sure you want to ${confirmToggleStatusUser.is_active ? 'deactivate' : 'activate'} the account of ${confirmToggleStatusUser.first_name} ${confirmToggleStatusUser.last_name}?` : ""}
-                confirmText={confirmToggleStatusUser?.is_active ? "Deactivate" : "Activate"}
-                confirmButtonClass={confirmToggleStatusUser?.is_active ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-600"}
+                yesText={confirmToggleStatusUser?.is_active ? "Deactivate" : "Activate"}
+                yesVariant={confirmToggleStatusUser?.is_active ? "danger" : "success"}
+                type={confirmToggleStatusUser?.is_active ? "warning" : "help"}
                 isSubmitting={updateMutation.isPending}
             />
         </div>
@@ -596,62 +599,6 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
     );
 };
 
-/**
- * Reusable Custom Flat UI Confirmation Modal
- */
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Confirm", confirmButtonClass = "bg-green-700 hover:bg-green-600", isSubmitting }) => {
-    if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-md border border-stone-200 shadow-2xl rounded-none overflow-hidden">
-                {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle size={18} className="text-red-600 shrink-0" />
-                        <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest">{title}</h3>
-                    </div>
-                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="p-6 space-y-6">
-                    <p className="text-xs font-bold text-stone-600 leading-relaxed uppercase tracking-wider">
-                        {message}
-                    </p>
-
-                    {/* Actions */}
-                    <div className="flex gap-4 justify-end pt-4 border-t border-stone-100">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={isSubmitting}
-                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onConfirm}
-                            disabled={isSubmitting}
-                            className={`${confirmButtonClass} text-white px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <span className="loading loading-spinner loading-xs"></span>
-                                    Processing...
-                                </>
-                            ) : (
-                                confirmText
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export default FarmerManagementPage;

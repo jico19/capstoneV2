@@ -7,15 +7,17 @@ import { Check, ArrowRight } from "lucide-react";
 import { useCreateApplicataion } from "/src/hooks/useApplications";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import ConfirmationModal from "/src/components/ui/ConfirmationModal";
 
 /**
  * Create Application Flow
- * Redesigned for Farmer-Friendly simplicity and high-signal minimalism.
- * Restored stable flex-based progress tracker.
+ * Redesigned for Farmer-Friendly simplicity, high-signal minimalism, and mobile responsiveness.
+ * Follows the FarmPass Design System 2.0 guidelines.
  */
 const CreateApplication = () => {
     const [step, setStep] = useState(1);
     const [origins, setOrigins] = useState([{ id: Date.now(), barangay: '', number_of_pigs: '' }]);
+    const [confirmModal, setConfirmModal] = useState(null);
     const { mutate } = useCreateApplicataion();
     const navigate = useNavigate();
 
@@ -25,6 +27,7 @@ const CreateApplication = () => {
         reset,
         watch,
         trigger,
+        setValue,
         formState: { errors, isSubmitting }
     } = useForm();
 
@@ -38,158 +41,227 @@ const CreateApplication = () => {
         }
     };
 
-    const onSubmit = (data) => {
-        const formData = new FormData();
-        formData.append('destination', data.destination);
-        formData.append('transport_date', data.transport_date);
-        formData.append('purpose', data.purpose);
+    const handleFormSubmit = (data) => {
+        setConfirmModal({
+            title: "Send Permit Request?",
+            message: "Are you sure you want to send this livestock transport permit request? Please make sure all travel details and document photos are correct.",
+            yesText: "Yes, Send Request",
+            yesVariant: "success",
+            type: "success",
+            onYes: () => {
+                const formData = new FormData();
+                formData.append('destination', data.destination);
+                formData.append('transport_date', data.transport_date);
+                formData.append('purpose', data.purpose);
 
-        // Append origins
-        origins.forEach((o, index) => {
-            formData.append(`origins[${index}][barangay]`, data[`barangay_${o.id}`]);
-            formData.append(`origins[${index}][number_of_pigs]`, data[`pigs_${o.id}`]);
-        });
+                // Append origins
+                origins.forEach((o, index) => {
+                    formData.append(`origins[${index}][barangay]`, data[`barangay_${o.id}`]);
+                    formData.append(`origins[${index}][inahin]`, data[`inahin_${o.id}`] || 0);
+                    formData.append(`origins[${index}][barako]`, data[`barako_${o.id}`] || 0);
+                    formData.append(`origins[${index}][fattener]`, data[`fattener_${o.id}`] || 0);
+                    formData.append(`origins[${index}][grower]`, data[`grower_${o.id}`] || 0);
+                    formData.append(`origins[${index}][bulaw]`, data[`bulaw_${o.id}`] || 0);
+                    formData.append(`origins[${index}][starter]`, data[`starter_${o.id}`] || 0);
+                });
 
-        // Append documents
-        // Common docs
-        ['traders_pass', 'handlers_license', 'transport_carrier_reg'].forEach(docType => {
-            if (data[docType]?.[0]) formData.append(docType, data[docType][0]);
-        });
+                // Append documents
+                ['traders_pass', 'handlers_license', 'transport_carrier_reg'].forEach(docType => {
+                    if (data[docType]?.[0]) formData.append(docType, data[docType][0]);
+                });
 
-        // Origin-specific docs
-        origins.forEach((o, index) => {
-            ['cis', 'endorsement_cert'].forEach(docType => {
-                const key = `origin_${index}_${docType}`;
-                const dataKey = `origin_${o.id}_${docType}`;
-                if (data[dataKey]?.[0]) formData.append(key, data[dataKey][0]);
-            });
+                // Origin-specific docs
+                origins.forEach((o, index) => {
+                    ['cis', 'endorsement_cert'].forEach(docType => {
+                        const key = `origin_${index}_${docType}`;
+                        const dataKey = `origin_${o.id}_${docType}`;
+                        if (data[dataKey]?.[0]) formData.append(key, data[dataKey][0]);
+                    });
+                });
+                
+                mutate(formData);
+                reset();
+                setStep(1);
+                setConfirmModal(null);
+                navigate('/farmer/');
+            },
+            onClose: () => {
+                setConfirmModal(null);
+            }
         });
-        
-        mutate(formData);
-        reset();
-        setStep(1);
-        navigate('/farmer/');
     };
 
-    const nextStep = async (fieldsToValidate, errorMsg = "Please fill in all required details.") => {
+    const nextStep = async (fieldsToValidate, errorMsg = "Please check your answers before continuing.") => {
         const isValid = await trigger(fieldsToValidate);
         if (isValid) {
             setStep((prev) => prev + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             toast.error(errorMsg);
         }
     };
 
-    const prevStep = () => setStep((prev) => prev - 1);
+    const prevStep = () => {
+        setStep((prev) => prev - 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     return (
-        <div className="flex-1 max-w-3xl mx-auto p-4 md:p-12 space-y-10 bg-white min-h-full">
-            {/* Header & Friendly Guidance */}
-            <div className="space-y-4">
-                <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600 mb-1">New Request</p>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none">Start Your Permit Request</h1>
-                </div>
-                <p className="text-gray-500 font-medium text-lg max-w-xl">Complete these 3 quick steps to apply for your transport permit.</p>
+        <>
+            {confirmModal && (
+                <ConfirmationModal
+                    isOpen={!!confirmModal}
+                    onClose={confirmModal.onClose}
+                    onYes={confirmModal.onYes}
+                    title={confirmModal.title}
+                    message={confirmModal.message}
+                    yesText={confirmModal.yesText}
+                    yesVariant={confirmModal.yesVariant}
+                    type={confirmModal.type}
+                />
+            )}
+            
+            <div className="flex-1 max-w-3xl mx-auto p-4 sm:p-6 md:p-12 space-y-8 bg-white min-h-full">
+                {/* Header & Friendly Guidance */}
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-700 mb-1">New Request</p>
+                        <h1 className="text-2xl sm:text-3xl font-black text-stone-800 tracking-tight uppercase leading-none">Apply for a Permit</h1>
+                    </div>
+                    <p className="text-stone-500 font-medium text-sm sm:text-base max-w-xl">
+                        Complete these 3 simple steps to request your livestock transport permit.
+                    </p>
 
-                {/* Progress Bar - Robust Flex Version */}
-                <div className="flex items-center pt-8">
-                    {[1, 2, 3].map((num) => (
-                        <div key={num} className="flex items-center flex-1 last:flex-none">
-                            <div className="flex flex-col items-center gap-2">
-                                <div className={`w-10 h-10 flex items-center justify-center font-black text-sm transition-none rounded-none border-4
-                                    ${step > num 
-                                        ? "bg-green-600 border-green-600 text-white" 
-                                        : step === num 
-                                            ? "bg-white border-gray-900 text-gray-900" 
-                                            : "bg-white border-gray-100 text-gray-300"}`}
-                                >
-                                    {step > num ? <Check size={20} strokeWidth={3} /> : num}
-                                </div>
-                                <span className={`text-[9px] font-black uppercase tracking-widest ${step >= num ? 'text-gray-900' : 'text-gray-300'}`}>
-                                    {num === 1 ? "Travel" : num === 2 ? "Upload" : "Final"}
+                    {/* Progress Tracker */}
+                    <div className="pt-4">
+                        {/* Mobile-only Progress Indicator */}
+                        <div className="md:hidden space-y-2">
+                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                <span>Step {step} of 3</span>
+                                <span className="text-green-700">
+                                    {step === 1 ? "Travel Details" : step === 2 ? "Attach Files" : "Review & Send"}
                                 </span>
                             </div>
-                            {num < 3 && (
-                                <div className="flex-1 px-4 self-start mt-5">
-                                    <div className={`h-1 w-full transition-none ${step > num ? "bg-green-600" : "bg-gray-100"}`} />
-                                </div>
-                            )}
+                            <div className="w-full bg-stone-100 h-2 border border-stone-200">
+                                <div 
+                                    className="bg-green-700 h-full transition-all duration-300 ease-out" 
+                                    style={{ width: `${(step / 3) * 100}%` }}
+                                />
+                            </div>
                         </div>
-                    ))}
-                </div>
-            </div>
 
-            {/* Form Content - Clean Canvas */}
-            <div className="pt-10 border-t border-gray-100">
-                <form onSubmit={handleSubmit(onSubmit)}>
-
-                    {step === 1 && (
-                        <FarmerInfo
-                            register={register}
-                            errors={errors}
-                            nextStep={() => {
-                                const step1Fields = [
-                                    'destination', 
-                                    'transport_date', 
-                                    'purpose',
-                                    ...origins.map(o => `barangay_${o.id}`),
-                                    ...origins.map(o => `pigs_${o.id}`)
-                                ];
-                                nextStep(step1Fields, "Please fill in all required transport details.");
-                            }}
-                            origins={origins}
-                            addOrigin={addOrigin}
-                            removeOrigin={removeOrigin}
-                        />
-                    )}
-
-                    {step === 2 && (
-                        <UploadDocument
-                            register={register}
-                            errors={errors}
-                            watch={watch}
-                            prevStep={prevStep}
-                            nextStep={() => {
-                                const step2Fields = [
-                                    'traders_pass', 
-                                    'handlers_license', 
-                                    'transport_carrier_reg',
-                                    ...origins.flatMap(o => [
-                                        `origin_${o.id}_cis`, 
-                                        `origin_${o.id}_endorsement_cert`
-                                    ])
-                                ];
-                                nextStep(step2Fields, "Please upload all required documents.");
-                            }}
-                            origins={origins}
-                        />
-                    )}
-
-                    {step === 3 && (
-                        <ReviewApplication
-                            watch={watch}
-                            prevStep={prevStep}
-                            isSubmitting={isSubmitting}
-                            origins={origins}
-                        />
-                    )}
-
-                </form>
-            </div>
-
-            {/* Help Notice */}
-            {step === 1 && (
-                <div className="bg-gray-50 border border-gray-100 p-6 flex gap-4 items-start">
-                    <div className="bg-white p-2 border border-gray-100 text-green-600">
-                        <ArrowRight size={18} />
+                        {/* Desktop-only Stepper */}
+                        <div className="hidden md:flex items-center pt-4">
+                            {[1, 2, 3].map((num) => (
+                                <div key={num} className="flex items-center flex-1 last:flex-none">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className={`w-10 h-10 flex items-center justify-center font-black text-sm border-2
+                                            ${step > num 
+                                                ? "bg-green-700 border-green-700 text-white" 
+                                                : step === num 
+                                                    ? "bg-white border-stone-800 text-stone-800" 
+                                                    : "bg-white border-stone-200 text-stone-300"}`}
+                                        >
+                                            {step > num ? <Check size={18} strokeWidth={3} /> : num}
+                                        </div>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest ${step >= num ? 'text-stone-800' : 'text-stone-300'}`}>
+                                            {num === 1 ? "Travel Details" : num === 2 ? "Attach Files" : "Review & Send"}
+                                        </span>
+                                    </div>
+                                    {num < 3 && (
+                                        <div className="flex-1 px-4 self-start mt-5">
+                                            <div className={`h-[2px] w-full ${step > num ? "bg-green-700" : "bg-stone-200"}`} />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <p className="text-xs text-gray-500 leading-relaxed font-medium uppercase tracking-wide">
-                        Tip: Make sure you have your Handler's License and Certificate of Inspection ready for the next step.
-                    </p>
                 </div>
-            )}
-        </div>
+
+                {/* Form Content - Clean Canvas */}
+                <div className="pt-6 border-t border-stone-200">
+                    <form onSubmit={handleSubmit(handleFormSubmit)}>
+
+                        {step === 1 && (
+                            <FarmerInfo
+                                register={register}
+                                errors={errors}
+                                watch={watch}
+                                setValue={setValue}
+                                nextStep={() => {
+                                    const step1Fields = [
+                                        'destination', 
+                                        'transport_date', 
+                                        'purpose',
+                                        ...origins.map(o => `barangay_${o.id}`),
+                                        ...origins.flatMap(o => [
+                                            `inahin_${o.id}`,
+                                            `barako_${o.id}`,
+                                            `fattener_${o.id}`,
+                                            `grower_${o.id}`,
+                                            `bulaw_${o.id}`,
+                                            `starter_${o.id}`
+                                        ])
+                                    ];
+                                    nextStep(step1Fields, "Please fill in all required travel details.");
+                                }}
+                                origins={origins}
+                                addOrigin={addOrigin}
+                                removeOrigin={removeOrigin}
+                            />
+                        )}
+
+                        {step === 2 && (
+                            <UploadDocument
+                                register={register}
+                                errors={errors}
+                                watch={watch}
+                                prevStep={prevStep}
+                                nextStep={() => {
+                                    const step2Fields = [
+                                        'traders_pass', 
+                                        'handlers_license', 
+                                        'transport_carrier_reg',
+                                        ...origins.flatMap(o => [
+                                            `origin_${o.id}_cis`, 
+                                            `origin_${o.id}_endorsement_cert`
+                                        ])
+                                    ];
+                                    nextStep(step2Fields, "Please upload all required documents.");
+                                }}
+                                origins={origins}
+                            />
+                        )}
+
+                        {step === 3 && (
+                            <ReviewApplication
+                                watch={watch}
+                                prevStep={prevStep}
+                                isSubmitting={isSubmitting}
+                                origins={origins}
+                            />
+                        )}
+
+                    </form>
+                </div>
+
+                {/* Help Notice */}
+                {step === 1 && (
+                    <div className="bg-stone-50 border border-stone-200 p-5 flex gap-4 items-start">
+                        <div className="bg-white p-2 border border-stone-200 text-green-700 shrink-0">
+                            <ArrowRight size={16} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">Tip for Farmers</p>
+                            <p className="text-xs text-stone-600 leading-relaxed font-medium uppercase tracking-wide">
+                                Make sure you have photos of your Handler's License and Barangay Certificate of Inspection ready for the next step.
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
     );
 };
 

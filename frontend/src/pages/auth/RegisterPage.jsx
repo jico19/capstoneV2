@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { ShieldCheck, UserPlus, ArrowRight, Lock, Phone, CheckCircle2, X, RefreshCw, Smartphone, AlertCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { api } from "/src/lib/api";
+import { api } from "../../lib/api";
 import { toast } from "sonner";
 import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
@@ -593,8 +593,8 @@ const RegisterPage = () => {
                                 type="submit"
                                 disabled={isSubmitting || isSendingOTP}
                                 className={`w-full py-5 rounded-none font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${isOTPVerified
-                                        ? "bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20"
-                                        : "bg-stone-900 hover:bg-black text-white"
+                                    ? "bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20"
+                                    : "bg-stone-900 hover:bg-black text-white"
                                     }`}
                             >
                                 {isSubmitting || isSendingOTP ? (

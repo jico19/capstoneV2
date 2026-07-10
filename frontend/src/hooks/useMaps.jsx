@@ -1,7 +1,6 @@
 import { useQueryClient, useMutation, useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
-
 export const useGetMaps = () => {
     return useQuery({
         queryKey: ['map'],

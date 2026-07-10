@@ -173,7 +173,7 @@ def verify_permit(qr_token, user):
 
     return application_instance, issued_permit_instance, False
 
-def issue_permit(application, user):
+def issue_permit(application, user, permit_fee=None):
     if user.role != "Agri":
         raise PermissionDenied("Only Agri officers can issue permits.")
 
@@ -187,12 +187,16 @@ def issue_permit(application, user):
     if hasattr(application, "issued_permit"):
         raise ValidationError("A permit has already been issued for this application.")
 
+    if permit_fee is None:
+        permit_fee = models.MunicipalConfig.get_fee()
+
     with transaction.atomic():
         issued_permit = models.IssuedPermit.objects.create(
             permit_number=uuid.uuid4().hex[:13].upper(),
             application=application,
             issued_by=user,
             qr_token=uuid.uuid4(),
+            permit_fee=permit_fee,
         )
 
         # Advance status to Payment Pending

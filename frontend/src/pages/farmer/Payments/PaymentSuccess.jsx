@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api } from '/src/lib/api';
+import { api } from '../../../lib/api';
 import { CheckCircle2, AlertCircle, Clock, FileCheck2, ArrowRight } from 'lucide-react';
 
 const MAX_RETRIES = 10;

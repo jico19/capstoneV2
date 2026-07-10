@@ -55,8 +55,13 @@ class PermitApplicationViewSets(viewsets.ModelViewSet):
         while f"origins[{i}][barangay]" in data:
             origin = {
                 "barangay": data.get(f"origins[{i}][barangay]"),
-                "number_of_pigs": data.get(f"origins[{i}][number_of_pigs]"),
             }
+            # Parse pig types and counts if present
+            for field in ["inahin", "barako", "fattener", "grower", "bulaw", "starter", "number_of_pigs"]:
+                key = f"origins[{i}][{field}]"
+                if key in data:
+                    origin[field] = data.get(key)
+
             # Include ID if present (for updates)
             if f"origins[{i}][id]" in data:
                 origin["id"] = data.get(f"origins[{i}][id]")

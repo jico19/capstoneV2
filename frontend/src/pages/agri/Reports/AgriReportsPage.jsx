@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '/src/lib/api';
+import { api } from '../../../lib/api';
 import {
     BarChart3,
     Download,

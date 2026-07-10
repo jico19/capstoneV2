@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react';
-import { api } from '/src/lib/api';
+import { api } from '../../../lib/api';
 import { useApplicationDetail } from '/src/hooks/useApplications';
 import { toast } from 'sonner';
+import ConfirmationModal from '/src/components/ui/ConfirmationModal';
 
 // Checkout page for permit payments.
 // Connects to PayMongo for secure municipal fee collection.
@@ -12,7 +13,8 @@ const PaymentCheckout = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [totalPrice, setTotalprice] = useState(0)
+    const [totalPrice, setTotalprice] = useState(0);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const { data: application, isLoading: isApplicationLoading, isError } = useApplicationDetail(id)
 
@@ -52,8 +54,10 @@ const PaymentCheckout = () => {
     };
 
     useEffect(() => {
-        setTotalprice(document_price.reduce((total_price, curr) => total_price + curr.price, 0))
-    }, [])
+        if (application) {
+            setTotalprice(application.permit_fee || 150.00);
+        }
+    }, [application]);
 
     if (isApplicationLoading) {
         return (
@@ -82,7 +86,24 @@ const PaymentCheckout = () => {
     }
 
     return (
-        <div className="min-h-screen bg-stone-50/50 p-6 lg:p-12">
+        <>
+            {showConfirm && (
+                <ConfirmationModal
+                    isOpen={showConfirm}
+                    onClose={() => setShowConfirm(false)}
+                    onYes={async () => {
+                        setShowConfirm(false);
+                        await handleProceedToPayment();
+                    }}
+                    title="Confirm Fee Payment?"
+                    message={`Are you sure you want to proceed to pay the permit fee of ₱${totalPrice}? This will open the secure PayMongo checkout gateway.`}
+                    yesText="Proceed to Pay"
+                    yesVariant="success"
+                    type="success"
+                    isSubmitting={isLoading}
+                />
+            )}
+            <div className="min-h-screen bg-stone-50/50 p-6 lg:p-12">
             <div className="max-w-4xl mx-auto space-y-10">
 
                 {/* Navigation */}
@@ -136,13 +157,11 @@ const PaymentCheckout = () => {
                                         {application?.destination}
                                     </span>
                                 </div>
-                                {document_price.map((data, idx) => (
-                                    <div className="flex justify-between py-4 last:pb-0" key={idx}>
-                                        <span className="text-xs font-black uppercase tracking-widest text-stone-800">{data.doc_name}</span>
-                                        <span className="text-2xl font-black text-green-700 font-mono">₱{data.price}</span>
-                                    </div>
-                                ))}
-                                <div className="flex justify-between py-4 last:pb-0">
+                                <div className="flex justify-between py-4">
+                                    <span className="text-xs font-black uppercase tracking-widest text-stone-800">Official Permit Fee</span>
+                                    <span className="text-2xl font-black text-green-700 font-mono">₱{totalPrice}</span>
+                                </div>
+                                <div className="flex justify-between py-4 last:pb-0 border-t border-stone-100">
                                     <span className="text-xs font-black uppercase tracking-widest text-stone-800">Total Due</span>
                                     <span className="text-2xl font-black text-green-700 font-mono">₱{totalPrice}</span>
                                 </div>
@@ -160,7 +179,7 @@ const PaymentCheckout = () => {
                     {/* Right: Payment Action */}
                     <div className="lg:col-span-2 space-y-6">
                         <button
-                            onClick={handleProceedToPayment}
+                            onClick={() => setShowConfirm(true)}
                             disabled={isLoading}
                             className="bg-green-700 hover:bg-green-600 text-white w-full py-5 rounded-none font-black text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
                         >
@@ -184,6 +203,7 @@ const PaymentCheckout = () => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

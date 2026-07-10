@@ -7,6 +7,7 @@ from .models import (
     OCRValidationResult,
     IssuedPermit,
     TransportOrigin,
+    MunicipalConfig,
 )
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -83,17 +84,25 @@ class TransportOriginListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransportOrigin
-        fields = ["id", "barangay", "barangay_name", "number_of_pigs", "documents"]
+        fields = [
+            "id", "barangay", "barangay_name", "number_of_pigs",
+            "inahin", "barako", "fattener", "grower", "bulaw", "starter",
+            "documents"
+        ]
 
 
 class TransportOriginWriteSerializer(serializers.ModelSerializer):
     """Used for nested creation/updates"""
 
     id = serializers.IntegerField(required=False)
+    number_of_pigs = serializers.IntegerField(required=False)
 
     class Meta:
         model = TransportOrigin
-        fields = ["id", "barangay", "number_of_pigs"]
+        fields = [
+            "id", "barangay", "number_of_pigs",
+            "inahin", "barako", "fattener", "grower", "bulaw", "starter"
+        ]
 
 
 # ─────────────────────────────────────────
@@ -133,6 +142,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     number_of_pigs = serializers.SerializerMethodField()
     all_documents = serializers.SerializerMethodField()
     origins = TransportOriginListSerializer(many=True, read_only=True)
+    permit_fee = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
@@ -150,6 +160,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "origins",
             "created_at",
             "is_checked",
+            "permit_fee",
         ]
 
     def get_farmer_name(self, obj):
@@ -167,6 +178,11 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
 
     def get_number_of_pigs(self, obj):
         return sum(origin.number_of_pigs for origin in obj.origins.all())
+
+    def get_permit_fee(self, obj):
+        if hasattr(obj, "issued_permit"):
+            return float(obj.issued_permit.permit_fee)
+        return float(models.MunicipalConfig.get_fee())
 
 
 class PermitApplicationWriteSerializer(serializers.ModelSerializer):
@@ -313,6 +329,7 @@ class IssuedPermitDetailSerializer(serializers.ModelSerializer):
             "permit_pdf",
             "date_issued",
             "valid_until",
+            "permit_fee",
         ]
 
 
@@ -324,3 +341,18 @@ class IssuedPermitWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = IssuedPermit
         fields = ["application", "payment_method", "valid_until"]
+
+
+class MunicipalConfigSerializer(serializers.ModelSerializer):
+    permit_fee = serializers.ReadOnlyField()
+
+    class Meta:
+        model = MunicipalConfig
+        fields = [
+            "permit_fee",
+            "vet_health_cert_fee",
+            "transport_pass_fee",
+            "local_transport_permit_fee",
+            "validity_days",
+            "updated_at",
+        ]

@@ -2,8 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
 
-
-
 const useAuthStore = create(
     persist(
         (set) => ({
@@ -16,9 +14,6 @@ const useAuthStore = create(
             login: async (credentials) => {
                 set({ isLoading: true });
                 try {
-                    // Replace with your actual API call
-                    // const response = await api.post('/login', credentials);
-                    // const userData = response.data;
                     const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/login/`, credentials)
                     const decoded = JSON.parse(atob(res.data.access.split('.')[1]))
                     const user = {
@@ -45,7 +40,6 @@ const useAuthStore = create(
             logout: () => {
                 set({ user: null, access: null, refresh: null, isAuthenticated: false });
                 sessionStorage.clear()
-                // Optional: clear tokens from cookies/localstorage if not using persist
             },
         }),
         {

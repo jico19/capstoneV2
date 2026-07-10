@@ -89,7 +89,7 @@ const ApplicationDetail = () => {
                                 onClick={() => navigate(`/farmer/payment/checkout/${id}`)}
                                 className="bg-green-700 hover:bg-green-600 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
                             >
-                                <HandCoins size={14} /> Pay Fee (₱150)
+                                <HandCoins size={14} /> Pay Fee (₱{application.permit_fee || 150})
                             </button>
                         </div>
                     )}

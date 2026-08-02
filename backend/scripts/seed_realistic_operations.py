@@ -499,6 +499,8 @@ def run():
                             is_paid=is_paid,
                             payment_method=pay_method,
                             permit_pdf=f"issued_docs/permits/PERMIT_{permit_no}.pdf" if is_paid else None,
+                            aic_number=f"{issued_time.strftime('%m-%d')}-{random.randint(1, 999):03d}-{issued_time.strftime('%y')}" if is_paid else "",
+                            aic_pdf=f"issued_docs/aic/AIC_{permit_no}.pdf" if is_paid else None,
                             date_issued=issued_time.date()
                         )
                         

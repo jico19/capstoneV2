@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
-from apps.documents.services import generate_permit_pdf
+from apps.documents.services import generate_permit_pdf, generate_aic_pdf
 
 def get_auth_header():
     key = settings.PAYMONGO_SECRET_KEY
@@ -25,8 +25,23 @@ def create_checkout_session(application_pk: int, total_price: float):
             with transaction.atomic():
                 from apps.permits.services import handle_application_status_change
                 handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
+                
+                # Check / generate AIC number
+                if not issued_permit_instance.aic_number:
+                    today = timezone.now().date()
+                    mm_dd = today.strftime("%m-%d")
+                    yy = today.strftime("%y")
+                    prefix = f"{mm_dd}-"
+                    today_count = permits.IssuedPermit.objects.filter(
+                        aic_number__startswith=prefix
+                    ).count()
+                    issued_permit_instance.aic_number = f"{mm_dd}-{today_count + 1:03d}-{yy}"
+                    issued_permit_instance.save()
+                    
                 if not issued_permit_instance.permit_pdf:
                     generate_permit_pdf.enqueue(permit_application_id=application.pk)
+                if not issued_permit_instance.aic_pdf:
+                    generate_aic_pdf.enqueue(permit_application_id=application.pk)
             raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
         raise ValidationError('Already paid.')
 
@@ -154,6 +169,18 @@ def verify_paymongo_session(application_pk: int, user):
             issued_permit.is_paid = True
             issued_permit.payment_method = 'ONLINE'
             issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
+            
+            # Generate the unique AIC number here!
+            if not issued_permit.aic_number:
+                today = timezone.now().date()
+                mm_dd = today.strftime("%m-%d")
+                yy = today.strftime("%y")
+                prefix = f"{mm_dd}-"
+                today_count = permits.IssuedPermit.objects.filter(
+                    aic_number__startswith=prefix
+                ).count()
+                issued_permit.aic_number = f"{mm_dd}-{today_count + 1:03d}-{yy}"
+                
             issued_permit.save()
 
             # C. Advance the Application status to RELEASED
@@ -162,6 +189,7 @@ def verify_paymongo_session(application_pk: int, user):
 
             # D. Queue the background tasks for PDF generation
             generate_permit_pdf.enqueue(permit_application_id=application.pk)     
+            generate_aic_pdf.enqueue(permit_application_id=application.pk)
         
         return True, payment_history
     else:

@@ -115,6 +115,13 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
                     "issued_permit_pdf": request.build_absolute_uri(
                         issued_permit_instance.permit_pdf.url
                     ),
+                    "animal_inspection_certificate": (
+                        request.build_absolute_uri(
+                            issued_permit_instance.aic_pdf.url
+                        )
+                        if issued_permit_instance.aic_pdf
+                        else None
+                    ),
                 },
                 status=status.HTTP_200_OK,
             )

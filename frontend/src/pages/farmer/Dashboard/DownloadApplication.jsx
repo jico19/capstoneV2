@@ -102,6 +102,15 @@ const DownloadApplication = () => {
                             isPrimary={true}
                         />
 
+                        {/* AIC */}
+                        <DownloadCard
+                            title="Animal Inspection Certificate (AIC)"
+                            description="Official health inspection clearance issued by the Municipal Agriculturist."
+                            url={docs?.animal_inspection_certificate}
+                            fileName={`AIC_${id}.pdf`}
+                            icon={FileCheck2}
+                        />
+
                         {/* VHC */}
                         <DownloadCard
                             title="Health Certificate"

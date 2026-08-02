@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, CheckCircle, XCircle, MessageSquare, UploadCloud} from 'lucide-react';
+import { CheckCircle2, CheckCircle, XCircle, MessageSquare, UploadCloud } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 /**
@@ -7,10 +7,31 @@ import { useForm } from 'react-hook-form';
  * Friendly-first design with natural language and industrial flat UI.
  * Validation Logic: Documents are only required for Approval. Remarks are required for both.
  */
+const COMMON_FEEDBACK_OPTIONS = [
+    { value: "", label: "Select common feedback template..." },
+    { value: "All submitted documents are valid and verified.", label: "All documents valid & verified" },
+    { value: "One or more uploaded documents are expired.", label: "Expired documents" },
+    { value: "Livestock Handler's License details do not match the applicant.", label: "Handler's License mismatch" },
+    { value: "Transport carrier accreditation or plate number details are invalid.", label: "Carrier Accreditation/Plate invalid" },
+    { value: "Certificate of Inspection and Stewardship (CIS) is missing or illegible.", label: "CIS missing/illegible" },
+    { value: "Barangay Endorsement Certificate is missing or illegible.", label: "Endorsement Certificate missing/illegible" },
+    { value: "Uploaded documents are incomplete, blurry, or low resolution.", label: "Incomplete/Blurry documents" },
+    { value: "custom", label: "Other / Custom Feedback (Specify below)" }
+];
+
 const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
-    const { register, trigger, getValues, setError, watch, formState: { errors } } = useForm();
+    const { register, trigger, getValues, setError, watch, setValue, formState: { errors } } = useForm();
     const [activeAction, setActiveAction] = useState(null);
     const isProcessing = activeAction !== null;
+
+    const handleFeedbackSelect = (e) => {
+        const selectedValue = e.target.value;
+        if (selectedValue === "custom") {
+            setValue("remarks", "");
+        } else {
+            setValue("remarks", selectedValue);
+        }
+    };
 
     const documents = [
         { id: 'veterinary_health_certificate', label: "Health Certificate", desc: "Official Vet Clearance" },
@@ -61,7 +82,7 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
         if (isProcessing) return;
         // 1. Validate Remarks
         const isRemarksValid = await trigger('remarks');
-        
+
         // 2. Validate Documents (Only required for approval)
         let isDocsValid = true;
         documents.forEach(doc => {
@@ -96,13 +117,37 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
                     <p className="text-sm text-gray-500 font-medium">Add any important details regarding this health validation.</p>
                 </div>
 
-                <textarea
-                    {...register('remarks', { required: "Please enter notes before taking action." })}
-                    disabled={isProcessing}
-                    className="w-full min-h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Write your notes here..."
-                />
-                {errors.remarks && <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{errors.remarks.message}</p>}
+                <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                            Quick Feedback Templates
+                        </label>
+                        <select
+                            onChange={handleFeedbackSelect}
+                            disabled={isProcessing}
+                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none text-sm font-medium text-gray-700"
+                        >
+                            {COMMON_FEEDBACK_OPTIONS.map((opt, i) => (
+                                <option key={i} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                            Detailed Notes / Remarks
+                        </label>
+                        <textarea
+                            {...register('remarks', { required: "Please enter notes before taking action." })}
+                            disabled={isProcessing}
+                            className="w-full min-h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            placeholder="Write your notes here..."
+                        />
+                        {errors.remarks && <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{errors.remarks.message}</p>}
+                    </div>
+                </div>
             </div>
 
             {/* 2. Document Uploads */}
@@ -155,20 +200,6 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
 
             {/* 3. Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
-                <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={handleRejectClick}
-                    className="w-full sm:w-auto border border-red-200 bg-white hover:bg-red-50 text-red-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {activeAction === 'reject' ? (
-                        <span className="loading loading-spinner loading-xs"></span>
-                    ) : (
-                        <XCircle size={18} strokeWidth={3} />
-                    )}
-                    Permanent Reject
-                </button>
-
                 <button
                     type="button"
                     disabled={isProcessing}

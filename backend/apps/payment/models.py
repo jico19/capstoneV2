@@ -9,6 +9,10 @@ def reference_num():
     random_suffix = "".join(secrets.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ') for _ in range(6))
     return f"PAY-{timezone.now().year}-{random_suffix}"
 
+def generate_or_number():
+    import secrets
+    return "".join(secrets.choice('0123456789') for _ in range(7))
+
 class PaymentHistory(models.Model):
     class Method(models.TextChoices):
         PAYMAYA = 'paymaya', 'Paymaya'
@@ -29,7 +33,13 @@ class PaymentHistory(models.Model):
     paymongo_session_id = models.CharField(max_length=100, blank=True)
     confirmed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="agri_officer")
     confirmed_at = models.DateTimeField(null=True, blank=True)
+    or_number = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.SUCCESS and not self.or_number:
+            self.or_number = generate_or_number()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Payment #{self.pk} — {self.issued_permit.permit_number} ({self.status})"

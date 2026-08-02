@@ -266,6 +266,8 @@ class IssuedPermit(models.Model):
     permit_fee = models.DecimalField(max_digits=10, decimal_places=2, default=150.00)
 
     permit_pdf = models.FileField(upload_to='issued_docs/permits/', null=True, blank=True, validators=[validate_file_size])
+    aic_number = models.CharField(max_length=20, default="", blank=True)
+    aic_pdf = models.FileField(upload_to='issued_docs/aic/', null=True, blank=True, validators=[validate_file_size])
 
     date_issued = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True)
@@ -291,6 +293,8 @@ class MunicipalConfig(models.Model):
     transport_pass_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
     local_transport_permit_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
     validity_days = models.PositiveIntegerField(default=3)
+    oic_name = models.CharField(max_length=100, default="AMALITA C. AMORES")
+    oic_title = models.CharField(max_length=100, default="OIC - Municipal Agriculturist")
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod

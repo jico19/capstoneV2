@@ -6,10 +6,31 @@ import { useForm } from 'react-hook-form';
  * Agri Approval Controls
  * Friendly-first design with clear natural language and flat UI.
  */
+const COMMON_FEEDBACK_OPTIONS = [
+    { value: "", label: "Select common feedback template..." },
+    { value: "All submitted documents are valid and verified.", label: "All documents valid & verified" },
+    { value: "One or more uploaded documents are expired.", label: "Expired documents" },
+    { value: "Livestock Handler's License details do not match the applicant.", label: "Handler's License mismatch" },
+    { value: "Transport carrier accreditation or plate number details are invalid.", label: "Carrier Accreditation/Plate invalid" },
+    { value: "Certificate of Inspection and Stewardship (CIS) is missing or illegible.", label: "CIS missing/illegible" },
+    { value: "Barangay Endorsement Certificate is missing or illegible.", label: "Endorsement Certificate missing/illegible" },
+    { value: "Uploaded documents are incomplete, blurry, or low resolution.", label: "Incomplete/Blurry documents" },
+    { value: "custom", label: "Other / Custom Feedback (Specify below)" }
+];
+
 const ApprovalControls = ({ onApprove, onReject }) => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, setValue, formState: { errors } } = useForm();
     const [activeAction, setActiveAction] = useState(null);
     const isProcessing = activeAction !== null;
+
+    const handleFeedbackSelect = (e) => {
+        const selectedValue = e.target.value;
+        if (selectedValue === "custom") {
+            setValue("remarks", "");
+        } else {
+            setValue("remarks", selectedValue);
+        }
+    };
 
     const handleReject = async (data) => {
         setActiveAction('reject');
@@ -44,14 +65,36 @@ const ApprovalControls = ({ onApprove, onReject }) => {
                 <p className="text-sm text-gray-500 font-medium">Please provide a reason if you are returning this request, or any internal notes for approval.</p>
             </div>
 
-            <div className="space-y-2">
-                <textarea
-                    {...register('remarks', { required: "Please enter some notes before taking action." })}
-                    disabled={isProcessing}
-                    className="w-full min-h-[150px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Write your notes here..."
-                />
-                {errors.remarks && <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{errors.remarks.message}</p>}
+            <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Quick Feedback Templates
+                    </label>
+                    <select
+                        onChange={handleFeedbackSelect}
+                        disabled={isProcessing}
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none text-sm font-medium text-gray-700"
+                    >
+                        {COMMON_FEEDBACK_OPTIONS.map((opt, i) => (
+                            <option key={i} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Detailed Notes / Remarks
+                    </label>
+                    <textarea
+                        {...register('remarks', { required: "Please enter some notes before taking action." })}
+                        disabled={isProcessing}
+                        className="w-full min-h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        placeholder="Write your notes here..."
+                    />
+                    {errors.remarks && <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{errors.remarks.message}</p>}
+                </div>
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4 border-t border-gray-50">

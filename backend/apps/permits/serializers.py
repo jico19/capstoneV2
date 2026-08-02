@@ -182,7 +182,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     def get_permit_fee(self, obj):
         if hasattr(obj, "issued_permit"):
             return float(obj.issued_permit.permit_fee)
-        return float(models.MunicipalConfig.get_fee())
+        return float(MunicipalConfig.get_fee())
 
 
 class PermitApplicationWriteSerializer(serializers.ModelSerializer):
@@ -327,6 +327,8 @@ class IssuedPermitDetailSerializer(serializers.ModelSerializer):
             "is_paid",
             "payment_method",
             "permit_pdf",
+            "aic_number",
+            "aic_pdf",
             "date_issued",
             "valid_until",
             "permit_fee",
@@ -354,5 +356,7 @@ class MunicipalConfigSerializer(serializers.ModelSerializer):
             "transport_pass_fee",
             "local_transport_permit_fee",
             "validity_days",
+            "oic_name",
+            "oic_title",
             "updated_at",
         ]

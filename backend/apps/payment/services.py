@@ -101,9 +101,113 @@ def create_checkout_session(application_pk: int, total_price: float):
         "checkout_url": data["attributes"]["checkout_url"],
     }
 
+def create_qrph_payment(application_pk: int, total_price: float):
+    application = get_object_or_404(permits.PermitApplication, pk=application_pk)
+    issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
+
+    if issued_permit_instance.is_paid:
+        if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
+            with transaction.atomic():
+                from apps.permits.services import handle_application_status_change
+                handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
+                
+                if not issued_permit_instance.aic_number:
+                    today = timezone.now().date()
+                    mm_dd = today.strftime("%m-%d")
+                    yy = today.strftime("%y")
+                    prefix = f"{mm_dd}-"
+                    today_count = permits.IssuedPermit.objects.filter(
+                        aic_number__startswith=prefix
+                    ).count()
+                    issued_permit_instance.aic_number = f"{mm_dd}-{today_count + 1:03d}-{yy}"
+                    issued_permit_instance.save()
+                    
+                if not issued_permit_instance.permit_pdf:
+                    generate_permit_pdf.enqueue(permit_application_id=application.pk)
+                if not issued_permit_instance.aic_pdf:
+                    generate_aic_pdf.enqueue(permit_application_id=application.pk)
+            raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
+        raise ValidationError('Already paid.')
+
+    headers = get_auth_header()
+    amount_in_cents = int(float(total_price) * 100)
+
+    # 1. Create Payment Intent
+    intent_payload = {
+        "data": {
+            "attributes": {
+                "amount": amount_in_cents,
+                "currency": "PHP",
+                "payment_method_allowed": ["qrph"],
+                "description": f"FarmPass QRPH Permit #{issued_permit_instance.permit_number}",
+            }
+        }
+    }
+    intent_res = requests.post(f"{settings.PAYMONGO_URL}/payment_intents", json=intent_payload, headers=headers)
+    if intent_res.status_code != 200:
+        raise ValidationError(intent_res.json())
+    intent_data = intent_res.json()["data"]
+    intent_id = intent_data["id"]
+    client_key = intent_data["attributes"]["client_key"]
+
+    # 2. Create Payment Method (Max out expiry to 2.5 hours / 9000 seconds)
+    method_payload = {
+        "data": {
+            "attributes": {
+                "type": "qrph",
+                "expiry_seconds": 9000 
+            }
+        }
+    }
+    method_res = requests.post(f"{settings.PAYMONGO_URL}/payment_methods", json=method_payload, headers=headers)
+    if method_res.status_code != 200:
+        raise ValidationError(method_res.json())
+    method_id = method_res.json()["data"]["id"]
+
+    # 3. Attach Payment Method to Payment Intent
+    attach_payload = {
+        "data": {
+            "attributes": {
+                "payment_method": method_id,
+                "client_key": client_key
+            }
+        }
+    }
+    attach_res = requests.post(
+        f"{settings.PAYMONGO_URL}/payment_intents/{intent_id}/attach", 
+        json=attach_payload, 
+        headers=headers
+    )
+    if attach_res.status_code != 200:
+        raise ValidationError(attach_res.json())
+    
+    attach_data = attach_res.json()["data"]
+    qr_image_url = attach_data["attributes"]["next_action"]["code"]["image_url"]
+
+    # Save to local history
+    expiry_time = timezone.now() + timedelta(seconds=9000)
+    payment_history, _ = models.PaymentHistory.objects.update_or_create(
+        issued_permit=issued_permit_instance,
+        defaults={
+            'status': models.PaymentHistory.Status.PENDING,
+            'method': models.PaymentHistory.Method.QRPH,
+            'amount': total_price,
+            'paymongo_payment_intent_id': intent_id,
+            'paymongo_session_id': "",  # clear session ID if any
+            'expires_at': expiry_time
+        }
+    )
+
+    return {
+        "qr_image_url": qr_image_url,
+        "expires_at": expiry_time.isoformat(),
+        "amount": total_price,
+        "payment_history_id": payment_history.pk
+    }
+
 def verify_paymongo_session(application_pk: int, user):
     """
-    Calls PayMongo to check the actual status of the checkout session.
+    Calls PayMongo to check the actual status of the checkout session or payment intent.
     This endpoint verifies if a payment has been successfully made.
     """
     # 1. Fetch the application and its related permit
@@ -136,23 +240,34 @@ def verify_paymongo_session(application_pk: int, user):
     if payment_history.status == models.PaymentHistory.Status.SUCCESS:
         return True, payment_history
 
-    # 5. Query PayMongo API for the checkout session details
-    url = f"{settings.PAYMONGO_URL}/checkout_sessions/{payment_history.paymongo_session_id}"
+    # 5. Query PayMongo API for checkout session or payment intent details
+    if payment_history.paymongo_payment_intent_id:
+        url = f"{settings.PAYMONGO_URL}/payment_intents/{payment_history.paymongo_payment_intent_id}"
+    else:
+        url = f"{settings.PAYMONGO_URL}/checkout_sessions/{payment_history.paymongo_session_id}"
+        
     headers = get_auth_header()
-
     response = requests.get(url, headers=headers)
     
     if response.status_code != 200:
-        raise ValidationError("Failed to verify session with payment provider")
+        raise ValidationError("Failed to verify session/intent with payment provider")
 
     data = response.json().get('data', {})
     attributes = data.get('attributes', {})
 
-    # 6. PROTOTYPE SIMULATION:
-    # For this prototype, we treat an 'active' session status as 'paid' to simulate a successful transaction.
     payment_status = attributes.get('status')
     
-    if payment_status == 'active':
+    # 6. PROTOTYPE SIMULATION:
+    # For this prototype:
+    # - Checkout Session: 'active' status is treated as 'paid' to simulate success.
+    # - Payment Intent: 'awaiting_next_action' or 'succeeded' status is treated as 'paid' to simulate success.
+    is_paid = False
+    if payment_history.paymongo_payment_intent_id:
+        is_paid = (payment_status == 'succeeded')
+    else:
+        is_paid = (payment_status == 'active')
+    
+    if is_paid:
         with transaction.atomic():
             # Re-fetch payment history with a lock to prevent concurrent update issues
             payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
@@ -162,7 +277,10 @@ def verify_paymongo_session(application_pk: int, user):
             
             # A. Update Payment History record
             payment_history.status = models.PaymentHistory.Status.SUCCESS
-            payment_history.method = 'ONLINE'
+            if payment_history.paymongo_payment_intent_id:
+                payment_history.method = models.PaymentHistory.Method.QRPH
+            else:
+                payment_history.method = 'ONLINE'
             payment_history.save()
 
             # B. Update the Issued Permit state

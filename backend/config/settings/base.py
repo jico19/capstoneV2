@@ -186,6 +186,9 @@ SMS_USERNAME = os.environ.get("SMS_USERNAME")
 SMS_PASSWORD = os.environ.get("SMS_PASSWORD")
 
 
+GEMENI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+
 # DJANGO TASK
 TASKS = {
     "default": {"BACKEND": "django_tasks_db.DatabaseBackend", "QUEUES": ["default"]}

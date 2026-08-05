@@ -77,6 +77,84 @@ class PaymentViewSets(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
+    def create_qrph_payment(self, request, pk=None):
+        """
+        Pass the permit application PK to create a QR Ph payment (Payment Intent/Method attach)
+        """
+        application = get_object_or_404(Permits.PermitApplication, pk=pk)
+        total_price = request.data.get("total_price", 0)
+
+        # Ownership check
+        if request.user.role == 'Farmer' and application.farmer != request.user:
+            return Response({"error": "Unauthorized access to this application"}, status=status.HTTP_403_FORBIDDEN)
+
+        if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
+            return Response({"error": "Application not ready for payment"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure IssuedPermit exists
+        get_object_or_404(Permits.IssuedPermit, application=application)
+
+        try:
+            data = services.create_qrph_payment(application_pk=application.pk, total_price=total_price)
+            return Response(data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def simulate_payment(self, request, pk=None):
+        """
+        Action to simulate payment success for testing/prototype purposes.
+        Sets status to SUCCESS and processes the permit issuance.
+        """
+        from django.db import transaction
+        from django.utils import timezone
+        from datetime import timedelta
+
+        application = get_object_or_404(Permits.PermitApplication, pk=pk)
+        issued_permit = get_object_or_404(Permits.IssuedPermit, application=application)
+        
+        try:
+            payment_history = issued_permit.payment_history
+        except models.PaymentHistory.DoesNotExist:
+            return Response({"error": "No payment history found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if payment_history.status == models.PaymentHistory.Status.SUCCESS:
+            return Response({"msg": "Already paid"}, status=status.HTTP_200_OK)
+
+        # Run transaction logic to mark as paid (same as successful verification)
+        with transaction.atomic():
+            payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
+            payment_history.status = models.PaymentHistory.Status.SUCCESS
+            payment_history.save()
+
+            issued_permit.is_paid = True
+            issued_permit.payment_method = 'ONLINE'
+            issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
+            
+            if not issued_permit.aic_number:
+                today = timezone.now().date()
+                mm_dd = today.strftime("%m-%d")
+                yy = today.strftime("%y")
+                prefix = f"{mm_dd}-"
+                today_count = Permits.IssuedPermit.objects.filter(
+                    aic_number__startswith=prefix
+                ).count()
+                issued_permit.aic_number = f"{mm_dd}-{today_count + 1:03d}-{yy}"
+                
+            issued_permit.save()
+
+            from apps.permits.services import handle_application_status_change
+            handle_application_status_change(application, Permits.PermitApplication.Status.RELEASED)
+
+            from apps.documents.services import generate_permit_pdf, generate_aic_pdf
+            generate_permit_pdf.enqueue(permit_application_id=application.pk)     
+            generate_aic_pdf.enqueue(permit_application_id=application.pk)
+
+        return Response({"msg": "Payment simulated successfully", "verified": True}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
     def verify_paymongo_session(self, request, pk=None):
         """
         Calls PayMongo to check the actual status of the checkout session.

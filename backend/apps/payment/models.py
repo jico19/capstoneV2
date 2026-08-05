@@ -18,6 +18,7 @@ class PaymentHistory(models.Model):
         PAYMAYA = 'paymaya', 'Paymaya'
         OFFLINE = 'gcash', 'Gcash'
         CARD = 'card', 'Card'
+        QRPH = 'qrph', 'Sari-Sari Store (QR Ph)'
 
     class Status(models.TextChoices):
         PENDING     = 'PENDING',    'Pending'
@@ -31,6 +32,8 @@ class PaymentHistory(models.Model):
     amount = models.PositiveIntegerField()
     paymongo_payment_id = models.CharField(max_length=100, blank=True)
     paymongo_session_id = models.CharField(max_length=100, blank=True)
+    paymongo_payment_intent_id = models.CharField(max_length=100, blank=True, default="")
+    expires_at = models.DateTimeField(null=True, blank=True)
     confirmed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="agri_officer")
     confirmed_at = models.DateTimeField(null=True, blank=True)
     or_number = models.CharField(max_length=20, blank=True, default="")

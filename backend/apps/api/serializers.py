@@ -32,6 +32,7 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
             'phone_no',
             'first_name',
             'last_name',
+            'role',
             'address',
             'barangay',
             'receive_sms',
@@ -40,6 +41,23 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True, 'required': False}
         }
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        # Coerce role for unauthorized/unauthenticated requests
+        if not user or not user.is_authenticated or user.role not in ['Admin', 'Agri']:
+            attrs['role'] = 'Farmer'
+        else:
+            role = attrs.get('role')
+            if role:
+                if user.role == 'Agri' and role not in ['Farmer', 'Barangay']:
+                    raise serializers.ValidationError({"role": "Agri can only register Farmers and Barangay Officials."})
+            else:
+                # If authenticated and role is omitted, default to Farmer
+                attrs['role'] = 'Farmer'
+        return attrs
 
     def create(self, validated_data):
         print(validated_data)
@@ -81,8 +99,9 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['first_name'] = user.first_name
         token['last_name'] = user.last_name
+        token['barangay'] = user.barangay.id if user.barangay else None
+        token['barangay_name'] = user.barangay.name if user.barangay else None
 
-        
         return token
 
 

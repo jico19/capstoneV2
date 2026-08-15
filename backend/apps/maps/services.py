@@ -11,7 +11,7 @@ class HogSurveyService:
     # Imports hog survey data from a CSV file object.
     # Returns a tuple: (number of records created, list of error messages).
     @staticmethod
-    def import_csv(file_obj):
+    def import_csv(file_obj, barangay_restriction=None):
         # Read the file content as text
         try:
             # Reset pointer first in case it was already read
@@ -61,6 +61,10 @@ class HogSurveyService:
                 
                 if not barangay:
                     errors.append(f"Row {row_num}: Barangay '{barangay_name}' not found.")
+                    continue
+
+                if barangay_restriction and barangay != barangay_restriction:
+                    errors.append(f"Row {row_num}: Barangay '{barangay_name}' is not your assigned barangay ({barangay_restriction.name}).")
                     continue
 
                 # Parse the survey date using standard datetime parsing.

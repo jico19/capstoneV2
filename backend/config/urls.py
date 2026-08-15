@@ -3,17 +3,16 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
 )
-from apps.api.views import health_check
+from apps.api.views import health_check, CustomTokenObtainPairView
 from .router import routers
 
 # app viewsets
 urlpatterns = [
     path("admin/", admin.site.urls),
     # Auth Endpoints
-    path("login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("login/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     # App Routes
     path("dashboard/", include("apps.dashboard.urls"), name="agri_dashboard"),

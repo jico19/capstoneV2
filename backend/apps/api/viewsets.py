@@ -35,15 +35,21 @@ class UserViewSets(viewsets.ModelViewSet):
             return models.User.objects.none()
 
         if user.role == "Admin":
-            return models.User.objects.all()
+            queryset = models.User.objects.all()
         elif user.role == "Agri":
-            # Agri can see all Farmers AND their own profile
-            return models.User.objects.filter(
-                Q(role="Farmer") | Q(id=user.id)
+            # Agri can see Farmers, Barangay Officials, and their own profile
+            queryset = models.User.objects.filter(
+                Q(role__in=["Farmer", "Barangay"]) | Q(id=user.id)
             )
         else:
             # All other roles (OPV, Inspector, Farmer) can only see themselves
-            return models.User.objects.filter(id=user.id)
+            queryset = models.User.objects.filter(id=user.id)
+
+        role_filter = self.request.query_params.get("role")
+        if role_filter:
+            queryset = queryset.filter(role=role_filter)
+
+        return queryset
 
     @action(detail=False, methods=["post"], permission_classes=[])
     def verify_otp(self, request):
@@ -133,3 +139,13 @@ class AuditTrailViewSets(viewsets.ModelViewSet):
     serializer_class = serializers.AuditTrailSerializer
     queryset = models.AuditTrail.objects.all()
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.AuditTrail.objects.none()
+            
+        queryset = models.AuditTrail.objects.all().order_by("-when_performed")
+        if user.role == "Barangay":
+            queryset = queryset.filter(who_performed=user)
+        return queryset

@@ -15,7 +15,7 @@ import {
     MapPin,
     Phone,
     Trash2,
-    AlertCircle
+    Shield
 } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';
 import { toast } from 'sonner';
@@ -43,11 +43,11 @@ const parseValidationError = (err, fallback = "Action failed.") => {
 };
 
 /**
- * Farmer Management Page
- * Municipal Agriculture Office (MAO) control panel to manage farmers.
+ * Barangay Official Management Page
+ * Municipal Agriculture Office (MAO) control panel to manage Barangay Officials.
  * Follows flat UI industrial aesthetic (stone colors, square borders, bold tracking).
  */
-const FarmerManagementPage = () => {
+const BarangayOfficialManagementPage = () => {
     const queryClient = useQueryClient();
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
@@ -69,12 +69,12 @@ const FarmerManagementPage = () => {
         return () => clearTimeout(handler);
     }, [searchInput]);
 
-    // Query for farmers (users with role='Farmer')
+    // Query for Barangay Officials (users with role='Barangay')
     const { data, isLoading, isError, isFetching } = useQuery({
-        queryKey: ['farmers', limit, offset, searchQuery],
+        queryKey: ['barangay-officials', limit, offset, searchQuery],
         queryFn: async () => {
             const res = await api.get('/user/', {
-                params: { limit, offset, search: searchQuery, role: 'Farmer' }
+                params: { limit, offset, search: searchQuery, role: 'Barangay' }
             });
             return res.data;
         }
@@ -88,37 +88,37 @@ const FarmerManagementPage = () => {
         mutationFn: async (userData) => {
             const res = await api.post('/user/', {
                 ...userData,
-                role: 'Farmer',
+                role: 'Barangay',
                 is_active: true
             });
             return res.data;
         },
         onSuccess: () => {
-            toast.success("Farmer account created successfully.");
-            queryClient.invalidateQueries({ queryKey: ['farmers'] });
+            toast.success("Barangay Official account created successfully.");
+            queryClient.invalidateQueries({ queryKey: ['barangay-officials'] });
             setIsCreateOpen(false);
         },
         onError: (err) => {
             console.error(err);
-            const detail = parseValidationError(err, "Could not create farmer account.");
+            const detail = parseValidationError(err, "Could not create Barangay Official account.");
             toast.error(detail);
         }
     });
 
-    // Mutation: Update user (including active/inactive status)
+    // Mutation: Update user
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }) => {
             const res = await api.patch(`/user/${id}/`, data);
             return res.data;
         },
         onSuccess: () => {
-            toast.success("Farmer registry updated.");
-            queryClient.invalidateQueries({ queryKey: ['farmers'] });
+            toast.success("Barangay Official registry updated.");
+            queryClient.invalidateQueries({ queryKey: ['barangay-officials'] });
             setEditUser(null);
         },
         onError: (err) => {
             console.error(err);
-            const detail = parseValidationError(err, "Could not update farmer account.");
+            const detail = parseValidationError(err, "Could not update Barangay Official account.");
             toast.error(detail);
         }
     });
@@ -130,18 +130,18 @@ const FarmerManagementPage = () => {
             return res.data;
         },
         onSuccess: () => {
-            toast.success("Farmer account permanently deleted.");
-            queryClient.invalidateQueries({ queryKey: ['farmers'] });
+            toast.success("Barangay Official account permanently deleted.");
+            queryClient.invalidateQueries({ queryKey: ['barangay-officials'] });
         },
         onError: (err) => {
             console.error(err);
-            const detail = parseValidationError(err, "Could not delete farmer account.");
+            const detail = parseValidationError(err, "Could not delete Barangay Official account.");
             toast.error(detail);
         }
     });
 
-    const handleDeleteFarmer = (farmer) => {
-        setConfirmDeleteUser(farmer);
+    const handleDeleteOfficial = (official) => {
+        setConfirmDeleteUser(official);
     };
 
     const executeDelete = async () => {
@@ -154,8 +154,8 @@ const FarmerManagementPage = () => {
         }
     };
 
-    const toggleActiveStatus = (farmer) => {
-        setConfirmToggleStatusUser(farmer);
+    const toggleActiveStatus = (official) => {
+        setConfirmToggleStatusUser(official);
     };
 
     const executeToggleStatus = async () => {
@@ -175,7 +175,7 @@ const FarmerManagementPage = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
                 <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Farmer Directory...</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Official Directory...</p>
             </div>
         );
     }
@@ -184,13 +184,13 @@ const FarmerManagementPage = () => {
         return (
             <div className="p-4 md:p-8">
                 <div className="bg-red-50 text-red-600 border border-red-100 p-8 text-center font-black uppercase tracking-widest text-xs">
-                    Failed to load farmer registry. Please refresh the page.
+                    Failed to load official registry. Please refresh the page.
                 </div>
             </div>
         );
     }
 
-    const farmers = data?.results || [];
+    const officials = data?.results || [];
     const count = data?.count || 0;
 
     return (
@@ -199,14 +199,14 @@ const FarmerManagementPage = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-100 pb-8 gap-4">
                 <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Municipal Agriculture Office</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Farmer Directory</h1>
-                    <p className="text-sm text-stone-500 font-medium">Manage and audit swine owners in Sariaya</p>
+                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Barangay Officials</h1>
+                    <p className="text-sm text-stone-500 font-medium">Manage and assign Barangay Officials to track localized swine surveys</p>
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
                     className="bg-stone-900 hover:bg-stone-800 text-white px-6 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2"
                 >
-                    <UserPlus size={16} /> Register New Farmer
+                    <UserPlus size={16} /> Register New Official
                 </button>
             </div>
 
@@ -226,48 +226,48 @@ const FarmerManagementPage = () => {
                     )}
                 </div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                    Showing {farmers.length} of {count} Farmers
+                    Showing {officials.length} of {count} Officials
                 </div>
             </div>
 
-            {/* Farmers Table */}
+            {/* Officials Table */}
             <div className="border border-stone-200 bg-white">
                 <div className="overflow-x-auto w-full">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-500">
                             <tr>
-                                <th className="px-6 py-5">Farmer Account</th>
+                                <th className="px-6 py-5">Official Account</th>
                                 <th className="px-6 py-5">Phone & Address</th>
-                                <th className="px-6 py-5">Location</th>
+                                <th className="px-6 py-5">Assigned Barangay</th>
                                 <th className="px-6 py-5 text-center">Status</th>
                                 <th className="px-6 py-5 text-right pr-8">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {farmers.length === 0 ? (
+                            {officials.length === 0 ? (
                                 <tr>
                                     <td colSpan="5">
                                         <div className="flex flex-col items-center justify-center py-24 bg-stone-50/30">
                                             <Users size={48} className="text-stone-200 mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">No registered farmers found</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">No registered officials found</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
-                                farmers.map((farmer) => (
-                                    <tr key={farmer.id} className="hover:bg-stone-50 transition-colors">
+                                officials.map((official) => (
+                                    <tr key={official.id} className="hover:bg-stone-50 transition-colors">
                                         {/* Name & Username */}
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 shrink-0">
-                                                    <User size={20} />
+                                                    <Shield size={20} className="text-stone-600" />
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-black text-stone-800 uppercase tracking-tight">
-                                                        {farmer.first_name} {farmer.last_name}
+                                                        {official.first_name} {official.last_name}
                                                     </p>
                                                     <p className="text-[9px] font-mono font-bold text-stone-400 mt-0.5">
-                                                        @{farmer.username}
+                                                        @{official.username}
                                                     </p>
                                                 </div>
                                             </div>
@@ -277,10 +277,10 @@ const FarmerManagementPage = () => {
                                             <div className="space-y-1">
                                                 <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
                                                     <Phone size={12} className="text-stone-400" />
-                                                    {farmer.phone_no || 'No phone listed'}
+                                                    {official.phone_no || 'No phone listed'}
                                                 </p>
                                                 <p className="text-[10px] text-stone-500 font-medium truncate max-w-xs">
-                                                    {farmer.address || 'No address listed'}
+                                                    {official.address || 'No address listed'}
                                                 </p>
                                             </div>
                                         </td>
@@ -288,20 +288,20 @@ const FarmerManagementPage = () => {
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
                                                 <MapPin size={14} className="text-green-600 shrink-0" />
-                                                <span className="uppercase tracking-tight">{farmer.barangay_name || 'None'}</span>
+                                                <span className="uppercase tracking-tight text-green-700">{official.barangay_name || 'Unassigned'}</span>
                                             </div>
                                         </td>
                                         {/* Status */}
                                         <td className="px-6 py-5 text-center">
                                             <button
-                                                onClick={() => toggleActiveStatus(farmer)}
+                                                onClick={() => toggleActiveStatus(official)}
                                                 className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border transition-colors inline-flex items-center gap-1.5
-                                                    ${farmer.is_active 
+                                                    ${official.is_active 
                                                         ? 'bg-green-50 text-green-700 border-green-600/30 hover:bg-red-50 hover:text-red-600 hover:border-red-600/30' 
                                                         : 'bg-red-50 text-red-600 border-red-600/30 hover:bg-green-50 hover:text-green-700 hover:border-green-600/30'
                                                     }`}
                                             >
-                                                {farmer.is_active ? (
+                                                {official.is_active ? (
                                                     <>
                                                         <UserCheck size={12} /> Active
                                                     </>
@@ -316,13 +316,13 @@ const FarmerManagementPage = () => {
                                         <td className="px-6 py-5 text-right pr-8">
                                             <div className="flex items-center gap-2 justify-end">
                                                 <button
-                                                    onClick={() => setEditUser(farmer)}
+                                                    onClick={() => setEditUser(official)}
                                                     className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2"
                                                 >
                                                     <Edit size={12} /> Edit Details
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteFarmer(farmer)}
+                                                    onClick={() => handleDeleteOfficial(official)}
                                                     disabled={deleteMutation.isPending}
                                                     className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50"
                                                 >
@@ -351,9 +351,9 @@ const FarmerManagementPage = () => {
                 )}
             </div>
 
-            {/* Create Farmer Modal */}
+            {/* Create Official Modal */}
             {isCreateOpen && (
-                <FarmerFormModal 
+                <OfficialFormModal 
                     onClose={() => setIsCreateOpen(false)}
                     onSubmit={(data) => createMutation.mutate(data)}
                     isSubmitting={createMutation.isPending}
@@ -361,9 +361,9 @@ const FarmerManagementPage = () => {
                 />
             )}
 
-            {/* Edit Farmer Modal */}
+            {/* Edit Official Modal */}
             {editUser && (
-                <FarmerFormModal 
+                <OfficialFormModal 
                     user={editUser}
                     onClose={() => setEditUser(null)}
                     onSubmit={(data) => updateMutation.mutate({ id: editUser.id, data })}
@@ -377,8 +377,8 @@ const FarmerManagementPage = () => {
                 isOpen={!!confirmDeleteUser}
                 onClose={() => setConfirmDeleteUser(null)}
                 onYes={executeDelete}
-                title="Permanently Delete Account?"
-                message={confirmDeleteUser ? `Are you sure you want to PERMANENTLY delete the account of ${confirmDeleteUser.first_name} ${confirmDeleteUser.last_name}? This action is irreversible and might affect their existing permit applications.` : ""}
+                title="Permanently Delete Official?"
+                message={confirmDeleteUser ? `Are you sure you want to PERMANENTLY delete the account of ${confirmDeleteUser.first_name} ${confirmDeleteUser.last_name}? They will no longer be able to submit hog surveys.` : ""}
                 yesText="Permanently Delete"
                 yesVariant="danger"
                 type="danger"
@@ -402,9 +402,9 @@ const FarmerManagementPage = () => {
 };
 
 /**
- * Reusable Farmer Form Modal for Registration & Edit Details
+ * Reusable Official Form Modal for Registration & Edit Details
  */
-const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) => {
+const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) => {
     const isEdit = !!user;
     const { register, handleSubmit, formState: { errors } } = useForm({
         defaultValues: {
@@ -427,7 +427,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                     <div className="flex items-center gap-3">
                         <Users size={18} className="text-stone-700" />
                         <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest">
-                            {isEdit ? "Update Farmer Profile" : "Register Swine Owner"}
+                            {isEdit ? "Update Official Profile" : "Register Barangay Official"}
                         </h3>
                     </div>
                     <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 transition-colors">
@@ -446,7 +446,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 {...register('username', { required: "Username is required." })}
                                 disabled={isSubmitting}
                                 className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
-                                placeholder="john_doe"
+                                placeholder="barangay_official"
                             />
                             {errors.username && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.username.message}</p>}
                         </div>
@@ -474,7 +474,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 {...register('first_name', { required: "First name is required." })}
                                 disabled={isSubmitting}
                                 className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
-                                placeholder="Juan"
+                                placeholder="Pedro"
                             />
                             {errors.first_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.first_name.message}</p>}
                         </div>
@@ -487,7 +487,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 {...register('last_name', { required: "Last name is required." })}
                                 disabled={isSubmitting}
                                 className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
-                                placeholder="Dela Cruz"
+                                placeholder="Sanchez"
                             />
                             {errors.last_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.last_name.message}</p>}
                         </div>
@@ -511,9 +511,9 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                             {errors.phone_no && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.phone_no.message}</p>}
                         </div>
 
-                        {/* Barangay Dropdown */}
+                        {/* Assigned Barangay Dropdown */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Barangay</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Assign to Barangay</label>
                             <select
                                 {...register('barangay', { required: "Selecting a barangay is required." })}
                                 disabled={isSubmitting}
@@ -535,7 +535,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 {...register('address', { required: "Complete address is required." })}
                                 disabled={isSubmitting}
                                 className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
-                                placeholder="Purok 4, Sariaya, Quezon"
+                                placeholder="Barangay Hall, Sariaya, Quezon"
                             />
                             {errors.address && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.address.message}</p>}
                         </div>
@@ -549,7 +549,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                     disabled={isSubmitting}
                                     className="checkbox checkbox-success checkbox-sm rounded-none border-stone-300"
                                 />
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Send SMS notifications to this farmer</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Send SMS notifications to this official</span>
                             </label>
 
                             {isEdit && (
@@ -560,7 +560,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                         disabled={isSubmitting}
                                         className="checkbox checkbox-success checkbox-sm rounded-none border-stone-300"
                                     />
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Farmer account is active and authorized</span>
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Official account is active and authorized</span>
                                 </label>
                             )}
                         </div>
@@ -588,7 +588,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 </>
                             ) : (
                                 <>
-                                    <Check size={14} /> {isEdit ? "Save Profile" : "Register Owner"}
+                                    <Check size={14} /> {isEdit ? "Save Profile" : "Register Official"}
                                 </>
                             )}
                         </button>
@@ -599,6 +599,4 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
     );
 };
 
-
-
-export default FarmerManagementPage;
+export default BarangayOfficialManagementPage;

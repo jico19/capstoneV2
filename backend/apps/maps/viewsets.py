@@ -40,6 +40,14 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
     queryset = models.HogSurvey.objects.all()
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return models.HogSurvey.objects.none()
+        if user.role == "Barangay":
+            return models.HogSurvey.objects.filter(barangay=user.barangay)
+        return models.HogSurvey.objects.all()
+
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
             return serializers.HogSurveyListDetailSerializer
@@ -47,20 +55,78 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
             return serializers.HogSurveyWriteSerializer
         return serializers.HogSurveyListSerializer  # safe fallback
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.role == "Barangay":
+            barangay = serializer.validated_data.get('barangay')
+            if barangay != user.barangay:
+                raise ValidationError({"barangay": "You can only submit surveys for your own barangay."})
+        survey = serializer.save()
+        
+        # Audit Log
+        from django.utils import timezone
+        from apps.api.models import AuditTrail
+        AuditTrail.objects.create(
+            who_performed=user,
+            what_performed=f"[HOG SURVEY ADDED] - Survey for Barangay {survey.barangay.name} (Total: {survey.total_pigs} pigs) submitted successfully.",
+            when_performed=timezone.now()
+        )
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        if user.role == "Barangay":
+            barangay = serializer.validated_data.get('barangay')
+            if barangay and barangay != user.barangay:
+                raise ValidationError({"barangay": "You cannot change the barangay to another barangay."})
+        survey = serializer.save()
+        
+        # Audit Log
+        from django.utils import timezone
+        from apps.api.models import AuditTrail
+        AuditTrail.objects.create(
+            who_performed=user,
+            what_performed=f"[HOG SURVEY UPDATED] - Survey for Barangay {survey.barangay.name} (Total: {survey.total_pigs} pigs) updated successfully.",
+            when_performed=timezone.now()
+        )
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if user.role == "Barangay" and instance.barangay != user.barangay:
+            raise ValidationError({"error": "You do not have permission to delete this survey."})
+            
+        barangay_name = instance.barangay.name
+        total_pigs = instance.total_pigs
+        instance.delete()
+        
+        # Audit Log
+        from django.utils import timezone
+        from apps.api.models import AuditTrail
+        AuditTrail.objects.create(
+            who_performed=user,
+            what_performed=f"[HOG SURVEY DELETED] - Survey for Barangay {barangay_name} (Total: {total_pigs} pigs) deleted successfully.",
+            when_performed=timezone.now()
+        )
+
     @action(detail=False, methods=["get"])
     def export_csv(self, request):
         """
         API Endpoint: GET /api/hog-survey/export_csv/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
         Exports survey data to a CSV file for official reporting with date range.
         """
-        if request.user.role != "Agri":
+        if request.user.role not in ["Agri", "Barangay"]:
             return Response({"error": "Unauthorized"}, status=403)
 
         start_date_str = request.query_params.get("start_date")
         end_date_str = request.query_params.get("end_date")
 
         try:
-            rows = HogSurveyService.generate_export_csv_data(start_date_str, end_date_str)
+            if request.user.role == "Barangay":
+                # Only let them export their own barangay
+                rows = HogSurveyService.generate_export_csv_data(start_date_str, end_date_str)
+                # Filter rows to only matching barangay
+                rows = [row for row in rows if row[0].lower() == request.user.barangay.name.lower()]
+            else:
+                rows = HogSurveyService.generate_export_csv_data(start_date_str, end_date_str)
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=400)
 
@@ -92,9 +158,13 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         API Endpoint: GET /api/hog-survey/years/
         Returns a list of unique years present in the survey data.
         """
+        user = request.user
+        queryset = models.HogSurvey.objects.filter(survey_date__isnull=False)
+        if user.role == "Barangay":
+            queryset = queryset.filter(barangay=user.barangay)
+            
         years = (
-            models.HogSurvey.objects.filter(survey_date__isnull=False)
-            .values_list("survey_date__year", flat=True)
+            queryset.values_list("survey_date__year", flat=True)
             .distinct()
             .order_by("-survey_date__year")
         )
@@ -120,8 +190,26 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
             target_season=target_season,
             target_year=target_year
         )
+        
+        # If user is a Barangay Official, we only return data for their barangay
+        if request.user.role == "Barangay" and request.user.barangay:
+            user_b = request.user.barangay.name.lower()
+            if isinstance(heatmap_payload, dict):
+                # Filter components if it's a dict
+                if "density_data" in heatmap_payload:
+                    heatmap_payload["density_data"] = [
+                        d for d in heatmap_payload["density_data"] if d.get("barangay", "").lower() == user_b
+                    ]
+                if "historical_trends" in heatmap_payload:
+                    heatmap_payload["historical_trends"] = [
+                        t for t in heatmap_payload["historical_trends"] if t.get("barangay", "").lower() == user_b
+                    ]
+            elif isinstance(heatmap_payload, list):
+                heatmap_payload = [
+                    d for d in heatmap_payload if d.get("barangay", "").lower() == user_b
+                ]
+                
         return Response(heatmap_payload)
-
 
     @action(detail=False, methods=["post"])
     def upload_csv(self, request):
@@ -129,7 +217,7 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         API Endpoint: POST /api/hog-survey/upload_csv/
         Uploads a CSV file and imports hog survey data.
         """
-        if request.user.role != "Agri":
+        if request.user.role not in ["Agri", "Barangay"]:
             return Response({"error": "Unauthorized"}, status=403)
 
         file_obj = request.FILES.get("file")
@@ -139,8 +227,24 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         if not file_obj.name.endswith(".csv"):
             return Response({"error": "File is not a CSV"}, status=400)
 
+        barangay_restriction = None
+        if request.user.role == "Barangay":
+            barangay_restriction = request.user.barangay
+
         try:
-            created_count, errors = HogSurveyService.import_csv(file_obj)
+            created_count, errors = HogSurveyService.import_csv(file_obj, barangay_restriction=barangay_restriction)
+            
+            # Audit Log on success
+            if created_count > 0:
+                from django.utils import timezone
+                from apps.api.models import AuditTrail
+                restriction_msg = f" for assigned Barangay {barangay_restriction.name}" if barangay_restriction else ""
+                AuditTrail.objects.create(
+                    who_performed=request.user,
+                    what_performed=f"[HOG SURVEY CSV IMPORT] - CSV file '{file_obj.name}' imported successfully{restriction_msg}. Imported {created_count} records.",
+                    when_performed=timezone.now()
+                )
+                
             return Response(
                 {
                     "message": f"Successfully imported {created_count} records.",

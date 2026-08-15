@@ -8,6 +8,7 @@ import {
     Settings,
     QrCode,
     History,
+    FileText,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import NotificationBadge from './NotificationBadge';
@@ -46,6 +47,13 @@ const MobileNavbar = () => {
                     { icon: QrCode, label: 'Scan', to: '/inspector/scan/' },
                     { icon: History, label: 'Logs', to: '/inspector/history/' },
                     { icon: Settings, label: 'Settings', to: '/inspector/settings/' },
+                ];
+            case 'Barangay':
+                return [
+                    { icon: LayoutDashboard, label: 'Home', to: '/barangay' },
+                    { icon: FileText, label: 'Surveys', to: '/barangay/hog-surveys/' },
+                    { icon: History, label: 'Logs', to: '/barangay/audit-logs/' },
+                    { icon: Settings, label: 'Settings', to: '/barangay/settings/' },
                 ];
             default:
                 return null;

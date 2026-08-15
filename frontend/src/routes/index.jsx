@@ -35,7 +35,13 @@ import AgriPaymentPage from "../pages/agri/Payment/AgriPaymentPage";
 import AgriReportsPage from "../pages/agri/Reports/AgriReportsPage";
 import AuditTrailPage from "../pages/agri/Audit/AuditTrailPage";
 import FarmerManagementPage from "../pages/agri/FarmerManagementPage";
+import BarangayOfficialManagementPage from "../pages/agri/BarangayOfficialManagementPage";
 import AgriSystemSettings from "../pages/agri/SystemSettings/AgriSystemSettings";
+
+// barangay
+import BarangayDashboard from "../pages/barangay/Dashboard/BarangayDashboard";
+import HogSurveyPage from "../pages/barangay/HogSurvey/HogSurveyPage";
+import BarangayAuditPage from "../pages/barangay/Audit/BarangayAuditPage";
 
 
 // Opv
@@ -102,9 +108,21 @@ const router = createBrowserRouter([
             { path: 'reports/', element: <AgriReportsPage /> },
             { path: 'audit-trail/', element: <AuditTrailPage /> },
             { path: 'farmers/', element: <FarmerManagementPage /> },
+            { path: 'barangay-officials/', element: <BarangayOfficialManagementPage /> },
             { path: 'notification/', element: <NotificationPage /> },
             { path: 'settings/', element: <SettingsPage /> },
             { path: 'system-settings/', element: <AgriSystemSettings /> },
+        ]
+    },
+    // barangay official route
+    {
+        path: '/barangay',
+        element: <ProtectedRoute allowedRoles={['Barangay']} />,
+        children: [
+            { index: true, element: <BarangayDashboard /> },
+            { path: 'hog-surveys/', element: <HogSurveyPage /> },
+            { path: 'audit-logs/', element: <BarangayAuditPage /> },
+            { path: 'settings/', element: <SettingsPage /> },
         ]
     },
     // opv route

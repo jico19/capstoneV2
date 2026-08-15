@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import useAuthStore from "/src/store/authStore";
 import { Lock, User, ShieldCheck, ArrowRight, ClipboardCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
 
 /**
@@ -20,8 +20,19 @@ const LoginPage = () => {
     const navigate = useNavigate();
     const [apiError, setApiError] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [throttleWait, setThrottleWait] = useState(0);
+
+    // Countdown timer for throttling
+    useEffect(() => {
+        if (throttleWait <= 0) return;
+        const interval = setInterval(() => {
+            setThrottleWait((prev) => prev - 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [throttleWait]);
 
     const onSubmit = async (data) => {
+        if (throttleWait > 0) return;
         setApiError(null);
         try {
             await login(data);
@@ -31,10 +42,19 @@ const LoginPage = () => {
             navigate("/");
         } catch (err) {
             console.error("Login failed", err);
-            setApiError("Incorrect username or password. Please try again.");
-            toast.error("Log In Failed", {
-                description: "Please check your details and try again.",
-            });
+            if (err.response?.status === 429) {
+                const wait = err.response.data.wait || 60;
+                setThrottleWait(Math.ceil(wait));
+                setApiError(`Too many incorrect password attempts. Please try again later.`);
+                toast.error("Login Paused", {
+                    description: `Too many login attempts. Please wait ${Math.ceil(wait)} seconds.`,
+                });
+            } else {
+                setApiError("Incorrect username or password. Please try again.");
+                toast.error("Log In Failed", {
+                    description: "Please check your details and try again.",
+                });
+            }
         }
     };
 
@@ -93,15 +113,25 @@ const LoginPage = () => {
                     </div>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                        {/* Global Error Banner */}
-                        {apiError && (
+                        {/* Global Error Banner / Throttle Block Banner */}
+                        {throttleWait > 0 ? (
                             <div className="bg-red-50 border-l-4 border-red-600 p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={18} />
                                 <div>
-                                    <p className="text-xs font-black text-red-700 uppercase tracking-widest leading-none mb-1">Log In Failed</p>
-                                    <p className="text-xs font-medium text-red-600">{apiError}</p>
+                                    <p className="text-xs font-black text-red-700 uppercase tracking-widest leading-none mb-1">Login Temporarily Paused</p>
+                                    <p className="text-xs font-medium text-red-600">Too many incorrect attempts. Please wait <span className="font-bold">{throttleWait} seconds</span> before trying again.</p>
                                 </div>
                             </div>
+                        ) : (
+                            apiError && (
+                                <div className="bg-red-50 border-l-4 border-red-600 p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={18} />
+                                    <div>
+                                        <p className="text-xs font-black text-red-700 uppercase tracking-widest leading-none mb-1">Log In Failed</p>
+                                        <p className="text-xs font-medium text-red-600">{apiError}</p>
+                                    </div>
+                                </div>
+                            )
                         )}
 
                         <div className="space-y-5">
@@ -110,14 +140,14 @@ const LoginPage = () => {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-900">Your Username</label>
                                 <div className="relative">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    {/* Register the input field. Pass custom onChange into register options to prevent overriding react-hook-form's own onChange handler. */}
                                     <input
                                         type="text"
+                                        disabled={throttleWait > 0}
                                         {...register("username", {
                                             required: "Please enter your username.",
                                             onChange: () => apiError && setApiError(null)
                                         })}
-                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.username ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
+                                        className={`w-full p-4 pl-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${errors.username ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
                                             }`}
                                         placeholder="e.g. juan_farmer"
                                     />
@@ -132,21 +162,22 @@ const LoginPage = () => {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-900">Your Password</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    {/* Register the input field. Pass custom onChange into register options to prevent overriding react-hook-form's own onChange handler. */}
                                     <input
                                         type={showPassword ? "text" : "password"}
+                                        disabled={throttleWait > 0}
                                         {...register("password", {
                                             required: "Please enter your password.",
                                             onChange: () => apiError && setApiError(null)
                                         })}
-                                        className={`w-full p-4 pl-12 pr-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
+                                        className={`w-full p-4 pl-12 pr-12 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${errors.password ? "border-red-600 text-red-900" : "border-gray-200 text-gray-900 focus:border-green-600"
                                             }`}
                                         placeholder="••••••••"
                                     />
                                     <button
                                         type="button"
+                                        disabled={throttleWait > 0}
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-stone-900 transition-colors focus:outline-none"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-stone-900 transition-colors focus:outline-none disabled:opacity-50"
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
@@ -160,10 +191,12 @@ const LoginPage = () => {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-none font-black text-sm uppercase tracking-widest transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+                            disabled={isSubmitting || throttleWait > 0}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-none font-black text-sm uppercase tracking-widest transition-colors flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? (
+                            {throttleWait > 0 ? (
+                                <span>Try again in {throttleWait}s</span>
+                            ) : isSubmitting ? (
                                 <>
                                     <span className="loading loading-spinner loading-sm"></span>
                                     <span>Logging In...</span>

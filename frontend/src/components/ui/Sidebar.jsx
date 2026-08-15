@@ -63,7 +63,7 @@ const Sidebar = ({ children }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const isMobileFirstRole = user && (user.role === 'Farmer' || user.role === 'Inspector');
+    const isMobileFirstRole = user && (user.role === 'Farmer' || user.role === 'Inspector' || user.role === 'Barangay');
 
     // Fetch unread notification count for the badge
     const { data: unreadCount = 0 } = useGetUnreadNotificationCount();
@@ -89,12 +89,22 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={LayoutDashboard} label="Overview" to='/agri/' />
                         <SidebarItem icon={FilesIcon} label="Applications" to='/agri/application' />
                         <SidebarItem icon={Users} label="Farmers" to='/agri/farmers/' />
+                        <SidebarItem icon={Users} label="Barangay Officials" to='/agri/barangay-officials/' />
                         <SidebarItem icon={CreditCard} label="Payments" to='/agri/payment' />
                         <SidebarItem icon={Map} label="Map" to='/agri/map/pig-density/' />
                         <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/' />
                         <SidebarItem icon={BarChart3} label="Reports" to='/agri/reports/' />
                         <SidebarItem icon={SlidersHorizontal} label="System Settings" to='/agri/system-settings/' />
                         <SidebarItem icon={Settings} label="Settings" to='/agri/settings/' />
+                    </MenuSection>
+                );
+            case 'Barangay':
+                return (
+                    <MenuSection title="Barangay Official">
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/barangay' />
+                        <SidebarItem icon={FileText} label="Hog Surveys" to='/barangay/hog-surveys/' />
+                        <SidebarItem icon={History} label="Audit Logs" to='/barangay/audit-logs/' />
+                        <SidebarItem icon={Settings} label="Settings" to='/barangay/settings/' />
                     </MenuSection>
                 );
             case 'Opv':

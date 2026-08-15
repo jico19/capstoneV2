@@ -15,6 +15,7 @@ const RootRedirect = ({ children }) => {
         Agri: '/agri',
         Opv: '/opv',
         Inspector: '/inspector',
+        Barangay: '/barangay',
     };
 
     return <Navigate to={rolePaths[user.role] || '/login'} replace />;

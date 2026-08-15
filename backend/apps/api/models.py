@@ -14,6 +14,7 @@ class User(AbstractUser):
             ("Inspector", "Inspector"),
             ("Opv", "Opv"),
             ("Agri", "Agri"),
+            ("Barangay", "Barangay Official"),
         ),
         null=False,
         help_text="User role",

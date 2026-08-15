@@ -21,7 +21,9 @@ const useAuthStore = create(
                         username: decoded.username,
                         role: decoded.role,
                         first_name: decoded.first_name,
-                        last_name: decoded.last_name
+                        last_name: decoded.last_name,
+                        barangay: decoded.barangay,
+                        barangay_name: decoded.barangay_name
                     };
 
                     set({

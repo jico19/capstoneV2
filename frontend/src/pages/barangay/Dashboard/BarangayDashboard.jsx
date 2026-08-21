@@ -16,6 +16,7 @@ import {
     History
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SmartInsights from '../../../components/ui/SmartInsights';
 
 const BarangayDashboard = () => {
     const { user } = useAuthStore();
@@ -87,6 +88,9 @@ const BarangayDashboard = () => {
                     <span className="text-xs font-black uppercase tracking-wider">{user?.barangay_name || 'Sariaya Barangay'}</span>
                 </div>
             </div>
+
+            {/* Smart AI Insights Hero Banner */}
+            <SmartInsights role="Barangay" title={`${user?.barangay_name || 'Barangay'} Swine Census & Movement Insights`} />
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

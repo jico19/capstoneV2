@@ -11,6 +11,7 @@ import {
 import { useGetOPVDashboard } from "/src/hooks/useDashboard";
 import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
+import SmartInsights from "../../../components/ui/SmartInsights";
 
 
 /**
@@ -49,6 +50,9 @@ const OpvDashboard = () => {
                     <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none italic">OPV Dashboard</h1>
                 </div>
             </div>
+
+            {/* Smart AI Insights Hero Banner */}
+            <SmartInsights role="OPV" title="Provincial Veterinary Validation Insights" />
 
             {/* KPI Cards: Primary Operational Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

@@ -9,6 +9,7 @@ import { useGetInspectorDashboard } from "/src/hooks/useDashboard";
 import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from "/src/components/charts/BarChart";
 import LineChartComponent from "/src/components/charts/LineChart";
+import SmartInsights from "../../../components/ui/SmartInsights";
 
 
 /**
@@ -50,6 +51,9 @@ const InspectorDashboard = () => {
                     <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>
+
+            {/* Smart AI Insights Hero Banner */}
+            <SmartInsights role="Inspector" title="Checkpoint Field Intelligence & Scan Insights" />
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

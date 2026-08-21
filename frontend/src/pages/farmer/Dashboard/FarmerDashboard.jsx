@@ -11,6 +11,7 @@ import { useGetFarmerDashboard } from '/src/hooks/useDashboard';
 import { Link } from 'react-router-dom';
 import useAuthStore from '/src/store/authStore';
 import BarChartComponent from '/src/components/charts/BarChart';
+import SmartInsights from '../../../components/ui/SmartInsights';
 
 const FarmerDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetFarmerDashboard();
@@ -43,6 +44,9 @@ const FarmerDashboard = () => {
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Welcome Back</p>
                 <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter mt-1">Hello, {user?.first_name || 'Farmer'}</h1>
             </div>
+
+            {/* Smart AI Insights Hero Banner */}
+            <SmartInsights role="Farmer" title="Personal Permit & Transit Insights" />
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

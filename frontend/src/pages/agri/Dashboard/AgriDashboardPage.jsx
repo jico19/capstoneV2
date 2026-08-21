@@ -9,6 +9,7 @@ import { useGetAgriDashboard } from '/src/hooks/useDashboard';
 import LineChartComponent from '/src/components/charts/LineChart';
 import PieChartComponent from '/src/components/charts/PieChart';
 import BarChartComponent from '/src/components/charts/BarChart';
+import SmartInsights from '/src/components/ui/SmartInsights';
 
 
 /**
@@ -53,6 +54,10 @@ const AgriOfficerKPIDashboard = () => {
                     <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
                 </div>
             </div>
+
+            {/* Smart AI Insights Hero Banner */}
+            <SmartInsights role="Agri" title="Municipal Operations Insights" />
+
             {/* KPI Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <KPICard

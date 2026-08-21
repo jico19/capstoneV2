@@ -324,3 +324,37 @@ class InspectorDashboardView(views.APIView):
             },
             "recent_activity": recent_activity
         }, status=status.HTTP_200_OK)
+
+
+class DashboardInsightsView(views.APIView):
+    """
+    Returns AI-generated and metric-backed operational insights for the authenticated user's role.
+    Uses cached records where valid (3-hour TTL).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from .insights_engine import get_or_generate_insight
+        from .serializers import CachedInsightSerializer
+
+        role = request.query_params.get('role') or getattr(request.user, 'role', 'Farmer')
+        insight = get_or_generate_insight(request.user, role, force_refresh=False)
+        serializer = CachedInsightSerializer(insight)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DashboardInsightsRefreshView(views.APIView):
+    """
+    Forces immediate recalculation and cache refresh for the user's role insights.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from .insights_engine import get_or_generate_insight
+        from .serializers import CachedInsightSerializer
+
+        role = request.data.get('role') or request.query_params.get('role') or getattr(request.user, 'role', 'Farmer')
+        insight = get_or_generate_insight(request.user, role, force_refresh=True)
+        serializer = CachedInsightSerializer(insight)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

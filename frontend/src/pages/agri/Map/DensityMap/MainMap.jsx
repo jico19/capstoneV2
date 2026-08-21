@@ -3,7 +3,18 @@ import { Map, MapControls, useMap, MapPopup} from "/src/components/ui/map"
 import MapDataHandler from "./MapDataHandler"
 
 
-const MainMap = forwardRef(({ center = [121.5239, 13.9630], zoom = 12, mapData, surveyData, activeFilters, selectedBarangay, setSelectedBarangay }, ref) => {
+const MainMap = forwardRef(({ 
+    center = [121.5239, 13.9630], 
+    zoom = 12, 
+    mapData, 
+    surveyData, 
+    activeFilters, 
+    selectedBarangay, 
+    setSelectedBarangay,
+    isCompareMode = false,
+    compareSurveyData = [],
+    compareYears = { baseline: '', target: '' }
+}, ref) => {
     return (
         <div className="h-full w-full overflow-hidden">
             <Map
@@ -19,6 +30,9 @@ const MainMap = forwardRef(({ center = [121.5239, 13.9630], zoom = 12, mapData, 
                     activeFilters={activeFilters}
                     selectedBarangay={selectedBarangay}
                     setSelectedBarangay={setSelectedBarangay}
+                    isCompareMode={isCompareMode}
+                    compareSurveyData={compareSurveyData}
+                    compareYears={compareYears}
                 />
             </Map>
         </div>

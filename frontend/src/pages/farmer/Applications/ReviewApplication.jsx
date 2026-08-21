@@ -101,10 +101,11 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
                 ))}
             </div>
 
-            <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 border-t border-stone-200 gap-4 mt-8">
+            {/* Desktop Navigation Buttons */}
+            <div className="hidden sm:flex justify-between pt-6 border-t border-stone-200 gap-4 mt-8">
                 <button 
                     type="button" 
-                    className="w-full sm:w-auto border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
+                    className="border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
                     onClick={prevStep}
                     disabled={isSubmitting}
                 >
@@ -112,11 +113,31 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
                 </button>
                 <button
                     type="submit"
-                    className="w-full sm:w-auto bg-green-700 hover:bg-green-600 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="bg-green-700 hover:bg-green-600 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     disabled={isSubmitting}
                 >
                     {isSubmitting && <span className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin"></span>}
                     {isSubmitting ? "SENDING..." : "SEND PERMIT REQUEST"}
+                </button>
+            </div>
+
+            {/* Sticky Mobile Navigation Bar */}
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 flex items-center justify-between z-50">
+                <button
+                    type="button"
+                    onClick={prevStep}
+                    disabled={isSubmitting}
+                    className="border border-stone-200 bg-white active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-wider px-4 py-3 rounded-none"
+                >
+                    Back
+                </button>
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs px-5 py-3 rounded-none transition-colors flex items-center gap-2"
+                >
+                    {isSubmitting && <span className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin"></span>}
+                    {isSubmitting ? "Sending..." : "Send Request ✓"}
                 </button>
             </div>
         </div>

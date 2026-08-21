@@ -42,9 +42,9 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
             </div>
 
             {/* Common Docs */}
-            <div className="space-y-4">
+            <div className="space-y-3">
                 <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Seller & Vehicle Documents</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                     {commonDocs.map((doc) => (
                         <FileUpload 
                             key={doc.id} 
@@ -60,15 +60,15 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
             </div>
 
             {/* Origin Docs */}
-            <div className="space-y-6 pt-4 border-t border-stone-100">
+            <div className="space-y-4 pt-4 border-t border-stone-100 pb-20 sm:pb-0">
                 <div>
                     <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Barangay Certificates</h3>
                     <p className="text-xs text-stone-400 mt-0.5">Please provide certificates for each starting location.</p>
                 </div>
                 {origins.map((origin, index) => (
-                    <div key={origin.id} className="p-5 bg-stone-50 border border-stone-200 space-y-4">
+                    <div key={origin.id} className="p-4 bg-stone-50 border border-stone-200 space-y-3">
                         <p className="text-[10px] font-black text-stone-700 uppercase tracking-wider">Starting Location #{index + 1} Documents</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             {originDocs.map(doc => {
                                 const fieldName = `origin_${origin.id}_${doc.id}`;
                                 return (
@@ -88,20 +88,39 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
                 ))}
             </div>
 
-            <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 border-t border-stone-200 gap-4 mt-8">
+            {/* Desktop Navigation Buttons */}
+            <div className="hidden sm:flex justify-between pt-6 border-t border-stone-200 gap-4 mt-8">
                 <button 
                     type="button" 
-                    className="w-full sm:w-auto border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
+                    className="border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
                     onClick={prevStep}
                 >
                     Back
                 </button>
                 <button 
                     type="button" 
-                    className="w-full sm:w-auto bg-green-700 hover:bg-green-600 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
+                    className="bg-green-700 hover:bg-green-600 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
                     onClick={nextStep}
                 >
                     Next: Review & Send
+                </button>
+            </div>
+
+            {/* Sticky Mobile Navigation Bar */}
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 flex items-center justify-between z-50">
+                <button
+                    type="button"
+                    onClick={prevStep}
+                    className="border border-stone-200 bg-white active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-wider px-4 py-3 rounded-none"
+                >
+                    Back
+                </button>
+                <button
+                    type="button"
+                    onClick={nextStep}
+                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs px-5 py-3 rounded-none transition-colors"
+                >
+                    Review Request →
                 </button>
             </div>
         </div>
@@ -125,7 +144,7 @@ const FileUpload = ({ id, label, desc, register, errors, watch }) => {
 
     return (
         <div className="relative">
-            <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed transition-all cursor-pointer rounded-none min-h-[160px]
+            <label className={`flex flex-col items-center justify-center p-3 sm:p-5 border-2 border-dashed transition-all cursor-pointer rounded-none min-h-[120px] sm:min-h-[150px]
                 ${hasAnyFile 
                     ? "border-green-700 bg-green-50/50 hover:bg-green-50" 
                     : errors[id] 
@@ -164,37 +183,33 @@ const FileUpload = ({ id, label, desc, register, errors, watch }) => {
                 
                 {hasAnyFile ? (
                     <div className="flex flex-col items-center text-center">
-                        <div className="w-10 h-10 bg-green-700 flex items-center justify-center text-white mb-2">
-                            <CheckCircle2 size={20} />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-green-700 flex items-center justify-center text-white mb-1.5">
+                            <CheckCircle2 size={16} />
                         </div>
-                        <span className="text-xs font-black uppercase tracking-widest text-green-700">
-                            {isExisting && !isNewUpload ? "Existing File Kept" : "New File Selected"}
+                        <span className="text-[10px] font-black uppercase tracking-widest text-green-700">
+                            {isExisting && !isNewUpload ? "Saved" : "Selected"}
                         </span>
-                        <p className="text-xs font-bold text-stone-800 mt-1.5 max-w-[220px] truncate">{fileName}</p>
-                        <p className="text-[10px] text-stone-400 uppercase tracking-wider mt-0.5">{fileSize}</p>
-                        <span className="text-[9px] text-green-700 font-bold uppercase tracking-wider mt-3.5 bg-white border border-green-200 px-2.5 py-1.5">
-                            Tap to Change Photo
+                        <p className="text-[10px] font-bold text-stone-800 mt-1 max-w-[120px] sm:max-w-[180px] truncate leading-tight">{fileName}</p>
+                        <span className="text-[8px] text-green-700 font-bold uppercase tracking-wider mt-2 bg-white border border-green-200 px-2 py-0.5">
+                            Change
                         </span>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center text-center">
-                        <div className={`w-10 h-10 flex items-center justify-center mb-2 ${errors[id] ? "bg-red-100 text-red-600" : "bg-stone-100 text-stone-600"}`}>
-                            {id.includes('carrier') || id.includes('license') ? <UploadCloud size={20} /> : <Camera size={20} />}
+                        <div className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center mb-1.5 ${errors[id] ? "bg-red-100 text-red-600" : "bg-stone-100 text-stone-600"}`}>
+                            {id.includes('carrier') || id.includes('license') ? <UploadCloud size={16} /> : <Camera size={16} />}
                         </div>
-                        <span className={`text-xs font-black uppercase tracking-widest ${errors[id] ? "text-red-700" : "text-stone-800"}`}>
+                        <span className={`text-[10px] sm:text-xs font-black uppercase tracking-tight text-center leading-tight ${errors[id] ? "text-red-700" : "text-stone-800"}`}>
                             {label}
                         </span>
-                        <p className="text-[10px] text-stone-500 uppercase tracking-wider mt-1.5 px-2 leading-normal">
-                            {desc}
-                        </p>
-                        <span className="text-[9px] text-stone-600 font-black uppercase tracking-widest mt-4 bg-stone-100 px-3 py-1.5 border border-stone-200">
-                            Take Photo or Upload
+                        <span className="text-[8px] text-stone-600 font-black uppercase tracking-widest mt-2 bg-stone-100 px-2 py-1 border border-stone-200 hidden sm:inline-block">
+                            Take Photo
                         </span>
                     </div>
                 )}
             </label>
             {errors[id] && (
-                <p className="text-red-600 text-[10px] mt-2 font-bold uppercase tracking-wider text-center">
+                <p className="text-red-600 text-[9px] mt-1 font-bold uppercase tracking-wider text-center">
                     {errors[id].message}
                 </p>
             )}

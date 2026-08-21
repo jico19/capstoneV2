@@ -56,13 +56,13 @@ const Stepper = ({ fieldName, watch, setValue }) => {
     };
 
     return (
-        <div className="flex items-center justify-between border border-stone-200 bg-white select-none h-12 w-full sm:w-[140px] md:w-[160px] rounded-none">
+        <div className="flex items-center justify-between border border-stone-200 bg-white select-none h-9 w-[110px] sm:w-[130px] rounded-none shrink-0">
             <button
                 type="button"
                 onClick={handleDecrement}
                 aria-label="Decrease quantity"
                 disabled={displayVal <= 0}
-                className="w-12 h-full flex items-center justify-center bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-600 hover:text-stone-800 font-medium text-xl transition-colors border-r border-stone-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-stone-50 rounded-none shrink-0"
+                className="w-8 h-full flex items-center justify-center bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 font-bold text-base transition-colors border-r border-stone-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-none shrink-0"
             >
                 −
             </button>
@@ -72,13 +72,13 @@ const Stepper = ({ fieldName, watch, setValue }) => {
                 onChange={handleInputChange}
                 onBlur={handleBlur}
                 onFocus={(e) => e.target.select()}
-                className="w-full text-center text-base font-black border-0 p-0 focus:ring-0 focus:outline-none text-stone-800 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full text-center text-xs font-black border-0 p-0 focus:ring-0 focus:outline-none text-stone-900 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <button
                 type="button"
                 onClick={handleIncrement}
                 aria-label="Increase quantity"
-                className="w-12 h-full flex items-center justify-center bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-600 hover:text-stone-800 font-medium text-xl transition-colors border-l border-stone-200 rounded-none shrink-0"
+                className="w-8 h-full flex items-center justify-center bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 font-bold text-base transition-colors border-l border-stone-200 rounded-none shrink-0"
             >
                 +
             </button>
@@ -202,42 +202,38 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                     
                                     <div className="space-y-2 pt-2">
                                         <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">How many pigs are you transporting?</label>
-                                        <div className="space-y-0 border border-stone-200">
-                                            {/* Desktop Header */}
-                                            <div className="hidden sm:flex justify-between items-center px-5 py-2.5 border-b border-stone-200 bg-stone-50">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">Animal Type</span>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 w-[140px] md:w-[160px] text-center">Quantity</span>
-                                            </div>
-                                            
-                                            {ANIMAL_CATEGORIES.map((category) => (
-                                                <div key={category.name} className="space-y-0">
-                                                    {/* Category Title */}
-                                                    <div className="bg-stone-50/50 px-5 py-2 border-b border-stone-200">
-                                                        <span className="text-[11px] font-black uppercase tracking-widest text-stone-500">{category.name}</span>
-                                                    </div>
-                                                    {/* Category Items */}
-                                                    {category.items.map((item) => (
-                                                        <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between h-[72px] sm:h-16 px-5 py-2 sm:py-0 border-b border-stone-200 bg-white">
-                                                            <span className="text-xs font-bold uppercase tracking-wider text-stone-600 sm:text-base sm:font-medium sm:normal-case sm:tracking-normal sm:text-stone-800 leading-none">
+                                        <div className="border border-stone-200 bg-white">
+                                            {/* Compact 2-Column Responsive Animal Grid */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-stone-50/50">
+                                                {ANIMAL_CATEGORIES.flatMap(cat => cat.items.map(item => ({ ...item, category: cat.name }))).map((item) => (
+                                                    <div 
+                                                        key={item.key} 
+                                                        className="flex items-center justify-between p-2.5 bg-white border border-stone-200"
+                                                    >
+                                                        <div className="min-w-0 pr-2">
+                                                            <span className="text-xs font-black text-stone-800 uppercase block truncate leading-tight">
                                                                 {item.label}
                                                             </span>
-                                                            <div className="flex justify-start sm:justify-end mt-1.5 sm:mt-0">
-                                                                <Stepper
-                                                                    fieldName={`${item.key}_${origin.id}`}
-                                                                    watch={watch}
-                                                                    setValue={setValue}
-                                                                />
-                                                            </div>
+                                                            <span className="text-[8px] font-bold uppercase tracking-wider text-stone-400">
+                                                                {item.category}
+                                                            </span>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            ))}
+                                                        <Stepper
+                                                            fieldName={`${item.key}_${origin.id}`}
+                                                            watch={watch}
+                                                            setValue={setValue}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
 
-                                            {/* Origin Total Row */}
-                                            <div className="flex justify-between items-center h-16 px-5 bg-stone-50">
-                                                <span className="text-xs font-black uppercase tracking-widest text-stone-800">Total Pigs (This Location)</span>
-                                                <span className="text-lg font-black text-stone-800 w-[140px] md:w-[160px] text-center">
-                                                    {getOriginTotal(origin.id)}
+                                            {/* Origin Total Summary Bar */}
+                                            <div className="flex justify-between items-center px-4 py-3 bg-stone-100/70 border-t border-stone-200">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">
+                                                    Subtotal (This Location)
+                                                </span>
+                                                <span className="text-sm font-black text-stone-900 font-mono">
+                                                    {getOriginTotal(origin.id)} <span className="text-[10px] font-normal text-stone-500 font-sans">pigs</span>
                                                 </span>
                                             </div>
                                         </div>

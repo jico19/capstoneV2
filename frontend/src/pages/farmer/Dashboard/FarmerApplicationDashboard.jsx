@@ -93,16 +93,23 @@ const FarmerApplicationDashboard = () => {
     return (
         <div className="p-4 md:p-8 space-y-8 bg-stone-50 min-h-full">
 
-            {/* 1. Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-stone-200 pb-8">
+            {/* 1. Header Section with Quick Action */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200 pb-6">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Your Records</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter">Your Permit Requests</h1>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-0.5">Your Records</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter">Your Permit Requests</h1>
                 </div>
+                <Link
+                    to="/farmer/application/create"
+                    className="w-full sm:w-auto px-5 py-3 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center justify-center gap-2"
+                >
+                    <Plus size={14} />
+                    New Request
+                </Link>
             </div>
 
-            {/* 2. KPI Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 2. KPI Metrics (2 columns on mobile) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
                 <KPICard
                     title="Total Requests"
                     value={summary.total}
@@ -113,29 +120,31 @@ const FarmerApplicationDashboard = () => {
                 <KPICard
                     title="Ready Permits"
                     value={summary.active}
-                    subtitle="Approved and ready to use"
+                    subtitle="Approved & active"
                     icon={CheckCircle}
                     colorClass="bg-green-50 text-green-700 border-green-200"
                 />
-                <KPICard
-                    title="Waiting for You"
-                    value={summary.pending}
-                    subtitle="Needs your action or payment"
-                    icon={AlertCircle}
-                    colorClass="bg-amber-50 text-amber-700 border-amber-200"
-                />
+                <div className="col-span-2 md:col-span-1">
+                    <KPICard
+                        title="Waiting for You"
+                        value={summary.pending}
+                        subtitle="Needs action or pay"
+                        icon={AlertCircle}
+                        colorClass="bg-amber-50 text-amber-700 border-amber-200"
+                    />
+                </div>
             </div>
 
             {/* 3. Main Content Area */}
             <div className="bg-white border border-stone-200 rounded-none">
 
                 {/* 3.1 Unified Toolbar */}
-                <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                <div className="p-3 sm:p-4 bg-stone-50 border-b border-stone-200 flex flex-col sm:flex-row gap-3 justify-between items-center w-full">
                     <div className="relative w-full sm:w-80">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
                         <input
                             type="text"
-                            placeholder="Search by Permit ID..."
+                            placeholder="Search Permit ID..."
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
@@ -178,14 +187,90 @@ const FarmerApplicationDashboard = () => {
                     </div>
                 </div>
 
-                {/* 3.2 The Table - Removed min-w-[800px] and added better responsive classes */}
-                <div className="overflow-x-auto overflow-y-visible">
+                {/* 3.2 Dedicated Mobile Permit Cards (< sm) */}
+                <div className="sm:hidden divide-y divide-stone-100">
+                    {applications.length === 0 ? (
+                        <div className="py-16 text-center">
+                            <Inbox size={40} className="text-stone-200 mx-auto mb-3" />
+                            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                                No requests found
+                            </p>
+                        </div>
+                    ) : (
+                        applications.map((app) => (
+                            <div 
+                                key={app.id} 
+                                className="p-4 space-y-3 bg-white active:bg-stone-50 transition-colors"
+                                onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-mono font-black text-stone-800 bg-stone-100 px-2 py-0.5 border border-stone-200">
+                                        {app.application_id || `#${app.id}`}
+                                    </span>
+                                    <StatusBadge status={app.status} />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1.5">
+                                        <MapPin size={13} className="text-stone-400 shrink-0" />
+                                        <span className="text-xs font-bold text-stone-800 uppercase truncate">
+                                            {app.destination || "Not specified"}
+                                        </span>
+                                    </div>
+                                    {app.transport_date && (
+                                        <div className="flex items-center gap-1.5 pl-0.5 text-stone-500">
+                                            <Calendar size={12} className="text-stone-300 shrink-0" />
+                                            <span className="text-[10px] font-medium">
+                                                <DateFormatter date={app.transport_date} />
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div onClick={(e) => e.stopPropagation()} className="pt-1">
+                                    {app.status === 'PAYMENT_PENDING' ? (
+                                        <button
+                                            onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
+                                            className="w-full py-2 bg-green-700 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                                        >
+                                            <HandCoins size={13} /> Pay Fee Now
+                                        </button>
+                                    ) : ['PAID', 'RELEASED'].includes(app.status) ? (
+                                        <button
+                                            onClick={() => navigate(`/farmer/application/download/${app.id}`)}
+                                            className="w-full py-2 bg-stone-800 active:bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                                        >
+                                            <Download size={13} /> Get Permit PDF
+                                        </button>
+                                    ) : ['RESUBMISSION', 'OPV_REJECTED'].includes(app.status) ? (
+                                        <button
+                                            onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
+                                            className="w-full py-2 bg-amber-600 active:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                                        >
+                                            Fix / Resubmit
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                            className="w-full py-2 bg-stone-50 border border-stone-200 active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                                        >
+                                            <Eye size={13} /> View Details
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* 3.3 Desktop Table (>= sm) */}
+                <div className="hidden sm:block overflow-x-auto overflow-y-visible">
                     <table className="w-full border-collapse text-left">
                         <thead>
                             <tr className="bg-stone-50 border-b border-stone-100">
                                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Permit Info</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 hidden sm:table-cell text-center">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 hidden md:table-cell">Travel Date</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Status</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Travel Date</th>
                                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -219,16 +304,12 @@ const FarmerApplicationDashboard = () => {
                                                         {app.destination || "Not specified"}
                                                     </span>
                                                 </div>
-                                                {/* Mobile-only status badge */}
-                                                <div className="sm:hidden mt-1">
-                                                    <StatusBadge status={app.status} />
-                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5 text-center hidden sm:table-cell">
+                                        <td className="px-6 py-5 text-center">
                                             <StatusBadge status={app.status} />
                                         </td>
-                                        <td className="px-6 py-5 hidden md:table-cell">
+                                        <td className="px-6 py-5">
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={14} className="text-stone-300" />
                                                 <span className="text-xs font-medium text-stone-800">
@@ -242,7 +323,7 @@ const FarmerApplicationDashboard = () => {
                                                      <>
                                                          <button
                                                              onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
-                                                             className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5 shadow-sm"
+                                                             className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
                                                          >
                                                              <HandCoins size={12} /> Pay Fee
                                                          </button>
@@ -257,7 +338,7 @@ const FarmerApplicationDashboard = () => {
                                                      <>
                                                          <button
                                                              onClick={() => navigate(`/farmer/application/download/${app.id}`)}
-                                                             className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5 shadow-sm"
+                                                             className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
                                                          >
                                                              <Download size={12} /> Get Permit
                                                          </button>
@@ -272,7 +353,7 @@ const FarmerApplicationDashboard = () => {
                                                      <>
                                                          <button
                                                              onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
-                                                             className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5 shadow-sm"
+                                                             className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
                                                          >
                                                              Fix/Resubmit
                                                          </button>
@@ -292,7 +373,7 @@ const FarmerApplicationDashboard = () => {
                                                      </button>
                                                  )}
                                              </div>
-                                         </td>
+                                        </td>
                                     </tr>
                                 ))
                             )}

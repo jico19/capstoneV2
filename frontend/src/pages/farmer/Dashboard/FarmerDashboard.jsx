@@ -39,20 +39,33 @@ const FarmerDashboard = () => {
 
     return (
         <div className="p-4 md:p-8 space-y-8 bg-stone-50/50 min-h-full">
-            {/* Header */}
-            <div className="border-b border-stone-200 pb-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Welcome Back</p>
-                <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter mt-1">Hello, {user?.first_name || 'Farmer'}</h1>
+            {/* Header with Quick Action */}
+            <div className="border-b border-stone-200 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Welcome Back</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter mt-0.5">
+                        Hello, {user?.first_name || 'Farmer'}
+                    </h1>
+                </div>
+                <Link
+                    to="/farmer/application/create"
+                    className="w-full sm:w-auto px-5 py-3 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center justify-center gap-2"
+                >
+                    <FileText size={14} />
+                    Request New Permit
+                </Link>
             </div>
 
             {/* Smart AI Insights Hero Banner */}
             <SmartInsights role="Farmer" title="Personal Permit & Transit Insights" />
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* KPI Cards (2 columns on mobile, 3 on tablet/desktop) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                 <KPICard title="All Permits" value={kpis.total_applications} subtitle="Request history" icon={FileText} colorClass="bg-white text-stone-800 border-stone-200" />
                 <KPICard title="Ready to Use" value={kpis.active_permits} subtitle="Approved/Active" icon={CircleCheck} colorClass="bg-green-50 text-green-700 border-green-600" />
-                <KPICard title="Pending Pay" value={kpis.pending_payments} subtitle="Payment required" icon={Clock} colorClass="bg-amber-50 text-amber-700 border-amber-600" />
+                <div className="col-span-2 sm:col-span-1">
+                    <KPICard title="Pending Pay" value={kpis.pending_payments} subtitle="Payment required" icon={Clock} colorClass="bg-amber-50 text-amber-700 border-amber-600" />
+                </div>
             </div>
 
             {/* Dashboard Visual Grid */}

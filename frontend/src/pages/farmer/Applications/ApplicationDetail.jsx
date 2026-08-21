@@ -57,20 +57,20 @@ const ApplicationDetail = () => {
                     <ArrowLeft size={16} strokeWidth={3} /> Return to Applications
                 </button>
 
-                <div className="space-y-12 md:space-y-20">
+                <div className="space-y-6 md:space-y-10">
                     <ApplicationHeader data={application} />
                     
                     {(application.status === "RESUBMISSION" || application.status === "OPV_REJECTED") && (
-                        <div className="bg-amber-50 border border-amber-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="space-y-2">
-                                <h3 className="text-sm font-black text-amber-800 uppercase tracking-widest">Action Required</h3>
-                                <p className="text-xs font-bold text-amber-700/70 uppercase tracking-widest leading-relaxed max-w-xl">
+                        <div className="bg-amber-50 border border-amber-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-black text-amber-800 uppercase tracking-widest">Action Required</h3>
+                                <p className="text-xs font-bold text-amber-700/80 uppercase tracking-wider leading-normal max-w-xl">
                                     Your application was returned for correction. Please update your details or documents to proceed.
                                 </p>
                             </div>
                             <button 
                                 onClick={() => navigate(`/farmer/application/resubmit/${id}`)}
-                                className="bg-amber-600 hover:bg-amber-700 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto"
+                                className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto text-center"
                             >
                                 Resubmit Now
                             </button>
@@ -78,16 +78,16 @@ const ApplicationDetail = () => {
                     )}
 
                     {application.status === "PAYMENT_PENDING" && (
-                        <div className="bg-green-50 border border-green-200 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="space-y-2">
-                                <h3 className="text-sm font-black text-green-800 uppercase tracking-widest">Payment Required</h3>
-                                <p className="text-xs font-bold text-green-700/70 uppercase tracking-widest leading-relaxed max-w-xl">
-                                    Your application has been approved. Please complete the permit fee payment to release and download your transport permit.
+                        <div className="bg-green-50 border border-green-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-black text-green-700 uppercase tracking-widest">Payment Required</h3>
+                                <p className="text-xs font-bold text-green-700/80 uppercase tracking-wider leading-normal max-w-xl">
+                                    Your application has been approved. Please complete the permit fee payment to release your transport permit.
                                 </p>
                             </div>
                             <button 
                                 onClick={() => navigate(`/farmer/payment/checkout/${id}`)}
-                                className="bg-green-700 hover:bg-green-600 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
+                                className="bg-green-700 hover:bg-green-600 text-white px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
                             >
                                 <HandCoins size={14} /> Pay Fee (₱{application.permit_fee || 150})
                             </button>
@@ -95,34 +95,34 @@ const ApplicationDetail = () => {
                     )}
 
                     {['PAID', 'RELEASED'].includes(application.status) && (
-                        <div className="bg-stone-900 border border-stone-850 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 text-white">
-                            <div className="space-y-2">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-green-400">Permit Issued</h3>
-                                <p className="text-xs font-bold text-stone-300 uppercase tracking-widest leading-relaxed max-w-xl">
-                                    Your transport permit is fully active and ready to use. Download or view the PDF copy here.
+                        <div className="bg-stone-800 border border-stone-700 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-green-600">Permit Issued</h3>
+                                <p className="text-xs font-bold text-stone-300 uppercase tracking-wider leading-normal max-w-xl">
+                                    Your transport permit is active and ready to use. Download or view your official PDF copy.
                                 </p>
                             </div>
                             <button 
                                 onClick={() => navigate(`/farmer/application/download/${id}`)}
-                                className="bg-green-700 hover:bg-green-600 text-white px-10 py-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
+                                className="bg-green-700 hover:bg-green-600 text-white px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
                             >
                                 <Download size={14} /> Get Permit PDF
                             </button>
                         </div>
                     )}
                     
-                    <section>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-8 md:mb-10">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-gray-900 text-white p-3 hidden sm:block">
-                                    <FileText size={20} />
+                    <section className="pt-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-stone-900 text-white p-2.5 hidden sm:block">
+                                    <FileText size={18} />
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Submission Evidence</p>
-                                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter leading-none">Attached Documents</h2>
+                                <div className="space-y-0.5">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">Submission Evidence</p>
+                                    <h2 className="text-xl font-black text-stone-900 uppercase tracking-tight leading-none">Attached Documents</h2>
                                 </div>
                             </div>
-                            <div className="h-[2px] flex-1 bg-gray-100 hidden sm:block"></div>
+                            <div className="h-[1px] flex-1 bg-stone-200 hidden sm:block"></div>
                         </div>
                         
                         <DocumentList 

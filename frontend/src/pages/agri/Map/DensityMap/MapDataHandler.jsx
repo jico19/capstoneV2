@@ -302,14 +302,23 @@ const MapDataHandler = ({
         return colors[density] || 'text-gray-400';
     };
 
-    // Calculate delta calculations for compare mode
+    // Calculate plain-English comparison popover when a barangay is clicked
     const renderComparisonPopup = () => {
         const targetPigs = Number(selectedField.totalPigs || 0);
         const basePigs = Number(selectedField.compareTotalPigs || 0);
         const diff = targetPigs - basePigs;
         const pct = basePigs > 0 
-            ? ((diff / basePigs) * 100).toFixed(1) 
-            : (diff > 0 ? '+100' : '0.0');
+            ? Math.abs(((diff / basePigs) * 100)).toFixed(1) 
+            : (diff > 0 ? '100' : '0.0');
+
+        const stageLabels = {
+            fattener: { label: 'Market Fatteners' },
+            grower: { label: 'Growing Pigs' },
+            starter: { label: 'Piglets / Starters' },
+            inahin: { label: 'Breeding Sows' },
+            barako: { label: 'Breeding Boars' },
+            bulaw: { label: 'Bulaw Pigs' }
+        };
 
         const allKeys = Array.from(new Set([
             ...Object.keys(selectedField.compareBreakdown || {}),
@@ -317,68 +326,72 @@ const MapDataHandler = ({
         ]));
 
         return (
-            <div className="w-60 bg-white border border-stone-200 rounded-none shadow-2xl overflow-hidden font-sans p-3 space-y-2">
+            <div className="w-68 bg-white border border-stone-200 rounded-none shadow-2xl overflow-hidden font-sans p-3.5 space-y-2.5">
                 {/* Header */}
-                <div className="flex items-center justify-between gap-1.5 border-b border-stone-100 pb-1.5">
-                    <h3 className="text-xs font-black text-stone-900 tracking-tight uppercase truncate">
-                        {selectedField.name}
-                    </h3>
-                    {/* YoY Badge */}
-                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 border text-[8px] font-black uppercase tracking-wider rounded-none shrink-0 ${
+                <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
+                    <div>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Barangay Comparison</p>
+                        <h3 className="text-sm font-black text-stone-900 tracking-tight uppercase truncate">
+                            {selectedField.name}
+                        </h3>
+                    </div>
+                    {/* Status Badge */}
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[9px] font-black uppercase tracking-wider rounded-none shrink-0 ${
                         diff > 0 
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
                             : diff < 0 
                                 ? 'bg-rose-50 text-rose-800 border-rose-200'
                                 : 'bg-stone-100 text-stone-700 border-stone-200'
                     }`}>
-                        {diff > 0 && <TrendingUp size={9} />}
-                        {diff < 0 && <TrendingDown size={9} />}
-                        {diff === 0 && <Minus size={9} />}
-                        {diff > 0 ? `+${pct}%` : `${pct}%`}
+                        {diff > 0 && <TrendingUp size={11} />}
+                        {diff < 0 && <TrendingDown size={11} />}
+                        {diff === 0 && <Minus size={11} />}
+                        {diff > 0 ? `+${diff} (+${pct}%)` : diff < 0 ? `-${Math.abs(diff)} (-${pct}%)` : 'Steady'}
                     </span>
                 </div>
 
-                {/* Headcount Shift Row */}
-                <div className="flex items-center justify-between bg-stone-50 p-1.5 border border-stone-100 text-xs font-mono">
-                    <div>
-                        <span className="text-[7px] font-bold text-stone-400 uppercase font-sans block leading-none mb-0.5">
-                            {compareYears.baseline || 'Base'}
-                        </span>
-                        <span className="font-bold text-stone-700">{basePigs.toLocaleString()}</span>
-                    </div>
-                    <ArrowRight size={11} className="text-stone-300 mx-0.5" />
-                    <div>
-                        <span className="text-[7px] font-bold text-emerald-700 uppercase font-sans block leading-none mb-0.5">
-                            {compareYears.target || 'Target'}
-                        </span>
-                        <span className="font-black text-stone-900">{targetPigs.toLocaleString()}</span>
-                    </div>
-                    <span className={`text-[10px] font-bold ${diff > 0 ? 'text-emerald-700' : diff < 0 ? 'text-rose-700' : 'text-stone-400'}`}>
-                        ({diff > 0 ? `+${diff}` : diff})
-                    </span>
+                {/* Plain-English Story Line */}
+                <div className="bg-stone-50 p-2 border border-stone-200/80 space-y-1">
+                    <p className="text-[10px] text-stone-700 font-medium leading-relaxed">
+                        {diff > 0 
+                            ? `Grew from ${basePigs.toLocaleString()} pigs (${compareYears.baseline || 'Base'}) to ${targetPigs.toLocaleString()} pigs (${compareYears.target || 'Target'}).`
+                            : diff < 0 
+                                ? `Decreased from ${basePigs.toLocaleString()} pigs (${compareYears.baseline || 'Base'}) down to ${targetPigs.toLocaleString()} pigs (${compareYears.target || 'Target'}).`
+                                : `Maintained steady count at ${targetPigs.toLocaleString()} pigs across both years.`
+                        }
+                    </p>
                 </div>
 
-                {/* Compact 2-Column Grid for Stage Deltas */}
+                {/* Stage Breakdown by Category */}
                 {allKeys.length > 0 && (
-                    <div className="grid grid-cols-2 gap-1 pt-1 text-[9px] border-t border-stone-100 max-h-36 overflow-y-auto">
-                        {allKeys.map(key => {
-                            const bVal = Number(selectedField.compareBreakdown?.[key] || 0);
-                            const tVal = Number(selectedField.breakdown?.[key] || 0);
-                            const stageDiff = tVal - bVal;
+                    <div className="space-y-1.5 pt-1 border-t border-stone-100">
+                        <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest block">
+                            Stage Shifts (Pigs Added / Reduced)
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
+                            {allKeys.map(key => {
+                                const bVal = Number(selectedField.compareBreakdown?.[key] || 0);
+                                const tVal = Number(selectedField.breakdown?.[key] || 0);
+                                const stageDiff = tVal - bVal;
+                                const stageInfo = stageLabels[key.toLowerCase()] || { label: key.replace('_', ' ') };
 
-                            return (
-                                <div key={key} className="flex justify-between items-center bg-stone-50/70 px-1.5 py-0.5 border border-stone-200/50">
-                                    <span className="text-stone-500 truncate capitalize font-medium mr-1 text-[8px]">
-                                        {key.replace('_', ' ')}
-                                    </span>
-                                    <span className={`font-bold font-mono text-[9px] ${
-                                        stageDiff > 0 ? 'text-emerald-700' : stageDiff < 0 ? 'text-rose-700' : 'text-stone-400'
-                                    }`}>
-                                        {stageDiff > 0 ? `+${stageDiff}` : stageDiff}
-                                    </span>
-                                </div>
-                            );
-                        })}
+                                return (
+                                    <div key={key} className="bg-white p-1.5 border border-stone-200 text-[9px] flex flex-col justify-between">
+                                        <span className="text-stone-600 truncate font-semibold capitalize text-[9px]">
+                                            {stageInfo.label}
+                                        </span>
+                                        <div className="flex justify-between items-center mt-1 pt-1 border-t border-stone-100">
+                                            <span className="text-stone-400 font-mono text-[8px]">{bVal} ➔ {tVal}</span>
+                                            <span className={`font-bold font-mono text-[9px] ${
+                                                stageDiff > 0 ? 'text-emerald-700' : stageDiff < 0 ? 'text-rose-700' : 'text-stone-400'
+                                            }`}>
+                                                {stageDiff > 0 ? `+${stageDiff}` : stageDiff}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

@@ -16,7 +16,9 @@ import {
     Calendar,
     CloudRain,
     Sun,
-    X
+    X,
+    Sparkles,
+    FileText
 } from "lucide-react"
 import HogSurveyUploadModal from "/src/components/HogSurveyUploadModal"
 
@@ -131,14 +133,14 @@ const AgriMapPage = () => {
         { id: '12', name: 'December', short: 'Dec' },
     ];
 
-    // Municipal-wide YoY calculations
+    // Municipal-wide plain-English comparison calculations
     const comparisonStats = useMemo(() => {
         if (!isCompareMode || !survey || !compareSurvey) return null;
 
         const targetTotal = survey.reduce((acc, curr) => acc + Number(curr.total_pigs || 0), 0);
         const baseTotal = compareSurvey.reduce((acc, curr) => acc + Number(curr.total_pigs || 0), 0);
         const netDiff = targetTotal - baseTotal;
-        const netPct = baseTotal > 0 ? ((netDiff / baseTotal) * 100).toFixed(1) : (netDiff > 0 ? '+100' : '0.0');
+        const netPct = baseTotal > 0 ? Math.abs((netDiff / baseTotal) * 100).toFixed(1) : (netDiff > 0 ? '100' : '0.0');
 
         let increased = 0;
         let decreased = 0;
@@ -152,6 +154,16 @@ const AgriMapPage = () => {
             else stable++;
         });
 
+        // Dynamic Plain-English Narrative Summary
+        let storySummary = "";
+        if (netDiff > 0) {
+            storySummary = `Sariaya's total pig count grew by +${netPct}% (+${netDiff.toLocaleString()} pigs) from ${baselineYear} to ${selectedYear}. Growth was recorded in ${increased} barangays.`;
+        } else if (netDiff < 0) {
+            storySummary = `Sariaya's total pig count decreased by -${netPct}% (-${Math.abs(netDiff).toLocaleString()} pigs) from ${baselineYear} to ${selectedYear}, reflecting commercial sales or market transport offloads.`;
+        } else {
+            storySummary = `Sariaya's total pig population remained stable between ${baselineYear} and ${selectedYear} at ${targetTotal.toLocaleString()} pigs.`;
+        }
+
         return {
             targetTotal,
             baseTotal,
@@ -159,9 +171,10 @@ const AgriMapPage = () => {
             netPct,
             increased,
             decreased,
-            stable
+            stable,
+            storySummary
         };
-    }, [isCompareMode, survey, compareSurvey, map]);
+    }, [isCompareMode, survey, compareSurvey, map, baselineYear, selectedYear]);
 
     const totalPigs = survey?.reduce((acc, curr) => acc + Number(curr.total_pigs || 0), 0) || 0;
     const isMapDataUpdating = surveyFetching || (isCompareMode && compareSurveyFetching);
@@ -424,13 +437,13 @@ const AgriMapPage = () => {
                 <div className="xl:col-span-1 space-y-6">
                     
                     {/* Status / Comparison Card */}
-                    <div className="bg-white border border-stone-200 p-6 space-y-6 rounded-none">
+                    <div className="bg-white border border-stone-200 p-6 space-y-6 rounded-none shadow-sm">
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                                {isCompareMode ? 'Comparison Analytics' : 'Census Status'}
+                                {isCompareMode ? 'Yearly Comparison' : 'Census Status'}
                             </p>
                             <h2 className="text-xl font-black text-stone-900 tracking-tight uppercase">
-                                {isCompareMode ? 'YoY Shift Overview' : 'At a Glance'}
+                                {isCompareMode ? 'What Changed Between Years' : 'At a Glance'}
                             </h2>
                         </div>
 
@@ -453,63 +466,89 @@ const AgriMapPage = () => {
                                 </div>
                             </div>
                         ) : (
-                            /* Compare Mode Municipal Summary */
+                            /* Plain-English Compare Mode Municipal Summary */
                             <div className={`space-y-4 ${isMapDataUpdating ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
                                 
-                                {/* Net Growth Card */}
-                                <div className="p-4 bg-stone-50 border border-stone-200 space-y-2.5">
+                                {/* 1. Plain-English Executive Story Card */}
+                                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 space-y-1.5">
+                                    <div className="flex items-center gap-1.5 text-emerald-800">
+                                        <Sparkles size={13} className="shrink-0" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider">
+                                            Executive Takeaway
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-stone-800 leading-relaxed font-medium">
+                                        {comparisonStats?.storySummary}
+                                    </p>
+                                </div>
+
+                                {/* 2. Headcount Comparison Box */}
+                                <div className="p-4 bg-stone-50 border border-stone-200 space-y-3">
                                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                        <span>Municipal Net Shift</span>
+                                        <span>Total Swine in Sariaya</span>
                                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[10px] font-black ${
                                             comparisonStats?.netDiff > 0 
-                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
                                                 : comparisonStats?.netDiff < 0 
-                                                    ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                                    ? 'bg-rose-100 text-rose-800 border-rose-300'
                                                     : 'bg-stone-100 text-stone-700 border-stone-200'
                                         }`}>
-                                            {comparisonStats?.netDiff > 0 ? `+${comparisonStats?.netPct}%` : `${comparisonStats?.netPct}%`}
+                                            {comparisonStats?.netDiff > 0 && <TrendingUp size={11} />}
+                                            {comparisonStats?.netDiff < 0 && <TrendingDown size={11} />}
+                                            {comparisonStats?.netDiff > 0 
+                                                ? `+${comparisonStats?.netDiff.toLocaleString()} Pigs (+${comparisonStats?.netPct}%)` 
+                                                : comparisonStats?.netDiff < 0 
+                                                    ? `-${Math.abs(comparisonStats?.netDiff).toLocaleString()} Pigs (-${comparisonStats?.netPct}%)` 
+                                                    : 'No Net Change'}
                                         </span>
                                     </div>
                                     
-                                    <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-stone-200">
-                                        <div>
-                                            <span className="text-[9px] text-stone-400 uppercase font-sans block">Base ({baselineYear})</span>
-                                            <span className="font-bold text-stone-800 text-sm">{comparisonStats?.baseTotal.toLocaleString()}</span>
+                                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-stone-200">
+                                        <div className="bg-white p-2 border border-stone-200">
+                                            <span className="text-[9px] text-stone-400 font-black uppercase block mb-0.5">
+                                                Earlier ({baselineYear})
+                                            </span>
+                                            <span className="font-bold text-stone-800 text-sm">
+                                                {comparisonStats?.baseTotal.toLocaleString()} <span className="text-[10px] font-normal text-stone-400 font-sans">pigs</span>
+                                            </span>
                                         </div>
-                                        <ArrowRight size={14} className="text-stone-300" />
-                                        <div className="text-right">
-                                            <span className="text-[9px] text-emerald-700 uppercase font-sans block">Target ({selectedYear})</span>
-                                            <span className="font-bold text-stone-900 text-sm">{comparisonStats?.targetTotal.toLocaleString()}</span>
+                                        <div className="bg-white p-2 border border-emerald-200">
+                                            <span className="text-[9px] text-emerald-700 font-black uppercase block mb-0.5">
+                                                Later ({selectedYear})
+                                            </span>
+                                            <span className="font-bold text-stone-900 text-sm">
+                                                {comparisonStats?.targetTotal.toLocaleString()} <span className="text-[10px] font-normal text-emerald-600 font-sans">pigs</span>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Barangay Breakdown Count */}
-                                <div className="p-4 bg-white border border-stone-200 space-y-2 text-xs">
+                                {/* 3. Barangay Movement Breakdown */}
+                                <div className="p-4 bg-white border border-stone-200 space-y-2.5 text-xs">
                                     <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest block border-b border-stone-100 pb-1.5">
-                                        Barangay Population Shifts
+                                        Barangay Movements
                                     </span>
-                                    <div className="space-y-2 text-[11px] font-bold pt-1">
-                                        <div className="flex justify-between items-center text-emerald-700">
+                                    <div className="space-y-2 text-[11px] font-bold">
+                                        <div className="flex justify-between items-center bg-emerald-50/50 p-1.5 border border-emerald-100 text-emerald-800">
                                             <span className="flex items-center gap-1.5">
-                                                <TrendingUp size={13} />
-                                                Population Increased
+                                                <TrendingUp size={13} className="text-emerald-600" />
+                                                Barangays That Grew (Added Pigs)
                                             </span>
-                                            <span>{comparisonStats?.increased}</span>
+                                            <span className="font-mono text-xs">{comparisonStats?.increased}</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-rose-700">
+                                        <div className="flex justify-between items-center bg-rose-50/50 p-1.5 border border-rose-100 text-rose-800">
                                             <span className="flex items-center gap-1.5">
-                                                <TrendingDown size={13} />
-                                                Population Decreased
+                                                <TrendingDown size={13} className="text-rose-600" />
+                                                Barangays That Dropped (Fewer Pigs)
                                             </span>
-                                            <span>{comparisonStats?.decreased}</span>
+                                            <span className="font-mono text-xs">{comparisonStats?.decreased}</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-stone-500">
+                                        <div className="flex justify-between items-center bg-stone-50 p-1.5 border border-stone-200 text-stone-600">
                                             <span className="flex items-center gap-1.5">
-                                                <Minus size={13} />
-                                                Unchanged / Stable
+                                                <Minus size={13} className="text-stone-400" />
+                                                No Significant Change (Steady)
                                             </span>
-                                            <span>{comparisonStats?.stable}</span>
+                                            <span className="font-mono text-xs">{comparisonStats?.stable}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -553,19 +592,39 @@ const AgriMapPage = () => {
                         </div>
                     </div>
 
-                    {/* Notice Card */}
-                    <div className="bg-stone-900 p-5 text-white border border-stone-800 rounded-none">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Info size={15} className="text-emerald-400" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                                {isCompareMode ? 'Comparison Tip' : 'Data Integrity'}
+                    {/* Notice & Staff Quick Guide Card */}
+                    <div className="bg-stone-900 p-5 text-white border border-stone-800 rounded-none space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Info size={15} className="text-emerald-400 shrink-0" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                                {isCompareMode ? 'Staff Quick Guide' : 'Data Integrity'}
                             </span>
                         </div>
-                        <p className="text-[11px] text-stone-300 leading-relaxed font-medium">
-                            {isCompareMode 
-                                ? `Comparing ${baselineYear} baseline against ${selectedYear}. Click any barangay polygon to inspect stage-by-stage shifts and headcount deltas.` 
-                                : "Swine density classifications are grounded in verified municipal and barangay agriculture surveys."}
-                        </p>
+                        
+                        {isCompareMode ? (
+                            <div className="space-y-2.5 text-[11px] text-stone-300 leading-relaxed">
+                                <p className="font-medium text-white border-b border-stone-800 pb-1.5">
+                                    How to interpret the changes:
+                                </p>
+                                <div className="space-y-2 text-[10px]">
+                                    <div className="flex items-start gap-2">
+                                        <span className="w-2 h-2 rounded-none bg-emerald-400 mt-1 shrink-0"></span>
+                                        <p><strong className="text-emerald-400 uppercase tracking-wider">Increases:</strong> Farmers restocked piglets or expanded breeding pens.</p>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="w-2 h-2 rounded-none bg-rose-400 mt-1 shrink-0"></span>
+                                        <p><strong className="text-rose-400 uppercase tracking-wider">Decreases:</strong> Hogs reached market weight and were sold or transported out.</p>
+                                    </div>
+                                    <p className="text-stone-400 pt-1.5 border-t border-stone-800 text-[10px]">
+                                        Click any barangay on the map to see its exact category breakdown.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-[11px] text-stone-300 leading-relaxed font-medium">
+                                Swine density classifications are grounded in verified municipal and barangay agriculture surveys.
+                            </p>
+                        )}
                     </div>
                 </div>
 

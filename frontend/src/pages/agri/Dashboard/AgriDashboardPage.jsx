@@ -49,14 +49,14 @@ const AgriOfficerKPIDashboard = () => {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Management Overview</p>
                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Operations Summary</h1>
                 </div>
-                <div className="bg-gray-50 border border-gray-100 px-4 py-2 rounded-none">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">System Date</p>
-                    <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
+                <div className="flex items-center gap-3">
+                    <SmartInsights role="Agri" title="Municipal Operations Insights" />
+                    <div className="bg-gray-50 border border-gray-100 px-4 py-2 rounded-none">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">System Date</p>
+                        <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
+                    </div>
                 </div>
             </div>
-
-            {/* Smart AI Insights Hero Banner */}
-            <SmartInsights role="Agri" title="Municipal Operations Insights" />
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

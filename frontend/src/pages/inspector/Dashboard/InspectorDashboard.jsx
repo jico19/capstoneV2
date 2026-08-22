@@ -46,14 +46,14 @@ const InspectorDashboard = () => {
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Field Verification Hub</p>
                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">Inspector View</h1>
                 </div>
-                <div className="bg-white border border-gray-200 p-4 rounded-none">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty Session</p>
-                    <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>
+                <div className="flex items-center gap-3">
+                    <SmartInsights role="Inspector" title="Checkpoint Field Intelligence & Scan Insights" />
+                    <div className="bg-white border border-gray-200 p-4 rounded-none">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty Session</p>
+                        <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>
+                    </div>
                 </div>
             </div>
-
-            {/* Smart AI Insights Hero Banner */}
-            <SmartInsights role="Inspector" title="Checkpoint Field Intelligence & Scan Insights" />
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

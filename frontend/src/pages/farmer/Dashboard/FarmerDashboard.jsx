@@ -47,17 +47,17 @@ const FarmerDashboard = () => {
                         Hello, {user?.first_name || 'Farmer'}
                     </h1>
                 </div>
-                <Link
-                    to="/farmer/application/create"
-                    className="w-full sm:w-auto px-5 py-3 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center justify-center gap-2"
-                >
-                    <FileText size={14} />
-                    Request New Permit
-                </Link>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <SmartInsights role="Farmer" title="Personal Permit & Transit Insights" />
+                    <Link
+                        to="/farmer/application/create"
+                        className="w-full sm:w-auto px-5 py-2.5 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center justify-center gap-2"
+                    >
+                        <FileText size={14} />
+                        Request New Permit
+                    </Link>
+                </div>
             </div>
-
-            {/* Smart AI Insights Hero Banner */}
-            <SmartInsights role="Farmer" title="Personal Permit & Transit Insights" />
 
             {/* KPI Cards (2 columns on mobile, 3 on tablet/desktop) */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">

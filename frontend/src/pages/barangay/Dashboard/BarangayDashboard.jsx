@@ -83,14 +83,14 @@ const BarangayDashboard = () => {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Barangay Official Panel</p>
                     <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter mt-1">Hello, {user?.first_name || 'Official'}</h1>
                 </div>
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200/50 px-4 py-2 text-green-800">
-                    <MapPin size={16} />
-                    <span className="text-xs font-black uppercase tracking-wider">{user?.barangay_name || 'Sariaya Barangay'}</span>
+                <div className="flex items-center gap-3">
+                    <SmartInsights role="Barangay" title={`${user?.barangay_name || 'Barangay'} Swine Census & Movement Insights`} />
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-200/50 px-4 py-2 text-green-800">
+                        <MapPin size={16} />
+                        <span className="text-xs font-black uppercase tracking-wider">{user?.barangay_name || 'Sariaya Barangay'}</span>
+                    </div>
                 </div>
             </div>
-
-            {/* Smart AI Insights Hero Banner */}
-            <SmartInsights role="Barangay" title={`${user?.barangay_name || 'Barangay'} Swine Census & Movement Insights`} />
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

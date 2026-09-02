@@ -1,6 +1,6 @@
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import FeeIcon     from "/src/assets/requirements-icons/fee-icon.png";
-import PaymentIcon from "/src/assets/requirements-icons/payment-icon.png";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import FeeIcon     from '../../../../assets/requirements-icons/fee-icon.png';
+import PaymentIcon from '../../../../assets/requirements-icons/payment-icon.png';
 
 const FEES = [
   { doc: "Veterinary Health Certificate", fee: "₱50.00" },

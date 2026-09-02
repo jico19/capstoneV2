@@ -1,10 +1,10 @@
 import { useRef, useEffect } from "react";
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import OcrIcon        from "/src/assets/home-icons/ocr-icon.svg";
-import QrIcon         from "/src/assets/home-icons/qrcode-icon.svg";
-import SmsIcon        from "/src/assets/home-icons/sms-icon.svg";
-import GeospatialIcon from "/src/assets/home-icons/geospatial-icon.svg";
-import FeaturesBg     from "/src/assets/home-icons/feature-bg.jpg";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import OcrIcon        from '../../../../assets/home-icons/ocr-icon.svg';
+import QrIcon         from '../../../../assets/home-icons/qrcode-icon.svg';
+import SmsIcon        from '../../../../assets/home-icons/sms-icon.svg';
+import GeospatialIcon from '../../../../assets/home-icons/geospatial-icon.svg';
+import FeaturesBg     from '../../../../assets/home-icons/feature-bg.jpg';
 
 const ACCENT_FILTER = {
   "#f5a623": "brightness(0) saturate(100%) invert(70%) sepia(80%) saturate(500%) hue-rotate(350deg) brightness(100%)",

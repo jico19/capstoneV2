@@ -4,10 +4,10 @@ import FarmerInfo from "./FarmerInfo";
 import UploadDocument from "./UploadDocument";
 import ReviewApplication from "./ReviewApplication";
 import { Check, ArrowRight } from "lucide-react";
-import { useCreateApplicataion } from "/src/hooks/useApplications";
+import { useCreateApplication } from '../../../hooks/useApplications';
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import ConfirmationModal from "/src/components/ui/ConfirmationModal";
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 /**
  * Create Application Flow
@@ -18,7 +18,7 @@ const CreateApplication = () => {
     const [step, setStep] = useState(1);
     const [origins, setOrigins] = useState([{ id: Date.now(), barangay: '', number_of_pigs: '' }]);
     const [confirmModal, setConfirmModal] = useState(null);
-    const { mutate } = useCreateApplicataion();
+    const { mutate } = useCreateApplication();
     const navigate = useNavigate();
 
     const {

@@ -14,14 +14,12 @@ def send_via_status(application_id, attempt=3):
     Sends a status update SMS to the farmer.
     Uses django-tasks TaskContext for non-blocking retries on gateway failure.
     """
-    # Fetch the application using the ID
     try:
         application = permits.PermitApplication.objects.get(pk=application_id)
     except permits.PermitApplication.DoesNotExist:
         logger.error(f"PermitApplication {application_id} not found for SMS task.")
         return
 
-    # Respect user preference for receiving SMS
     if not application.farmer.receive_sms:
         return
 
@@ -31,7 +29,6 @@ def send_via_status(application_id, attempt=3):
         f"{phone_no[:4]}****{phone_no[-2:]}" if len(phone_no) > 6 else phone_no
     )
 
-    # Guard: Check if an SMS for this specific status has already been sent to this number
     already_sent = SMSLog.objects.filter(
         phone_number=phone_no,
         status_captured=current_status,
@@ -66,7 +63,6 @@ def send_via_status(application_id, attempt=3):
         success = send_sms(phone_number=phone_no, message=message)
 
         if success:
-            # Create a SMS Log with the captured status
             SMSLog.objects.create(
                 phone_number=phone_no,
                 message_type=SMSLog.Type.NOTIFICATION,
@@ -76,7 +72,6 @@ def send_via_status(application_id, attempt=3):
                 f"Successfully sent and logged status update for {application.application_id}"
             )
         else:
-            # Handle failure with retry
             MAX_ATTEMPTS = 3
             if attempt < MAX_ATTEMPTS:
                 wait_time = 60 * attempt  # 60s, 120s

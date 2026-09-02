@@ -1,80 +1,93 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import ProtectedRoute from "./protectedRoute";
 import RootRedirect from "./RootRedirect";
 
+// Use a shared loading fallback
+const PageLoader = () => (
+    <div className="flex items-center justify-center min-h-screen bg-white">
+        <span className="loading loading-spinner loading-lg text-green-700"></span>
+    </div>
+);
+
+// Wrap a lazy component with Suspense
+const withSuspense = (Component) => (
+    <Suspense fallback={<PageLoader />}>
+        <Component />
+    </Suspense>
+);
 
 // Landing Page
-import LandingLayout from "../pages/landing-page/LandingLayout";
-import LandingHome from "../pages/landing-page/Home/home";
-import LandingRequirements from "../pages/landing-page/Requirements/requirements";
-import LandingAbout from "../pages/landing-page/About/about";
-import LandingFAQs from "../pages/landing-page/FAQs/faqs";
+const LandingLayout = lazy(() => import("../pages/landing-page/LandingLayout"));
+const LandingHome = lazy(() => import("../pages/landing-page/Home/home"));
+const LandingRequirements = lazy(() => import("../pages/landing-page/Requirements/requirements"));
+const LandingAbout = lazy(() => import("../pages/landing-page/About/about"));
+const LandingFAQs = lazy(() => import("../pages/landing-page/FAQs/faqs"));
 
 // auths
-import LoginPage from "/src/pages/auth/LoginPage";
-import RegisterPage from "../pages/auth/RegisterPage";
-import SettingsPage from "../pages/shared/SettingsPage";
+const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
+const SettingsPage = lazy(() => import("../pages/shared/SettingsPage"));
 
 // farmer
-import FarmerDashboard from "../pages/farmer/Dashboard/FarmerDashboard";
-import FarmerApplicationDashboard from "../pages/farmer/Dashboard/FarmerApplicationDashboard";
-import CreateApplication from "../pages/farmer/Applications/CreateApplication";
-import ResubmitApplication from "../pages/farmer/Applications/ResubmitApplication";
-import NotificationPage from "../pages/farmer/Notification/NotificationPage";
-import PaymentSuccess from "../pages/farmer/Payments/PaymentSuccess";
-import ApplicationDetail from "../pages/farmer/Applications/ApplicationDetail";
-import PaymentCheckout from "../pages/farmer/Payments/PaymentCheckout";
-import DownloadApplication from "../pages/farmer/Dashboard/DownloadApplication";
+const FarmerDashboard = lazy(() => import("../pages/farmer/Dashboard/FarmerDashboard"));
+const FarmerApplicationDashboard = lazy(() => import("../pages/farmer/Dashboard/FarmerApplicationDashboard"));
+const CreateApplication = lazy(() => import("../pages/farmer/Applications/CreateApplication"));
+const ResubmitApplication = lazy(() => import("../pages/farmer/Applications/ResubmitApplication"));
+const NotificationPage = lazy(() => import("../pages/farmer/Notification/NotificationPage"));
+const PaymentSuccess = lazy(() => import("../pages/farmer/Payments/PaymentSuccess"));
+const ApplicationDetail = lazy(() => import("../pages/farmer/Applications/ApplicationDetail"));
+const PaymentCheckout = lazy(() => import("../pages/farmer/Payments/PaymentCheckout"));
+const DownloadApplication = lazy(() => import("../pages/farmer/Dashboard/DownloadApplication"));
 
 // agri
-import AgriDashboardPage from "../pages/agri/Dashboard/AgriDashboardPage";
-import ApplicationDashboard from "../pages/agri/Applications/ApplicationDashboard";
-import AgriPermitDetail from "../pages/agri/Applications/AgriPermitDetail";
-import AgriMapPage from "../pages/agri/Map/DensityMap/AgriMapPage";
-import AgriPaymentPage from "../pages/agri/Payment/AgriPaymentPage";
-import AgriReportsPage from "../pages/agri/Reports/AgriReportsPage";
-import AuditTrailPage from "../pages/agri/Audit/AuditTrailPage";
-import FarmerManagementPage from "../pages/agri/FarmerManagementPage";
-import BarangayOfficialManagementPage from "../pages/agri/BarangayOfficialManagementPage";
-import AgriSystemSettings from "../pages/agri/SystemSettings/AgriSystemSettings";
+const AgriDashboardPage = lazy(() => import("../pages/agri/Dashboard/AgriDashboardPage"));
+const ApplicationDashboard = lazy(() => import("../pages/agri/Applications/ApplicationDashboard"));
+const AgriPermitDetail = lazy(() => import("../pages/agri/Applications/AgriPermitDetail"));
+const AgriMapPage = lazy(() => import("../pages/agri/Map/DensityMap/AgriMapPage"));
+const AgriPaymentPage = lazy(() => import("../pages/agri/Payment/AgriPaymentPage"));
+const AgriReportsPage = lazy(() => import("../pages/agri/Reports/AgriReportsPage"));
+const AuditTrailPage = lazy(() => import("../pages/agri/Audit/AuditTrailPage"));
+const FarmerManagementPage = lazy(() => import("../pages/agri/FarmerManagementPage"));
+const BarangayOfficialManagementPage = lazy(() => import("../pages/agri/BarangayOfficialManagementPage"));
+const AgriSystemSettings = lazy(() => import("../pages/agri/SystemSettings/AgriSystemSettings"));
 
 // barangay
-import BarangayDashboard from "../pages/barangay/Dashboard/BarangayDashboard";
-import HogSurveyPage from "../pages/barangay/HogSurvey/HogSurveyPage";
-import BarangayAuditPage from "../pages/barangay/Audit/BarangayAuditPage";
-
+const BarangayDashboard = lazy(() => import("../pages/barangay/Dashboard/BarangayDashboard"));
+const HogSurveyPage = lazy(() => import("../pages/barangay/HogSurvey/HogSurveyPage"));
+const BarangayAuditPage = lazy(() => import("../pages/barangay/Audit/BarangayAuditPage"));
 
 // Opv
-import OpvDashboard from "../pages/opv/Dashboard/OpvDashboard";
-import OpvApplicationDashboard from "../pages/opv/Application/OpvApplicationDashboard";
-import OPVApplicationDetail from "../pages/opv/Application/OPVApplicationDetailView";
+const OpvDashboard = lazy(() => import("../pages/opv/Dashboard/OpvDashboard"));
+const OpvApplicationDashboard = lazy(() => import("../pages/opv/Application/OpvApplicationDashboard"));
+const OPVApplicationDetail = lazy(() => import("../pages/opv/Application/OPVApplicationDetailView"));
 
 // Inspector
-import InspectorDashboard from "../pages/inspector/Dashboard/InspectorDashboard";
-import InspectionHistory from "../pages/inspector/Dashboard/InspectionHistory";
-import QRScannerPage from "../pages/inspector/QR/QRScannerPage";
-import VerifyApplication from "../pages/inspector/Application/VerifyApplication";
+const InspectorDashboard = lazy(() => import("../pages/inspector/Dashboard/InspectorDashboard"));
+const InspectionHistory = lazy(() => import("../pages/inspector/Dashboard/InspectionHistory"));
+const QRScannerPage = lazy(() => import("../pages/inspector/QR/QRScannerPage"));
+const VerifyApplication = lazy(() => import("../pages/inspector/Application/VerifyApplication"));
 
 // Others
-import NotFoundPage from "../pages/NotFoundPage";
+const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
 const router = createBrowserRouter([
     // none-role route
-    { path: "/login", element: <LoginPage /> },
-    { path: '/register', element: <RegisterPage /> },
+    { path: "/login", element: withSuspense(LoginPage) },
+    { path: '/register', element: withSuspense(RegisterPage) },
 
     // Landing & Root Redirect
     {
         path: '/',
-        element: <LandingLayout />,
+        element: <Suspense fallback={<PageLoader />}><LandingLayout /></Suspense>,
         children: [
             { 
                 index: true, 
-                element: <RootRedirect><LandingHome /></RootRedirect> 
+                element: <RootRedirect>{withSuspense(LandingHome)}</RootRedirect> 
             },
-            { path: 'about', element: <LandingAbout /> },
-            { path: 'requirements', element: <LandingRequirements /> },
-            { path: 'faqs', element: <LandingFAQs /> },
+            { path: 'about', element: withSuspense(LandingAbout) },
+            { path: 'requirements', element: withSuspense(LandingRequirements) },
+            { path: 'faqs', element: withSuspense(LandingFAQs) },
         ]
     },
 
@@ -83,16 +96,16 @@ const router = createBrowserRouter([
         path: '/farmer',
         element: <ProtectedRoute allowedRoles={['Farmer']} />,
         children: [
-            { index: true, element: <FarmerDashboard /> },
-            { path: 'application', element: <FarmerApplicationDashboard /> },
-            { path: 'application/detail/:id', element: <ApplicationDetail /> },
-            { path: 'application/resubmit/:id', element: <ResubmitApplication /> },
-            { path: 'application/create/', element: <CreateApplication /> },
-            { path: 'notification/', element: <NotificationPage /> },
-            { path: 'payment/success/:issued_permit_id', element: <PaymentSuccess /> },
-            { path: 'payment/checkout/:id', element: <PaymentCheckout /> },
-            { path: 'application/download/:id', element: <DownloadApplication /> },
-            { path: 'settings/', element: <SettingsPage /> }
+            { index: true, element: withSuspense(FarmerDashboard) },
+            { path: 'application', element: withSuspense(FarmerApplicationDashboard) },
+            { path: 'application/detail/:id', element: withSuspense(ApplicationDetail) },
+            { path: 'application/resubmit/:id', element: withSuspense(ResubmitApplication) },
+            { path: 'application/create/', element: withSuspense(CreateApplication) },
+            { path: 'notification/', element: withSuspense(NotificationPage) },
+            { path: 'payment/success/:issued_permit_id', element: withSuspense(PaymentSuccess) },
+            { path: 'payment/checkout/:id', element: withSuspense(PaymentCheckout) },
+            { path: 'application/download/:id', element: withSuspense(DownloadApplication) },
+            { path: 'settings/', element: withSuspense(SettingsPage) }
         ]
     },
     // agri route
@@ -100,18 +113,18 @@ const router = createBrowserRouter([
         path: '/agri',
         element: <ProtectedRoute allowedRoles={['Agri']} />,
         children: [
-            { index: true, element: <AgriDashboardPage /> },
-            { path: 'application/', element: <ApplicationDashboard /> },
-            { path: 'application/detail/:id', element: <AgriPermitDetail /> },
-            { path: 'map/pig-density/', element: <AgriMapPage /> },
-            { path: 'payment/', element: <AgriPaymentPage /> },
-            { path: 'reports/', element: <AgriReportsPage /> },
-            { path: 'audit-trail/', element: <AuditTrailPage /> },
-            { path: 'farmers/', element: <FarmerManagementPage /> },
-            { path: 'barangay-officials/', element: <BarangayOfficialManagementPage /> },
-            { path: 'notification/', element: <NotificationPage /> },
-            { path: 'settings/', element: <SettingsPage /> },
-            { path: 'system-settings/', element: <AgriSystemSettings /> },
+            { index: true, element: withSuspense(AgriDashboardPage) },
+            { path: 'application/', element: withSuspense(ApplicationDashboard) },
+            { path: 'application/detail/:id', element: withSuspense(AgriPermitDetail) },
+            { path: 'map/pig-density/', element: withSuspense(AgriMapPage) },
+            { path: 'payment/', element: withSuspense(AgriPaymentPage) },
+            { path: 'reports/', element: withSuspense(AgriReportsPage) },
+            { path: 'audit-trail/', element: withSuspense(AuditTrailPage) },
+            { path: 'farmers/', element: withSuspense(FarmerManagementPage) },
+            { path: 'barangay-officials/', element: withSuspense(BarangayOfficialManagementPage) },
+            { path: 'notification/', element: withSuspense(NotificationPage) },
+            { path: 'settings/', element: withSuspense(SettingsPage) },
+            { path: 'system-settings/', element: withSuspense(AgriSystemSettings) },
         ]
     },
     // barangay official route
@@ -119,10 +132,10 @@ const router = createBrowserRouter([
         path: '/barangay',
         element: <ProtectedRoute allowedRoles={['Barangay']} />,
         children: [
-            { index: true, element: <BarangayDashboard /> },
-            { path: 'hog-surveys/', element: <HogSurveyPage /> },
-            { path: 'audit-logs/', element: <BarangayAuditPage /> },
-            { path: 'settings/', element: <SettingsPage /> },
+            { index: true, element: withSuspense(BarangayDashboard) },
+            { path: 'hog-surveys/', element: withSuspense(HogSurveyPage) },
+            { path: 'audit-logs/', element: withSuspense(BarangayAuditPage) },
+            { path: 'settings/', element: withSuspense(SettingsPage) },
         ]
     },
     // opv route
@@ -130,11 +143,11 @@ const router = createBrowserRouter([
         path: '/opv',
         element: <ProtectedRoute allowedRoles={['Opv']} />,
         children: [
-            { index: true, element: <OpvDashboard /> },
-            { path: 'application/', element: <OpvApplicationDashboard /> },
-            { path: 'application/detail/:id', element: <OPVApplicationDetail /> },
-            { path: 'notification/', element: <NotificationPage /> },
-            { path: 'settings/', element: <SettingsPage /> },
+            { index: true, element: withSuspense(OpvDashboard) },
+            { path: 'application/', element: withSuspense(OpvApplicationDashboard) },
+            { path: 'application/detail/:id', element: withSuspense(OPVApplicationDetail) },
+            { path: 'notification/', element: withSuspense(NotificationPage) },
+            { path: 'settings/', element: withSuspense(SettingsPage) },
         ]
     },
     // inspector route
@@ -142,17 +155,16 @@ const router = createBrowserRouter([
         path: '/inspector',
         element: <ProtectedRoute allowedRoles={['Inspector']} />,
         children: [
-            { index: true, element: <InspectorDashboard /> },
-            { path: 'scan/', element: <QRScannerPage /> },
-            { path: 'history/', element: <InspectionHistory /> },
-            { path: 'verify/:token/', element: <VerifyApplication /> },
-            { path: 'notification/', element: <NotificationPage /> },
-            { path: 'settings/', element: <SettingsPage /> },
+            { index: true, element: withSuspense(InspectorDashboard) },
+            { path: 'scan/', element: withSuspense(QRScannerPage) },
+            { path: 'history/', element: withSuspense(InspectionHistory) },
+            { path: 'verify/:token/', element: withSuspense(VerifyApplication) },
+            { path: 'notification/', element: withSuspense(NotificationPage) },
+            { path: 'settings/', element: withSuspense(SettingsPage) },
         ]
     },
 
-    { path: "*", element: <NotFoundPage /> },
+    { path: "*", element: withSuspense(NotFoundPage) },
 ])
-
 
 export default router;

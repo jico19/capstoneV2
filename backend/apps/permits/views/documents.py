@@ -1,10 +1,9 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from apps.api.base import BaseModelViewSet
 from .. import models, serializers
 
-class SubmittedDocumentViewSets(viewsets.ModelViewSet):
+class SubmittedDocumentViewSet(BaseModelViewSet):
     queryset = models.SubmittedDocument.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:

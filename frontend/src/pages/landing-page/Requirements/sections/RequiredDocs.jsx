@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import RequiredDocsIcon from "/src/assets/requirements-icons/required-docs-icon.png";
-import WarningIcon      from "/src/assets/requirements-icons/warning.png";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import RequiredDocsIcon from '../../../../assets/requirements-icons/required-docs-icon.png';
+import WarningIcon      from '../../../../assets/requirements-icons/warning.png';
 
 const DOCUMENTS = [
   { number: "1", title: "Handler's License",

@@ -1,5 +1,5 @@
 import { X, AlertCircle, ExternalLink, FileText, Info, Loader2 } from 'lucide-react';
-import { useDocument } from '/src/hooks/useApplications';
+import { useDocument } from '../../hooks/useApplications';
 
 /**
  * Global Document Review Modal

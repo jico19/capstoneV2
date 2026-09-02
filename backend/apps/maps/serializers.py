@@ -1,11 +1,5 @@
-# serializers.py
 from rest_framework import serializers
 from .models import Barangay, HogSurvey
-
-
-# ─────────────────────────────────────────
-# BARANGAY
-# ─────────────────────────────────────────
 
 class BarangayListDetailSerializer(serializers.ModelSerializer):
     """Used in: GET /barangays/"""
@@ -21,11 +15,6 @@ class BarangayWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Barangay
         fields = ["name", "latitude", "longitude", "geojson"]
-
-
-# ─────────────────────────────────────────
-# HOG SURVEY
-# ─────────────────────────────────────────
 
 
 class HogSurveyListDetailSerializer(serializers.ModelSerializer):

@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from apps.api.views import health_check, CustomTokenObtainPairView
-from .router import routers
+from .router import router
 
 # app viewsets
 urlpatterns = [
@@ -20,5 +20,5 @@ urlpatterns = [
     path("api/health-check/", health_check, name="health-check"),
 ]
 
-urlpatterns += routers.urls
+urlpatterns += router.urls
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

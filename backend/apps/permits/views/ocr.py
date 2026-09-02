@@ -1,12 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
+from apps.api.base import BaseModelViewSet
 from .. import models, serializers, services
 
-class OCRValidationResultViewSets(viewsets.ModelViewSet):
+class OCRValidationResultViewSet(BaseModelViewSet):
     queryset = models.OCRValidationResult.objects.all()
-    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -17,12 +16,6 @@ class OCRValidationResultViewSets(viewsets.ModelViewSet):
             return serializers.OCRValidationResultListSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        # if not user.is_authenticated:
-        #     return models.OCRValidationResult.objects.none()
-
-        # if user.role == 'Farmer':
-        #     return models.OCRValidationResult.objects.filter(document__origin__application__farmer=user)
         return models.OCRValidationResult.objects.all()
 
     def update(self, request, *args, **kwargs):

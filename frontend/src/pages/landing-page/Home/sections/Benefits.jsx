@@ -1,12 +1,12 @@
 import { useRef, useEffect } from "react";
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import TimeMoney    from "/src/assets/home-icons/time-money.svg";
-import Hours24      from "/src/assets/home-icons/24hours-icon.svg";
-import Tracking     from "/src/assets/home-icons/tracking-icon.svg";
-import Disease      from "/src/assets/home-icons/disease-icon.svg";
-import ErrorIcon    from "/src/assets/home-icons/error-icon.svg";
-import Transparency from "/src/assets/home-icons/transparency-icon.svg";
-import BenefitsBg   from "/src/assets/home-icons/benefits-bg.jpg";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import TimeMoney    from '../../../../assets/home-icons/time-money.svg';
+import Hours24      from '../../../../assets/home-icons/24hours-icon.svg';
+import Tracking     from '../../../../assets/home-icons/tracking-icon.svg';
+import Disease      from '../../../../assets/home-icons/disease-icon.svg';
+import ErrorIcon    from '../../../../assets/home-icons/error-icon.svg';
+import Transparency from '../../../../assets/home-icons/transparency-icon.svg';
+import BenefitsBg   from '../../../../assets/home-icons/benefits-bg.jpg';
 
 const BENEFITS = [
   { icon: TimeMoney,    title: "Save Time and Money",  desc: "No more trips to the municipal office. Submit your permit application online in minutes and eliminate transportation costs.", accent: "#f5a623" },

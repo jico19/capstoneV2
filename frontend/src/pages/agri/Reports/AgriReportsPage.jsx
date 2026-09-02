@@ -1,3 +1,4 @@
+import { downloadBlob } from '../../../lib/utils';
 import { useState } from 'react';
 import { api } from '../../../lib/api';
 import {
@@ -40,13 +41,7 @@ const AgriReportsPage = () => {
                 responseType: 'blob',
             });
 
-            const blobUrl = URL.createObjectURL(data);
-            const link = document.createElement('a');
-            Object.assign(link, { href: blobUrl, download: filename });
-            document.body.append(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(blobUrl);
+            downloadBlob(data, filename);
 
             toast.success("Download Complete", { description: filename });
         } catch (err) {

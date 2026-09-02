@@ -10,7 +10,6 @@ def reference_num():
     return f"PAY-{timezone.now().year}-{random_suffix}"
 
 def generate_or_number():
-    import secrets
     return "".join(secrets.choice('0123456789') for _ in range(7))
 
 class PaymentHistory(models.Model):

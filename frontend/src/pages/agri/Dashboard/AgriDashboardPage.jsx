@@ -5,11 +5,12 @@ import {
     Activity
 } from 'lucide-react';
 import KPICard from '../../../components/ui/KPICard';
-import { useGetAgriDashboard } from '/src/hooks/useDashboard';
-import LineChartComponent from '/src/components/charts/LineChart';
-import PieChartComponent from '/src/components/charts/PieChart';
-import BarChartComponent from '/src/components/charts/BarChart';
-import SmartInsights from '/src/components/ui/SmartInsights';
+import { useGetAgriDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
+import LineChartComponent from '../../../components/charts/LineChart';
+import PieChartComponent from '../../../components/charts/PieChart';
+import BarChartComponent from '../../../components/charts/BarChart';
+import SmartInsights from '../../../components/ui/SmartInsights';
+import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 
 
 /**
@@ -18,6 +19,7 @@ import SmartInsights from '/src/components/ui/SmartInsights';
  */
 const AgriOfficerKPIDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetAgriDashboard()
+    const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Agri');
 
     if (isLoading) {
         return (
@@ -98,6 +100,10 @@ const AgriOfficerKPIDashboard = () => {
                         height={350}
                         barColor="#16a34a"
                     />
+                    <ChartTakeaway
+                        takeaway={insightData?.chart_insights?.density_trend}
+                        isLoading={isInsightLoading}
+                    />
                 </div>
 
                 {/* Status Distribution */}
@@ -111,6 +117,10 @@ const AgriOfficerKPIDashboard = () => {
                         nameKey="status"
                         valueKey="count"
                         height={350}
+                    />
+                    <ChartTakeaway
+                        takeaway={insightData?.chart_insights?.status_distribution}
+                        isLoading={isInsightLoading}
                     />
                 </div>
 
@@ -127,6 +137,10 @@ const AgriOfficerKPIDashboard = () => {
                         height={300}
                         lineColor="#2563eb"
                     />
+                    <ChartTakeaway
+                        takeaway={insightData?.chart_insights?.submission_trend}
+                        isLoading={isInsightLoading}
+                    />
                 </div>
 
                 {/* Revenue Collection Trend - Spans 1 col on XL */}
@@ -141,6 +155,10 @@ const AgriOfficerKPIDashboard = () => {
                         yKey="amount"
                         height={300}
                         lineColor="#d97706"
+                    />
+                    <ChartTakeaway
+                        takeaway={insightData?.chart_insights?.revenue_trend}
+                        isLoading={isInsightLoading}
                     />
                 </div>
             </div>

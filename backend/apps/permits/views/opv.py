@@ -1,14 +1,13 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
+from apps.api.base import BaseModelViewSet
 from .. import models, serializers, services
 
-class OPVValidationViewSets(viewsets.ModelViewSet):
+class OPVValidationViewSet(BaseModelViewSet):
     queryset = models.OPVValidation.objects.all()
-    permission_classes = [IsAuthenticated]
     pagination_class = None
 
     def get_serializer_class(self):

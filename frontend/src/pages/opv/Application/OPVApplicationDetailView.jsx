@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom"
-import { useApplicationDetail } from "/src/hooks/useApplications"
+import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
 import { ArrowLeft } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
-import ConfirmationModal from "/src/components/ui/ConfirmationModal"
+import ConfirmationModal from '../../../components/ui/ConfirmationModal'
 
 
 /**

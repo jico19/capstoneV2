@@ -1,6 +1,6 @@
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import DownloadIcon from "/src/assets/requirements-icons/download.png";
-import DocumentIcon from "/src/assets/requirements-icons/document.png";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import DownloadIcon from '../../../../assets/requirements-icons/download.png';
+import DocumentIcon from '../../../../assets/requirements-icons/document.png';
 
 const DOWNLOADS = [
   { label: "Sample Ownership Certificate", file: "#" },

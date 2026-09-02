@@ -3,7 +3,7 @@ import {
     CheckCircle2, AlertTriangle, Info,
     CheckCheck, Inbox, ChevronRight
 } from 'lucide-react';
-import { useGetNotification } from '/src/hooks/useNotifications';
+import { useGetNotification } from '../../../hooks/useNotifications';
 import { api } from '../../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';

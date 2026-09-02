@@ -23,7 +23,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'is_active',
         ]
 
-class UserWriteSeiralizer(serializers.ModelSerializer):
+class UserWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
         fields = [
@@ -46,7 +46,6 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user if request else None
 
-        # Coerce role for unauthorized/unauthenticated requests
         if not user or not user.is_authenticated or user.role not in ['Admin', 'Agri']:
             attrs['role'] = 'Farmer'
         else:
@@ -55,12 +54,10 @@ class UserWriteSeiralizer(serializers.ModelSerializer):
                 if user.role == 'Agri' and role not in ['Farmer', 'Barangay']:
                     raise serializers.ValidationError({"role": "Agri can only register Farmers and Barangay Officials."})
             else:
-                # If authenticated and role is omitted, default to Farmer
                 attrs['role'] = 'Farmer'
         return attrs
 
     def create(self, validated_data):
-        print(validated_data)
         return models.User.objects.create_user(**validated_data)
 
 

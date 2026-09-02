@@ -146,6 +146,7 @@ MEDIA_URL = "/media/"
 
 # DRF SETTINGS
 REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "apps.api.exceptions.custom_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -179,6 +180,8 @@ PAYMONGO_SECRET_KEY = os.environ.get("PAYMONGO_TEST_SECRET_KEY")
 PAYMONGO_PUBLIC_KEY = os.environ.get("PAYMONGO_TEST_PUBLIC_KEY")
 PAYMONGO_URL = os.environ.get("PAYMONGO_URL")
 FRONTEND_URL = os.environ.get("FRONTEND_URL")
+# QRPH payment window in seconds (default: 9000 = 2.5 hours)
+QRPH_EXPIRY_SECONDS = 9000
 
 # SMS SECRETS
 SMS_BASE_URL = os.environ.get("SMS_BASE_URL")
@@ -186,7 +189,7 @@ SMS_USERNAME = os.environ.get("SMS_USERNAME")
 SMS_PASSWORD = os.environ.get("SMS_PASSWORD")
 
 
-GEMENI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 
 # DJANGO TASK
@@ -202,5 +205,4 @@ CACHES = {
     }
 }
 
-# settings.py
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # Adjust this number to fit your data size

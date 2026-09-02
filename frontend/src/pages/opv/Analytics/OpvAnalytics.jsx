@@ -1,6 +1,6 @@
-import { useGetOPVAnalytics } from "/src/hooks/useDashboard";
+import { useGetOPVAnalytics } from '../../../hooks/useDashboard';
 import KPICard from "../../../components/ui/KPICard";
-import BarChartComponent from "/src/components/charts/BarChart";
+import BarChartComponent from '../../../components/charts/BarChart';
 import { Truck, Percent, ClipboardList } from "lucide-react";
 
 /**

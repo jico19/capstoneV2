@@ -1,6 +1,6 @@
-from .application import PermitApplicationViewSets
-from .documents import SubmittedDocumentViewSets
-from .opv import OPVValidationViewSets
-from .permit import IssuedPermitViewSets, MunicipalConfigViewSets
-from .ocr import OCRValidationResultViewSets
-from .reports import ReportViewSets
+from .application import PermitApplicationViewSet
+from .documents import SubmittedDocumentViewSet
+from .opv import OPVValidationViewSet
+from .permit import IssuedPermitViewSet, MunicipalConfigViewSet
+from .ocr import OCRValidationResultViewSet
+from .reports import ReportViewSet

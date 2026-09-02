@@ -1,3 +1,4 @@
+import { downloadBlob } from '../lib/utils';
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { toast } from "sonner";
@@ -19,13 +20,7 @@ export const useInspectorLogs = () => {
                 params: { start_date, end_date },
                 responseType: 'blob'
             });
-            const url = window.URL.createObjectURL(new Blob([res.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `INSPECTOR_LOGS_${start_date}_to_${end_date}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            downloadBlob(res.data, `INSPECTOR_LOGS_${start_date}_to_${end_date}.pdf`);
         },
         onSuccess: () => {
             toast.success("Report generated successfully.");

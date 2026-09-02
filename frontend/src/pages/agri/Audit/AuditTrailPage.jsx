@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useGetAuditTrail } from '/src/hooks/useAudit';
+import { useGetAuditTrail } from '../../../hooks/useAudit';
 import { 
     History, 
     Search, 
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Pagination from '../../../components/ui/Pagination';
 import AuditDetailModal from '../../../components/ui/AuditDetailModal';
+import { formatDate, formatRelativeTime } from '../../../lib/utils';
 
 /**
  * Categorizes an activity string into an operational module
@@ -120,25 +121,7 @@ const formatTime = (dateString) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 };
 
-const formatDateOnly = (dateString) => {
-    if (!dateString) return 'Date unknown';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
 
-const formatRelativeTime = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
-};
 
 /**
  * Agriculture Audit Trail Activity Hub
@@ -480,7 +463,7 @@ const AuditTrailPage = () => {
                                                 <span>{formatTime(log.when_performed)}</span>
                                             </div>
                                             <p className="text-[10px] text-stone-400 font-medium">
-                                                {formatDateOnly(log.when_performed)} - {formatRelativeTime(log.when_performed)}
+                                                {formatDate(log.when_performed)} - {formatRelativeTime(log.when_performed)}
                                             </p>
                                         </div>
 

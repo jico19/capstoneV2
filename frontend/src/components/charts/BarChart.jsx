@@ -10,9 +10,7 @@ import {
 } from 'recharts';
 
 /**
- * Flat Bar Chart
- * Strictly follows GEMINI.md: Primary Green or Semantic Colors, no plain black.
- * Sharp corners, no shadows, no radius.
+ * Flat Bar Chart. Sharp corners, no shadows, no radius.
  */
 const COLORS = ['#16a34a', '#2563eb', '#ca8a04', '#dc2626', '#9333ea'];
 

@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import PhoneIcon    from "/src/assets/home-icons/phone.png";
-import MailIcon     from "/src/assets/home-icons/mail.png";
-import LocationIcon from "/src/assets/home-icons/location.png";
-import WebIcon      from "/src/assets/home-icons/web.png";
-import LogoImg      from "/src/assets/farmpass-logo.png";
-import AgriLogo     from "/src/assets/sariaya-agri-logo.jpg";
+import PhoneIcon    from '../../assets/home-icons/phone.png';
+import MailIcon     from '../../assets/home-icons/mail.png';
+import LocationIcon from '../../assets/home-icons/location.png';
+import WebIcon      from '../../assets/home-icons/web.png';
+import LogoImg      from '../../assets/farmpass-logo.png';
+import AgriLogo     from '../../assets/sariaya-agri-logo.jpg';
 
 const NAV_LINKS = [
   { label: "Home",         path: "/"             },

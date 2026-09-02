@@ -21,26 +21,8 @@ import Pagination from '../../components/ui/Pagination';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import { parseValidationError } from '../../lib/utils';
 
-const parseValidationError = (err, fallback = "Action failed.") => {
-    if (err.response?.data) {
-        const data = err.response.data;
-        if (typeof data === 'object') {
-            if (data.detail) return data.detail;
-            const fieldErrors = Object.entries(data)
-                .map(([field, errors]) => {
-                    const fieldLabel = field.replace('_', ' ');
-                    const errorMsg = Array.isArray(errors) ? errors[0] : errors;
-                    return `${fieldLabel}: ${errorMsg}`;
-                })
-                .join(' | ');
-            if (fieldErrors) return fieldErrors;
-        } else if (typeof data === 'string') {
-            return data;
-        }
-    }
-    return err.message || fallback;
-};
 
 /**
  * Farmer Management Page

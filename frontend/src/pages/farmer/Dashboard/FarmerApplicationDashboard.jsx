@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useApplication } from "/src/hooks/useApplications";
+import { useApplication } from '../../../hooks/useApplications';
 import {
     Plus,
     MapPin, Inbox, FileText, CheckCircle, AlertCircle,
@@ -12,7 +12,7 @@ import {
     Filter,
     Calendar
 } from "lucide-react";
-import ActionGroup from "/src/components/ui/ActionButton";
+import ActionGroup from '../../../components/ui/ActionButton';
 import DateFormatter from "../../../components/ui/DateFormatter";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import KPICard from "../../../components/ui/KPICard";

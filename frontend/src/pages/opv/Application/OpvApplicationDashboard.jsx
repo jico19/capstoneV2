@@ -6,7 +6,7 @@ import {
     Filter,
     LayoutDashboard
 } from "lucide-react";
-import { useApplication } from "/src/hooks/useApplications";
+import { useApplication } from '../../../hooks/useApplications';
 import { useNavigate } from "react-router-dom";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import DateFormatter from "../../../components/ui/DateFormatter";
@@ -39,8 +39,6 @@ const OpvApplicationDashboard = () => {
     // but we can pass status filters if needed.
     const { data: application, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery);
     const navigate = useNavigate();
-
-    // console.log(application)
 
     if (isLoading) {
         return (

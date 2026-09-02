@@ -1,5 +1,5 @@
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import HelpIcon from "/src/assets/requirements-icons/help-icon.png";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import HelpIcon from '../../../../assets/requirements-icons/help-icon.png';
 
 export default function NeedHelp() {
   const ref = useScrollReveal({ threshold: 0.2 });

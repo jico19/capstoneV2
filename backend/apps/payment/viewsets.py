@@ -8,9 +8,10 @@ from django.http import FileResponse
 from . import models, serializers, services
 from apps.permits import models as Permits
 
-class PaymentViewSets(viewsets.ModelViewSet):
+from apps.api.base import BaseModelViewSet
+
+class PaymentViewSet(BaseModelViewSet):
     queryset = models.PaymentHistory.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -20,11 +21,11 @@ class PaymentViewSets(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'list':
-            return serializers.PaymentListSerializers
+            return serializers.PaymentListSerializer
         elif self.action in ['retrieve','create', 'update', 'partial_update']:
-            return serializers.PaymentWriteAndDetailSerializers
+            return serializers.PaymentWriteAndDetailSerializer
         else:
-            return serializers.PaymentListSerializers
+            return serializers.PaymentListSerializer
 
     @action(detail=False, methods=['get'])
     def generate_report(self, request):
@@ -103,18 +104,118 @@ class PaymentViewSets(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
+    def farmer_simulate_payment(self, request, pk=None):
+        """
+        POST /api/payment/{application_pk}/farmer_simulate_payment/
+
+        Allows a Farmer to simulate a realistic payment transaction (DEBUG only).
+        Mimics the full PayMongo webhook flow from the farmer's perspective.
+        The farmer chooses a payment method and the system processes it as if
+        the payment gateway confirmed it successfully.
+
+        Required body: { "payment_method": "gcash" | "card" | "paymaya" | "qrph" }
+        Returns: Receipt data matching PaymentListSerializer shape.
+        """
+        payment_method = request.data.get('payment_method', 'gcash').strip().lower()
+
+        try:
+            payment_history = services.farmer_simulate_payment(
+                application_pk=pk,
+                user=request.user,
+                payment_method=payment_method,
+            )
+            return Response(
+                {
+                    "msg": "Payment simulation successful.",
+                    "verified": True,
+                    "data": serializers.PaymentListSerializer(payment_history).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except PermissionDenied as e:
+            return Response(
+                {"error": e.detail if hasattr(e, "detail") else str(e)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValidationError as e:
+            return Response(
+                {"error": e.detail[0] if isinstance(e.detail, list) else e.detail},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=['post'])
+    def confirm_offline_payment(self, request, pk=None):
+        """
+        POST /api/payment/{application_pk}/confirm_offline_payment/
+
+        Agri officer confirms a walk-in (offline/cash) payment.
+        Required body: { "or_number": "1234567" }
+        """
+        or_number = request.data.get('or_number', '').strip()
+
+        try:
+            payment_history = services.confirm_offline_payment(
+                application_pk=pk,
+                user=request.user,
+                or_number=or_number,
+            )
+            return Response(
+                {
+                    "msg": "Offline payment confirmed successfully.",
+                    "or_number": payment_history.or_number,
+                    "confirmed_at": payment_history.confirmed_at,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except PermissionDenied as e:
+            return Response(
+                {"error": e.detail if hasattr(e, "detail") else str(e)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValidationError as e:
+            return Response(
+                {"error": e.detail[0] if isinstance(e.detail, list) else e.detail},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=['post'])
     def simulate_payment(self, request, pk=None):
         """
-        Action to simulate payment success for testing/prototype purposes.
-        Sets status to SUCCESS and processes the permit issuance.
+        Simulates payment success for testing/demo purposes ONLY.
+        BLOCKED in production (DEBUG=False). Restricted to Agri role.
         """
+        from django.conf import settings
         from django.db import transaction
         from django.utils import timezone
         from datetime import timedelta
 
+        # Guard #1: Block in production
+        if not settings.DEBUG:
+            return Response(
+                {"error": "This endpoint is not available in production."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Guard #2: Only Agri officers may simulate payments
+        if request.user.role != 'Agri':
+            return Response(
+                {"error": "Only Agri officers can simulate payments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
         issued_permit = get_object_or_404(Permits.IssuedPermit, application=application)
-        
+
         try:
             payment_history = issued_permit.payment_history
         except models.PaymentHistory.DoesNotExist:
@@ -123,7 +224,6 @@ class PaymentViewSets(viewsets.ModelViewSet):
         if payment_history.status == models.PaymentHistory.Status.SUCCESS:
             return Response({"msg": "Already paid"}, status=status.HTTP_200_OK)
 
-        # Run transaction logic to mark as paid (same as successful verification)
         with transaction.atomic():
             payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
             payment_history.status = models.PaymentHistory.Status.SUCCESS
@@ -132,24 +232,18 @@ class PaymentViewSets(viewsets.ModelViewSet):
             issued_permit.is_paid = True
             issued_permit.payment_method = 'ONLINE'
             issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
-            
+
+            # Use the shared atomic helper (no more duplicate inline logic)
             if not issued_permit.aic_number:
-                today = timezone.now().date()
-                mm_dd = today.strftime("%m-%d")
-                yy = today.strftime("%y")
-                prefix = f"{mm_dd}-"
-                today_count = Permits.IssuedPermit.objects.filter(
-                    aic_number__startswith=prefix
-                ).count()
-                issued_permit.aic_number = f"{mm_dd}-{today_count + 1:03d}-{yy}"
-                
+                issued_permit.aic_number = services._generate_aic_number(issued_permit)
+
             issued_permit.save()
 
             from apps.permits.services import handle_application_status_change
             handle_application_status_change(application, Permits.PermitApplication.Status.RELEASED)
 
             from apps.documents.services import generate_permit_pdf, generate_aic_pdf
-            generate_permit_pdf.enqueue(permit_application_id=application.pk)     
+            generate_permit_pdf.enqueue(permit_application_id=application.pk)
             generate_aic_pdf.enqueue(permit_application_id=application.pk)
 
         return Response({"msg": "Payment simulated successfully", "verified": True}, status=status.HTTP_200_OK)
@@ -170,7 +264,7 @@ class PaymentViewSets(viewsets.ModelViewSet):
                 return Response({
                     "msg": "Payment verified successfully",
                     "verified": True,
-                    "data": serializers.PaymentListSerializers(payment_history).data
+                    "data": serializers.PaymentListSerializer(payment_history).data
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
@@ -195,5 +289,4 @@ class PaymentViewSets(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            print(f"Payment Verification Error: {str(e)}")
             return Response({"error": "An internal error occurred during verification"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

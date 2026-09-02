@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Eye, Inbox, FileText, AlertCircle, Clock, CheckCircle, Search } from "lucide-react";
 import DateFormatter from "../../../components/ui/DateFormatter";
-import ActionGroup from "/src/components/ui/ActionButton";
+import ActionGroup from '../../../components/ui/ActionButton';
 import StatusBadge from "../../../components/ui/StatusBadge";
-import { useApplication } from "/src/hooks/useApplications";
+import { useApplication } from '../../../hooks/useApplications';
 import { useState, useMemo, useEffect } from "react";
 import Pagination from "../../../components/ui/Pagination";
 import KPICard from "../../../components/ui/KPICard";

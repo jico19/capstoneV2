@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import LandingButton from "/src/components/ui/LandingButton";
-import MockupImage from "/src/assets/home-icons/mock-up.png";
-import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
+import LandingButton from '../../../../components/ui/LandingButton';
+import MockupImage from '../../../../assets/home-icons/mock-up.png';
+import AgriLogo from '../../../../assets/sariaya-agri-logo.jpg';
 
 export default function Hero() {
   const navigate = useNavigate();

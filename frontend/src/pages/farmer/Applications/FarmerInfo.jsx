@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useGetMaps } from "/src/hooks/useMaps";
+import { useGetMaps } from '../../../hooks/useMaps';
 import { Navigation, Calendar, Plus, Trash2, ArrowRight, ChevronRight, ChevronDown } from "lucide-react";
 
 const ANIMAL_CATEGORIES = [

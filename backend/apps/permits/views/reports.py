@@ -6,8 +6,9 @@ from django.utils import timezone
 from django.http import FileResponse, HttpResponse
 from apps.api.utils import parse_date_range_strings
 from rest_framework.exceptions import ValidationError
+from apps.documents.services import generate_permit_issuance_report_pdf, generate_permit_issuance_csv, generate_barangay_distribution_pdf, generate_inspector_report_pdf
 
-class ReportViewSets(viewsets.ViewSet):
+class ReportViewSet(viewsets.ViewSet):
     """
     Report generation endpoints for Agri Officers only.
     All reports accept optional start_date and end_date query params (YYYY-MM-DD).
@@ -34,8 +35,6 @@ class ReportViewSets(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="permit-issuance/pdf")
     def permit_issuance_pdf(self, request):
         """Export the permit issuance summary as a PDF for a given date range."""
-        from apps.documents.services import generate_permit_issuance_report_pdf
-
         if request.user.role != "Agri":
             return Response(
                 {"error": "Only Agri officers can generate reports."}, status=403
@@ -54,8 +53,6 @@ class ReportViewSets(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="permit-issuance/csv")
     def permit_issuance_csv(self, request):
         """Export the permit issuance list as a CSV file for a given date range."""
-        from apps.documents.services import generate_permit_issuance_csv
-
         if request.user.role != "Agri":
             return Response(
                 {"error": "Only Agri officers can generate reports."}, status=403
@@ -76,8 +73,6 @@ class ReportViewSets(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="barangay-distribution/pdf")
     def barangay_distribution_pdf(self, request):
         """Export barangay livestock volume distribution as a PDF."""
-        from apps.documents.services import generate_barangay_distribution_pdf
-
         if request.user.role != "Agri":
             return Response(
                 {"error": "Only Agri officers can generate reports."}, status=403
@@ -96,8 +91,6 @@ class ReportViewSets(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="inspector-logs/pdf")
     def inspector_logs_pdf(self, request):
         """Export field inspection audit log as a PDF."""
-        from apps.documents.services import generate_inspector_report_pdf
-
         if request.user.role != "Agri":
             return Response(
                 {"error": "Only Agri officers can generate reports."}, status=403

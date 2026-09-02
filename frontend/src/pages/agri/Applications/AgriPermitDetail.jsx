@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
-import { useApplicationDetail, useOCRUpdate } from "/src/hooks/useApplications";
+import { useApplicationDetail, useOCRUpdate } from '../../../hooks/useApplications';
 import DocumentList from "../../../components/ui/DocumentList";
 import OCRModal from "./OCRModal";
 import { useState, useEffect } from "react";
@@ -10,7 +10,7 @@ import DocumentViewModal from "../../../components/ui/DocumentViewModal";
 import ApplicationHeader from "../../../components/ui/ApplicationHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import ConfirmationModal from "/src/components/ui/ConfirmationModal";
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 /**
  * Agri Permit Detail View
@@ -147,7 +147,7 @@ const AgriPermitDetail = () => {
         });
     };
 
-    const issue_permit_handler = (id) => {
+    const handleIssuePermit = (id) => {
         const fee = parseFloat(permitFeeInput);
         const finalFee = isNaN(fee) ? 150.00 : fee;
 
@@ -276,7 +276,7 @@ const AgriPermitDetail = () => {
                                 <button
                                     className="w-full sm:w-auto bg-green-700 hover:bg-green-600 text-white px-12 py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-none"
                                     disabled={isIssuingPermit}
-                                    onClick={() => issue_permit_handler(application.id)}
+                                    onClick={() => handleIssuePermit(application.id)}
                                 >
                                     {isIssuingPermit ? (
                                         <span className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></span>

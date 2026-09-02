@@ -4,13 +4,16 @@ from rest_framework.response import Response
 from . import serializers
 from . import models
 from .services import HogSurveyService
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+import csv
+from django.http import HttpResponse
+from django.utils import timezone
+from apps.api.models import AuditTrail
+from apps.api.base import BaseModelViewSet
 
 
-class BarangayViewSets(viewsets.ModelViewSet):
+class BarangayViewSet(BaseModelViewSet):
     queryset = models.Barangay.objects.all()
-    permission_classes = [IsAuthenticated]
     pagination_class = None
 
     def get_serializer_class(self):
@@ -19,7 +22,7 @@ class BarangayViewSets(viewsets.ModelViewSet):
         elif self.action in ["create", "update", "partial_update"]:
             return serializers.BarangayWriteSerializer
         else:
-            return serializers.BarangayListSerializer
+            return serializers.BarangayListDetailSerializer
 
     @action(detail=False, methods=["get"])
     def transport_volume(self, request):
@@ -32,13 +35,8 @@ class BarangayViewSets(viewsets.ModelViewSet):
 
 
 
-import csv
-from django.http import HttpResponse
-
-
-class HogSurveyViewSets(viewsets.ModelViewSet):
+class HogSurveyViewSet(BaseModelViewSet):
     queryset = models.HogSurvey.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -53,7 +51,7 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
             return serializers.HogSurveyListDetailSerializer
         elif self.action in ["create", "update", "partial_update"]:
             return serializers.HogSurveyWriteSerializer
-        return serializers.HogSurveyListSerializer  # safe fallback
+        return serializers.HogSurveyListDetailSerializer  # safe fallback
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -64,8 +62,6 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         survey = serializer.save()
         
         # Audit Log
-        from django.utils import timezone
-        from apps.api.models import AuditTrail
         AuditTrail.objects.create(
             who_performed=user,
             what_performed=f"[HOG SURVEY ADDED] - Survey for Barangay {survey.barangay.name} (Total: {survey.total_pigs} pigs) submitted successfully.",
@@ -81,8 +77,6 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         survey = serializer.save()
         
         # Audit Log
-        from django.utils import timezone
-        from apps.api.models import AuditTrail
         AuditTrail.objects.create(
             who_performed=user,
             what_performed=f"[HOG SURVEY UPDATED] - Survey for Barangay {survey.barangay.name} (Total: {survey.total_pigs} pigs) updated successfully.",
@@ -99,8 +93,6 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
         instance.delete()
         
         # Audit Log
-        from django.utils import timezone
-        from apps.api.models import AuditTrail
         AuditTrail.objects.create(
             who_performed=user,
             what_performed=f"[HOG SURVEY DELETED] - Survey for Barangay {barangay_name} (Total: {total_pigs} pigs) deleted successfully.",
@@ -236,8 +228,6 @@ class HogSurveyViewSets(viewsets.ModelViewSet):
             
             # Audit Log on success
             if created_count > 0:
-                from django.utils import timezone
-                from apps.api.models import AuditTrail
                 restriction_msg = f" for assigned Barangay {barangay_restriction.name}" if barangay_restriction else ""
                 AuditTrail.objects.create(
                     who_performed=request.user,

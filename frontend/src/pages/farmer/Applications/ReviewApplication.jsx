@@ -1,5 +1,5 @@
 import { CheckCircle } from "lucide-react";
-import { useGetMaps } from "/src/hooks/useMaps";
+import { useGetMaps } from '../../../hooks/useMaps';
 
 const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
     const { data: map } = useGetMaps();

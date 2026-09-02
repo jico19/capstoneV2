@@ -1,5 +1,5 @@
 import { X, AlertCircle, ExternalLink } from 'lucide-react';
-import { useDocument } from '/src/hooks/useApplications';
+import { useDocument } from '../../../hooks/useApplications';
 import { useForm } from 'react-hook-form';
 
 /**

@@ -9,7 +9,7 @@ import {
     UserCircle,
     MapPin,
 } from 'lucide-react';
-import { useProfile } from '/src/hooks/useProfile';
+import { useProfile } from '../../hooks/useProfile';
 
 /**
  * Universal Settings Page — Profile & Preferences only.

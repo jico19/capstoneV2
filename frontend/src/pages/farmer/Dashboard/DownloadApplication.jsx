@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { useGetPermit } from "/src/hooks/useApplications"
+import { useGetPermit } from '../../../hooks/useApplications'
 import {
     FileText,
     Download,

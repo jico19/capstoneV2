@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { usePayment } from "/src/hooks/usePayment";
+import { usePayment } from '../../../hooks/usePayment';
 import {
     DollarSign,
     CheckCircle2,

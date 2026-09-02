@@ -21,13 +21,10 @@ def create_inspector_log(user, request_data):
     serializer.is_valid(raise_exception=True)
     log_instance = serializer.save(inspector=user)
 
-    # --- Update Permit Status ---
     application = log_instance.application
     application.is_checked = True
     application.save()
 
-    # --- Send Notifications ---
-    # 1. Notify the Farmer
     Notification.objects.create(
         recipient=log_instance.application.farmer,
         type=Notification.Type.INFO,
@@ -35,7 +32,6 @@ def create_inspector_log(user, request_data):
         message=f"Your transport permit (ID: {log_instance.application.application_id}) has been successfully verified by an inspector at a checkpoint."
     )
 
-    # 2. Notify Agri and OPV offices
     staff_to_notify = User.objects.filter(role__in=['Agri', 'Opv'])
     for staff in staff_to_notify:
         Notification.objects.create(

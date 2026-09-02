@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react"
 import MainMap from "./MainMap"
-import { useGetHogSurvey, useGetMaps, useGetHogSurveyYears } from "/src/hooks/useMaps"
+import { useGetHogSurvey, useGetMaps, useGetHogSurveyYears } from '../../../../hooks/useMaps'
 import { 
     Map as MapIcon, 
     Info, 
@@ -20,7 +20,7 @@ import {
     Sparkles,
     FileText
 } from "lucide-react"
-import HogSurveyUploadModal from "/src/components/HogSurveyUploadModal"
+import HogSurveyUploadModal from '../../../../components/HogSurveyUploadModal'
 
 /**
  * Agriculture Pig Population Map & Operations Hub

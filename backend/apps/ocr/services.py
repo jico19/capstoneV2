@@ -10,8 +10,6 @@ from rest_framework.exceptions import ValidationError, NotFound, APIException
 
 logger = logging.getLogger(__name__)
 
-# HELPERS
-
 def check_all_documents_complete(application_id):
     """
     Checks if all documents for an application have been processed by OCR.
@@ -44,7 +42,6 @@ def check_all_documents_complete(application_id):
                     application.status = new_status
                     application.save()
 
-                    # Notification for Farmer
                     api.Notification.objects.create(
                         type=api.Notification.Type.WARNING,
                         recipient=application.farmer,
@@ -52,7 +49,6 @@ def check_all_documents_complete(application_id):
                         message=f'Your application #{application.application_id} requires manual review by an Agri Officer due to document validation issues.'
                     )
 
-                    # Bulk notification for Agri Officers
                     agri_officers = api.User.objects.filter(role='Agri')
                     if agri_officers.exists():
                         manual_types = [r.document.get_document_type_display() for r in manual_docs]
@@ -66,20 +62,17 @@ def check_all_documents_complete(application_id):
                             for officer in agri_officers
                         ])
 
-                    # Audit Trail
                     api.AuditTrail.objects.create(
                         what_performed=f"[OCR AUTOMATION] - Application #{application.application_id} flagged for MANUAL REVIEW due to extraction errors/validation failures.",
                         when_performed=timezone.now()
                     )
 
             else:
-                # All documents passed OCR validation
                 new_status = permits.PermitApplication.Status.OCR_VALIDATED
                 if old_status != new_status:
                     application.status = new_status
                     application.save()
 
-                    # Notify farmer
                     api.Notification.objects.create(
                         type=api.Notification.Type.SUCCESS,
                         recipient=application.farmer,
@@ -87,7 +80,6 @@ def check_all_documents_complete(application_id):
                         message=f'All documents for application #{application.application_id} have passed automated validation.'
                     )
 
-                    # Notify Agri Officers
                     agri_officers = api.User.objects.filter(role='Agri')
                     if agri_officers.exists():
                         api.Notification.objects.bulk_create([
@@ -100,7 +92,6 @@ def check_all_documents_complete(application_id):
                             for officer in agri_officers
                         ])
                     
-                    # Audit Trail
                     api.AuditTrail.objects.create(
                         what_performed=f"[OCR AUTOMATION] - Application #{application.application_id} documents successfully validated. Status updated to OCR_VALIDATED.",
                         when_performed=timezone.now()

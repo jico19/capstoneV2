@@ -2,7 +2,7 @@ from rest_framework import serializers
 from . import models
 
 
-class PaymentListSerializers(serializers.ModelSerializer):
+class PaymentListSerializer(serializers.ModelSerializer):
     payment_status = serializers.CharField(
         source = 'get_status_display',
         read_only=True
@@ -35,7 +35,7 @@ class PaymentListSerializers(serializers.ModelSerializer):
 
 
 
-class PaymentWriteAndDetailSerializers(serializers.ModelSerializer):
+class PaymentWriteAndDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.PaymentHistory
         fields = '__all__'

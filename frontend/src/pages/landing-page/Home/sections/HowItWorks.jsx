@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import useScrollReveal from "/src/hooks/useScrollReveal";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
 
 const STEPS = [
   { number: "01", title: "Create Your Account",     desc: "Sign up in minutes. Fill in your personal information, address, and create your login credentials. Verify your mobile number via SMS.",                                                           accent: "#f5a623" },

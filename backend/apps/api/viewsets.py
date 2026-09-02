@@ -10,9 +10,10 @@ from rest_framework.exceptions import ValidationError
 
 
 
-class UserViewSets(viewsets.ModelViewSet):
+from .base import BaseModelViewSet
+
+class UserViewSet(BaseModelViewSet):
     queryset = models.User.objects.all()
-    permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ["username", "first_name", "last_name", "phone_no"]
 
@@ -25,7 +26,7 @@ class UserViewSets(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve"]:
             return serializers.UserListSerializer
         elif self.action in ["create", "update", "partial_update"]:
-            return serializers.UserWriteSeiralizer
+            return serializers.UserWriteSerializer
         else:
             return serializers.UserListSerializer
 
@@ -90,7 +91,6 @@ class UserViewSets(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as e:
-            print(f"OTP SEND ERROR: {str(e)}")
             return Response(
                 {"error": "Failed to send OTP due to a system error."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -98,10 +98,9 @@ class UserViewSets(viewsets.ModelViewSet):
 
 
 
-class NotificationViewSets(viewsets.ModelViewSet):
+class NotificationViewSet(BaseModelViewSet):
     serializer_class = serializers.NotificationSerializer
     queryset = models.Notification.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -127,7 +126,7 @@ class NotificationViewSets(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def unread_count(self, request):
-        # Returns the count of unread notifications for the authenticated user.
+        """Returns the count of unread notifications for the authenticated user."""
         unread_count = models.Notification.objects.filter(
             recipient=request.user, is_read=False
         ).count()
@@ -135,10 +134,9 @@ class NotificationViewSets(viewsets.ModelViewSet):
         return Response({"unread_count": unread_count}, status=status.HTTP_200_OK)
 
 
-class AuditTrailViewSets(viewsets.ModelViewSet):
+class AuditTrailViewSet(BaseModelViewSet):
     serializer_class = serializers.AuditTrailSerializer
     queryset = models.AuditTrail.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user

@@ -1,4 +1,4 @@
-import useScrollReveal from "/src/hooks/useScrollReveal";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
 import { useNavigate } from "react-router-dom";
 
 export default function FAQsCTA() {

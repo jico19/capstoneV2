@@ -4,39 +4,14 @@ import FarmerInfo from "./FarmerInfo";
 import UploadDocument from "./UploadDocument";
 import ReviewApplication from "./ReviewApplication";
 import { Check, ArrowRight, AlertCircle } from "lucide-react";
-import { useApplicationDetail, useResubmitApplication } from "/src/hooks/useApplications";
+import { useApplicationDetail, useResubmitApplication } from '../../../hooks/useApplications';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { getFileObject, isFile } from '../../../lib/utils';
 
 // Helper to determine if a form value is a valid file upload (FileList or File)
-const isFile = (val) => {
-    if (!val) return false;
-    if (typeof FileList !== 'undefined' && val instanceof FileList) {
-        return val.length > 0;
-    }
-    if (Array.isArray(val)) {
-        return val.length > 0 && val[0] instanceof File;
-    }
-    if (typeof File !== 'undefined' && val instanceof File) {
-        return true;
-    }
-    if (val.length && val[0] instanceof File) {
-        return true;
-    }
-    return false;
-};
 
 // Helper to get the actual File object from a form value
-const getFileObject = (val) => {
-    if (!val) return null;
-    if (typeof FileList !== 'undefined' && val instanceof FileList) {
-        return val[0];
-    }
-    if (Array.isArray(val)) {
-        return val[0];
-    }
-    return val;
-};
 
 /**
  * Resubmit Application Component

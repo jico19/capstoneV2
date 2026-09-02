@@ -3,7 +3,6 @@ import React from 'react';
 /**
  * Global ActionGroup Component
  * Used in tables and lists for consistent row actions.
- * Style: Flat, Sharp, Minimal. Strictly adheres to GEMINI.md.
  */
 const ActionGroup = ({ buttons = [] }) => {
     return (
@@ -31,9 +30,9 @@ const ActionGroup = ({ buttons = [] }) => {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation(); // Prevent row click events
-                                btn.onclick();
+                                btn.onClick();
                             }}
-                            disabled={btn.disable}
+                            disabled={btn.disabled}
                             className={`
                                 /* Fixed Dimensions - Sharp Square */
                                 h-10 w-10 flex items-center justify-center
@@ -45,7 +44,7 @@ const ActionGroup = ({ buttons = [] }) => {
                                 rounded-none bg-white transition-all duration-75
                                 
                                 /* Interaction States - High Contrast Semantic Fills */
-                                ${btn.disable
+                                ${btn.disabled
                                     ? "bg-gray-50 text-gray-200 border-gray-100 cursor-not-allowed"
                                     : isDestructive
                                         ? "text-gray-400 hover:bg-red-600 hover:text-white hover:border-red-600"

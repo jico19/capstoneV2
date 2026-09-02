@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
-import useScrollReveal from "/src/hooks/useScrollReveal";
-import AppGuideIcon from "/src/assets/requirements-icons/app-guide-icon.png";
+import useScrollReveal from '../../../../hooks/useScrollReveal';
+import AppGuideIcon from '../../../../assets/requirements-icons/app-guide-icon.png';
 
 const STEPS = [
   { n: "1", title: "Create Account & Login",

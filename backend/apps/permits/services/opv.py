@@ -68,53 +68,30 @@ def approve_opv_validation(application, staff, data, files):
             when_performed=timezone.now(),
         )
 
-def reject_opv_validation(application, staff, data):
+def handle_opv_rejection(application, staff, data, *, is_resubmission: bool = False):
     if staff.role != "Opv":
         raise PermissionDenied("Not Authorized")
-
     if application.status == "OPV_VALIDATED":
         raise ValidationError("This is already approved.")
-
     with transaction.atomic():
-        create_reject_opv_validation(
-            application_id=application.pk, staff=staff, data=data
-        )
-
-        handle_application_status_change(
-            application,
-            models.PermitApplication.Status.OPV_REJECTED,
-            reason=data.get('remarks')
-        )
-
-        # --- Formal Audit Entry ---
-        AuditTrail.objects.create(
-            who_performed=staff,
-            what_performed=f"[PROVINCIAL VETERINARY REVIEW] - Application #{application.application_id} rejected by Veterinary Officer. Remarks: {data.get('remarks', 'N/A')}.",
-            when_performed=timezone.now(),
-        )
-
-def request_opv_resubmission(application, staff, data):
-    if staff.role != "Opv":
-        raise PermissionDenied("Not Authorized")
-
-    if application.status == "OPV_VALIDATED":
-        raise ValidationError("This is already approved.")
-
-    with transaction.atomic():
-        create_reject_opv_validation(
-            application_id=application.pk, staff=staff, data=data
-        )
-
-        # Use helper to handle status change and notification
+        create_reject_opv_validation(application_id=application.pk, staff=staff, data=data)
         handle_application_status_change(
             application,
             models.PermitApplication.Status.OPV_REJECTED,
             reason=data.get("remarks", "N/A"),
         )
-
-        # --- Formal Audit Entry ---
+        if is_resubmission:
+            action_desc = f"[PROVINCIAL VETERINARY REVIEW] - Application #{application.application_id} returned for resubmission. Remarks: {data.get('remarks', 'N/A')}."
+        else:
+            action_desc = f"[PROVINCIAL VETERINARY REVIEW] - Application #{application.application_id} rejected by Veterinary Officer. Remarks: {data.get('remarks', 'N/A')}."
         AuditTrail.objects.create(
             who_performed=staff,
-            what_performed=f"[PROVINCIAL VETERINARY REVIEW] - Application #{application.application_id} returned for resubmission. Remarks: {data.get('remarks', 'N/A')}.",
+            what_performed=action_desc,
             when_performed=timezone.now(),
         )
+
+def reject_opv_validation(application, staff, data):
+    handle_opv_rejection(application, staff, data, is_resubmission=False)
+
+def request_opv_resubmission(application, staff, data):
+    handle_opv_rejection(application, staff, data, is_resubmission=True)

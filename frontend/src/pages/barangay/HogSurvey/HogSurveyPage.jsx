@@ -19,26 +19,8 @@ import {
 import Pagination from '../../../components/ui/Pagination';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 import useAuthStore from '../../../store/authStore';
+import { parseValidationError, downloadBlob } from '../../../lib/utils';
 
-const parseValidationError = (err, fallback = "Action failed.") => {
-    if (err.response?.data) {
-        const data = err.response.data;
-        if (typeof data === 'object') {
-            if (data.detail) return data.detail;
-            const fieldErrors = Object.entries(data)
-                .map(([field, errors]) => {
-                    const fieldLabel = field.replace('_', ' ');
-                    const errorMsg = Array.isArray(errors) ? errors[0] : errors;
-                    return `${fieldLabel}: ${errorMsg}`;
-                })
-                .join(' | ');
-            if (fieldErrors) return fieldErrors;
-        } else if (typeof data === 'string') {
-            return data;
-        }
-    }
-    return err.message || fallback;
-};
 
 const HogSurveyPage = () => {
     const { user } = useAuthStore();
@@ -193,12 +175,7 @@ const HogSurveyPage = () => {
         const headers = "barangay,survey_date,inahin,barako,fattener,grower,starter,bulaw,total_pigs\n";
         const sampleRow = `${user.barangay_name},${new Date().toISOString().split('T')[0]},10,2,25,15,30,8,90\n`;
         const blob = new Blob([headers + sampleRow], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${user.barangay_name.replace(/\s+/g, '_')}_hog_survey_template.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        downloadBlob(blob, `${user.barangay_name.replace(/\s+/g, '_')}_hog_survey_template.csv`);
     };
 
     if (isLoading) {

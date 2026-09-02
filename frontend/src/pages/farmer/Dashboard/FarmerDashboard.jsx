@@ -7,14 +7,16 @@ import {
     ArrowRight
 } from 'lucide-react';
 import KPICard from '../../../components/ui/KPICard';
-import { useGetFarmerDashboard } from '/src/hooks/useDashboard';
+import { useGetFarmerDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
 import { Link } from 'react-router-dom';
-import useAuthStore from '/src/store/authStore';
-import BarChartComponent from '/src/components/charts/BarChart';
+import useAuthStore from '../../../store/authStore';
+import BarChartComponent from '../../../components/charts/BarChart';
 import SmartInsights from '../../../components/ui/SmartInsights';
+import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 
 const FarmerDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetFarmerDashboard();
+    const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Farmer');
     const { user } = useAuthStore();
 
     if (isLoading) {
@@ -83,6 +85,10 @@ const FarmerDashboard = () => {
                             yKey="total_pigs"
                             height={250}
                             barColor="#15803d"
+                        />
+                        <ChartTakeaway
+                            takeaway={insightData?.chart_insights?.transport_volume}
+                            isLoading={isInsightLoading}
                         />
                     </div>
                 </div>

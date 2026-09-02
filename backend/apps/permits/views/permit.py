@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
+from apps.api.base import BaseModelViewSet
 from .. import models, serializers, services
 
-class IssuedPermitViewSets(viewsets.ModelViewSet):
+class IssuedPermitViewSet(BaseModelViewSet):
     queryset = models.IssuedPermit.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         if request.user.role != "Agri":
@@ -153,7 +153,7 @@ class IssuedPermitViewSets(viewsets.ModelViewSet):
             )
 
 
-class MunicipalConfigViewSets(viewsets.ViewSet):
+class MunicipalConfigViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):

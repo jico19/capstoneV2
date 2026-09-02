@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useMap, MapPopup } from "/src/components/ui/map"
+import { useMap, MapPopup } from '../../../../components/ui/map'
 import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react"
 
 const MapDataHandler = ({ 

@@ -12,7 +12,6 @@ from .services import (
 )
 from django.tasks import task
 
-# Initialize logger for this module
 logger = logging.getLogger(__name__)
 
 class OCRRateLimitError(Exception):
@@ -66,7 +65,6 @@ def extract_document_info(document_id: int, attempt=3):
             payload['url'] = file_url
             response = requests.post(url=api_url, data=payload, timeout=30)
         else:
-            # read the document
             with doc.file.open('rb') as f:
                 files = {'file': (doc.file.name, f)}
                 response = requests.post(url=api_url, data=payload, files=files, timeout=30)
@@ -117,11 +115,9 @@ def extract_document_info(document_id: int, attempt=3):
     except OCRRateLimitError as e:
         attempt = context.task_result.attempt_count
         if attempt < MAX_ATTEMPTS:
-            # Exponential backoff: 10s, 20s, 40s...
             wait_time = RETRY_DELAY * (2 ** (attempt - 1))
             logger.warning(f"OCR Rate Limit hit for doc {document_id}. Retrying in {wait_time}s... (Attempt {attempt})")
             
-            # Re-enqueue with a delay
             extract_document_info.using(run_after=timedelta(seconds=wait_time)).enqueue(document_id)
             return
         else:

@@ -1,18 +1,17 @@
 import csv
 import io
-from django.db import transaction
-from .models import Barangay, HogSurvey
 from datetime import datetime
+from django.db import transaction
+from django.db.models import Sum, Q
 from rest_framework.exceptions import ValidationError
 from apps.api.utils import parse_date_range_strings
+from apps.permits.models import PermitApplication
+from .models import Barangay, HogSurvey
 
-# Service class to handle business logic for Hog Surveys, including CSV imports.
 class HogSurveyService:
-    # Imports hog survey data from a CSV file object.
     # Returns a tuple: (number of records created, list of error messages).
     @staticmethod
     def import_csv(file_obj, barangay_restriction=None):
-        # Read the file content as text
         try:
             # Reset pointer first in case it was already read
             file_obj.seek(0)
@@ -36,7 +35,6 @@ class HogSurveyService:
             'fattener', 'grower', 'starter', 'bulaw', 'total_pigs'
         ]
         
-        # Validate that all required columns are present in the CSV.
         if not all(col in reader.fieldnames for col in required_columns):
             missing = [col for col in required_columns if col not in reader.fieldnames]
             raise ValueError(f"Missing columns: {', '.join(missing)}")
@@ -45,14 +43,12 @@ class HogSurveyService:
         records_to_update = []
         errors = []
 
-        # Pre-fetch all barangays to avoid multiple queries.
         barangay_map = {b.name.lower(): b for b in Barangay.objects.all()}
 
         parsed_rows = []
         dates_in_csv = set()
         barangays_in_csv = set()
 
-        # csv readers are 1-based, and headers are row 1.
         for index, row in enumerate(reader):
             row_num = index + 2
             try:
@@ -67,7 +63,6 @@ class HogSurveyService:
                     errors.append(f"Row {row_num}: Barangay '{barangay_name}' is not your assigned barangay ({barangay_restriction.name}).")
                     continue
 
-                # Parse the survey date using standard datetime parsing.
                 date_str = str(row.get('survey_date', '')).strip()
                 try:
                     # Handle full ISO timestamps (like 2024-01-01 00:00:00) by splitting
@@ -77,7 +72,6 @@ class HogSurveyService:
                     errors.append(f"Row {row_num}: Invalid date '{date_str}'.")
                     continue
 
-                # Helper to convert fields to integers safely, defaulting to 0
                 def safe_int(val):
                     if val is None or str(val).strip() == '':
                         return 0
@@ -93,7 +87,6 @@ class HogSurveyService:
                 starter = safe_int(row.get('starter'))
                 bulaw = safe_int(row.get('bulaw'))
 
-                # Use total_pigs from CSV, or calculate if missing/zero/incorrect
                 total_pigs = safe_int(row.get('total_pigs'))
                 calculated_total = inahin + barako + fattener + grower + starter + bulaw
                 if total_pigs == 0 or total_pigs != calculated_total:
@@ -115,7 +108,6 @@ class HogSurveyService:
             except Exception as e:
                 errors.append(f"Row {row_num}: {str(e)}")
 
-        # Fetch existing surveys matching the (barangay, date) criteria
         existing_surveys = HogSurvey.objects.filter(
             barangay__in=list(barangays_in_csv),
             survey_date__in=list(dates_in_csv)
@@ -170,9 +162,6 @@ class HogSurveyService:
         Calculates the total number of pigs being transported out of each barangay
         based on active/released permits.
         """
-        from apps.permits.models import PermitApplication
-        from django.db.models import Sum
-
         # We only count permits that have reached 'Permit Issued' or later
         active_permits = PermitApplication.objects.filter(
             status__in=[
@@ -258,8 +247,6 @@ class HogSurveyService:
         """
         Aggregates pig population per barangay for heatmap.
         """
-        from django.db.models import Sum, Q
-
         queryset = HogSurvey.objects.all()
 
         # If no specific filters, we default to the latest year available

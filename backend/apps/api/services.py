@@ -8,7 +8,6 @@ def verify_otp(phone_no, otp_input):
     if not phone_no or not otp_input:
         raise ValidationError("Phone number and OTP are required.")
 
-    # Normalize phone number to match cache key
     phone_no = normalize_phone_number(phone_no)
 
     try:
@@ -16,7 +15,6 @@ def verify_otp(phone_no, otp_input):
     except (ValueError, TypeError):
         raise ValidationError("OTP must be a numeric value.")
 
-    # Retrieve the OTP specifically tied to this phone number
     cached_otp = cache.get(f"otp_{phone_no}")
 
     if not cached_otp:
@@ -25,7 +23,6 @@ def verify_otp(phone_no, otp_input):
     if int(cached_otp) != otp_input:
         raise ValidationError("Invalid verification code.")
 
-    # Success: remove OTP from cache and verify session
     cache.delete(f"otp_{phone_no}")
     return True
 
@@ -33,16 +30,13 @@ def send_otp(phone_no):
     if not phone_no:
         raise ValidationError("No phone number provided.")
 
-    # Consistent normalization
     normalized_phone = normalize_phone_number(phone_no)
 
-    # Check if phone number is already registered in the system
     if len(phone_no) >= 9:
         core_phone = phone_no[-9:]
         if models.User.objects.filter(phone_no__contains=core_phone).exists():
             raise ValidationError("This mobile number is already registered to another account.")
 
-    # Generate and cache OTP tied to the normalized phone number
     otp = generate_otp(normalized_phone)
 
     success = send_sms(

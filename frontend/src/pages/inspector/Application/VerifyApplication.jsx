@@ -10,7 +10,7 @@ import {
 import { api } from "../../../lib/api"
 import { toast } from "sonner"
 import DateFormatter from "../../../components/ui/DateFormatter"
-import { useInspectorLogs } from "/src/hooks/useInspectorLogs"
+import { useInspectorLogs } from '../../../hooks/useInspectorLogs'
 
 
 const VerifyApplication = () => {

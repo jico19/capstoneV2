@@ -17,8 +17,6 @@ function useCounter(target, duration = 1800, start = false) {
   return count;
 }
 
-// TODO:
-// use real data from the backend
 const STATS = [
   { value: 500,  suffix: "+",    label: "Permits Issued",           delay: "0s"    },
   { value: 15,   suffix: " min", label: "Average Processing Time",  delay: "0.1s"  },

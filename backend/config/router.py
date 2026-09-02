@@ -1,33 +1,33 @@
 from rest_framework.routers import DefaultRouter
 from apps.permits import views as PermitViewSets
 from apps.maps import viewsets as MapsViewSets
-from apps.api import viewsets as UserViewSets
+from apps.api import viewsets as UserViewSet
 from apps.payment import viewsets as PaymentViewSets
 from apps.inspector import viewsets as InspectorViewSets
 
-routers = DefaultRouter()
+router = DefaultRouter()
 
 # permit
-routers.register(r'application', PermitViewSets.PermitApplicationViewSets)
-routers.register(r'document', PermitViewSets.SubmittedDocumentViewSets)
-routers.register(r'opv', PermitViewSets.OPVValidationViewSets)
-routers.register(r'issued-permit', PermitViewSets.IssuedPermitViewSets)
-routers.register(r'ocr-validation', PermitViewSets.OCRValidationResultViewSets)
-routers.register(r'report', PermitViewSets.ReportViewSets, basename='report')
-routers.register(r'municipal-config', PermitViewSets.MunicipalConfigViewSets, basename='municipal-config')
+router.register(r'application', PermitViewSets.PermitApplicationViewSet)
+router.register(r'document', PermitViewSets.SubmittedDocumentViewSet)
+router.register(r'opv', PermitViewSets.OPVValidationViewSet)
+router.register(r'issued-permit', PermitViewSets.IssuedPermitViewSet)
+router.register(r'ocr-validation', PermitViewSets.OCRValidationResultViewSet)
+router.register(r'report', PermitViewSets.ReportViewSet, basename='report')
+router.register(r'municipal-config', PermitViewSets.MunicipalConfigViewSet, basename='municipal-config')
 
 # map
-routers.register(r'barangay', MapsViewSets.BarangayViewSets)
-routers.register(r'hog-survey', MapsViewSets.HogSurveyViewSets)
+router.register(r'barangay', MapsViewSets.BarangayViewSet)
+router.register(r'hog-survey', MapsViewSets.HogSurveyViewSet)
 
 
 # user
-routers.register(r'user', UserViewSets.UserViewSets)
-routers.register(r'notification', UserViewSets.NotificationViewSets)
-routers.register(r'audit-trail', UserViewSets.AuditTrailViewSets)
+router.register(r'user', UserViewSet.UserViewSet)
+router.register(r'notification', UserViewSet.NotificationViewSet)
+router.register(r'audit-trail', UserViewSet.AuditTrailViewSet)
 
 # payment
-routers.register(r'payment', PaymentViewSets.PaymentViewSets)
+router.register(r'payment', PaymentViewSets.PaymentViewSet)
 
 # Inspector
-routers.register(r'inspector', InspectorViewSets.InspectorLogViewSets)
+router.register(r'inspector', InspectorViewSets.InspectorLogViewSet)

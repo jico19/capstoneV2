@@ -1,18 +1,17 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.api.base import BaseModelViewSet
 from ..filters import PermitApplicationFilter
 from .. import models, serializers, services
 
-class PermitApplicationViewSets(viewsets.ModelViewSet):
+class PermitApplicationViewSet(BaseModelViewSet):
     queryset = models.PermitApplication.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = PermitApplicationFilter
-    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == "list":

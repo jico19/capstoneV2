@@ -8,10 +8,11 @@ import {
     Percent,
     AlertTriangle
 } from "lucide-react";
-import { useGetOPVDashboard } from "/src/hooks/useDashboard";
+import { useGetOPVDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
 import KPICard from "../../../components/ui/KPICard";
-import BarChartComponent from "/src/components/charts/BarChart";
+import BarChartComponent from '../../../components/charts/BarChart';
 import SmartInsights from "../../../components/ui/SmartInsights";
+import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 
 
 /**
@@ -21,6 +22,7 @@ import SmartInsights from "../../../components/ui/SmartInsights";
  */
 const OpvDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetOPVDashboard();
+    const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('OPV');
 
     if (isLoading) {
         return (
@@ -103,6 +105,10 @@ const OpvDashboard = () => {
                             height={300}
                             barColor="#15803d"
                         />
+                        <ChartTakeaway
+                            takeaway={insightData?.chart_insights?.validation_history}
+                            isLoading={isInsightLoading}
+                        />
                     </div>
                 </div>
 
@@ -122,6 +128,10 @@ const OpvDashboard = () => {
                                 height={250}
                                 barColor="#b91c1c"
                             />
+                            <ChartTakeaway
+                                takeaway={insightData?.chart_insights?.rejection_reasons}
+                                isLoading={isInsightLoading}
+                            />
                         </div>
                         <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Primary causes for permit application refusal (30d).</p>
                     </div>
@@ -140,6 +150,10 @@ const OpvDashboard = () => {
                                 height={250}
                                 barColor="#15803d"
                             />
+                            <ChartTakeaway
+                                takeaway={insightData?.chart_insights?.top_barangays}
+                                isLoading={isInsightLoading}
+                            />
                         </div>
                         <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Swine volume distribution by top 5 origin barangays.</p>
                     </div>
@@ -157,6 +171,10 @@ const OpvDashboard = () => {
                                 yKey="count"
                                 height={250}
                                 barColor="#1d4ed8"
+                            />
+                            <ChartTakeaway
+                                takeaway={insightData?.chart_insights?.top_destinations}
+                                isLoading={isInsightLoading}
                             />
                         </div>
                         <p className="mt-4 text-[10px] font-medium text-stone-500 uppercase tracking-wide">Most frequent shipment endpoints by livestock headcount.</p>

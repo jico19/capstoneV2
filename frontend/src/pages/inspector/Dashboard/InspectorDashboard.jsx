@@ -5,11 +5,12 @@ import {
     Clock,
     History
 } from "lucide-react";
-import { useGetInspectorDashboard } from "/src/hooks/useDashboard";
+import { useGetInspectorDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
 import KPICard from "../../../components/ui/KPICard";
-import BarChartComponent from "/src/components/charts/BarChart";
-import LineChartComponent from "/src/components/charts/LineChart";
+import BarChartComponent from '../../../components/charts/BarChart';
+import LineChartComponent from '../../../components/charts/LineChart';
 import SmartInsights from "../../../components/ui/SmartInsights";
+import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 
 
 /**
@@ -18,6 +19,7 @@ import SmartInsights from "../../../components/ui/SmartInsights";
  */
 const InspectorDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetInspectorDashboard();
+    const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Inspector');
 
     if (isLoading) {
         return (
@@ -94,6 +96,10 @@ const InspectorDashboard = () => {
                         height={300}
                         barColor="#16a34a"
                     />
+                    <ChartTakeaway
+                        takeaway={insightData?.chart_insights?.activity_trend}
+                        isLoading={isInsightLoading}
+                    />
                 </div>
 
                 <div className="bg-white border border-gray-200 p-10 rounded-none">
@@ -107,6 +113,10 @@ const InspectorDashboard = () => {
                         yKey="count"
                         height={300}
                         lineColor="#15803d"
+                    />
+                    <ChartTakeaway
+                        takeaway={insightData?.chart_insights?.peak_activity}
+                        isLoading={isInsightLoading}
                     />
                     <p className="mt-4 text-[10px] font-medium text-gray-500 uppercase tracking-wide">Verification scans per hour (all-time).</p>
                 </div>

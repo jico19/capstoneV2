@@ -1,15 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.http import FileResponse
+from apps.api.base import BaseModelViewSet
 from . import models, serializers, services
 
-class InspectorLogViewSets(viewsets.ModelViewSet):
+class InspectorLogViewSet(BaseModelViewSet):
     queryset = models.InspectorLogs.objects.all()
     serializer_class = serializers.InspectorLogsSerializer
-    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def generate_report(self, request):

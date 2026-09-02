@@ -10,7 +10,6 @@ export const useApplication = (limit = 10, offset = 0, status, search) => {
             const res = await api.get('/application/', {
                 params: { limit, offset, status, search }
             })
-            // console.log(res.data)
             return res.data
         },
         placeholderData: keepPreviousData,
@@ -23,7 +22,6 @@ export const useApplicationDetail = (id) => {
         queryKey: ['application', id],
         queryFn: async () => {
             const res = await api.get(`/application/${id}/`)
-            // console.log(res.data)
             return res.data
         },
         enabled: !!id,
@@ -57,7 +55,7 @@ export const useOCRUpdate = () => {
 }
 
 
-export const useCreateApplicataion = () => {
+export const useCreateApplication = () => {
     const query = useQueryClient()
     return useMutation({
         mutationFn: async (data) => {
@@ -68,7 +66,6 @@ export const useCreateApplicataion = () => {
             query.invalidateQueries({ queryKey: ['application'] })
         }, onError: (error) => {
             toast.error("There is something wrong...")
-            // console.log(error.response)
         }
     })
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, forwardRef } from "react"
-import { Map, MapControls, useMap, MapPopup} from "/src/components/ui/map"
+import { Map, MapControls, useMap, MapPopup} from '../../../../components/ui/map'
 import MapDataHandler from "./MapDataHandler"
 
 

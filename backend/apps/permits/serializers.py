@@ -1,4 +1,3 @@
-# serializers.py
 from rest_framework import serializers
 from .models import (
     PermitApplication,
@@ -113,7 +112,7 @@ class TransportOriginWriteSerializer(serializers.ModelSerializer):
 class PermitApplicationListSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/"""
 
-    farmer_name = serializers.SerializerMethodField()
+    farmer_name = serializers.CharField(source='farmer.get_full_name', read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
@@ -130,14 +129,11 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def get_farmer_name(self, obj):
-        return obj.farmer.get_full_name() or obj.farmer.username
-
 
 class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/<id>/"""
 
-    farmer_name = serializers.SerializerMethodField()
+    farmer_name = serializers.CharField(source='farmer.get_full_name', read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     number_of_pigs = serializers.SerializerMethodField()
     all_documents = serializers.SerializerMethodField()
@@ -162,9 +158,6 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "is_checked",
             "permit_fee",
         ]
-
-    def get_farmer_name(self, obj):
-        return obj.farmer.get_full_name() or obj.farmer.username
 
     def get_all_documents(self, obj):
         # Flatten all documents from all transport origins

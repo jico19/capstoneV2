@@ -15,7 +15,6 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
-from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -46,7 +45,6 @@ class NumberedCanvas(canvas.Canvas):
         self.saveState()
         width, height = self._pagesize
         
-        # 1. Running Header on later pages (Page 2+)
         if self._pageNumber > 1:
             self.setFont("Helvetica-Bold", 8)
             self.setFillColor(colors.HexColor("#1c1917"))
@@ -56,23 +54,18 @@ class NumberedCanvas(canvas.Canvas):
             self.setFillColor(colors.HexColor("#57534e"))
             self.drawRightString(width - 1 * cm, height - 1.5 * cm, f"Period: {self.date_range_str}")
             
-            # Divider line
             self.setStrokeColor(colors.HexColor("#e7e5e4"))
             self.setLineWidth(0.5)
             self.line(1 * cm, height - 1.8 * cm, width - 1 * cm, height - 1.8 * cm)
             
-        # 2. Running Footer on all pages
-        # Divider line above footer
         self.setStrokeColor(colors.HexColor("#e7e5e4"))
         self.setLineWidth(0.5)
         self.line(1 * cm, 1.8 * cm, width - 1 * cm, 1.8 * cm)
         
-        # Footer text
         self.setFont("Helvetica-Oblique", 8)
         self.setFillColor(colors.HexColor("#78716c"))
         self.drawString(1 * cm, 1.2 * cm, self.footer_text)
         
-        # Page numbers
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor("#78716c"))
         self.drawRightString(width - 1 * cm, 1.2 * cm, f"Page {self._pageNumber} of {page_count}")
@@ -94,7 +87,14 @@ def make_numbered_canvas(report_title, report_subtitle, date_range_str, footer_t
 
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
-from apps.permits.models import IssuedPermit, PermitApplication, TransportOrigin
+from apps.permits.models import (
+    IssuedPermit,
+    PermitApplication,
+    TransportOrigin,
+    SubmittedDocument,
+    OCRValidationResult,
+    MunicipalConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +136,6 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
             AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
 
-            # 1. Page Background & Border
             p.setFillColor(colors.white)
             p.rect(0, 0, width, height, fill=True, stroke=False)
 
@@ -144,8 +143,6 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             p.setFillColor(PRIMARY_GREEN)
             p.rect(0, 0, 0.5 * cm, height, fill=True, stroke=False)
 
-            # 2. Header Section
-            # Draw Logos
             logo_size = 2.2 * cm
             if os.path.exists(OFFICIAL_LOGO):
                 p.drawImage(
@@ -167,7 +164,6 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
                     mask="auto",
                 )
 
-            # Header Text (Centered)
             p.setFillColor(TEXT_MAIN)
             p.setFont("Helvetica-Bold", 20)
             p.drawCentredString(
@@ -199,7 +195,6 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
                 badge_x + 0.3 * cm, badge_y + 0.4 * cm, issued_permit.permit_number
             )
 
-            # 3. Main Content Grid
             def draw_info_row(x, y, label, value, w=8 * cm, h=1.4 * cm):
                 # Box
                 p.setStrokeColor(BORDER_COLOR)
@@ -280,12 +275,10 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
                 w=18 * cm,
             )
 
-            # 4. Security & Verification Zone
             p.setFillColor(ACCENT_BG)
             p.rect(1.5 * cm, 3.5 * cm, 18 * cm, 6 * cm, fill=True, stroke=True)
             p.setStrokeColor(BORDER_COLOR)
 
-            # QR Code Generation
             qr_url = (
                 f"{settings.FRONTEND_URL}/inspector/verify/{issued_permit.qr_token}"
             )
@@ -322,7 +315,6 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
                 "Validation confirms authenticity and real-time status of the permit.",
             )
 
-            # 5. Signatures
             p.setFillColor(TEXT_MAIN)
             p.setFont("Helvetica-Bold", 10)
             p.drawString(1.5 * cm, 2 * cm, "ISSUED BY:")
@@ -335,7 +327,6 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
                 f"Date Issued: {issued_permit.date_issued.strftime('%B %d, %Y')}",
             )
 
-            # 6. Footer Note
             p.setFillColor(TEXT_MUTED)
             p.setFont("Helvetica-Oblique", 7)
             p.drawRightString(
@@ -393,8 +384,6 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
     """
     try:
         with transaction.atomic():
-            from apps.permits.models import PermitApplication, IssuedPermit, SubmittedDocument, OCRValidationResult, MunicipalConfig
-            
             application = (
                 PermitApplication.objects.select_related("farmer", "issued_permit")
                 .prefetch_related("origins__barangay")
@@ -1454,8 +1443,6 @@ def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=No
         f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
     )
 
-    doc.build(story, canvasmaker=canvas_factory)
-
     buffer.seek(0)
     return buffer
 
@@ -1625,7 +1612,6 @@ def generate_permit_issuance_csv(start_date, end_date):
     output = StringIO()
     writer = csv.writer(output)
 
-    # CSV header row
     writer.writerow(
         [
             "Permit Number",

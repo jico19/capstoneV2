@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import LandingButton from "/src/components/ui/LandingButton";
-import CtaBg from '/src/assets/home-icons/CTA-bg.png'
+import LandingButton from '../../../../components/ui/LandingButton';
+import CtaBg from '../../../../assets/home-icons/CTA-bg.png'
 
 
 export default function CTA() {

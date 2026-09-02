@@ -1,10 +1,10 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
-import useAuthStore from "/src/store/authStore";
+import useAuthStore from '../../store/authStore';
 import { Lock, User, ShieldCheck, ArrowRight, ClipboardCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import AgriLogo from "/src/assets/sariaya-agri-logo.jpg";
+import AgriLogo from '../../assets/sariaya-agri-logo.jpg';
 
 /**
  * Login Page

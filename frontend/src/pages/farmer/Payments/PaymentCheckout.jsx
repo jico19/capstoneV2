@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, CheckCircle2, ChevronRight, AlertCircle, Download, Info, Clock, QrCode } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, CheckCircle2, ChevronRight, AlertCircle, Download, Info, Clock, QrCode, Smartphone, Banknote } from 'lucide-react';
 import { api } from '../../../lib/api';
-import { useApplicationDetail } from '/src/hooks/useApplications';
+import { useApplicationDetail } from '../../../hooks/useApplications';
 import { toast } from 'sonner';
-import ConfirmationModal from '/src/components/ui/ConfirmationModal';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 // Timer component for QR Ph code expiration countdown
 const QRCountDown = ({ expiresAt, onExpire }) => {
@@ -42,7 +42,7 @@ const PaymentCheckout = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [totalPrice, setTotalprice] = useState(0);
+    const [totalPrice, setTotalPrice] = useState(0);
     const [showConfirm, setShowConfirm] = useState(false);
     
     // QR Ph related states
@@ -50,6 +50,11 @@ const PaymentCheckout = () => {
     const [qrData, setQrData] = useState(null);
     const [isPolling, setIsPolling] = useState(false);
     const [isExpired, setIsExpired] = useState(false);
+
+    // Sandbox (demo) checkout modal states
+    const [showSandbox, setShowSandbox] = useState(false);
+    const [sandboxMethod, setSandboxMethod] = useState('gcash');
+    const [isSandboxPaying, setIsSandboxPaying] = useState(false);
 
     const { data: application, isLoading: isApplicationLoading, isError } = useApplicationDetail(id);
 
@@ -59,18 +64,10 @@ const PaymentCheckout = () => {
 
         try {
             if (paymentMode === 'online') {
-                // Call backend endpoint that triggers create_checkout_session()
-                const response = await api.post(`/payment/${id}/checkout_session/`, { total_price: totalPrice });
-                const checkoutUrl = response.data.checkout_url;
-
-                if (checkoutUrl) {
-                    toast.info("Redirecting to Secure Payment", {
-                        description: "Please complete the transaction on the payment gateway."
-                    });
-                    window.location.href = checkoutUrl;
-                } else {
-                    throw new Error("No checkout URL received from server.");
-                }
+                // In demo/dev: show sandbox checkout modal instead of redirecting
+                // In production this would go straight to PayMongo
+                setIsLoading(false);
+                setShowSandbox(true);
             } else {
                 // Call backend endpoint to generate QR Ph payment
                 const response = await api.post(`/payment/${id}/create_qrph_payment/`, { total_price: totalPrice });
@@ -89,6 +86,27 @@ const PaymentCheckout = () => {
                 description: "Could not initialize the payment session. Please try again later."
             });
             setIsLoading(false);
+        }
+    };
+
+    const handleSandboxPayment = async () => {
+        setIsSandboxPaying(true);
+        try {
+            const res = await api.post(`/payment/${id}/farmer_simulate_payment/`, {
+                payment_method: sandboxMethod,
+            });
+            if (res.data.verified) {
+                setShowSandbox(false);
+                toast.success("Payment Successful!", {
+                    description: `${sandboxMethod.toUpperCase()} payment confirmed. Redirecting to your receipt...`
+                });
+                navigate(`/farmer/payment/success/${id}`);
+            }
+        } catch (err) {
+            const msg = err?.response?.data?.error || "Payment simulation failed. Please try again.";
+            toast.error("Payment Failed", { description: msg });
+        } finally {
+            setIsSandboxPaying(false);
         }
     };
 
@@ -120,7 +138,7 @@ const PaymentCheckout = () => {
 
     useEffect(() => {
         if (application) {
-            setTotalprice(application.permit_fee || 150.00);
+            setTotalPrice(application.permit_fee || 150.00);
         }
     }, [application]);
 
@@ -202,6 +220,95 @@ const PaymentCheckout = () => {
                     isSubmitting={isLoading}
                 />
             )}
+
+            {/* ── Sandbox Payment Modal ─────────────────────────────────────────── */}
+            {showSandbox && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-sm rounded-none shadow-2xl overflow-hidden">
+
+                        {/* Modal Header — mimics a payment gateway */}
+                        <div className="bg-green-700 px-6 py-5 text-white flex items-center gap-3">
+                            <ShieldCheck size={20} />
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest">Secure Payment</p>
+                                <p className="text-[9px] font-medium text-green-200 uppercase tracking-wider">FarmPass × PayMongo Sandbox</p>
+                            </div>
+                        </div>
+
+                        {/* Amount display */}
+                        <div className="px-6 pt-6 pb-4 border-b border-stone-100 text-center space-y-1">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Amount Due</p>
+                            <p className="text-4xl font-black text-stone-800 font-mono">₱{totalPrice}</p>
+                            <p className="text-[9px] text-stone-400 uppercase font-semibold">
+                                Permit #{application?.application_id}
+                            </p>
+                        </div>
+
+                        {/* Payment method picker */}
+                        <div className="px-6 pt-5 pb-4 space-y-3">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Choose Payment Method</p>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                {[
+                                    { id: 'gcash',   label: 'GCash',       icon: <Smartphone size={16} /> },
+                                    { id: 'paymaya', label: 'Maya',        icon: <Wallet size={16} /> },
+                                    { id: 'card',    label: 'Credit/Debit Card', icon: <CreditCard size={16} /> },
+                                    { id: 'qrph',    label: 'QR Ph',       icon: <QrCode size={16} /> },
+                                ].map(m => (
+                                    <button
+                                        key={m.id}
+                                        onClick={() => setSandboxMethod(m.id)}
+                                        className={`flex items-center gap-2 px-3 py-3 border text-left text-[10px] font-black uppercase tracking-widest transition-all rounded-none ${
+                                            sandboxMethod === m.id
+                                                ? 'border-green-700 bg-green-50 text-green-800'
+                                                : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+                                        }`}
+                                    >
+                                        <span className={sandboxMethod === m.id ? 'text-green-700' : 'text-stone-400'}>
+                                            {m.icon}
+                                        </span>
+                                        {m.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Sandbox notice */}
+                        <div className="mx-6 mb-4 bg-amber-50 border border-amber-200 px-3 py-2 flex gap-2 items-start">
+                            <Info size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                            <p className="text-[9px] font-semibold text-amber-700 uppercase leading-relaxed">
+                                Demo mode — no real transaction. Simulates a successful {sandboxMethod.toUpperCase()} payment.
+                            </p>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="px-6 pb-6 flex flex-col gap-2">
+                            <button
+                                onClick={handleSandboxPayment}
+                                disabled={isSandboxPaying}
+                                className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors rounded-none"
+                            >
+                                {isSandboxPaying ? (
+                                    <>
+                                        <span className="loading loading-spinner loading-xs"></span>
+                                        Processing {sandboxMethod.toUpperCase()}...
+                                    </>
+                                ) : (
+                                    <>Pay ₱{totalPrice} with {sandboxMethod.toUpperCase()} <ChevronRight size={14} /></>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setShowSandbox(false)}
+                                disabled={isSandboxPaying}
+                                className="w-full text-stone-400 hover:text-stone-700 text-[10px] font-black uppercase tracking-widest py-2 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* ── End Sandbox Modal ─────────────────────────────────────────────── */}
             <div className="min-h-screen bg-stone-50/50 p-6 lg:p-12">
                 <div className="max-w-4xl mx-auto space-y-10">
 
@@ -430,12 +537,19 @@ const PaymentCheckout = () => {
                                                 onClick={async () => {
                                                     try {
                                                         setIsLoading(true);
-                                                        await api.post(`/payment/${id}/simulate_payment/`);
-                                                        toast.success("Simulation Complete", {
-                                                            description: "Simulated store keeper scanning and paying QR Ph."
-                                                       });
+                                                        const res = await api.post(`/payment/${id}/farmer_simulate_payment/`, {
+                                                            payment_method: 'qrph'
+                                                        });
+                                                        if (res.data.verified) {
+                                                            toast.success("Payment Successful!", {
+                                                                description: "Store keeper scanned and paid. Redirecting..."
+                                                            });
+                                                            navigate(`/farmer/payment/success/${id}`);
+                                                        }
                                                     } catch (err) {
-                                                        toast.error("Simulation failed");
+                                                        toast.error("Simulation failed", {
+                                                            description: err?.response?.data?.error || "An error occurred."
+                                                        });
                                                     } finally {
                                                         setIsLoading(false);
                                                     }

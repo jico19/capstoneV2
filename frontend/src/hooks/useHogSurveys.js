@@ -1,3 +1,4 @@
+import { downloadBlob } from '../lib/utils';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
@@ -67,13 +68,7 @@ export const useExportHogSurveyCsv = () => {
                 params,
                 responseType: 'blob'
             });
-            const url = window.URL.createObjectURL(new Blob([res.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Sariaya_Hog_Population_${params?.start_date || 'ALL'}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            downloadBlob(res.data, `Sariaya_Hog_Population_${params?.start_date || 'ALL'}.csv`);
         }
     });
 };

@@ -33,7 +33,6 @@ export const useGetHogSurvey = (startMonth, endMonth, season, year) => {
             if (season) params.season = season;
             if (year) params.year = year;
 
-            // Artificial delay to showcase the loading state
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Make sure your Axios instance is pointing to the correct Django endpoint

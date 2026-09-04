@@ -1,0 +1,33 @@
+upon registration the system needs to require the farmer to upload the necessary document:
+- Handler's License
+- Transport License
+- Traders Pass
+
+and when application it will be automatically added in the required documents.
+
+and it will automatically notifies the user before expiration and uploaded document is expired and requires them to upload a new updated document.
+
+
+There will be a new two coulmn Farmer/Owner of Pig name and Their Cellphone number in the Hog Survey.
+
+and the barangay will have options to upload a csv for batch uploading or manually encode each person via forms.
+
+Put a key take away on the map that is not generic key takeaway but meaningful and has purpose key takeway.
+
+Keytake away it needs to be not too obvious like something meaninful and purpose
+- > done
+
+- WIP
+in application there will be a form to put the farmer name and phone number of the farm who is the pig source of the pig and they will be also notified if ever the permit is scanned in the checkpoints. 
+
+Implement a auto generated AIC and MAO will pass it to OPV for Validation.
+
+Implement the auto generated of Endrosement Letter per barangay and Certificate of Slaughter
+
+
+
+if possible put a tagalog support for each user.
+
+Reports it needs to be an actual report not just a table with the summary of the datas. it needs to be formal and goverment like reports 
+
+and the Insights needs to be benificial like "Low count of this kind of pig in this barangay it needs some veterirnary Attentions.

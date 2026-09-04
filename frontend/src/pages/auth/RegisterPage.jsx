@@ -154,12 +154,15 @@ const RegisterPage = () => {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h1 className="text-4xl font-black text-stone-900 uppercase tracking-tighter">Registration Complete</h1>
-                            <p className="text-stone-500 font-medium text-sm leading-relaxed">Your account has been successfully created. You can now use your details to log in and apply for permits.</p>
+                            <h1 className="text-3xl font-black text-stone-900 uppercase tracking-tighter">Registration Complete</h1>
+                            <div className="inline-block bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-800">
+                                Status: Pending Document Verification
+                            </div>
+                            <p className="text-stone-500 font-medium text-xs leading-relaxed">Your account has been created. After logging in, upload your Handler's License, Transport License, and Trader's Pass to unlock permit applications.</p>
                         </div>
-                        <div className="pt-6">
-                            <Link to="/login" className="w-full bg-green-700 hover:bg-green-800 text-white py-5 px-10 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-700/20">
-                                Go to Login Page <ArrowRight size={18} strokeWidth={3} />
+                        <div className="pt-4">
+                            <Link to="/login" className="w-full bg-green-700 hover:bg-green-800 text-white py-4 px-8 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-green-700/20">
+                                Continue to Login <ArrowRight size={16} strokeWidth={2.5} />
                             </Link>
                         </div>
                     </div>

@@ -116,9 +116,13 @@ def extract_handlers_license(text):
         match = re.search(pattern, text, flags)
         return match.group(1).strip() if match else None
 
-    # More robust patterns: allowing for colons, multiple spaces, and values before/after labels
+    reg_no = find(r'(20\d{2}-DARFO[\w-]+)')
+    if not reg_no:
+        reg_no = find(r'Registration\s*Number\s*[:\n]\s*([^\n]+)')
+
     return {
-        'registration_number': find(r'(20\d{2}-DARFO[\w-]+)'),
+        'registration_number': reg_no,
+        'license_number': reg_no,
         'name_of_applicant': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*NAME OF APPLICANT', re.IGNORECASE | re.MULTILINE),
         'business_name': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*BUSINESS NAME', re.IGNORECASE | re.MULTILINE),
         'address': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*ADDRESS', re.IGNORECASE | re.MULTILINE),
@@ -134,8 +138,12 @@ def extract_transport_carrier(text):
         match = re.search(pattern, text, flags)
         return match.group(1).strip() if match else None
 
+    lic_no = find(r'(20\d{2}-DARFO[\w-]+)')
+    if not lic_no:
+        lic_no = find(r'License\s*Number\s*[:\n]\s*([^\n]+)')
+
     return {
-        'license_number': find(r'(20\d{2}-DARFO[\w-]+)'),
+        'license_number': lic_no,
         'name_of_applicant': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*NAME OF APPLICANT', re.IGNORECASE | re.MULTILINE),
         'business_name': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*BUSINESS NAME', re.IGNORECASE | re.MULTILINE),
         'address': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*ADDRESS', re.IGNORECASE | re.MULTILINE),
@@ -146,6 +154,79 @@ def extract_transport_carrier(text):
         'body_type': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*BODY TYPE', re.IGNORECASE | re.MULTILINE),
         'date_of_issuance': find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF ISSUANCE', re.IGNORECASE | re.MULTILINE),
         'date_of_expiration': find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF EXPIRATION', re.IGNORECASE | re.MULTILINE),
+    }
+
+
+def extract_traders_pass(text):
+    text = re.sub(r'\r\n|\r', '\n', text)
+
+    def find(pattern, flags=re.IGNORECASE | re.MULTILINE):
+        match = re.search(pattern, text, flags)
+        return match.group(1).strip() if match else None
+
+    # TrPASS Code regex: e.g. TrPASS-OPV-QZN-00014-V1 or TrPASS-OPV-QZN-00014
+    pass_code = find(r'(TrPASS-OPV-[A-Z]+-[\w\-]+)')
+    if not pass_code:
+        pass_code = find(r'T[ri]PASS\s*Code\s*[:\n]\s*([^\n]+)')
+
+    # In OCR.space, lines often appear as:
+    # TrPASS-OPV-QZN-00014-V1
+    # Darrel A?onuevo
+    # Darrel Affonueva Trucking Services
+    # Poblacion, San Antonio, Quezon
+    # Or labels with colons
+    hauler = find(r'Name of Hauler\s*:\s*([^\n]+)')
+    biz_name = find(r'Name of Business\s*:\s*([^\n]+)')
+    address = find(r'Business Address\s*:\s*([^\n]+)')
+    plate_no = find(r'Plate Number\s*:\s*([^\n]+)')
+    vehicle_type = find(r'Type of Vehicle\s*:\s*([^\n]+)')
+    issue_date = find(r'Issue Date\s*:\s*(\d{1,2}/\d{1,2}/\d{4}|\w+\s+\d{1,2},?\s*\d{4})')
+
+    # If key-value colons were on lines below:
+    if not hauler:
+        # Check if values are clustered under the block
+        m = re.search(
+            r'(TrPASS-OPV-[^\n]+)\n([^\n]+)\n([^\n]+)\n([^\n]+)',
+            text
+        )
+        if m:
+            if not pass_code:
+                pass_code = m.group(1).strip()
+            hauler = m.group(2).strip()
+            biz_name = m.group(3).strip()
+            address = m.group(4).strip()
+
+    if not plate_no:
+        m_plate = re.search(r'\n([A-Z]{2,4}\s?\d{3,4})\nSilver|Gray|White|Black|Red|Blue|JITNEY', text, re.IGNORECASE)
+        if m_plate:
+            plate_no = m_plate.group(1).strip()
+        else:
+            m_gen = re.search(r'\b([A-Z]{3}\s*\d{3,4})\b', text)
+            if m_gen:
+                plate_no = m_gen.group(1).strip()
+
+    # Calculate default 1-year expiration from issue date if found
+    expiration_date_str = None
+    if issue_date:
+        parsed_issue = parse_date(issue_date)
+        if parsed_issue:
+            try:
+                # 1 year later
+                exp_dt = parsed_issue.replace(year=parsed_issue.year + 1)
+                expiration_date_str = exp_dt.strftime('%Y-%m-%d')
+            except ValueError:
+                exp_dt = parsed_issue + datetime.timedelta(days=365)
+                expiration_date_str = exp_dt.strftime('%Y-%m-%d')
+
+    return {
+        'license_number': pass_code,
+        'name_of_applicant': hauler,
+        'business_name': biz_name,
+        'address': address,
+        'plate_no': plate_no,
+        'vehicle_type': vehicle_type,
+        'date_of_issuance': issue_date,
+        'date_of_expiration': expiration_date_str,
     }
 
 
@@ -203,3 +284,23 @@ def validate_transport_carrier(extracted):
         errors['plate_no'] = f'Plate number format looks invalid: {plate}'
 
     return errors
+
+
+def validate_traders_pass(extracted):
+    errors = {}
+    today = datetime.today()
+
+    if not extracted.get('license_number'):
+        errors['license_number'] = 'TrPASS code could not be extracted.'
+
+    if not extracted.get('date_of_issuance'):
+        errors['date_of_issuance'] = 'Issue date could not be extracted.'
+
+    expiry_str = extracted.get('date_of_expiration')
+    if expiry_str:
+        expiry = parse_date(expiry_str)
+        if expiry and expiry < today:
+            errors['date_of_expiration'] = f'Trader\'s pass expired as of {expiry.strftime("%B %d, %Y")}.'
+
+    return errors
+

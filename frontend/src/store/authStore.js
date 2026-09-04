@@ -23,7 +23,8 @@ const useAuthStore = create(
                         first_name: decoded.first_name,
                         last_name: decoded.last_name,
                         barangay: decoded.barangay,
-                        barangay_name: decoded.barangay_name
+                        barangay_name: decoded.barangay_name,
+                        verification_status: decoded.verification_status || 'UNVERIFIED'
                     };
 
                     set({
@@ -36,6 +37,40 @@ const useAuthStore = create(
                     console.error("Login failed:", error);
                     throw error
                 }
+            },
+
+            // Update user state dynamically
+            updateUser: (updatedFields) => {
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...updatedFields } : null
+                }));
+            },
+
+            // Fetch fresh user profile
+            fetchUserProfile: async () => {
+                try {
+                    const access = useAuthStore.getState().access;
+                    if (!access) return null;
+                    const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/user/me/`, {
+                        headers: { Authorization: `Bearer ${access}` }
+                    });
+                    if (res.data) {
+                        set((state) => ({
+                            user: {
+                                ...state.user,
+                                verification_status: res.data.verification_status,
+                                verification_remarks: res.data.verification_remarks,
+                                verified_at: res.data.verified_at,
+                                first_name: res.data.first_name,
+                                last_name: res.data.last_name,
+                            }
+                        }));
+                        return res.data;
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch fresh user profile:", error);
+                }
+                return null;
             },
 
             // Logout Action

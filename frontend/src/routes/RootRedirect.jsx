@@ -1,11 +1,10 @@
 import { Navigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
-
 const RootRedirect = ({ children }) => {
     const { isAuthenticated, user } = useAuthStore();
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
         return children;
     }
 
@@ -18,7 +17,7 @@ const RootRedirect = ({ children }) => {
         Barangay: '/barangay',
     };
 
-    return <Navigate to={rolePaths[user.role] || '/login'} replace />;
+    return <Navigate to={rolePaths[user?.role] || '/login'} replace />;
 };
 
-export default RootRedirect
+export default RootRedirect;

@@ -9,8 +9,12 @@ export default function FAQsCTA() {
     navigate("/about");
     setTimeout(() => {
       const el = document.getElementById("contact-section");
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }, 300);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 150);
   };
 
   return (
@@ -33,8 +37,10 @@ export default function FAQsCTA() {
           <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-white/55 leading-[1.7] mb-7">
             Can't find the answer you're looking for? We're here to help!
           </p>
-          <button onClick={handleContact}
-            className="inline-flex items-center px-8 py-3 bg-white text-brand-primary font-jakarta text-[0.95rem] font-bold rounded-[0.65rem]
+          <button
+            type="button"
+            onClick={handleContact}
+            className="inline-flex items-center px-8 py-3 bg-white text-brand-primary font-jakarta text-[0.95rem] font-bold rounded-[0.65rem] cursor-pointer
               transition-[background,transform,box-shadow] duration-200
               hover:bg-[#f0faf4] hover:-translate-y-0.5 hover:shadow-[0_0.5rem_1.5rem_rgba(255,255,255,0.15)]">
             Contact Us

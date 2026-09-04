@@ -356,14 +356,54 @@ class FallbackInsightsBuilder:
             return {
                 "summary": "System baseline is initializing. As permits and checkpoint scans are processed, automated biosecurity and operational trends will populate here.",
                 "chart_insights": {
-                    "transport_volume": "No shipments logged this period. To prevent same-day delays, submit permit applications at least 24 hours before your target transport date.",
-                    "status_distribution": "No active applications in review. When uploading credentials, ensure clear photos of barangay clearances to secure instant first-pass approval.",
-                    "density_trend": "Swine census records are compiling across barangays to identify biosecurity risk clusters.",
-                    "revenue_trend": "Permit payment history is building. Digital payments (GCash/QRPH) release transit QR passes immediately upon completion.",
-                    "validation_history": "Veterinary review queue is clear and ready to process new livestock submissions.",
-                    "rejection_reasons": "Zero document rejections recorded. Keep uploaded certificate files sharp and well-lit.",
-                    "activity_trend": "Checkpoint logs will display real-time verification velocity once inspectors scan active QR passes.",
-                    "peak_activity": "Road movement data will map peak transit windows to optimize municipal inspection coverage."
+                    "transport_volume": {
+                        "category": "SHIPPING CADENCE",
+                        "title": "Zero Active Transit Logs",
+                        "insight": "No commercial hog shipments are logged this period. To prevent same-day dispatch delays, submitting permit applications at least 24 hours before your target transport date secures timely veterinary inspection.",
+                        "action": "Pre-register planned livestock movement manifests before loading animals."
+                    },
+                    "status_distribution": {
+                        "category": "FIRST-PASS CLEARANCE",
+                        "title": "Document Queue Clear",
+                        "insight": "Permit verification queue is currently clear. First-pass approval holds in Sariaya typically occur when uploaded barangay clearance photos are poorly lit or lack official barangay seals.",
+                        "action": "Ensure uploaded credentials are well-lit with clear, readable clearance dates."
+                    },
+                    "density_trend": {
+                        "category": "CENSUS COVERAGE",
+                        "title": "Swine Distribution Indexing",
+                        "insight": "Swine census records are compiling across barangays. Identifying high-density clusters enables the municipal agriculture office to prioritize proactive African Swine Fever (ASF) surveillance.",
+                        "action": "Coordinate with barangay desks to verify recent hog survey submissions."
+                    },
+                    "revenue_trend": {
+                        "category": "FINANCIAL VELOCITY",
+                        "title": "Digital Payment Clearance",
+                        "insight": "Permit payment history is building. Digital fee collections via GCash or QRPH bypass municipal cashier queues and instantly release scannable QR movement passes.",
+                        "action": "Encourage livestock traders and farmers to utilize digital payment options."
+                    },
+                    "validation_history": {
+                        "category": "VETERINARY VELOCITY",
+                        "title": "OPV Review Readiness",
+                        "insight": "Veterinary review queue is open and operational. Submitting livestock batches before early afternoon prevents evening backlogs when commercial haulers load animals for overnight transit.",
+                        "action": "Maintain same-day validation turnaround for abattoir-bound stock."
+                    },
+                    "rejection_reasons": {
+                        "category": "QUALITY CONTROL",
+                        "title": "Zero Document Flaws Recorded",
+                        "insight": "Zero document rejections logged this period. Unreadable veterinarian signatures and mismatched headcounts remain the primary cause of shipment impoundment.",
+                        "action": "Verify physical truck headcounts match permit manifests prior to endorsement."
+                    },
+                    "activity_trend": {
+                        "category": "ENFORCEMENT COVERAGE",
+                        "title": "Checkpoint Verification Ready",
+                        "insight": "Roadside inspectors log scans to enforce quarantine cordons. Scanning active QR passes ensures uncertified backyard livestock cannot bypass biosecurity corridors.",
+                        "action": "Maintain active scanning along high-traffic bypass corridors."
+                    },
+                    "peak_activity": {
+                        "category": "TRANSIT SURVEILLANCE",
+                        "title": "Thermal Window Scheduling",
+                        "insight": "Livestock transit surges during early morning hours to minimize animal heat exhaustion. Concentrating officer shifts during peak windows prevents highway bottlenecks.",
+                        "action": "Synchronize checkpoint officer shifts with peak transport windows."
+                    }
                 },
                 "trends": [
                     {
@@ -422,10 +462,30 @@ class FallbackInsightsBuilder:
             ]
 
             chart_insights = {
-                "density_trend": f"Barangay {top_b_name} holds the largest swine concentration. Recommend focusing routine biosecurity audits and tire disinfectant checkpoints along its access corridors.",
-                "submission_trend": f"Transit volume is {'growing (+'+str(sub_pct)+'%)' if sub_pct > 0 else 'stable'}. Higher animal movement increases cross-border exposure—verify farm-level African Swine Fever status before release.",
-                "revenue_trend": f"Permit collections reached ₱{rev_cur:,.2f} ({'+' if rev_pct >= 0 else ''}{rev_pct}%). Encouraging hog raisers to adopt GCash/QRPH payments eliminates cashier queues and speeds up clearance releases.",
-                "status_distribution": f"Review velocity is healthy with {cur_released} permits cleared. Keeping reviews under 4 hours ensures commercial haulers meet their scheduled abattoir delivery slots."
+                "density_trend": {
+                    "category": "BIOSECURITY CORRIDOR",
+                    "title": f"High Swine Concentration ({top_b_name})",
+                    "insight": f"Barangay {top_b_name} anchors the municipality's largest swine cluster. Concentrated pens bordering active transport corridors exponentially elevate disease amplification risk in the event of an outbreak.",
+                    "action": f"Deploy routine tire-bath disinfection along access corridors of Barangay {top_b_name}."
+                },
+                "submission_trend": {
+                    "category": "TRANSIT VELOCITY",
+                    "title": f"Livestock Movement Cadence ({'+' if sub_pct >= 0 else ''}{sub_pct}%)",
+                    "insight": f"Inter-municipal transit volume is {'growing (+'+str(sub_pct)+'%)' if sub_pct > 0 else 'holding stable'}. Higher commercial haulage frequency increases cross-border pathogen exposure along the Maharlika transport artery.",
+                    "action": "Verify farm-level African Swine Fever negative certificates prior to endorsing movement permits."
+                },
+                "revenue_trend": {
+                    "category": "FINANCIAL VELOCITY",
+                    "title": f"Regulatory Collections (₱{rev_cur:,.2f})",
+                    "insight": f"Municipal fee collections reached ₱{rev_cur:,.2f} ({'+' if rev_pct >= 0 else ''}{rev_pct}%). Encouraging hog raisers and commercial traders to pay via GCash/QRPH eliminates cashier queues and yields instant digital clearance releases.",
+                    "action": "Promote QRPH digital checkout at frontline agricultural helpdesks."
+                },
+                "status_distribution": {
+                    "category": "TURNAROUND PACING",
+                    "title": f"Review Pipeline ({cur_released} Cleared)",
+                    "insight": f"Current queue holds {pending_rev} pending applications. Maintaining an average review turnaround under 4 hours ensures commercial haulers meet strict abattoir intake receiving schedules without incurring holding penalties.",
+                    "action": f"Process {pending_rev} pending manual permit reviews to prevent downstream veterinary bottlenecks."
+                }
             }
 
             summary = f"Municipal livestock transit shows {cur.get('swine_shipped', 0):,} pigs shipped over {sub_cur} permit submissions this month. Revenue currently stands at ₱{rev_cur:,.2f}."
@@ -472,18 +532,48 @@ class FallbackInsightsBuilder:
 
             if cur_pigs > 0:
                 if cur_pigs >= pri_pigs and pri_pigs > 0:
-                    vol_insight = "Your transport activity is ramping up this month. Heightened shipments trigger closer border scrutiny—ensure driver IDs and truck plates strictly match your permit manifest."
+                    vol_insight = {
+                        "category": "SHIPPING VELOCITY",
+                        "title": f"Active Shipping Surge ({cur_pigs} Heads)",
+                        "insight": f"Your livestock transport volume is trending upward with {cur_pigs} pigs shipped this period. Increased shipping frequency triggers elevated border inspection scrutiny.",
+                        "action": "Ensure driver licenses and truck plate numbers strictly match your released permit manifests."
+                    }
                 else:
-                    vol_insight = "Your livestock shipping rhythm is steady. Before your next scheduled run, check that your handler's license and vehicle accreditation are up to date to prevent checkpoint holds."
+                    vol_insight = {
+                        "category": "HERD RUNOFF",
+                        "title": f"Consistent Transport Rhythm ({cur_pigs} Heads)",
+                        "insight": f"Your livestock shipping rhythm is steady at {cur_pigs} heads. Coordinating transport batches into consolidated full-truckload runs minimizes cumulative inspection and permit overhead fees.",
+                        "action": "Consolidate market-weight hogs into scheduled single-run dispatches."
+                    }
             else:
-                vol_insight = "No livestock shipments logged this month. When you plan your next batch, submitting credentials at least 24 hours ahead ensures smooth, same-day veterinary approval."
+                vol_insight = {
+                    "category": "TRANSIT PREPARATION",
+                    "title": "Zero Shipments This Period",
+                    "insight": "No livestock transport logged this period. When preparing market-ready hogs, filing permit applications at least 24 hours in advance secures same-day veterinary sign-off.",
+                    "action": "Pre-verify animal health cards before scheduling your commercial buyer truck."
+                }
 
             if rejected > 0:
-                status_insight = f"{rejected} permit application encountered a document hold. Most common cause: expired barangay clearances or blurry photo uploads. Submitting a clear, well-lit re-upload typically clears within 4 hours."
+                status_insight = {
+                    "category": "DOCUMENT HOLD",
+                    "title": f"{rejected} Application(s) Encountered Holds",
+                    "insight": f"{rejected} application was flagged for documentation issues. Common causes in Sariaya include expired barangay clearances or poorly lit photo attachments.",
+                    "action": "Submit clear, well-lit re-uploads during morning hours for expedited 2-hour re-evaluation."
+                }
             elif approved > 0:
-                status_insight = "100% first-pass clearance rate across your recent applications. Your paperwork compliance is excellent—keep your digital QR pass ready on your smartphone for zero-delay checkpoint transit."
+                status_insight = {
+                    "category": "FIRST-PASS ACCREDITATION",
+                    "title": "100% First-Pass Clearance Rate",
+                    "insight": "Your paperwork compliance is exceptional with zero document holds. Keeping your active digital QR pass saved offline ensures seamless, zero-delay border checkpoint passage.",
+                    "action": "Keep your offline digital QR transit pass readily accessible on your mobile phone."
+                }
             else:
-                status_insight = "Your application pipeline is clean and ready. Submitting requests during morning office hours (8:00 AM - 11:00 AM) consistently secures the fastest same-day officer sign-off."
+                status_insight = {
+                    "category": "APPLICATION TIMING",
+                    "title": "Permit Queue Open",
+                    "insight": "Submitting livestock transport requests during morning office windows (8:00 AM – 11:00 AM) consistently secures same-day officer review before the afternoon dispatch window.",
+                    "action": "Submit permits early in the day to guarantee same-day release."
+                }
 
             chart_insights = {
                 "transport_volume": vol_insight,
@@ -514,8 +604,23 @@ class FallbackInsightsBuilder:
                 "Ensure originating livestock have verified Barangay clearances prior to municipal transit."
             ]
 
+            chart_insights = {
+                "density_trend": {
+                    "category": "COMMUNITY CENSUS",
+                    "title": f"Local Swine Registry ({pigs:,} Heads)",
+                    "insight": f"Your barangay maintains {pigs:,} registered pigs across local backyard pens. Maintaining an exhaustive swine census ensures your farmers qualify for municipal indemnity relief and subsidized biologics in the event of local quarantine alerts.",
+                    "action": "Conduct monthly enumeration sweeps for newly farrowed backyard litters."
+                },
+                "survey_velocity": {
+                    "category": "CLEARANCE PACING",
+                    "title": f"Originating Livestock Flow ({permits_count} Clearances)",
+                    "insight": f"{permits_count} transport clearances originated from your barangay in the last 30 days. Ensuring every originating shipment has an updated barangay clearance attached prevents commercial truckers from being impounded at municipal border checkpoints.",
+                    "action": "Verify physical pen locations and health status for all new survey entries."
+                }
+            }
+
             summary = f"{b_name} maintains an active swine registry of {pigs:,} heads with {permits_count} transit clearances processed."
-            return {"summary": summary, "trends": trends, "actions": actions}
+            return {"summary": summary, "trends": trends, "actions": actions, "chart_insights": chart_insights}
 
         elif role == "OPV":
             val_total = cur.get("validations_processed", 0)
@@ -546,10 +651,30 @@ class FallbackInsightsBuilder:
             ]
 
             chart_insights = {
-                "validation_history": f"Validation velocity is handling {val_total} permits monthly. Processing queues before 2:00 PM prevents evening bottlenecks when commercial haulers load animals for overnight transit.",
-                "rejection_reasons": "Primary rejection cause centers on unreadable signatures or expired health certificates. Issuing a standard 1-page pre-submission checklist to barangay desks can eliminate up to 70% of rework.",
-                "top_barangays": "Livestock movement concentrates heavily in key production corridors. Ensuring up-to-date African Swine Fever (ASF) negative monitoring in these specific barangays maintains municipal green-zone status.",
-                "top_destinations": "High-volume routes target designated commercial slaughterhouses. Verifying receiving abattoir accreditations before endorsing transit permits ensures full food safety traceability."
+                "validation_history": {
+                    "category": "QUEUE PACING",
+                    "title": f"Turnaround Velocity ({val_total} Processed)",
+                    "insight": f"Validation throughput is handling {val_total} permits monthly with a {pass_rate}% pass rate. Clearing validation queues before 2:00 PM prevents evening bottlenecks when commercial haulers load animals for overnight transit.",
+                    "action": f"Review {pending_queue} pending validations ahead of the 3:00 PM dispatch window."
+                },
+                "rejection_reasons": {
+                    "category": "PREVENTIVE SCREENING",
+                    "title": "First-Pass Compliance Deficit",
+                    "insight": "Primary rejection cause centers on unreadable veterinarian signatures or expired barangay health certificates. Issuing a standard 1-page pre-submission checklist to barangay desks eliminates up to 70% of rework.",
+                    "action": "Distribute standardized document verification criteria to municipal and barangay intake desks."
+                },
+                "top_barangays": {
+                    "category": "OUTBREAK SHIELD",
+                    "title": "Production Corridor Focus",
+                    "insight": "Livestock movement concentrates heavily in key agrarian production corridors. Maintaining active African Swine Fever (ASF) negative monitoring in these top origin barangays preserves municipal green-zone status.",
+                    "action": "Enforce bi-weekly blood sampling and clinical inspection in top originating hubs."
+                },
+                "top_destinations": {
+                    "category": "SUPPLY CHAIN INTEGRITY",
+                    "title": "Abattoir Traceability Pacing",
+                    "insight": "High-volume transit routes target designated commercial slaughterhouses. Verifying receiving abattoir accreditations and holding pen capacities prevents livestock trucks from idling in long quarantine queues upon arrival.",
+                    "action": "Verify receiving abattoir certifications prior to endorsing inter-municipal transit permits."
+                }
             }
 
             summary = f"OPV processed {val_total} permit validations in the last 30 days with an overall pass rate of {pass_rate}%."
@@ -578,8 +703,18 @@ class FallbackInsightsBuilder:
             ]
 
             chart_insights = {
-                "activity_trend": f"Checkpoint enforcement logged {scans} digital scans. Consistent QR code scanning at border checkpoints ensures uncertified backyard livestock cannot bypass quarantine corridors.",
-                "peak_activity": f"Livestock transport surges during {peak_str} to minimize heat stress on animals. Concentrating checkpoint officer shift rotations during these high-traffic hours prevents highway bottlenecks."
+                "activity_trend": {
+                    "category": "ENFORCEMENT INTEGRITY",
+                    "title": f"Digital Checkpoint Enforcement ({scans} Scans)",
+                    "insight": f"Enforcement logged {scans} digital scans across active transit corridors. Consistent QR code scanning at border checkpoints ensures uncertified backyard livestock cannot bypass biosecurity quarantine corridors.",
+                    "action": "Conduct spot headcount audits on 1 out of every 5 passing livestock haulers to verify manifest matches physical animals."
+                },
+                "peak_activity": {
+                    "category": "SHIFT OPTIMIZATION",
+                    "title": f"Transit Window Clustering ({peak_str})",
+                    "insight": f"Livestock transport surges during {peak_str} to minimize heat stress on animals. Concentrating checkpoint officer shift rotations during these high-traffic hours prevents highway bottlenecks while maximizing inspection coverage.",
+                    "action": f"Deploy double-manned inspection teams during {peak_str} peak travel windows."
+                }
             }
 
             summary = f"Checkpoint operations show {active_permits} active transport passes in transit across the municipality."
@@ -620,14 +755,14 @@ class GeminiInsightsClient:
             "{\n"
             '  "summary": "2-3 sentence strategic executive summary of current operational health, risks, and performance.",\n'
             '  "chart_insights": {\n'
-            '    "transport_volume": "Strategic advice on shipping cadence, seasonal spikes, and avoiding checkpoint clearance delays.",\n'
-            '    "status_distribution": "Actionable advice on permit approval turnaround, root causes of document returns, and how to get same-day approval.",\n'
-            '    "density_trend": "Targeted biosecurity advice on swine concentration clusters and quarantine focus.",\n'
-            '    "revenue_trend": "Financial velocity insight on collections and digital payment adoption.",\n'
-            '    "validation_history": "Operational advice on veterinary turnaround speed and queue pacing.",\n'
-            '    "rejection_reasons": "Quality-control guidance on common document flaws and preventive pre-checks.",\n'
-            '    "activity_trend": "Field enforcement insight on inspection coverage and compliance.",\n'
-            '    "peak_activity": "Staffing and travel window advice based on high-traffic animal movement hours."\n'
+            '    "transport_volume": {"category": "SHIPPING CADENCE", "title": "Short Diagnostic Title", "insight": "Strategic non-obvious operational advice.", "action": "Concrete preventive action to take."},\n'
+            '    "status_distribution": {"category": "APPROVAL VELOCITY", "title": "Short Diagnostic Title", "insight": "Actionable paperwork and turnaround advice.", "action": "Concrete action to take."},\n'
+            '    "density_trend": {"category": "BIOSECURITY CLUSTER", "title": "Short Diagnostic Title", "insight": "Targeted biosecurity advice on swine concentration clusters.", "action": "Concrete action to take."},\n'
+            '    "revenue_trend": {"category": "FINANCIAL VELOCITY", "title": "Short Diagnostic Title", "insight": "Financial velocity insight on collections and digital payment adoption.", "action": "Concrete action to take."},\n'
+            '    "validation_history": {"category": "VETERINARY PACING", "title": "Short Diagnostic Title", "insight": "Operational advice on veterinary turnaround speed and queue pacing.", "action": "Concrete action to take."},\n'
+            '    "rejection_reasons": {"category": "PREVENTIVE QUALITY", "title": "Short Diagnostic Title", "insight": "Quality-control guidance on common document flaws and preventive pre-checks.", "action": "Concrete action to take."},\n'
+            '    "activity_trend": {"category": "ENFORCEMENT SHIELD", "title": "Short Diagnostic Title", "insight": "Field enforcement insight on inspection coverage and compliance.", "action": "Concrete action to take."},\n'
+            '    "peak_activity": {"category": "TRANSIT WINDOW", "title": "Short Diagnostic Title", "insight": "Staffing and travel window advice based on high-traffic animal movement hours.", "action": "Concrete action to take."}\n'
             '  },\n'
             '  "trends": [\n'
             '    {"text": "Key trend observation explaining the underlying reason and why it matters.", "severity": "positive"|"warning"|"critical"|"neutral"}\n'

@@ -17,9 +17,12 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SmartInsights from '../../../components/ui/SmartInsights';
+import ChartTakeaway from '../../../components/ui/ChartTakeaway';
+import { useGetDashboardInsights } from '../../../hooks/useDashboard';
 
 const BarangayDashboard = () => {
     const { user } = useAuthStore();
+    const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Barangay');
 
     // Query for current density data of their barangay
     const { data: densityData = [], isLoading: isDensityLoading } = useQuery({
@@ -138,13 +141,19 @@ const BarangayDashboard = () => {
                     </div>
                     <div className="flex-1 min-h-[250px] bg-white border border-stone-50 p-4">
                         {barangayStats.total_pigs > 0 ? (
-                            <BarChartComponent
-                                data={stageChartData}
-                                xKey="type"
-                                yKey="count"
-                                height={250}
-                                barColor="#15803d"
-                            />
+                            <>
+                                <BarChartComponent
+                                    data={stageChartData}
+                                    xKey="type"
+                                    yKey="count"
+                                    height={250}
+                                    barColor="#15803d"
+                                />
+                                <ChartTakeaway
+                                    takeaway={insightData?.chart_insights?.density_trend}
+                                    isLoading={isInsightLoading}
+                                />
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-stone-300 py-12">
                                 <Activity size={48} className="mb-2" />
@@ -162,13 +171,19 @@ const BarangayDashboard = () => {
                     </div>
                     <div className="flex-1 min-h-[250px] bg-white border border-stone-50 p-4">
                         {trendChartData.length > 0 ? (
-                            <LineChartComponent
-                                data={trendChartData}
-                                xKey="date"
-                                yKey="count"
-                                height={250}
-                                lineColor="#15803d"
-                            />
+                            <>
+                                <LineChartComponent
+                                    data={trendChartData}
+                                    xKey="date"
+                                    yKey="count"
+                                    height={250}
+                                    lineColor="#15803d"
+                                />
+                                <ChartTakeaway
+                                    takeaway={insightData?.chart_insights?.survey_velocity}
+                                    isLoading={isInsightLoading}
+                                />
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-stone-300 py-12">
                                 <TrendingUp size={48} className="mb-2" />

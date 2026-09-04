@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db import transaction
 from . import serializers
 from . import models
 from .services import HogSurveyService
@@ -99,6 +100,94 @@ class HogSurveyViewSet(BaseModelViewSet):
             when_performed=timezone.now()
         )
 
+    @action(detail=False, methods=["post"])
+    def batch_create(self, request):
+        """
+        API Endpoint: POST /api/hog-survey/batch_create/
+        Accepts a list of survey dictionaries for rapid multi-row batch manual encoding.
+        """
+        user = request.user
+        if not user.is_authenticated or user.role not in ["Agri", "Barangay"]:
+            return Response({"error": "Unauthorized"}, status=403)
+
+        items = request.data.get("surveys")
+        if items is None and isinstance(request.data, list):
+            items = request.data
+        if not isinstance(items, list) or len(items) == 0:
+            return Response({"error": "A non-empty list of survey entries is required."}, status=400)
+
+        target_barangay = user.barangay if user.role == "Barangay" else None
+        records_to_create = []
+
+        for idx, item in enumerate(items):
+            row_num = idx + 1
+            b_id = target_barangay.id if target_barangay else item.get("barangay")
+            if not b_id:
+                return Response({"error": f"Row {row_num}: Barangay is required."}, status=400)
+
+            barangay_obj = target_barangay if target_barangay else models.Barangay.objects.filter(id=b_id).first()
+            if not barangay_obj:
+                return Response({"error": f"Row {row_num}: Barangay not found."}, status=400)
+
+            s_date = item.get("survey_date")
+            if not s_date:
+                return Response({"error": f"Row {row_num}: Survey collection date is required."}, status=400)
+
+            def safe_num(v):
+                try:
+                    return max(0, int(v or 0))
+                except (ValueError, TypeError):
+                    return 0
+
+            inahin = safe_num(item.get("inahin"))
+            barako = safe_num(item.get("barako"))
+            fattener = safe_num(item.get("fattener"))
+            grower = safe_num(item.get("grower"))
+            starter = safe_num(item.get("starter"))
+            bulaw = safe_num(item.get("bulaw"))
+            total_pigs = inahin + barako + fattener + grower + starter + bulaw
+
+            farmer_name = str(item.get("farmer_name") or "").strip()
+            contact_number = str(item.get("contact_number") or "").strip()
+
+            if not farmer_name:
+                return Response({"error": f"Row {row_num}: Farmer / Hog Owner name is required."}, status=400)
+
+            if total_pigs <= 0:
+                return Response({"error": f"Row {row_num} ({farmer_name}): Total pigs must be at least 1 across all categories."}, status=400)
+
+            records_to_create.append(models.HogSurvey(
+                barangay=barangay_obj,
+                farmer_name=farmer_name,
+                contact_number=contact_number,
+                survey_date=s_date,
+                inahin=inahin,
+                barako=barako,
+                fattener=fattener,
+                grower=grower,
+                starter=starter,
+                bulaw=bulaw,
+                total_pigs=total_pigs,
+            ))
+
+        with transaction.atomic():
+            created = models.HogSurvey.objects.bulk_create(records_to_create)
+
+        b_name = target_barangay.name if target_barangay else "Assigned Barangay"
+        AuditTrail.objects.create(
+            who_performed=user,
+            what_performed=f"[HOG SURVEY BATCH ENCODED] - Encoded {len(created)} surveys for Barangay {b_name}.",
+            when_performed=timezone.now()
+        )
+
+        return Response(
+            {
+                "message": f"Successfully encoded {len(created)} survey records.",
+                "count": len(created),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
     @action(detail=False, methods=["get"])
     def export_csv(self, request):
         """
@@ -132,6 +221,8 @@ class HogSurveyViewSet(BaseModelViewSet):
             [
                 "Barangay",
                 "Date",
+                "Farmer Name",
+                "Contact Number",
                 "Inahin",
                 "Barako",
                 "Fattener",

@@ -1,5 +1,3 @@
-import AgriLogo from "../../../../assets/sariaya-agri-logo.jpg";
-
 export default function ReqHero() {
   return (
     <section className="relative bg-brand-primary px-10 pt-20 pb-28 overflow-hidden text-center max-[640px]:px-6 max-[640px]:pt-16 max-[640px]:pb-24">

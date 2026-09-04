@@ -9,17 +9,23 @@ from apps.sms.services import send_sms
 from .. import models, serializers
 
 def create_permit(files, application, user):
-    # files dict keys should be structured as 'origin_<ID>_<docType>' 
-    # where ID is the temporary index in the FormData
-    if not files:
-        raise ValidationError("No documents uploaded. Please upload the required documents.")
+    origins = list(application.origins.all())
+    if not origins:
+        raise ValidationError("Application has no transport origins.")
 
     required_common = ['traders_pass', 'handlers_license', 'transport_carrier_reg']
+    user_farmer_docs = {
+        doc.document_type: doc for doc in getattr(user, 'farmer_documents', []).all()
+    } if hasattr(user, 'farmer_documents') else {}
+
+    auto_attached_docs = {}
     for req in required_common:
         if req not in files:
-            raise ValidationError(f"Missing required document: {req.replace('_', ' ').title()}")
+            if req in user_farmer_docs and user_farmer_docs[req].file:
+                auto_attached_docs[req] = user_farmer_docs[req].file
+            else:
+                raise ValidationError(f"Missing required document: {req.replace('_', ' ').title()}")
 
-    origins = list(application.origins.all()) 
     for i in range(len(origins)):
         if f'origin_{i}_cis' not in files:
             raise ValidationError(f"Missing Certificate of Inspection and Stewardship (CIS) for origin #{i+1}")
@@ -27,11 +33,10 @@ def create_permit(files, application, user):
             raise ValidationError(f"Missing Barangay Endorsement Certificate for origin #{i+1}")
 
     document_ids = []
-    
+
     # Map temporary origin index from request to actual DB ID
     # Since we saved the application and origins first, we can map them
     for key, file in files.items():
-        # key format: 'traders_pass', 'origin_<temp_index>_<doc_type>'
         if key.startswith('origin_'):
             parts = key.split('_')
             temp_index = int(parts[1])
@@ -41,7 +46,7 @@ def create_permit(files, application, user):
             # Common documents linked to the first origin (or handled appropriately)
             doc_type = key
             origin = origins[0]
-        
+
         serializer = serializers.SubmittedDocumentWriteSerializer(data={
             'origin': origin.id,
             'document_type': doc_type,
@@ -50,7 +55,17 @@ def create_permit(files, application, user):
         serializer.is_valid(raise_exception=True)
         doc = serializer.save()
         document_ids.append(doc.id)
-        
+
+    # Save auto-attached verified documents
+    for doc_type, file_field in auto_attached_docs.items():
+        if not models.SubmittedDocument.objects.filter(origin=origins[0], document_type=doc_type).exists():
+            doc = models.SubmittedDocument.objects.create(
+                origin=origins[0],
+                document_type=doc_type,
+                file=file_field
+            )
+            document_ids.append(doc.id)
+
     Notification.objects.create(
         type=Notification.Type.INFO,
         recipient=user,

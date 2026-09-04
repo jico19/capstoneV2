@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import LandingButton from '../../../../components/ui/LandingButton';
 import MockupImage from '../../../../assets/home-icons/mock-up.png';
-import AgriLogo from '../../../../assets/sariaya-agri-logo.jpg';
 
 export default function Hero() {
   const navigate = useNavigate();
@@ -52,11 +51,24 @@ export default function Hero() {
           {/* Actions */}
           <div className="animate-hero-actions opacity-0 flex items-center gap-5 mb-10 max-[900px]:justify-center flex-wrap">
             <div className="w-[180px] h-[48px] shrink-0">
-              <LandingButton label="Get Started Free" bgColor="#f5a623" textColor="#0a2a1a" baseColor="#5a3b00" onClick={() => navigate("/register")} />
+              <LandingButton
+                label="Get Started Free"
+                bgColor="#f5a623"
+                textColor="#0a2a1a"
+                baseColor="#5a3b00"
+                onClick={() => {
+                  navigate("/register");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
             </div>
             <button
+              type="button"
               className="hero-btn-ghost inline-flex items-center gap-2 bg-transparent border border-white/20 rounded-[10px] text-white/75 font-jakarta text-[15px] font-semibold px-[22px] py-[10px] cursor-pointer transition-all duration-200 hover:border-white/50 hover:text-white"
-              onClick={() => navigate("/requirements")}
+              onClick={() => {
+                navigate("/requirements");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
             >
               Learn More
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

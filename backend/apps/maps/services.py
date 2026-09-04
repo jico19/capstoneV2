@@ -80,6 +80,19 @@ class HogSurveyService:
                     except ValueError:
                         return 0
 
+                def get_field(row_dict, *keys):
+                    for k in keys:
+                        if k in row_dict and row_dict[k] is not None:
+                            return row_dict[k]
+                    lower_dict = {str(k).lower().strip(): v for k, v in row_dict.items() if k}
+                    for k in keys:
+                        if k.lower() in lower_dict and lower_dict[k.lower()] is not None:
+                            return lower_dict[k.lower()]
+                    return ''
+
+                farmer_name = str(get_field(row, 'farmer_name', 'farmer', 'owner_name', 'owner', 'Farmer Name', 'Farmer / Owner Name')).strip()
+                contact_number = str(get_field(row, 'contact_number', 'contact_no', 'phone_no', 'cellphone_number', 'contact', 'Cellphone Number', 'Contact Number')).strip()
+
                 inahin = safe_int(row.get('inahin'))
                 barako = safe_int(row.get('barako'))
                 fattener = safe_int(row.get('fattener'))
@@ -94,6 +107,8 @@ class HogSurveyService:
 
                 parsed_rows.append({
                     'barangay': barangay,
+                    'farmer_name': farmer_name,
+                    'contact_number': contact_number,
                     'survey_date': survey_date,
                     'inahin': inahin,
                     'barako': barako,
@@ -112,25 +127,41 @@ class HogSurveyService:
             barangay__in=list(barangays_in_csv),
             survey_date__in=list(dates_in_csv)
         )
-        existing_map = {(s.barangay_id, s.survey_date): s for s in existing_surveys}
+        existing_map = {
+            (s.barangay_id, s.survey_date, (s.farmer_name or "").strip().lower()): s 
+            for s in existing_surveys
+        }
 
         for row in parsed_rows:
-            key = (row['barangay'].id, row['survey_date'])
+            key = (row['barangay'].id, row['survey_date'], row['farmer_name'].strip().lower())
             if key in existing_map:
                 existing = existing_map[key]
-                existing.inahin += row['inahin']
-                existing.barako += row['barako']
-                existing.fattener += row['fattener']
-                existing.grower += row['grower']
-                existing.starter += row['starter']
-                existing.bulaw += row['bulaw']
-                existing.total_pigs += row['total_pigs']
+                if row['farmer_name']:
+                    existing.inahin = row['inahin']
+                    existing.barako = row['barako']
+                    existing.fattener = row['fattener']
+                    existing.grower = row['grower']
+                    existing.starter = row['starter']
+                    existing.bulaw = row['bulaw']
+                    existing.total_pigs = row['total_pigs']
+                    if row['contact_number']:
+                        existing.contact_number = row['contact_number']
+                else:
+                    existing.inahin += row['inahin']
+                    existing.barako += row['barako']
+                    existing.fattener += row['fattener']
+                    existing.grower += row['grower']
+                    existing.starter += row['starter']
+                    existing.bulaw += row['bulaw']
+                    existing.total_pigs += row['total_pigs']
                 
                 if existing not in records_to_update:
                     records_to_update.append(existing)
             else:
                 new_record = HogSurvey(
                     barangay=row['barangay'],
+                    farmer_name=row['farmer_name'],
+                    contact_number=row['contact_number'],
                     survey_date=row['survey_date'],
                     inahin=row['inahin'],
                     barako=row['barako'],
@@ -149,7 +180,7 @@ class HogSurveyService:
                 if records_to_update:
                     HogSurvey.objects.bulk_update(
                         records_to_update, 
-                        fields=['inahin', 'barako', 'fattener', 'grower', 'starter', 'bulaw', 'total_pigs']
+                        fields=['farmer_name', 'contact_number', 'inahin', 'barako', 'fattener', 'grower', 'starter', 'bulaw', 'total_pigs']
                     )
                 if records_to_create:
                     HogSurvey.objects.bulk_create(records_to_create)
@@ -232,6 +263,8 @@ class HogSurveyService:
             rows.append([
                 s.barangay.name,
                 s.survey_date,
+                s.farmer_name or "",
+                s.contact_number or "",
                 s.inahin,
                 s.barako,
                 s.fattener,

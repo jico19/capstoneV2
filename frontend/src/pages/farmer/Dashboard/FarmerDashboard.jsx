@@ -13,11 +13,29 @@ import useAuthStore from '../../../store/authStore';
 import BarChartComponent from '../../../components/charts/BarChart';
 import SmartInsights from '../../../components/ui/SmartInsights';
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
+import { ShieldCheck, AlertTriangle, AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const FarmerDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetFarmerDashboard();
     const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Farmer');
-    const { user } = useAuthStore();
+    const { user, fetchUserProfile } = useAuthStore();
+    const [showGateModal, setShowGateModal] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, [fetchUserProfile]);
+
+    const isVerified = user?.verification_status === 'VERIFIED';
+
+    const handleRequestPermitClick = (e) => {
+        if (!isVerified) {
+            e.preventDefault();
+            setShowGateModal(true);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -40,11 +58,85 @@ const FarmerDashboard = () => {
     const { kpis, charts, recent_applications } = metrics;
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-stone-50/50 min-h-full">
+        <div className="p-4 md:p-8 space-y-6 bg-stone-50/50 min-h-full">
+            {/* KYC Status Notification Banner (GCash-style) */}
+            {user?.verification_status === 'UNVERIFIED' && (
+                <div className="bg-amber-50 border-2 border-amber-500 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="text-amber-700 mt-0.5 flex-shrink-0" size={22} />
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-wider text-amber-900">
+                                Account Status: Pending Document Verification
+                            </p>
+                            <p className="text-xs text-amber-800 mt-0.5">
+                                You must upload your Handler's License, Transport License, and Trader's Pass to request livestock permits.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/farmer/verification"
+                        className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors"
+                    >
+                        Upload Documents →
+                    </Link>
+                </div>
+            )}
+
+            {user?.verification_status === 'PENDING_REVIEW' && (
+                <div className="bg-blue-50 border-2 border-blue-500 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <Clock className="text-blue-700 mt-0.5 flex-shrink-0" size={22} />
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-wider text-blue-900">
+                                Documents Under Review
+                            </p>
+                            <p className="text-xs text-blue-800 mt-0.5">
+                                Your licenses are currently being reviewed by the Municipal Agriculture Office. Permits will unlock upon verification.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/farmer/verification"
+                        className="px-4 py-2 border border-blue-400 bg-white hover:bg-blue-50 text-blue-800 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors"
+                    >
+                        View Submission
+                    </Link>
+                </div>
+            )}
+
+            {user?.verification_status === 'REJECTED' && (
+                <div className="bg-red-50 border-2 border-red-500 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="text-red-700 mt-0.5 flex-shrink-0" size={22} />
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-wider text-red-900">
+                                Verification Needs Correction
+                            </p>
+                            <p className="text-xs text-red-800 mt-0.5">
+                                {user?.verification_remarks || "Some documents were rejected. Please upload updated copies."}
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/farmer/verification"
+                        className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors"
+                    >
+                        Re-upload Documents →
+                    </Link>
+                </div>
+            )}
+
             {/* Header with Quick Action */}
             <div className="border-b border-stone-200 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Welcome Back</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Welcome Back</p>
+                        {isVerified && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 bg-green-100 text-green-800">
+                                <CheckCircle2 size={10} /> Fully Verified
+                            </span>
+                        )}
+                    </div>
                     <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter mt-0.5">
                         Hello, {user?.first_name || 'Farmer'}
                     </h1>
@@ -53,6 +145,7 @@ const FarmerDashboard = () => {
                     <SmartInsights role="Farmer" title="Personal Permit & Transit Insights" />
                     <Link
                         to="/farmer/application/create"
+                        onClick={handleRequestPermitClick}
                         className="w-full sm:w-auto px-5 py-2.5 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center justify-center gap-2"
                     >
                         <FileText size={14} />
@@ -60,6 +153,56 @@ const FarmerDashboard = () => {
                     </Link>
                 </div>
             </div>
+
+            {/* Verification Gate Modal */}
+            {showGateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border-2 border-stone-900 max-w-md w-full p-6 space-y-5 shadow-2xl">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-amber-100 p-3 text-amber-800">
+                                <ShieldAlert size={28} />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-black text-stone-900 uppercase tracking-tight">
+                                    Document Verification Required
+                                </h3>
+                                <p className="text-xs text-stone-500 font-medium leading-relaxed">
+                                    Before submitting livestock transport permits, municipal regulations require a verified Handler's License, Transport License, and Trader's Pass on file.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-stone-50 border border-stone-200 p-3 space-y-1.5 text-xs text-stone-700">
+                            <p className="font-bold text-[10px] uppercase tracking-wider text-stone-500">Required Standing Licenses:</p>
+                            <ul className="list-disc list-inside space-y-1 text-xs">
+                                <li>Handler's License (BAI)</li>
+                                <li>Transport License / Vehicle OR-CR</li>
+                                <li>Trader's Pass (Sariaya LGU)</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowGateModal(false)}
+                                className="px-4 py-2 border border-stone-300 text-stone-700 text-xs font-black uppercase tracking-widest hover:bg-stone-100"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowGateModal(false);
+                                    navigate('/farmer/verification');
+                                }}
+                                className="px-5 py-2 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest shadow-md"
+                            >
+                                Upload Documents Now →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* KPI Cards (2 columns on mobile, 3 on tablet/desktop) */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -125,6 +268,17 @@ const FarmerDashboard = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Status Distribution & Approval Takeaway */}
+                    {insightData?.chart_insights?.status_distribution && (
+                        <div className="p-3 bg-white border-t border-stone-100">
+                            <ChartTakeaway
+                                takeaway={insightData?.chart_insights?.status_distribution}
+                                isLoading={isInsightLoading}
+                                className="!mt-0"
+                            />
+                        </div>
+                    )}
                 </section>
             </div>
         </div>

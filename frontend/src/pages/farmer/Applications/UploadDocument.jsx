@@ -1,6 +1,8 @@
-import { UploadCloud, CheckCircle2, Camera } from "lucide-react";
+import { useState } from "react";
+import { UploadCloud, CheckCircle2, Camera, ChevronDown, ChevronUp, FileCheck } from "lucide-react";
 
 const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }) => {
+    const [showOverride, setShowOverride] = useState(false);
 
     const commonDocs = [
         { 
@@ -41,22 +43,65 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
                 <p className="text-xs text-stone-500 mt-1">Take a clear photo of your documents with your phone camera or select files to upload.</p>
             </div>
 
-            {/* Common Docs */}
-            <div className="space-y-3">
-                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Seller & Vehicle Documents</h3>
-                <div className="grid grid-cols-2 gap-3">
+            {/* Common Docs: Auto-Attached From Standing Verified Profile */}
+            <div className="bg-green-50/70 border-2 border-green-600 p-4 sm:p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                    <CheckCircle2 className="text-green-700 mt-0.5 flex-shrink-0" size={20} />
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-xs font-black text-green-950 uppercase tracking-wider">
+                                Standing Credentials Verified & Auto-Attached
+                            </h3>
+                            <span className="text-[9px] font-black uppercase bg-green-200 text-green-900 px-2 py-0.5">
+                                On File
+                            </span>
+                        </div>
+                        <p className="text-xs text-green-800 leading-relaxed">
+                            Your Handler's License, Vehicle Registration (OR/CR), and Trader's Pass are verified on your profile. The system will automatically attach them to this permit application.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-green-200">
                     {commonDocs.map((doc) => (
-                        <FileUpload 
-                            key={doc.id} 
-                            id={doc.id} 
-                            label={doc.label} 
-                            desc={doc.desc} 
-                            register={register} 
-                            errors={errors} 
-                            watch={watch} 
-                        />
+                        <div key={doc.id} className="bg-white border border-green-300 p-3 flex flex-col justify-between">
+                            <div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-green-700 bg-green-100 px-1.5 py-0.5">
+                                    ✓ Auto-Attached
+                                </span>
+                                <h4 className="font-bold text-stone-800 text-xs mt-1.5">{doc.label}</h4>
+                                <p className="text-[10px] text-stone-500 mt-0.5">{doc.desc}</p>
+                            </div>
+                        </div>
                     ))}
                 </div>
+
+                <div className="pt-1">
+                    <button
+                        type="button"
+                        onClick={() => setShowOverride(!showOverride)}
+                        className="text-[11px] font-bold text-green-800 hover:text-green-950 underline inline-flex items-center gap-1"
+                    >
+                        {showOverride ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        {showOverride ? "Hide optional replacement inputs" : "Need to upload a different vehicle or license for this trip? (Optional)"}
+                    </button>
+                </div>
+
+                {showOverride && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-green-200">
+                        {commonDocs.map((doc) => (
+                            <FileUpload 
+                                key={doc.id} 
+                                id={doc.id} 
+                                label={doc.label} 
+                                desc={`Replace on-file ${doc.label}`} 
+                                register={register} 
+                                errors={errors} 
+                                watch={watch} 
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Origin Docs */}

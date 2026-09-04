@@ -11,6 +11,7 @@ import { api } from "../../../lib/api"
 import { toast } from "sonner"
 import DateFormatter from "../../../components/ui/DateFormatter"
 import { useInspectorLogs } from '../../../hooks/useInspectorLogs'
+import FileViewerModal from '../../../components/ui/FileViewerModal'
 
 
 const VerifyApplication = () => {
@@ -22,6 +23,8 @@ const VerifyApplication = () => {
     const [isAlreadyChecked, setIsAlreadyChecked] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
     const [location, setLocation] = useState({ lat: 0, lng: 0 })
+    const [previewDoc, setPreviewDoc] = useState(null)
+
 
     const { createLog } = useInspectorLogs()
     const { register, handleSubmit, formState: { isSubmitting } } = useForm()
@@ -224,18 +227,32 @@ const VerifyApplication = () => {
                                         )}
                                     </div>
                                 </div>
-                                <a
-                                    href={doc.file}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="p-2 border border-stone-200 hover:bg-stone-100 text-stone-600"
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewDoc({
+                                        url: doc.file,
+                                        title: doc.document_type_display,
+                                        subtitle: `Application #${application.application_id}`
+                                    })}
+                                    className="p-2 border border-stone-200 hover:bg-stone-100 text-stone-600 transition-colors"
+                                    title="Preview Document"
                                 >
                                     <ExternalLink size={16} />
-                                </a>
+                                </button>
                             </div>
                         ))}
                     </div>
                 </div>
+
+                {/* Built-in Document Viewer Modal */}
+                <FileViewerModal
+                    isOpen={!!previewDoc}
+                    onClose={() => setPreviewDoc(null)}
+                    fileUrl={previewDoc?.url}
+                    title={previewDoc?.title}
+                    subtitle={previewDoc?.subtitle}
+                />
+
 
                 {/* Inspection Log Form */}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4 border-t border-stone-100">

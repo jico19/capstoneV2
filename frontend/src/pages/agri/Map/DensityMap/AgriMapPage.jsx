@@ -18,7 +18,8 @@ import {
     Sun,
     X,
     Sparkles,
-    FileText
+    FileText,
+    ShieldCheck
 } from "lucide-react"
 import HogSurveyUploadModal from '../../../../components/HogSurveyUploadModal'
 
@@ -175,6 +176,161 @@ const AgriMapPage = () => {
             storySummary
         };
     }, [isCompareMode, survey, compareSurvey, map, baselineYear, selectedYear]);
+
+    // Purpose-driven Non-Obvious Map Operational Intelligence Takeaway
+    const operationalTakeaway = useMemo(() => {
+        if (!survey || survey.length === 0) {
+            return {
+                category: "SURVEILLANCE NOTICE",
+                title: "Census Data Pending",
+                insight: "Awaiting validated survey submissions across barangays to compute geospatial biosecurity patterns.",
+                action: "Upload or encode barangay survey data to activate live intelligence."
+            };
+        }
+
+        // 1. If a specific barangay is selected/searched
+        if (selectedBarangay) {
+            const bRecord = survey.find(s => s.barangay === selectedBarangay);
+            if (bRecord) {
+                const bPigs = Number(bRecord.total_pigs || 0);
+                const breakdown = bRecord.breakdown || {};
+                const inahin = Number(breakdown.inahin || 0);
+                const fattener = Number(breakdown.fattener || 0);
+
+                if (bPigs === 0) {
+                    return {
+                        category: "ZONE CLASSIFICATION",
+                        title: `${selectedBarangay}: Zero Registered Density`,
+                        insight: `Currently classified as a swine-free or dormant sector. If backyard farming exists here, unrecorded livestock represents an undetected biosecurity blind spot.`,
+                        action: "Mobilize barangay livestock committee to verify unregistered backyard pens."
+                    };
+                }
+
+                if (inahin > fattener) {
+                    const sowRatio = Math.round((inahin / bPigs) * 100);
+                    return {
+                        category: "BREEDING RESERVOIR",
+                        title: `${selectedBarangay}: Maternal Stock Anchor`,
+                        insight: `Breeding sows constitute ${sowRatio}% (${inahin.toLocaleString()} heads) of local stock. This barangay serves as a local farrowing reservoir that supplies grower stock to surrounding finishing pens.`,
+                        action: "Prioritize strict farm visitor containment and artificial insemination support."
+                    };
+                } else if (fattener >= inahin) {
+                    const fatRatio = Math.round((fattener / bPigs) * 100);
+                    return {
+                        category: "MARKET CORRIDOR",
+                        title: `${selectedBarangay}: High-Turnover Finishing Hub`,
+                        insight: `Market-ready hogs (Fatteners) account for ${fatRatio}% (${fattener.toLocaleString()} heads). Frequent commercial hauler truck visits create elevated cross-border pathogen exposure.`,
+                        action: "Enforce mandatory vehicle wheel-spray and loading chute disinfection."
+                    };
+                }
+            }
+        }
+
+        // 2. If in Multi-Year Comparison Mode
+        if (isCompareMode && comparisonStats) {
+            const { netDiff, netPct, targetTotal } = comparisonStats;
+            
+            let inahinDiff = 0;
+            let fattenerDiff = 0;
+            let youngDiff = 0;
+
+            (survey || []).forEach(curr => {
+                const prev = (compareSurvey || []).find(s => s.barangay === curr.barangay);
+                const cB = curr.breakdown || {};
+                const pB = prev?.breakdown || {};
+                inahinDiff += (Number(cB.inahin || 0) - Number(pB.inahin || 0));
+                fattenerDiff += (Number(cB.fattener || 0) - Number(pB.fattener || 0));
+                youngDiff += (
+                    (Number(cB.starter || 0) + Number(cB.bulaw || 0) + Number(cB.grower || 0)) -
+                    (Number(pB.starter || 0) + Number(pB.bulaw || 0) + Number(pB.grower || 0))
+                );
+            });
+
+            if (netDiff > 0) {
+                if (inahinDiff > 0 && youngDiff > 0) {
+                    return {
+                        category: "STRUCTURAL RESILIENCE",
+                        title: `Breeding Herd Rebuilding (+${netPct}%)`,
+                        insight: `Expansion from ${baselineYear} to ${selectedYear} (+${netDiff.toLocaleString()} pigs) is driven by maternal stock (+${inahinDiff.toLocaleString()} sows) and nursing stock (+${youngDiff.toLocaleString()}), confirming genuine post-outbreak herd repopulation.`,
+                        action: "Maintain strict biosafety buffer zones to protect juvenile stock."
+                    };
+                }
+                return {
+                    category: "COMMERCIAL EXPANSION",
+                    title: `Finishing Volume Surge (+${netPct}%)`,
+                    insight: `Municipal swine count grew to ${targetTotal.toLocaleString()} pigs, driven primarily by market fatteners (+${fattenerDiff.toLocaleString()} heads). High livestock density along arterial roads requires heightened transit checkpoint screening.`,
+                    action: "Align abattoir transport clearances with certified veterinary health passes."
+                };
+            } else if (netDiff < 0) {
+                if (inahinDiff < 0) {
+                    return {
+                        category: "BREEDING CONSTRAINT",
+                        title: `Breeding Stock Depletion (-${netPct}%)`,
+                        insight: `The municipal decrease of ${Math.abs(netDiff).toLocaleString()} pigs stems from a loss of ${Math.abs(inahinDiff).toLocaleString()} breeding sows. Without maternal replacement stock, local farrowing output will remain constrained for 6–9 months.`,
+                        action: "Consider municipal breeder replenishment assistance and gilt distribution."
+                    };
+                }
+                return {
+                    category: "MARKET EXTRACTION",
+                    title: `Commercial Extraction Cycle (-${netPct}%)`,
+                    insight: `The reduction to ${targetTotal.toLocaleString()} pigs reflects accelerated commercial slaughter and inter-municipal export offloads rather than breeding herd collapse.`,
+                    action: "Audit shipping permits against abattoir receipts to verify transit integrity."
+                };
+            }
+        }
+
+        // 3. Municipal Single-Year Mode (The Default Map View)
+        const sorted = [...survey].sort((a, b) => Number(b.total_pigs || 0) - Number(a.total_pigs || 0));
+        const total = survey.reduce((acc, curr) => acc + Number(curr.total_pigs || 0), 0);
+        
+        let totalInahin = 0;
+        let totalFattener = 0;
+        survey.forEach(s => {
+            const b = s.breakdown || {};
+            totalInahin += Number(b.inahin || 0);
+            totalFattener += Number(b.fattener || 0);
+        });
+
+        const top3 = sorted.slice(0, 3);
+        const top3Pigs = top3.reduce((acc, curr) => acc + Number(curr.total_pigs || 0), 0);
+        const top3Pct = total > 0 ? Math.round((top3Pigs / total) * 100) : 0;
+        const top3Names = top3.map(t => t.barangay).filter(Boolean).join(', ');
+
+        if (seasonMode === 'wet') {
+            return {
+                category: "SURVEILLANCE VECTOR",
+                title: "Monsoon Effluent Runoff Risk",
+                insight: `Wet season conditions prolong viral pathogen viability in wet soil and manure slurry. In Sariaya's top production hubs (${top3Names}), surface water runoff along irrigation canals represents the primary transmissible route.`,
+                action: "Enforce elevated lagoon bunding and prohibit untreated farm drainage into creeks."
+            };
+        }
+
+        if (seasonMode === 'dry') {
+            return {
+                category: "LOGISTICS GUIDANCE",
+                title: "Dry Season Transit Thermal Window",
+                insight: `High daytime temperatures accelerate transit heat exhaustion among market hogs. With ${totalFattener.toLocaleString()} fatteners in inventory, commercial hauler transports should be restricted to early-morning cooler windows (5:00 AM – 8:30 AM).`,
+                action: "Mandate early-morning transit hours on released transport permits."
+            };
+        }
+
+        if (top3Pct >= 40 && top3Names) {
+            return {
+                category: "BIOSECURITY CLUSTER",
+                title: `Corridor Concentration Risk (${top3Pct}%)`,
+                insight: `Nearly half (${top3Pct}%) of Sariaya's swine population is clustered in just 3 barangays: ${top3Names}. A biosecurity breach along this shared transit corridor would instantly jeopardize ${top3Pigs.toLocaleString()} pigs.`,
+                action: `Focus routine perimeter disinfection checkpoints along the access arteries of ${top3[0]?.barangay}.`
+            };
+        }
+
+        const inahinRatio = total > 0 ? Math.round((totalInahin / total) * 100) : 0;
+        return {
+            category: "HERD COMPOSITION",
+            title: `Breeding Foundation Balance (${inahinRatio}%)`,
+            insight: `Maternal sows represent ${inahinRatio}% (${totalInahin.toLocaleString()} heads) of the municipal census alongside ${totalFattener.toLocaleString()} commercial fatteners. This balanced ratio ensures consistent slaughter turnover while sustaining self-replenishing farrowing stock.`,
+            action: "Maintain strict backyard reporting to prevent unmonitored farm turnover."
+        };
+    }, [survey, selectedBarangay, isCompareMode, comparisonStats, compareSurvey, seasonMode, selectedYear, baselineYear]);
 
     const totalPigs = survey?.reduce((acc, curr) => acc + Number(curr.total_pigs || 0), 0) || 0;
     const isMapDataUpdating = surveyFetching || (isCompareMode && compareSurveyFetching);
@@ -449,37 +605,88 @@ const AgriMapPage = () => {
 
                         {/* Stats Display */}
                         {!isCompareMode ? (
-                            /* Standard Single-Year Total */
-                            <div className={`p-4 bg-stone-50 border border-stone-200 transition-all duration-300 ${isMapDataUpdating ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-emerald-100 text-emerald-800">
-                                        <TrendingUp size={20} />
+                            /* Standard Single-Year Total with Meaningful Operational Takeaway */
+                            <div className={`space-y-4 transition-all duration-300 ${isMapDataUpdating ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
+                                <div className="p-4 bg-stone-50 border border-stone-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-emerald-100 text-emerald-800">
+                                            <TrendingUp size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">
+                                                Total Swine ({selectedYear})
+                                            </p>
+                                            <p className="text-2xl font-black text-stone-900 leading-none mt-1">
+                                                {isMapDataUpdating ? '...' : totalPigs.toLocaleString()}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">
-                                            Total Swine ({selectedYear})
+                                </div>
+
+                                {/* Dynamic Non-Generic Purposeful Takeaway */}
+                                <div className="p-3.5 bg-stone-50 border-l-2 border-l-emerald-600 border border-stone-200 space-y-2.5">
+                                    <div className="flex items-center justify-between gap-1.5 border-b border-stone-200/60 pb-1.5">
+                                        <div className="flex items-center gap-1.5 text-emerald-800">
+                                            <ShieldCheck size={13} className="shrink-0 text-emerald-700" />
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-900">
+                                                {operationalTakeaway.category}
+                                            </span>
+                                        </div>
+                                        <span className="text-[8px] font-bold uppercase tracking-wider text-stone-400">
+                                            Operational Takeaway
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <p className="text-[11px] font-black text-stone-900 uppercase tracking-tight">
+                                            {operationalTakeaway.title}
                                         </p>
-                                        <p className="text-2xl font-black text-stone-900 leading-none mt-1">
-                                            {isMapDataUpdating ? '...' : totalPigs.toLocaleString()}
+                                        <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                                            {operationalTakeaway.insight}
                                         </p>
                                     </div>
+
+                                    {operationalTakeaway.action && (
+                                        <div className="pt-2 border-t border-stone-200/80 flex items-start gap-1.5 text-[10px] text-stone-600">
+                                            <span className="font-bold text-emerald-800 uppercase tracking-wider shrink-0 text-[9px]">Priority Action:</span>
+                                            <span className="leading-snug">{operationalTakeaway.action}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (
                             /* Plain-English Compare Mode Municipal Summary */
                             <div className={`space-y-4 ${isMapDataUpdating ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
                                 
-                                {/* 1. Plain-English Executive Story Card */}
-                                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 space-y-1.5">
-                                    <div className="flex items-center gap-1.5 text-emerald-800">
-                                        <Sparkles size={13} className="shrink-0" />
-                                        <span className="text-[9px] font-black uppercase tracking-wider">
-                                            Executive Takeaway
+                                {/* 1. Structural Diagnostic Takeaway Card */}
+                                <div className="p-3.5 bg-stone-50 border-l-2 border-l-emerald-600 border border-stone-200 space-y-2.5">
+                                    <div className="flex items-center justify-between gap-1.5 border-b border-stone-200/60 pb-1.5">
+                                        <div className="flex items-center gap-1.5 text-emerald-800">
+                                            <ShieldCheck size={13} className="shrink-0 text-emerald-700" />
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-900">
+                                                {operationalTakeaway.category}
+                                            </span>
+                                        </div>
+                                        <span className="text-[8px] font-bold uppercase tracking-wider text-stone-400">
+                                            Operational Takeaway
                                         </span>
                                     </div>
-                                    <p className="text-xs text-stone-800 leading-relaxed font-medium">
-                                        {comparisonStats?.storySummary}
-                                    </p>
+
+                                    <div className="space-y-1">
+                                        <p className="text-[11px] font-black text-stone-900 uppercase tracking-tight">
+                                            {operationalTakeaway.title}
+                                        </p>
+                                        <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                                            {operationalTakeaway.insight}
+                                        </p>
+                                    </div>
+
+                                    {operationalTakeaway.action && (
+                                        <div className="pt-2 border-t border-stone-200/80 flex items-start gap-1.5 text-[10px] text-stone-600">
+                                            <span className="font-bold text-emerald-800 uppercase tracking-wider shrink-0 text-[9px]">Priority Action:</span>
+                                            <span className="leading-snug">{operationalTakeaway.action}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* 2. Headcount Comparison Box */}

@@ -39,6 +39,7 @@ const PaymentSuccess = lazy(() => import("../pages/farmer/Payments/PaymentSucces
 const ApplicationDetail = lazy(() => import("../pages/farmer/Applications/ApplicationDetail"));
 const PaymentCheckout = lazy(() => import("../pages/farmer/Payments/PaymentCheckout"));
 const DownloadApplication = lazy(() => import("../pages/farmer/Dashboard/DownloadApplication"));
+const DocumentVerificationPage = lazy(() => import("../pages/farmer/Verification/DocumentVerificationPage"));
 
 // agri
 const AgriDashboardPage = lazy(() => import("../pages/agri/Dashboard/AgriDashboardPage"));
@@ -105,6 +106,7 @@ const router = createBrowserRouter([
             { path: 'payment/success/:issued_permit_id', element: withSuspense(PaymentSuccess) },
             { path: 'payment/checkout/:id', element: withSuspense(PaymentCheckout) },
             { path: 'application/download/:id', element: withSuspense(DownloadApplication) },
+            { path: 'verification/', element: withSuspense(DocumentVerificationPage) },
             { path: 'settings/', element: withSuspense(SettingsPage) }
         ]
     },

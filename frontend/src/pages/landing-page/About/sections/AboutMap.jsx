@@ -35,7 +35,7 @@ export default function AboutMap() {
             <iframe
               src={EMBED_SRC}
               className="absolute inset-0 w-full h-full border-0 block"
-              allowFullScreen=""
+              allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               title="New Sariaya Municipal Hall"

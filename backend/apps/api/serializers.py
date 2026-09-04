@@ -4,8 +4,30 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 from . import models
 
 
+class FarmerDocumentSerializer(serializers.ModelSerializer):
+    document_type_display = serializers.CharField(source='get_document_type_display', read_only=True)
+
+    class Meta:
+        model = models.FarmerDocument
+        fields = [
+            'id',
+            'document_type',
+            'document_type_display',
+            'file',
+            'license_number',
+            'expiration_date',
+            'extracted_data',
+            'ocr_status',
+            'is_verified',
+            'uploaded_at',
+        ]
+
+
+
 class UserListSerializer(serializers.ModelSerializer):
     barangay_name = serializers.CharField(source='barangay.name', read_only=True)
+    verified_by_name = serializers.CharField(source='verified_by.username', read_only=True)
+    farmer_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = models.User
@@ -21,7 +43,18 @@ class UserListSerializer(serializers.ModelSerializer):
             'barangay_name',
             'receive_sms',
             'is_active',
+            'verification_status',
+            'verification_remarks',
+            'verified_at',
+            'verified_by',
+            'verified_by_name',
+            'farmer_documents',
         ]
+
+    def get_farmer_documents(self, obj):
+        if obj.role != 'Farmer':
+            return []
+        return FarmerDocumentSerializer(obj.farmer_documents.all(), many=True, context=self.context).data
 
 class UserWriteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,6 +70,8 @@ class UserWriteSerializer(serializers.ModelSerializer):
             'barangay',
             'receive_sms',
             'is_active',
+            'verification_status',
+            'verification_remarks',
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'required': False}
@@ -55,6 +90,13 @@ class UserWriteSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({"role": "Agri can only register Farmers and Barangay Officials."})
             else:
                 attrs['role'] = 'Farmer'
+
+        if attrs.get('role') != 'Farmer':
+            attrs['verification_status'] = models.User.VerificationStatus.VERIFIED
+        else:
+            if 'verification_status' not in attrs:
+                attrs['verification_status'] = models.User.VerificationStatus.UNVERIFIED
+
         return attrs
 
     def create(self, validated_data):
@@ -98,6 +140,7 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
         token['last_name'] = user.last_name
         token['barangay'] = user.barangay.id if user.barangay else None
         token['barangay_name'] = user.barangay.name if user.barangay else None
+        token['verification_status'] = user.verification_status
 
         return token
 
@@ -107,4 +150,4 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         try:
             return super().validate(attrs)
         except models.User.DoesNotExist:
-            raise InvalidToken("User for this token does not exist.")
+            raise InvalidToken("User for this token does not exist.")

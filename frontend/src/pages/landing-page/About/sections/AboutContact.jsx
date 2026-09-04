@@ -1,6 +1,5 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import useScrollReveal from "../../../../hooks/useScrollReveal";
-import LandingButton from "../../../../components/ui/LandingButton";
 import PhoneIcon    from "../../../../assets/about-icons/phone.png";
 import LocationIcon from "../../../../assets/about-icons/location.png";
 import ServicesIcon from "../../../../assets/about-icons/services.png";
@@ -21,8 +20,6 @@ const CARDS = [
     lines: ["Application submission: 24/7", "Support: During office hours", "Website: www.sariaya.gov.ph"],
     accent: "#52b788" },
 ];
-
-const SUBJECTS = ["General Inquiry", "Application Issue", "Technical Problem", "Feedback"];
 
 function ContactCard({ card }) {
   const ref = useRef(null);
@@ -72,21 +69,7 @@ function ContactCard({ card }) {
 }
 
 export default function AboutContact() {
-  const formRef  = useScrollReveal({ threshold: 0.1 });
   const rightRef = useScrollReveal({ threshold: 0.1 });
-
-  const [form, setForm]           = useState({ name: "", contact: "", subject: "", message: "" });
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = () => {
-    if (!form.name || !form.contact || !form.subject || !form.message) return;
-    setSubmitted(true);
-    setTimeout(() => { setSubmitted(false); setForm({ name: "", contact: "", subject: "", message: "" }); }, 4000);
-  };
-
-  const inputCls = "w-full box-border px-4 py-3 bg-white/[0.07] border-[1.5px] border-white/[0.12] rounded-[0.6rem] font-jakarta text-[clamp(0.85rem,1.2vw,0.95rem)] text-white outline-none transition-[border-color,box-shadow,background] duration-200 placeholder:text-white/30 focus:border-brand-amber focus:bg-white/[0.10] focus:shadow-[0_0_0_3px_rgba(245,166,35,0.12)]";
 
   return (
     <section id="contact-section" className="relative overflow-hidden">
@@ -123,10 +106,10 @@ export default function AboutContact() {
         </div>
 
         {/* Two-column layout */}
-          <div ref={rightRef} className="grid grid-cols-2 gap-4 reveal-block min-w-0 w-full box-border">
-            {CARDS.map((card, i) => <ContactCard key={i} card={card} />)}
-          </div>
+        <div ref={rightRef} className="grid grid-cols-2 max-[640px]:grid-cols-1 gap-4 reveal-block min-w-0 w-full box-border">
+          {CARDS.map((card, i) => <ContactCard key={i} card={card} />)}
         </div>
+      </div>
 
       {/* Wave bottom */}
       <div className="leading-[0] relative z-[1]">

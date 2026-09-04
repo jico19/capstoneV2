@@ -17,10 +17,13 @@ class Barangay(models.Model):
 
 class HogSurvey(models.Model):
     barangay = models.ForeignKey(Barangay, on_delete=models.CASCADE)
+    farmer_name = models.CharField(max_length=200, blank=True, default="")
+    contact_number = models.CharField(max_length=20, blank=True, default="")
 
     inahin = models.PositiveIntegerField(
         default=0,
     )
+
     barako = models.PositiveIntegerField(
         default=0,
     )

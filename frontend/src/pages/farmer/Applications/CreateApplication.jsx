@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import FarmerInfo from "./FarmerInfo";
 import UploadDocument from "./UploadDocument";
 import ReviewApplication from "./ReviewApplication";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, ShieldAlert } from "lucide-react";
 import { useCreateApplication } from '../../../hooks/useApplications';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import useAuthStore from '../../../store/authStore';
 
 /**
  * Create Application Flow
@@ -15,11 +16,16 @@ import ConfirmationModal from '../../../components/ui/ConfirmationModal';
  * Follows the FarmPass Design System 2.0 guidelines.
  */
 const CreateApplication = () => {
+    const { user, fetchUserProfile } = useAuthStore();
     const [step, setStep] = useState(1);
     const [origins, setOrigins] = useState([{ id: Date.now(), barangay: '', number_of_pigs: '' }]);
     const [confirmModal, setConfirmModal] = useState(null);
     const { mutate } = useCreateApplication();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, [fetchUserProfile]);
 
     const {
         register,
@@ -105,6 +111,51 @@ const CreateApplication = () => {
         setStep((prev) => prev - 1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    if (user?.verification_status && user?.verification_status !== 'VERIFIED') {
+        return (
+            <div className="max-w-2xl mx-auto p-4 sm:p-8 md:p-12 space-y-6">
+                <div className="bg-white border-2 border-stone-900 p-6 sm:p-10 space-y-6 text-center shadow-xl">
+                    <div className="w-16 h-16 bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+                        <ShieldAlert size={36} />
+                    </div>
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Account Restricted</p>
+                        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase tracking-tight">
+                            Document Verification Required
+                        </h2>
+                        <p className="text-stone-600 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
+                            Municipal regulations require farmers to have verified standing credentials before submitting livestock transport permit requests.
+                        </p>
+                    </div>
+
+                    <div className="bg-stone-50 border border-stone-200 p-4 text-left space-y-2 text-xs text-stone-700 max-w-md mx-auto">
+                        <p className="font-black text-[10px] uppercase tracking-wider text-stone-500">Required Documents:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            <li>Handler's License (BAI)</li>
+                            <li>Transport License / Vehicle Registration (OR/CR)</li>
+                            <li>Trader's Pass (Sariaya LGU)</li>
+                        </ul>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                        <Link
+                            to="/farmer"
+                            className="px-6 py-3 border border-stone-300 text-stone-700 text-xs font-black uppercase tracking-widest hover:bg-stone-100 transition-colors"
+                        >
+                            Back to Dashboard
+                        </Link>
+                        <Link
+                            to="/farmer/verification"
+                            className="px-6 py-3 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest transition-colors shadow-md shadow-green-700/20"
+                        >
+                            Upload Documents Now →
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -219,16 +270,11 @@ const CreateApplication = () => {
                                 watch={watch}
                                 prevStep={prevStep}
                                 nextStep={() => {
-                                    const step2Fields = [
-                                        'traders_pass', 
-                                        'handlers_license', 
-                                        'transport_carrier_reg',
-                                        ...origins.flatMap(o => [
-                                            `origin_${o.id}_cis`, 
-                                            `origin_${o.id}_endorsement_cert`
-                                        ])
-                                    ];
-                                    nextStep(step2Fields, "Please upload all required documents.");
+                                    const step2Fields = origins.flatMap(o => [
+                                        `origin_${o.id}_cis`, 
+                                        `origin_${o.id}_endorsement_cert`
+                                    ]);
+                                    nextStep(step2Fields, "Please upload the required barangay certificates for each starting location.");
                                 }}
                                 origins={origins}
                             />

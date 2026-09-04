@@ -39,9 +39,10 @@ export default function Downloads() {
         {/* Buttons */}
         <div className="flex flex-wrap gap-[0.85rem] max-[640px]:flex-col">
           {DOWNLOADS.map(({ label, file }, i) => (
-            <a key={i} href={file} download
+            <a key={i} href={file} download={file !== "#"}
+              onClick={(e) => { if (file === "#") e.preventDefault(); }}
               className="group inline-flex items-center gap-[0.6rem] px-[1.4rem] py-[0.8rem] bg-white/[0.06] border-[1.5px] border-white/18 rounded-[0.7rem]
-                font-jakarta text-[clamp(0.82rem,1.1vw,0.92rem)] font-semibold text-white no-underline whitespace-nowrap
+                font-jakarta text-[clamp(0.82rem,1.1vw,0.92rem)] font-semibold text-white no-underline whitespace-nowrap cursor-pointer
                 transition-[background,border-color,transform,box-shadow,color] duration-[250ms]
                 hover:bg-brand-amber hover:border-brand-amber hover:text-brand-primary hover:-translate-y-[0.2rem] hover:shadow-[0_0.5rem_1.5rem_rgba(245,166,35,0.25)]
                 max-[640px]:w-full max-[640px]:whitespace-normal">

@@ -64,11 +64,24 @@ export default function CTA() {
         {/* Actions */}
         <div className="flex flex-col items-center gap-4 mb-10">
           <div className="w-[220px] h-[52px]">
-            <LandingButton label="Create Free Account" bgColor="#f5a623" textColor="#0a2a1a" baseColor="#5a3b00" onClick={() => navigate("/register")} />
+            <LandingButton
+              label="Create Free Account"
+              bgColor="#f5a623"
+              textColor="#0a2a1a"
+              baseColor="#5a3b00"
+              onClick={() => {
+                navigate("/register");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
           </div>
           <button
+            type="button"
             className="bg-transparent border-none font-jakarta text-[14px] text-white/45 cursor-pointer transition-colors duration-200 hover:text-white/85 p-0"
-            onClick={() => navigate("/login")}
+            onClick={() => {
+              navigate("/login");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
           >
             Already have an account? Sign in →
           </button>

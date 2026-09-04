@@ -79,6 +79,15 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        if getattr(request.user, "verification_status", None) != "VERIFIED":
+            return Response(
+                {
+                    "error": "Account not verified",
+                    "detail": "Your account must be verified by the Municipal Agriculture Office before you can apply for a permit. Please submit your required licenses for verification.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Construct payload for serializer
         data = {
             "destination": request.data.get("destination"),

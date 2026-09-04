@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import useScrollReveal from '../../../../hooks/useScrollReveal';
 import HelpIcon from '../../../../assets/requirements-icons/help-icon.png';
 
@@ -21,7 +22,7 @@ export default function NeedHelp() {
 
         <ul className="list-none p-0 m-0 flex flex-col gap-[0.55rem]">
           {[
-            <>Check our <a href="/faqs" className="text-brand-primary-mid font-semibold no-underline hover:underline">Frequently Asked Questions</a></>,
+            <>Check our <Link to="/faqs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="text-brand-primary-mid font-semibold no-underline hover:underline">Frequently Asked Questions</Link></>,
             <>Contact us: <strong>(042) XXX-XXXX</strong> or <strong>agri@sariaya.gov.ph</strong></>,
             <>Visit Sariaya Municipal Agriculture Office during office hours <strong>(Mon–Fri, 8AM–5PM)</strong></>,
           ].map((item, i) => (

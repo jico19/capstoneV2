@@ -133,9 +133,24 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
                     const starter = parseInt(formData[`starter_${o.id}`] || 0);
                     const total = inahin + barako + fattener + grower + bulaw + starter;
 
+                    const sourceFarmer = formData[`source_farmer_name_${o.id}`];
+                    const sourcePhone = formData[`source_phone_no_${o.id}`];
+
                     return (
                         <div key={o.id} className="pb-4 border-b border-stone-200 last:border-0 last:pb-0 space-y-2">
                             <p className="text-[10px] font-black uppercase tracking-widest text-green-700">Origin #{index + 1}: Barangay {barangayName}</p>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs py-2 px-3 bg-stone-50 border border-stone-100">
+                                <div>
+                                    <span className="text-[9px] font-black uppercase text-stone-400 tracking-wider block">Source Farmer / Farm</span>
+                                    <span className="font-bold text-stone-800">{sourceFarmer || "—"}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-black uppercase text-stone-400 tracking-wider block">Farmer Mobile (SMS Alerts)</span>
+                                    <span className="font-bold text-stone-800">{sourcePhone || "—"}</span>
+                                </div>
+                            </div>
+
                             <DetailRow label="Total Swine" value={`${total} Pigs`} />
                             {total > 0 && (
                                 <div className="pl-4 py-2 border-l-2 border-green-700 text-[10px] font-bold text-stone-500 uppercase tracking-widest space-y-1 bg-stone-50 p-3">

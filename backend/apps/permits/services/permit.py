@@ -186,6 +186,25 @@ def verify_permit(qr_token, user):
             timestamp_str
         ))
 
+    # 3. Notify Source Farmers via SMS
+    from apps.sms.task import send_source_farmer_scan_sms
+    timestamp_str = timezone.now().strftime('%Y-%m-%d %H:%M')
+    notified_numbers = set()
+    if farmer.phone_no:
+        notified_numbers.add(farmer.phone_no)
+
+    for origin in application_instance.origins.all():
+        s_phone = (origin.source_phone_no or "").strip()
+        if s_phone and s_phone not in notified_numbers:
+            notified_numbers.add(s_phone)
+            s_name = origin.source_farmer_name or ""
+            transaction.on_commit(lambda p=s_phone, n=s_name: send_source_farmer_scan_sms.enqueue(
+                p,
+                application_instance.application_id,
+                n,
+                timestamp_str
+            ))
+
     return application_instance, issued_permit_instance, False
 
 def issue_permit(application, user, permit_fee=None):
@@ -258,3 +277,62 @@ def get_issued_permit_details(application, user):
         )
 
     return opv_docs_instance, issued_permit_instance
+
+
+def deduct_hog_survey_for_application(application):
+    """
+    Deducts pig counts from HogSurvey for all origins of a RELEASED application.
+    Matches the specific source farmer in the barangay if registered in HogSurvey;
+    otherwise falls back to the latest survey for that barangay.
+    Clamps counts to 0 and does not invent fake records.
+    """
+    import logging
+    from apps.maps.models import HogSurvey
+    from django.utils import timezone
+    from django.db import transaction
+
+    logger = logging.getLogger(__name__)
+    current_year = timezone.now().year
+
+    with transaction.atomic():
+        for origin in application.origins.all():
+            target_survey = None
+            # 1. Try to find survey record matching the source farmer name in this barangay
+            if origin.source_farmer_name:
+                target_survey = HogSurvey.objects.select_for_update().filter(
+                    barangay=origin.barangay,
+                    survey_date__year=current_year,
+                    farmer_name__iexact=origin.source_farmer_name.strip()
+                ).order_by('-survey_date').first()
+
+            # 2. Fallback to latest survey for the barangay
+            if not target_survey:
+                target_survey = HogSurvey.objects.select_for_update().filter(
+                    barangay=origin.barangay,
+                    survey_date__year=current_year
+                ).order_by('-survey_date').first()
+
+            if not target_survey:
+                logger.warning(
+                    f"deduct_hog_survey: No survey record found for barangay '{origin.barangay.name}' "
+                    f"in {current_year}. Skipping deduction for origin #{origin.pk}."
+                )
+                continue
+
+            # Decrement counts safely without going below 0
+            target_survey.inahin = max(0, target_survey.inahin - origin.inahin)
+            target_survey.barako = max(0, target_survey.barako - origin.barako)
+            target_survey.fattener = max(0, target_survey.fattener - origin.fattener)
+            target_survey.grower = max(0, target_survey.grower - origin.grower)
+            target_survey.bulaw = max(0, target_survey.bulaw - origin.bulaw)
+            target_survey.starter = max(0, target_survey.starter - origin.starter)
+            target_survey.total_pigs = (
+                target_survey.inahin + target_survey.barako + target_survey.fattener +
+                target_survey.grower + target_survey.bulaw + target_survey.starter
+            )
+            target_survey.save()
+            logger.info(
+                f"Successfully deducted stock from HogSurvey #{target_survey.pk} "
+                f"({target_survey.barangay.name} - {target_survey.farmer_name or 'General'}) "
+                f"for origin #{origin.pk}."
+            )

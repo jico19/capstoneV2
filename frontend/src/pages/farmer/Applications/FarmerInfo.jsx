@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useGetMaps } from '../../../hooks/useMaps';
-import { Navigation, Calendar, Plus, Trash2, ArrowRight, ChevronRight, ChevronDown } from "lucide-react";
+import { Navigation, Calendar, Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, User, Phone } from "lucide-react";
 
 const ANIMAL_CATEGORIES = [
     {
@@ -198,6 +198,46 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                             {map?.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                                         </select>
                                         {errors[`barangay_${origin.id}`] && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Please select a starting barangay</p>}
+                                    </div>
+
+                                    {/* Source Farm / Pig Owner Details */}
+                                    <div className="p-4 bg-white border border-stone-200 space-y-3">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                            Source Farm / Pig Owner (For Checkpoint Notifications)
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black text-stone-600 uppercase tracking-wider block">
+                                                    Farmer / Farm Owner Name
+                                                </label>
+                                                <div className="relative">
+                                                    <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                                                    <input
+                                                        type="text"
+                                                        {...register(`source_farmer_name_${origin.id}`)}
+                                                        placeholder="e.g. Juan Dela Cruz"
+                                                        className="w-full pl-9 pr-3 py-2.5 bg-stone-50/50 border border-stone-200 rounded-none focus:ring-0 focus:border-green-700 outline-none text-xs font-medium text-stone-800 placeholder:text-stone-400"
+                                                    />
+                                                </div>
+                                                <p className="text-[8px] text-stone-400 font-medium">Owner/grower of the pigs in this barangay</p>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black text-stone-600 uppercase tracking-wider block">
+                                                    Farmer Mobile Number (SMS Alerts)
+                                                </label>
+                                                <div className="relative">
+                                                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                                                    <input
+                                                        type="tel"
+                                                        {...register(`source_phone_no_${origin.id}`)}
+                                                        placeholder="09XXXXXXXXX"
+                                                        className="w-full pl-9 pr-3 py-2.5 bg-stone-50/50 border border-stone-200 rounded-none focus:ring-0 focus:border-green-700 outline-none text-xs font-medium text-stone-800 placeholder:text-stone-400"
+                                                    />
+                                                </div>
+                                                <p className="text-[8px] text-stone-400 font-medium">Will receive SMS when pigs are verified at checkpoints</p>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <div className="space-y-2 pt-2">

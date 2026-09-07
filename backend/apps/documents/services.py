@@ -1646,3 +1646,294 @@ def generate_permit_issuance_csv(start_date, end_date):
 
     output.seek(0)
     return output
+
+
+def generate_formal_government_report_pdf(draft_data):
+    """
+    Renders an official Philippine LGU Memorandum & Accomplishment Report PDF
+    using structured, formal civil service typography and layout.
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+        topMargin=2.2 * cm,
+        bottomMargin=2.0 * cm,
+    )
+
+    PRIMARY_GREEN = colors.HexColor("#166534")
+    TEXT_MAIN = colors.HexColor("#1c1917")
+    TEXT_MUTED = colors.HexColor("#57534e")
+    BORDER_COLOR = colors.HexColor("#d6d3d1")
+    BG_LIGHT = colors.HexColor("#f5f5f4")
+
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        'FormalTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=12.5,
+        leading=15,
+        alignment=1,
+        textColor=PRIMARY_GREEN,
+    )
+    subtitle_style = ParagraphStyle(
+        'FormalSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=11,
+        alignment=1,
+        textColor=TEXT_MUTED,
+    )
+    section_head_style = ParagraphStyle(
+        'SectionHead',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=9.5,
+        leading=13,
+        textColor=PRIMARY_GREEN,
+        spaceAfter=4,
+    )
+    body_style = ParagraphStyle(
+        'FormalBody',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=12.5,
+        textColor=TEXT_MAIN,
+    )
+    memo_label_style = ParagraphStyle(
+        'MemoLabel',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=8.5,
+        leading=11,
+        textColor=TEXT_MAIN,
+    )
+    memo_val_style = ParagraphStyle(
+        'MemoVal',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=11,
+        textColor=TEXT_MAIN,
+    )
+    bullet_style = ParagraphStyle(
+        'FormalBullet',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=12,
+        textColor=TEXT_MAIN,
+        leftIndent=15,
+        firstLineIndent=-10,
+    )
+
+    # 1. Header with Dual Logos
+    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
+    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
+    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+
+    logo_w = 1.8 * cm
+    official_img = Image(OFFICIAL_LOGO, width=logo_w, height=logo_w) if os.path.exists(OFFICIAL_LOGO) else ""
+    agri_img = Image(AGRI_LOGO, width=logo_w, height=logo_w) if os.path.exists(AGRI_LOGO) else ""
+
+    center_header = [
+        Paragraph("Republic of the Philippines", subtitle_style),
+        Paragraph("Province of Quezon", subtitle_style),
+        Paragraph("<b>MUNICIPALITY OF SARIAYA</b>", ParagraphStyle('Muni', parent=subtitle_style, fontName='Helvetica-Bold', fontSize=10, textColor=TEXT_MAIN)),
+        Paragraph("<b>OFFICE OF THE MUNICIPAL AGRICULTURIST</b>", ParagraphStyle('Off', parent=subtitle_style, fontName='Helvetica-Bold', fontSize=11, textColor=PRIMARY_GREEN)),
+    ]
+
+    header_table = Table(
+        [[official_img, center_header, agri_img]],
+        colWidths=[2.2 * cm, 13.6 * cm, 2.2 * cm],
+    )
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+
+    story = [
+        header_table,
+        Spacer(1, 4),
+    ]
+
+    divider = Table([[""]], colWidths=[18 * cm], rowHeights=[2])
+    divider.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), PRIMARY_GREEN),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(divider)
+    story.append(Spacer(1, 8))
+
+    doc_title = draft_data.get("report_title", "MEMORANDUM REPORT").upper()
+    story.append(Paragraph(f"<b>{doc_title}</b>", title_style))
+    period_str = draft_data.get("period_str", "")
+    if period_str:
+        story.append(Paragraph(f"REPORTING PERIOD: <b>{period_str.upper()}</b>", subtitle_style))
+    story.append(Spacer(1, 8))
+
+    trans = draft_data.get("transmittal", {})
+    legal_bases_text = str(trans.get("legal_bases", "")).replace("\n", "<br/>")
+
+    memo_data = [
+        [Paragraph("<b>MEMORANDUM FOR:</b>", memo_label_style), Paragraph(str(trans.get("memo_for", "HON. MARCELO P. GAYETA, Municipal Mayor")), memo_val_style)],
+        [Paragraph("<b>THROUGH:</b>", memo_label_style), Paragraph(str(trans.get("memo_through", "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist")), memo_val_style)],
+        [Paragraph("<b>FROM:</b>", memo_label_style), Paragraph(str(trans.get("memo_from", "Livestock Regulatory Staff")), memo_val_style)],
+        [Paragraph("<b>DATE:</b>", memo_label_style), Paragraph(str(trans.get("date", timezone.now().strftime("%B %d, %Y"))), memo_val_style)],
+        [Paragraph("<b>SUBJECT:</b>", memo_label_style), Paragraph(f"<b>{trans.get('subject', 'ACCOMPLISHMENT REPORT')}</b>", memo_val_style)],
+        [Paragraph("<b>LEGAL BASES:</b>", memo_label_style), Paragraph(legal_bases_text, memo_val_style)],
+    ]
+
+    memo_table = Table(memo_data, colWidths=[4.2 * cm, 13.8 * cm])
+    memo_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), BG_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(memo_table)
+    story.append(Spacer(1, 12))
+
+    story.append(Paragraph("I. EXECUTIVE SUMMARY", section_head_style))
+    exec_summary = str(draft_data.get("executive_summary", "")).replace("\n", "<br/>")
+    story.append(Paragraph(exec_summary, body_style))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("II. BIOSECURITY & REGULATORY COMPLIANCE", section_head_style))
+    biosecurity = str(draft_data.get("biosecurity_findings", "")).replace("\n", "<br/>")
+    story.append(Paragraph(biosecurity, body_style))
+    story.append(Spacer(1, 10))
+
+    key_metrics = draft_data.get("key_metrics", [])
+    if key_metrics:
+        km_data = [["METRIC DESCRIPTION", "REPORTED VALUE"]]
+        for km in key_metrics:
+            km_data.append([str(km.get("label", "")), str(km.get("value", ""))])
+        km_table = Table(km_data, colWidths=[12 * cm, 6 * cm])
+        km_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_GREEN),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(km_table)
+        story.append(Spacer(1, 12))
+
+    headers = draft_data.get("evidence_table_headers", ["COL 1", "COL 2", "COL 3", "COL 4"])
+    rows = draft_data.get("evidence_table_rows", [])
+    if rows:
+        story.append(Paragraph("III. STATISTICAL BREAKDOWN & MOVEMENT EVIDENCE", section_head_style))
+        ev_data = [headers]
+        for r in rows:
+            ev_data.append([str(r.get("col1", "")), str(r.get("col2", "")), str(r.get("col3", "")), str(r.get("col4", ""))])
+        ev_table = Table(ev_data, colWidths=[6.5 * cm, 4.0 * cm, 4.0 * cm, 3.5 * cm])
+        ev_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#292524")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, BG_LIGHT]),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(ev_table)
+        story.append(Spacer(1, 12))
+
+    obs = draft_data.get("operational_observations", [])
+    if obs:
+        story.append(Paragraph("IV. OPERATIONAL OBSERVATIONS & VERIFICATIONS", section_head_style))
+        for o in obs:
+            story.append(Paragraph(f"• &nbsp; {str(o)}", bullet_style))
+        story.append(Spacer(1, 10))
+
+    recs = draft_data.get("recommendations", [])
+    if recs:
+        story.append(Paragraph("V. POLICY RECOMMENDATIONS & ACTION ITEMS", section_head_style))
+        for idx, r in enumerate(recs, start=1):
+            story.append(Paragraph(f"<b>{idx}.</b> &nbsp; {str(r)}", bullet_style))
+        story.append(Spacer(1, 14))
+
+    sigs = draft_data.get("signatories", {})
+    prep_name = sigs.get("prepared_by_name", "LIVESTOCK REGULATORY STAFF")
+    prep_title = sigs.get("prepared_by_title", "Livestock Inspector / Agri Officer")
+    ver_name = sigs.get("verified_by_name", "DR. RENATO C. ALPAY")
+    ver_title = sigs.get("verified_by_title", "Municipal Veterinarian / Agri Officer")
+    app_name = sigs.get("approved_by_name", "ENGR. LEONARDO R. ABUSTAN")
+    app_title = sigs.get("approved_by_title", "Municipal Agriculturist")
+
+    sig_cell_prep = [
+        Paragraph("<b>Prepared by:</b>", memo_label_style),
+        Spacer(1, 20),
+        Paragraph(f"<b>{str(prep_name).upper()}</b>", memo_label_style),
+        Paragraph(str(prep_title), subtitle_style),
+    ]
+    sig_cell_ver = [
+        Paragraph("<b>Certified Correct:</b>", memo_label_style),
+        Spacer(1, 20),
+        Paragraph(f"<b>{str(ver_name).upper()}</b>", memo_label_style),
+        Paragraph(str(ver_title), subtitle_style),
+    ]
+    sig_cell_app = [
+        Paragraph("<b>Approved by:</b>", memo_label_style),
+        Spacer(1, 20),
+        Paragraph(f"<b>{str(app_name).upper()}</b>", memo_label_style),
+        Paragraph(str(app_title), subtitle_style),
+    ]
+
+    sig_table = Table(
+        [[sig_cell_prep, sig_cell_ver, sig_cell_app]],
+        colWidths=[6.0 * cm, 6.0 * cm, 6.0 * cm],
+    )
+    sig_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(sig_table)
+    story.append(Spacer(1, 14))
+
+    cf = draft_data.get("copy_furnished", [])
+    if cf:
+        cf_lines = "<br/>".join(f"- &nbsp; {str(c)}" for c in cf)
+        cf_para = Paragraph(f"<b>Copy Furnished:</b><br/>{cf_lines}", ParagraphStyle('CF', parent=subtitle_style, fontSize=7.5, leading=11, textColor=TEXT_MUTED, alignment=0))
+        story.append(cf_para)
+
+    canvas_factory = make_numbered_canvas(
+        report_title=doc_title,
+        report_subtitle=doc_title,
+        date_range_str=period_str,
+        footer_text=f"Official LGU Memorandum • Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        primary_color=PRIMARY_GREEN,
+    )
+
+    doc.build(story, canvasmaker=canvas_factory)
+    buffer.seek(0)
+    return buffer
+

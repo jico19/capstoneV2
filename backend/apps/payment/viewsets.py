@@ -15,9 +15,48 @@ class PaymentViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        qs = models.PaymentHistory.objects.select_related(
+            'issued_permit__application__farmer',
+            'confirmed_by',
+        ).prefetch_related(
+            'issued_permit__application__origins__barangay',
+        ).order_by('-created_at')
+
         if user.role == 'Farmer':
-            return models.PaymentHistory.objects.filter(issued_permit__application__farmer=user)
-        return models.PaymentHistory.objects.all()
+            qs = qs.filter(issued_permit__application__farmer=user)
+
+        # Status filter
+        status_param = self.request.query_params.get('status')
+        if status_param and status_param != 'ALL':
+            qs = qs.filter(status__iexact=status_param)
+
+        # Method filter
+        method_param = self.request.query_params.get('method')
+        if method_param and method_param != 'ALL':
+            qs = qs.filter(method__iexact=method_param)
+
+        # Search filter
+        search_param = self.request.query_params.get('search')
+        if search_param:
+            from django.db.models import Q
+            clean_search = search_param.strip().replace('#TRX-', '').replace('TRX-', '')
+            qs = qs.filter(
+                Q(or_number__icontains=search_param) |
+                Q(issued_permit__permit_number__icontains=search_param) |
+                Q(issued_permit__application__farmer__first_name__icontains=search_param) |
+                Q(issued_permit__application__farmer__last_name__icontains=search_param) |
+                Q(issued_permit__application__farmer__username__icontains=search_param) |
+                Q(paymongo_session_id__icontains=search_param) |
+                Q(id__icontains=clean_search)
+            )
+
+        # Date range filter
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        if start_date and end_date:
+            qs = qs.filter(created_at__date__range=[start_date, end_date])
+
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -26,6 +65,48 @@ class PaymentViewSet(BaseModelViewSet):
             return serializers.PaymentWriteAndDetailSerializer
         else:
             return serializers.PaymentListSerializer
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        API Endpoint: GET /payment/stats/
+        Returns comprehensive aggregate statistics across the entire collections ledger.
+        """
+        from django.db.models import Sum, Count
+        from django.utils import timezone
+
+        today = timezone.now().date()
+        base_qs = self.get_queryset()
+        cleared_qs = base_qs.filter(status__in=[models.PaymentHistory.Status.SUCCESS, models.PaymentHistory.Status.CONFIRMED])
+        
+        total_collected = cleared_qs.aggregate(Sum('amount'))['amount__sum'] or 0
+        total_cleared = cleared_qs.count()
+        today_collected = cleared_qs.filter(created_at__date=today).aggregate(Sum('amount'))['amount__sum'] or 0
+        today_cleared = cleared_qs.filter(created_at__date=today).count()
+        
+        pending_count = base_qs.filter(status=models.PaymentHistory.Status.PENDING).count()
+        
+        # Gateway breakdown
+        qrph_count = cleared_qs.filter(method=models.PaymentHistory.Method.QRPH).count()
+        gcash_count = cleared_qs.filter(method=models.PaymentHistory.Method.OFFLINE).count()
+        card_count = cleared_qs.filter(method=models.PaymentHistory.Method.CARD).count()
+        paymaya_count = cleared_qs.filter(method=models.PaymentHistory.Method.PAYMAYA).count()
+        digital_count = qrph_count + gcash_count + card_count + paymaya_count
+
+        return Response({
+            "total_collected": total_collected,
+            "total_cleared": total_cleared,
+            "today_collected": today_collected,
+            "today_cleared": today_cleared,
+            "pending_count": pending_count,
+            "digital_count": digital_count,
+            "methods": {
+                "qrph": qrph_count,
+                "gcash": gcash_count,
+                "card": card_count,
+                "paymaya": paymaya_count,
+            }
+        })
 
     @action(detail=False, methods=['get'])
     def generate_report(self, request):

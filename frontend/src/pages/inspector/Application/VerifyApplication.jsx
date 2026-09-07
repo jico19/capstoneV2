@@ -184,8 +184,16 @@ const VerifyApplication = () => {
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Origin Barangay(s)</p>
                         <div className="space-y-2 mt-2">
                             {application.origins?.map((origin) => (
-                                <div key={origin.id} className="flex justify-between items-center border-b border-stone-100 pb-1 last:border-0">
-                                    <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{origin.barangay_name}</p>
+                                <div key={origin.id} className="flex justify-between items-center border-b border-stone-100 pb-1.5 last:border-0">
+                                    <div className="space-y-0.5">
+                                        <p className="text-sm font-bold text-stone-800 uppercase tracking-tight">{origin.barangay_name}</p>
+                                        {origin.source_farmer_name && (
+                                            <p className="text-[10px] font-medium text-stone-500">
+                                                Source: <span className="font-bold text-stone-700">{origin.source_farmer_name}</span>
+                                                {origin.source_phone_no ? ` • ${origin.source_phone_no}` : ''}
+                                            </p>
+                                        )}
+                                    </div>
                                     <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{origin.number_of_pigs} Pigs</p>
                                 </div>
                             ))}

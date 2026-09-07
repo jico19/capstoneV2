@@ -223,8 +223,41 @@ const AgriPermitDetail = () => {
                     <ArrowLeft size={16} strokeWidth={3} /> Return to Application List
                 </button>
 
-                <div className="space-y-16">
+                <div className="space-y-12">
                     <ApplicationHeader data={application} />
+
+                    {application.origins && application.origins.length > 0 && (
+                        <div className="border border-stone-200 bg-white p-6 space-y-4">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Origin Traceability</p>
+                                <h3 className="text-lg font-black text-stone-800 uppercase tracking-tight">
+                                    Swine Source Farms & Locations
+                                </h3>
+                            </div>
+                            <div className="divide-y divide-stone-100 border-t border-stone-100">
+                                {application.origins.map((orig, idx) => (
+                                    <div key={orig.id || idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div className="space-y-0.5">
+                                            <span className="text-sm font-bold text-stone-800 uppercase">
+                                                Location #{idx + 1}: Barangay {orig.barangay_name}
+                                            </span>
+                                            {orig.source_farmer_name ? (
+                                                <p className="text-xs font-medium text-stone-500">
+                                                    Source Farmer / Farm: <span className="font-bold text-stone-800">{orig.source_farmer_name}</span>
+                                                    {orig.source_phone_no ? ` • Contact: ${orig.source_phone_no}` : ''}
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs text-stone-400 italic">Source farmer not specified</p>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-black font-mono text-stone-800 bg-stone-50 px-3 py-1.5 border border-stone-200">
+                                            {orig.number_of_pigs} pigs
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <section className="space-y-8">
                         <div className="flex items-center gap-6">

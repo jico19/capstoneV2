@@ -29,6 +29,17 @@ def handle_application_status_change(application, new_status, reason=None):
         from apps.sms.task import send_via_status
         db_transaction.on_commit(lambda: send_via_status.enqueue(application.id))
 
+    # When a permit is officially released (payment confirmed), deduct from HogSurvey.
+    if new_status == Status.RELEASED:
+        try:
+            from .permit import deduct_hog_survey_for_application
+            deduct_hog_survey_for_application(application)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(
+                f"HogSurvey deduction failed for application #{application.application_id}: {e}"
+            )
+
     notification_map = {
         Status.OPV_REJECTED: (
             Notification.Type.WARNING,

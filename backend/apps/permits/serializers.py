@@ -84,7 +84,7 @@ class TransportOriginListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransportOrigin
         fields = [
-            "id", "barangay", "barangay_name", "number_of_pigs",
+            "id", "barangay", "barangay_name", "source_farmer_name", "source_phone_no", "number_of_pigs",
             "inahin", "barako", "fattener", "grower", "bulaw", "starter",
             "documents"
         ]
@@ -95,11 +95,13 @@ class TransportOriginWriteSerializer(serializers.ModelSerializer):
 
     id = serializers.IntegerField(required=False)
     number_of_pigs = serializers.IntegerField(required=False)
+    source_farmer_name = serializers.CharField(required=False, allow_blank=True, default="")
+    source_phone_no = serializers.CharField(required=False, allow_blank=True, default="")
 
     class Meta:
         model = TransportOrigin
         fields = [
-            "id", "barangay", "number_of_pigs",
+            "id", "barangay", "source_farmer_name", "source_phone_no", "number_of_pigs",
             "inahin", "barako", "fattener", "grower", "bulaw", "starter"
         ]
 

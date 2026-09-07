@@ -27,7 +27,7 @@ router.register(r'notification', UserViewSet.NotificationViewSet)
 router.register(r'audit-trail', UserViewSet.AuditTrailViewSet)
 
 # payment
-router.register(r'payment', PaymentViewSets.PaymentViewSet)
+router.register(r'payment', PaymentViewSets.PaymentViewSet, basename='payment')
 
 # Inspector
 router.register(r'inspector', InspectorViewSets.InspectorLogViewSet)

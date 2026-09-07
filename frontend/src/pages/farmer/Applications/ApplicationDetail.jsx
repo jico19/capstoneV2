@@ -111,6 +111,34 @@ const ApplicationDetail = () => {
                         </div>
                     )}
                     
+                    {application.origins && application.origins.length > 0 && (
+                        <div className="border border-stone-200 bg-white p-5 space-y-3">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-stone-700">
+                                Swine Source & Origin Details
+                            </h3>
+                            <div className="divide-y divide-stone-100">
+                                {application.origins.map((orig, idx) => (
+                                    <div key={orig.id || idx} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                        <div>
+                                            <span className="text-xs font-bold text-stone-800 uppercase">
+                                                Location #{idx + 1}: Barangay {orig.barangay_name}
+                                            </span>
+                                            {orig.source_farmer_name && (
+                                                <p className="text-[10px] font-medium text-stone-500">
+                                                    Source Farmer: <span className="font-bold text-stone-700">{orig.source_farmer_name}</span>
+                                                    {orig.source_phone_no ? ` • ${orig.source_phone_no}` : ''}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-black font-mono text-stone-800">
+                                            {orig.number_of_pigs} pigs
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <section className="pt-2">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
                             <div className="flex items-center gap-3">

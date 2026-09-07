@@ -9,15 +9,19 @@ import {
     TrendingUp,
     Calendar,
     Loader2,
-    AlertCircle
+    AlertCircle,
+    Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ReportDrafterModal from './ReportDrafterModal';
 
 /**
  * Agri Reports Page
  * Generates and downloads server-side PDF and CSV reports for a chosen date range.
- * Each report card shows what data it covers and two export buttons (PDF/CSV).
- * Props: none — all state and fetching is managed here.
+ * Each report card supports:
+ * 1. "Customize & Draft Official Report" (interactive LGU Memorandum drafter with pre-filled prose)
+ * 2. "Quick PDF" (1-click direct download with default auto-drafted narrative)
+ * 3. "Export CSV" (raw tabular ledger download)
  */
 const AgriReportsPage = () => {
     // Today's date in YYYY-MM-DD format, used as default for both fields
@@ -25,6 +29,7 @@ const AgriReportsPage = () => {
 
     const [startDate, setStartDate] = useState(todayStr);
     const [endDate, setEndDate] = useState(todayStr);
+    const [selectedReportForDraft, setSelectedReportForDraft] = useState(null);
 
     // Track which button is currently loading: "<reportId>-<format>"
     const [loadingKey, setLoadingKey] = useState(null);
@@ -60,49 +65,53 @@ const AgriReportsPage = () => {
     const reports = [
         {
             id: 'permit-issuance',
+            reportType: 'permit_issuance',
             title: 'Permit Issuance Summary',
-            description: 'Complete list of all issued permits — farmer name, origin, destination, and total head count.',
+            description: 'Executive Memorandum report on all issued transport permits, livestock volume, and inter-municipal trade corridors.',
             icon: FileText,
             accentColor: 'text-green-700',
             bgColor: 'group-hover:bg-green-50 group-hover:border-green-100 group-hover:text-green-700',
             hasCsv: true,
             pdfEndpoint: '/report/permit-issuance/pdf/',
             csvEndpoint: '/report/permit-issuance/csv/',
-            pdfFilename: `PERMIT_ISSUANCE_${dateTag}.pdf`,
+            pdfFilename: `LGU_MEMORANDUM_PERMIT_ISSUANCE_${dateTag}.pdf`,
             csvFilename: `PERMIT_ISSUANCE_${dateTag}.csv`,
         },
         {
             id: 'barangay-distribution',
+            reportType: 'barangay_distribution',
             title: 'Barangay Volume Distribution',
-            description: 'Livestock movement origin points: how many pigs were transported from each barangay.',
+            description: 'Spatial volume distribution audit detailing origin barangays, production clusters, and biosecurity zoning compliance.',
             icon: PieChart,
             accentColor: 'text-sky-700',
             bgColor: 'group-hover:bg-sky-50 group-hover:border-sky-100 group-hover:text-sky-700',
             hasCsv: false,
             pdfEndpoint: '/report/barangay-distribution/pdf/',
-            pdfFilename: `BARANGAY_DISTRIBUTION_${dateTag}.pdf`,
+            pdfFilename: `LGU_MEMORANDUM_BARANGAY_DISTRIBUTION_${dateTag}.pdf`,
         },
         {
             id: 'inspector-logs',
+            reportType: 'inspector_logs',
             title: 'Field Inspection Audit',
-            description: 'Detailed log of all QR code scans and field checkpoints recorded by inspectors.',
+            description: 'Checkpoint enforcement audit synthesizing mobile QR scans, inspector activity, and inter-municipal transit compliance.',
             icon: TrendingUp,
             accentColor: 'text-amber-700',
             bgColor: 'group-hover:bg-amber-50 group-hover:border-amber-100 group-hover:text-amber-700',
             hasCsv: false,
             pdfEndpoint: '/report/inspector-logs/pdf/',
-            pdfFilename: `INSPECTOR_LOGS_${dateTag}.pdf`,
+            pdfFilename: `LGU_MEMORANDUM_INSPECTOR_LOGS_${dateTag}.pdf`,
         },
         {
             id: 'revenue-collection',
+            reportType: 'revenue_collection',
             title: 'Revenue & Fees Report',
-            description: 'Financial breakdown of all collected permit fees and successful payment transactions.',
+            description: 'Municipal regulatory collection audit reporting permit fees, digital transaction breakdown, and treasury remittances.',
             icon: BarChart3,
             accentColor: 'text-stone-700',
             bgColor: 'group-hover:bg-stone-100 group-hover:border-stone-200 group-hover:text-stone-700',
             hasCsv: false,
-            pdfEndpoint: '/payment/generate_report/',
-            pdfFilename: `COLLECTION_REPORT_${dateTag}.pdf`,
+            pdfEndpoint: '/report/revenue-collection/pdf/',
+            pdfFilename: `LGU_MEMORANDUM_COLLECTION_REPORT_${dateTag}.pdf`,
         },
     ];
 
@@ -201,33 +210,46 @@ const AgriReportsPage = () => {
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className={`grid ${report.hasCsv ? 'grid-cols-2' : 'grid-cols-1'} border-t border-stone-100`}>
+                            {/* Primary Action: Customize & Draft Official Report */}
+                            <div className="p-4 bg-stone-50 border-t border-stone-200">
+                                <button
+                                    type="button"
+                                    disabled={startDate > endDate}
+                                    onClick={() => setSelectedReportForDraft(report)}
+                                    className="w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    <Sparkles size={14} className="text-green-400" />
+                                    Customize & Draft Report
+                                </button>
+                            </div>
+
+                            {/* Secondary Row: Quick Actions */}
+                            <div className={`grid ${report.hasCsv ? 'grid-cols-2' : 'grid-cols-1'} border-t border-stone-200 bg-white`}>
                                 {/* CSV button — only for permit issuance */}
                                 {report.hasCsv && (
                                     <button
                                         id={`export-csv-${report.id}`}
                                         disabled={isCsvLoading || startDate > endDate}
                                         onClick={() => downloadFile(report.csvEndpoint, report.csvFilename, `${report.id}-csv`)}
-                                        className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 flex items-center justify-center gap-2 border-r border-stone-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 flex items-center justify-center gap-1.5 border-r border-stone-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         {isCsvLoading
-                                            ? <><Loader2 size={14} className="animate-spin" /> Generating...</>
-                                            : <><Download size={14} /> Export CSV</>
+                                            ? <><Loader2 size={13} className="animate-spin" /> Generating...</>
+                                            : <><Download size={13} /> Export CSV</>
                                         }
                                     </button>
                                 )}
 
-                                {/* PDF button — always shown */}
+                                {/* Quick PDF button */}
                                 <button
                                     id={`export-pdf-${report.id}`}
                                     disabled={isPdfLoading || startDate > endDate}
                                     onClick={() => downloadFile(report.pdfEndpoint, report.pdfFilename, `${report.id}-pdf`)}
-                                    className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-green-700 hover:bg-green-50 flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-green-700 hover:bg-green-50 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     {isPdfLoading
-                                        ? <><Loader2 size={14} className="animate-spin" /> Generating...</>
-                                        : <><FileText size={14} /> Export PDF</>
+                                        ? <><Loader2 size={13} className="animate-spin" /> Generating...</>
+                                        : <><FileText size={13} /> Quick PDF</>
                                     }
                                 </button>
                             </div>
@@ -235,6 +257,15 @@ const AgriReportsPage = () => {
                     );
                 })}
             </div>
+
+            {/* Report Drafter Modal */}
+            <ReportDrafterModal
+                isOpen={!!selectedReportForDraft}
+                onClose={() => setSelectedReportForDraft(null)}
+                report={selectedReportForDraft}
+                startDate={startDate}
+                endDate={endDate}
+            />
         </div>
     );
 };

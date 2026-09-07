@@ -15,15 +15,16 @@ and the barangay will have options to upload a csv for batch uploading or manual
 Put a key take away on the map that is not generic key takeaway but meaningful and has purpose key takeway.
 
 Keytake away it needs to be not too obvious like something meaninful and purpose
+
+in application there will be a form to put the farmer name and phone number of the farm who is the pig source of the pig and they will be also notified if ever the permit is scanned in the checkpoints. 
 - > done
 
 - WIP
-in application there will be a form to put the farmer name and phone number of the farm who is the pig source of the pig and they will be also notified if ever the permit is scanned in the checkpoints. 
-
+# Spec Created 07/09/26
 Implement a auto generated AIC and MAO will pass it to OPV for Validation.
 
 Implement the auto generated of Endrosement Letter per barangay and Certificate of Slaughter
-
+-
 
 
 if possible put a tagalog support for each user.

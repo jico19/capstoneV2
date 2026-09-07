@@ -44,6 +44,8 @@ const ResubmitApplication = () => {
             const mappedOrigins = application.origins.map(o => ({
                 id: o.id, // Use actual DB ID
                 barangay: o.barangay,
+                source_farmer_name: o.source_farmer_name || '',
+                source_phone_no: o.source_phone_no || '',
                 number_of_pigs: o.number_of_pigs,
                 inahin: o.inahin,
                 barako: o.barako,
@@ -80,6 +82,8 @@ const ResubmitApplication = () => {
             // Pre-fill origin fields and origin-specific documents
             mappedOrigins.forEach(o => {
                 resetData[`barangay_${o.id}`] = o.barangay;
+                resetData[`source_farmer_name_${o.id}`] = o.source_farmer_name || '';
+                resetData[`source_phone_no_${o.id}`] = o.source_phone_no || '';
                 resetData[`inahin_${o.id}`] = o.inahin || 0;
                 resetData[`barako_${o.id}`] = o.barako || 0;
                 resetData[`fattener_${o.id}`] = o.fattener || 0;
@@ -157,6 +161,8 @@ const ResubmitApplication = () => {
                 formData.append(`${prefix}[id]`, o.id);
             }
             formData.append(`${prefix}[barangay]`, data[`barangay_${o.id}`]);
+            formData.append(`${prefix}[source_farmer_name]`, data[`source_farmer_name_${o.id}`] || '');
+            formData.append(`${prefix}[source_phone_no]`, data[`source_phone_no_${o.id}`] || '');
             formData.append(`${prefix}[inahin]`, data[`inahin_${o.id}`] || 0);
             formData.append(`${prefix}[barako]`, data[`barako_${o.id}`] || 0);
             formData.append(`${prefix}[fattener]`, data[`fattener_${o.id}`] || 0);
@@ -299,6 +305,8 @@ const ResubmitApplication = () => {
                                     'purpose',
                                     ...origins.map(o => `barangay_${o.id}`),
                                     ...origins.flatMap(o => [
+                                        `source_farmer_name_${o.id}`,
+                                        `source_phone_no_${o.id}`,
                                         `inahin_${o.id}`,
                                         `barako_${o.id}`,
                                         `fattener_${o.id}`,

@@ -93,3 +93,15 @@ def send_scan_notification_sms(phone_number, application_id, timestamp_str):
     Sends a verification scan SMS alert in the background.
     """
     send_sms(phone_number=phone_number, message=f"FarmPass: Your permit #{application_id} was scanned and verified on {timestamp_str}. Safe travels!")
+
+
+@task()
+def send_source_farmer_scan_sms(phone_number, application_id, source_farmer_name, timestamp_str):
+    """
+    Sends a checkpoint verification scan SMS alert to the source pig owner.
+    """
+    farmer_label = f" ({source_farmer_name})" if source_farmer_name else ""
+    send_sms(
+        phone_number=phone_number,
+        message=f"FarmPass Alert: Swine sourced from your farm{farmer_label} under Permit #{application_id} were verified at a checkpoint on {timestamp_str}."
+    )

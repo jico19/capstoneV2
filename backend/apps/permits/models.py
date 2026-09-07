@@ -64,6 +64,8 @@ class PermitApplication(models.Model):
 class TransportOrigin(models.Model):
     application = models.ForeignKey(PermitApplication, on_delete=models.CASCADE, related_name='origins')
     barangay = models.ForeignKey(Barangay, on_delete=models.CASCADE)
+    source_farmer_name = models.CharField(max_length=200, blank=True, default="")
+    source_phone_no = models.CharField(max_length=20, blank=True, default="")
     number_of_pigs = models.PositiveIntegerField(default=0)
 
     inahin = models.PositiveIntegerField(default=0)
@@ -74,7 +76,8 @@ class TransportOrigin(models.Model):
     starter = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.barangay.name} ({self.number_of_pigs} pigs)"
+        source_info = f" — Source: {self.source_farmer_name}" if self.source_farmer_name else ""
+        return f"{self.barangay.name} ({self.number_of_pigs} pigs){source_info}"
 
     def save(self, *args, **kwargs):
         total = (
@@ -89,97 +92,7 @@ class TransportOrigin(models.Model):
             raise ValidationError("At least one pig must be specified for transport.")
 
         self.number_of_pigs = total
-
-        from apps.maps.models import HogSurvey
-        from django.utils import timezone
-        current_year = timezone.now().year
-        latest_survey = HogSurvey.objects.filter(
-            barangay=self.barangay,
-            survey_date__year=current_year
-        ).order_by('-survey_date').first()
-
-        # Fallback/Self-healing for tests or seeds:
-        if not latest_survey:
-            from django.utils import timezone
-            latest_survey = HogSurvey.objects.create(
-                barangay=self.barangay,
-                survey_date=timezone.now().date(),
-                inahin=self.inahin + 50,
-                barako=self.barako + 10,
-                fattener=self.fattener + 100,
-                grower=self.grower + 100,
-                bulaw=self.bulaw + 50,
-                starter=self.starter + 100,
-                total_pigs=self.inahin + self.barako + self.fattener + self.grower + self.bulaw + self.starter + 410
-            )
-
-        # Calculate differences for updates
-        if self.pk:
-            old_self = TransportOrigin.objects.get(pk=self.pk)
-            diff_inahin = self.inahin - old_self.inahin
-            diff_barako = self.barako - old_self.barako
-            diff_fattener = self.fattener - old_self.fattener
-            diff_grower = self.grower - old_self.grower
-            diff_bulaw = self.bulaw - old_self.bulaw
-            diff_starter = self.starter - old_self.starter
-        else:
-            diff_inahin = self.inahin
-            diff_barako = self.barako
-            diff_fattener = self.fattener
-            diff_grower = self.grower
-            diff_bulaw = self.bulaw
-            diff_starter = self.starter
-
-        # Self-healing adjust: if survey doesn't have enough, increase the survey stock
-        if latest_survey.inahin < diff_inahin:
-            latest_survey.inahin += (diff_inahin - latest_survey.inahin) + 10
-        if latest_survey.barako < diff_barako:
-            latest_survey.barako += (diff_barako - latest_survey.barako) + 10
-        if latest_survey.fattener < diff_fattener:
-            latest_survey.fattener += (diff_fattener - latest_survey.fattener) + 10
-        if latest_survey.grower < diff_grower:
-            latest_survey.grower += (diff_grower - latest_survey.grower) + 10
-        if latest_survey.bulaw < diff_bulaw:
-            latest_survey.bulaw += (diff_bulaw - latest_survey.bulaw) + 10
-        if latest_survey.starter < diff_starter:
-            latest_survey.starter += (diff_starter - latest_survey.starter) + 10
-
-        # Deduct from survey
-        latest_survey.inahin -= diff_inahin
-        latest_survey.barako -= diff_barako
-        latest_survey.fattener -= diff_fattener
-        latest_survey.grower -= diff_grower
-        latest_survey.bulaw -= diff_bulaw
-        latest_survey.starter -= diff_starter
-        latest_survey.total_pigs = (
-            latest_survey.inahin + latest_survey.barako + latest_survey.fattener +
-            latest_survey.grower + latest_survey.bulaw + latest_survey.starter
-        )
-        latest_survey.save()
-
         super().save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        from apps.maps.models import HogSurvey
-        from django.utils import timezone
-        current_year = timezone.now().year
-        latest_survey = HogSurvey.objects.filter(
-            barangay=self.barangay,
-            survey_date__year=current_year
-        ).order_by('-survey_date').first()
-        if latest_survey:
-            latest_survey.inahin += self.inahin
-            latest_survey.barako += self.barako
-            latest_survey.fattener += self.fattener
-            latest_survey.grower += self.grower
-            latest_survey.bulaw += self.bulaw
-            latest_survey.starter += self.starter
-            latest_survey.total_pigs = (
-                latest_survey.inahin + latest_survey.barako + latest_survey.fattener +
-                latest_survey.grower + latest_survey.bulaw + latest_survey.starter
-            )
-            latest_survey.save()
-        super().delete(*args, **kwargs)
 
 
 class SubmittedDocument(models.Model):

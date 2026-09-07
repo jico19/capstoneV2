@@ -63,6 +63,8 @@ const CreateApplication = () => {
                 // Append origins
                 origins.forEach((o, index) => {
                     formData.append(`origins[${index}][barangay]`, data[`barangay_${o.id}`]);
+                    formData.append(`origins[${index}][source_farmer_name]`, data[`source_farmer_name_${o.id}`] || '');
+                    formData.append(`origins[${index}][source_phone_no]`, data[`source_phone_no_${o.id}`] || '');
                     formData.append(`origins[${index}][inahin]`, data[`inahin_${o.id}`] || 0);
                     formData.append(`origins[${index}][barako]`, data[`barako_${o.id}`] || 0);
                     formData.append(`origins[${index}][fattener]`, data[`fattener_${o.id}`] || 0);
@@ -247,6 +249,8 @@ const CreateApplication = () => {
                                         'purpose',
                                         ...origins.map(o => `barangay_${o.id}`),
                                         ...origins.flatMap(o => [
+                                            `source_farmer_name_${o.id}`,
+                                            `source_phone_no_${o.id}`,
                                             `inahin_${o.id}`,
                                             `barako_${o.id}`,
                                             `fattener_${o.id}`,

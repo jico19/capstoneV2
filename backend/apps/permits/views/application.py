@@ -56,7 +56,7 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 "barangay": data.get(f"origins[{i}][barangay]"),
             }
             # Parse pig types and counts if present
-            for field in ["inahin", "barako", "fattener", "grower", "bulaw", "starter", "number_of_pigs"]:
+            for field in ["inahin", "barako", "fattener", "grower", "bulaw", "starter", "number_of_pigs", "source_farmer_name", "source_phone_no"]:
                 key = f"origins[{i}][{field}]"
                 if key in data:
                     origin[field] = data.get(key)

@@ -17,6 +17,7 @@ def handle_application_status_change(application, new_status, reason=None):
 
     # Queue SMS status update task (replaces sms signals)
     monitored_statuses = [
+        Status.FORWARDED_TO_OPV,
         Status.RESUBMISSION,
         Status.OPV_VALIDATED,
         Status.OPV_REJECTED,
@@ -74,7 +75,7 @@ def handle_application_status_change(application, new_status, reason=None):
 
 def approve_application(application, user, remarks):
     """
-    Agri officer approval to forward the application to OPV.
+    Agri officer approval to forward the application to OPV and auto-generate AIC.
     """
     if user.role != "Agri":
         raise PermissionDenied("Only Agri officers can approve applications.")
@@ -91,23 +92,43 @@ def approve_application(application, user, remarks):
         )
 
     with transaction.atomic():
+        # Ensure AIC number and issue timestamp on application
+        if not application.aic_number:
+            from apps.payment.services import _generate_aic_number
+            application.aic_number = _generate_aic_number(application)
+            application.aic_issued_at = timezone.now()
+            application.save(update_fields=["aic_number", "aic_issued_at"])
+        elif not application.aic_issued_at:
+            application.aic_issued_at = timezone.now()
+            application.save(update_fields=["aic_issued_at"])
+
         handle_application_status_change(application, models.PermitApplication.Status.FORWARDED_TO_OPV)
+
+        # Trigger AIC PDF generation
+        from apps.documents.services import generate_aic_pdf
+        transaction.on_commit(
+            lambda: generate_aic_pdf.enqueue(
+                permit_application_id=application.pk,
+                issued_by_user_id=user.pk
+            )
+        )
 
         # Create notification for the farmer
         Notification.objects.create(
             recipient=application.farmer,
-            title="Application Approved",
+            type=Notification.Type.SUCCESS,
+            title="Animal Inspection Certificate (AIC) Issued",
             message=(
-                f"Your permit application has been reviewed by Agri and forwarded to OPV for final validation.\n\nRemarks: {remarks}"
+                f"Your permit application #{application.application_id} has been approved by MAO (AIC #{application.aic_number}) and forwarded to OPV for provincial validation.\n\nRemarks: {remarks}"
                 if remarks
-                else "Your permit application has been forwarded to OPV."
+                else f"Your permit application #{application.application_id} has been approved by MAO (AIC #{application.aic_number}) and forwarded to OPV."
             ),
         )
 
         # --- Formal Audit Entry ---
         AuditTrail.objects.create(
             who_performed=user,
-            what_performed=f"[AGRI OFFICER REVIEW] - Application #{application.application_id} approved for health validation. Forwarded to OPV.",
+            what_performed=f"[AGRI OFFICER REVIEW] - Application #{application.application_id} approved. AIC #{application.aic_number} generated and forwarded to OPV.",
             when_performed=timezone.now(),
         )
 

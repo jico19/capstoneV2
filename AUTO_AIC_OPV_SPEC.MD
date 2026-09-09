@@ -1,6 +1,6 @@
-﻿# Auto-Generated AIC & MAO-to-OPV Validation Workflow Specification
+# Auto-Generated AIC & MAO-to-OPV Validation Workflow Specification
 
-**Status:** Set Aside / On Hold (WIP Reference)  
+**Status:** Implemented & Verified  
 **Reference Document:** sample_docs/AIC.jpg (Official Sariaya Animal Inspection Certificate)  
 **Target Roles:** Farmer (Applicant), MAO / Municipal Agriculture Office (Agri Officer), OPV (Office of the Provincial Veterinarian)
 
@@ -114,10 +114,10 @@ In approve_application(application, user, remarks):
 ---
 
 ## 5. Quick Resume Checklist (When Ready to Implement)
-- [ ] Run migration to add aic_number, aic_pdf, and aic_issued_at to PermitApplication.
-- [ ] Update generate_aic_pdf in backend/apps/documents/services.py to use PermitApplication.
-- [ ] Connect generate_aic_pdf call inside approve_application in backend/apps/permits/services/application.py.
-- [ ] Expose aic_pdf and include it in get_all_documents in backend/apps/permits/serializers.py.
-- [ ] Add "Download AIC" button in Farmer UI (ApplicationDetail.jsx).
-- [ ] Add AIC inspection view in OPV UI (OPVApplicationDetailView.jsx).
-- [ ] Run pytest backend/apps/permits/tests/test_workflow.py to verify automated workflow tests.
+- [x] Run migration to add aic_number, aic_pdf, and aic_issued_at to PermitApplication.
+- [x] Update generate_aic_pdf in backend/apps/documents/services.py to use PermitApplication.
+- [x] Connect generate_aic_pdf call inside approve_application in backend/apps/permits/services/application.py.
+- [x] Expose aic_pdf and include it in get_all_documents in backend/apps/permits/serializers.py.
+- [x] Add "Download AIC" button in Farmer UI (ApplicationDetail.jsx).
+- [x] Add AIC inspection view in OPV UI (OPVApplicationDetailView.jsx).
+- [x] Run pytest backend/apps/permits/tests/test_workflow.py to verify automated workflow tests.

@@ -16,31 +16,40 @@ from apps.api.models import AuditTrail
 
 logger = logging.getLogger(__name__)
 
-def _generate_aic_number(issued_permit_instance) -> str:
+def _generate_aic_number(instance=None) -> str:
     """
-    Atomically generates a unique AIC number for a given IssuedPermit.
+    Atomically generates a unique AIC number for a given PermitApplication or IssuedPermit.
     Uses select_for_update to lock matching rows and prevent duplicate numbers
-    on concurrent payments on the same day.
+    on concurrent requests on the same day.
 
     Format: MM-DD-NNN-YY  (e.g. 08-25-001-26)
 
     MUST be called inside a transaction.atomic() block.
     """
-    from apps.permits.models import IssuedPermit
+    from apps.permits.models import IssuedPermit, PermitApplication
     today = timezone.now().date()
     mm_dd = today.strftime("%m-%d")
     yy = today.strftime("%y")
     prefix = f"{mm_dd}-"
 
-    # Lock all rows with today's prefix so concurrent requests block here
-    # instead of reading the same count simultaneously.
+    # Lock all rows with today's prefix across both models so concurrent requests block here
+    PermitApplication.objects.select_for_update().filter(
+        aic_number__startswith=prefix
+    ).values_list('id', flat=True)
+
     IssuedPermit.objects.select_for_update().filter(
         aic_number__startswith=prefix
     ).values_list('id', flat=True)
 
-    today_count = IssuedPermit.objects.filter(
-        aic_number__startswith=prefix
-    ).exclude(pk=issued_permit_instance.pk).count()
+    app_qs = PermitApplication.objects.filter(aic_number__startswith=prefix)
+    if isinstance(instance, PermitApplication) and instance.pk:
+        app_qs = app_qs.exclude(pk=instance.pk)
+
+    issued_qs = IssuedPermit.objects.filter(aic_number__startswith=prefix)
+    if isinstance(instance, IssuedPermit) and instance.pk:
+        issued_qs = issued_qs.exclude(pk=instance.pk)
+
+    today_count = max(app_qs.count(), issued_qs.count())
 
     return f"{mm_dd}-{today_count + 1:03d}-{yy}"
 

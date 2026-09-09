@@ -117,6 +117,8 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
     farmer_name = serializers.CharField(source='farmer.get_full_name', read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
+    aic_pdf = serializers.SerializerMethodField()
+
     class Meta:
         model = PermitApplication
         fields = [
@@ -129,7 +131,18 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
             "status_display",
             "transport_date",
             "created_at",
+            "aic_number",
+            "aic_pdf",
+            "aic_issued_at",
         ]
+
+    def get_aic_pdf(self, obj):
+        if not obj.aic_pdf:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.aic_pdf.url)
+        return obj.aic_pdf.url
 
 
 class PermitApplicationDetailSerializer(serializers.ModelSerializer):
@@ -141,6 +154,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     all_documents = serializers.SerializerMethodField()
     origins = TransportOriginListSerializer(many=True, read_only=True)
     permit_fee = serializers.SerializerMethodField()
+    aic_pdf = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
@@ -159,7 +173,18 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "is_checked",
             "permit_fee",
+            "aic_number",
+            "aic_pdf",
+            "aic_issued_at",
         ]
+
+    def get_aic_pdf(self, obj):
+        if not obj.aic_pdf:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.aic_pdf.url)
+        return obj.aic_pdf.url
 
     def get_all_documents(self, obj):
         # Flatten all documents from all transport origins
@@ -167,9 +192,23 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         for origin in obj.origins.all():
             all_docs.extend(origin.documents.all())
-        return SubmittedDocumentListSerializer(
+        data = SubmittedDocumentListSerializer(
             all_docs, many=True, context={"request": request}
         ).data
+
+        # Include official AIC if generated
+        if obj.aic_pdf:
+            aic_url = request.build_absolute_uri(obj.aic_pdf.url) if request else obj.aic_pdf.url
+            data.append({
+                "id": f"aic-{obj.id}",
+                "document_type": "aic",
+                "document_type_display": "Animal Inspection Certificate (AIC)",
+                "file": aic_url,
+                "ocr": None,
+                "uploaded_at": obj.aic_issued_at or obj.updated_at,
+                "is_generated": True,
+            })
+        return data
 
     def get_number_of_pigs(self, obj):
         return sum(origin.number_of_pigs for origin in obj.origins.all())

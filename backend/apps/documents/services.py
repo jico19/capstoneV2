@@ -377,7 +377,7 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
 
 
 @task()
-def generate_aic_pdf(permit_application_id, current_attempt=1):
+def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id=None):
     """
     Background task to generate a professional PDF Animal Inspection Certificate (AIC).
     Populates fields from OCR-extracted Handler's License and Transport Carrier Accreditation.
@@ -385,11 +385,25 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
     try:
         with transaction.atomic():
             application = (
-                PermitApplication.objects.select_related("farmer", "issued_permit")
+                PermitApplication.objects.select_related("farmer")
                 .prefetch_related("origins__barangay")
                 .get(pk=permit_application_id)
             )
-            issued_permit = application.issued_permit
+            issued_permit = getattr(application, "issued_permit", None)
+
+            # Ensure AIC number and issue timestamp on application
+            if not application.aic_number:
+                from apps.payment.services import _generate_aic_number
+                application.aic_number = _generate_aic_number(application)
+                application.aic_issued_at = timezone.now()
+                application.save(update_fields=["aic_number", "aic_issued_at"])
+            elif not application.aic_issued_at:
+                application.aic_issued_at = timezone.now()
+                application.save(update_fields=["aic_issued_at"])
+
+            if issued_permit and not issued_permit.aic_number:
+                issued_permit.aic_number = application.aic_number
+                issued_permit.save(update_fields=["aic_number"])
             
             # 1. Fetch config or use defaults
             config = MunicipalConfig.objects.first()
@@ -462,13 +476,27 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
             
             # Or number and date
             or_num = "N/A"
-            if hasattr(issued_permit, 'payment_history') and issued_permit.payment_history.or_number:
+            if issued_permit and hasattr(issued_permit, 'payment_history') and issued_permit.payment_history and issued_permit.payment_history.or_number:
                 or_num = issued_permit.payment_history.or_number
                 
             # Processed by
+            issuer = None
+            if issued_by_user_id:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                issuer = User.objects.filter(pk=issued_by_user_id).first()
+            elif issued_permit and issued_permit.issued_by:
+                issuer = issued_permit.issued_by
+            else:
+                from apps.api.models import AuditTrail
+                review_audit = AuditTrail.objects.filter(
+                    what_performed__icontains=f"Application #{application.application_id}"
+                ).order_by("-when_performed").first()
+                if review_audit and review_audit.who_performed:
+                    issuer = review_audit.who_performed
+
             processed_by = (
-                issued_permit.issued_by.get_full_name() or 
-                issued_permit.issued_by.username if issued_permit.issued_by else "SYSTEM STAFF"
+                issuer.get_full_name() or issuer.username if issuer else "MUNICIPAL AGRICULTURIST STAFF"
             ).upper()
 
             buffer = BytesIO()
@@ -650,7 +678,8 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
             # Issuance Text
             p.setFillColor(TEXT_MAIN)
             p.setFont("Helvetica-Bold", 9)
-            date_str = issued_permit.date_issued.strftime("%B %d, %Y")
+            issue_date = application.aic_issued_at or (issued_permit.date_issued if issued_permit else timezone.now())
+            date_str = issue_date.strftime("%B %d, %Y")
             p.drawString(1.5 * cm, current_y, f"Issued this {date_str}, as transport requirement in the Province of Quezon and valid within 48 hours.")
             current_y -= 1.0 * cm
 
@@ -661,7 +690,7 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
             p.setFont("Helvetica-Bold", 8)
             p.drawString(1.5 * cm, sig_y, "AIC No.")
             p.setFont("Helvetica", 8)
-            p.drawString(4.0 * cm, sig_y, issued_permit.aic_number or "PENDING")
+            p.drawString(4.0 * cm, sig_y, application.aic_number or "PENDING")
             
             p.setFont("Helvetica-Bold", 8)
             p.drawString(1.5 * cm, sig_y - 0.4 * cm, "Official Receipt No.")
@@ -695,8 +724,12 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
             p.save()
 
             buffer.seek(0)
-            filename = f"AIC_{issued_permit.permit_number}.pdf"
-            issued_permit.aic_pdf.save(filename, File(buffer), save=True)
+            filename = f"AIC_{application.application_id}.pdf"
+            application.aic_pdf.save(filename, File(buffer), save=True)
+            if issued_permit:
+                buffer.seek(0)
+                issued_permit.aic_number = application.aic_number
+                issued_permit.aic_pdf.save(filename, File(buffer), save=True)
             logger.info(f"Successfully generated AIC PDF for application {permit_application_id}")
             return f"AIC PDF Generated: {filename}"
             
@@ -710,7 +743,7 @@ def generate_aic_pdf(permit_application_id, current_attempt=1):
                 f"Retrying in {wait_time}s... (Attempt {current_attempt})"
             )
             generate_aic_pdf.using(run_after=timedelta(seconds=wait_time)).enqueue(
-                permit_application_id, current_attempt=current_attempt + 1
+                permit_application_id, current_attempt=current_attempt + 1, issued_by_user_id=issued_by_user_id
             )
         else:
             logger.error(

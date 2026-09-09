@@ -13,23 +13,31 @@ def send_sms(phone_number, message):
     Sends an SMS using the configured gateway.
     Includes a basic rate limit of 10 messages per 24 hours per phone number.
     """
+    if not phone_number or not message:
+        return False
+
+    phone_number = str(phone_number).strip()
     normalized_phone = phone_number
     if phone_number.startswith("09"):
         normalized_phone = "+63" + phone_number[1:]
+    elif phone_number.startswith("63"):
+        normalized_phone = "+" + phone_number
 
     # Mask phone number for logging
     masked_phone = f"{phone_number[:4]}****{phone_number[-2:]}" if len(phone_number) > 6 else phone_number
 
     # Security: Rate limit check (Max 10 messages per day per number)
+    from django.db.models import Q
     day_ago = timezone.now() - timedelta(days=1)
     recent_sms_count = SMSLog.objects.filter(
-        phone_number=phone_number,
+        Q(phone_number=phone_number) | Q(phone_number=normalized_phone),
         send_at__gte=day_ago
     ).count()
 
     if recent_sms_count >= 10:
         logger.warning(f"Rate limit exceeded for {masked_phone}. SMS not sent.")
         return False
+
 
     try:
         res = requests.post(

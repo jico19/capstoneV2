@@ -47,4 +47,12 @@ def send_otp(phone_no):
     if not success:
         raise ValidationError("SMS provider error. Please try again later.", code="sms_error")
 
+    from apps.sms.models import SMSLog
+    SMSLog.objects.create(
+        phone_number=normalized_phone,
+        message_type=SMSLog.Type.OTP,
+        status_captured="OTP_SENT"
+    )
+
     return normalized_phone
+

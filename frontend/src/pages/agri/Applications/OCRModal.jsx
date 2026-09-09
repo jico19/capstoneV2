@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, AlertCircle, ExternalLink, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { X, AlertCircle, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText } from 'lucide-react';
 import { useDocument } from '../../../hooks/useApplications';
 import { useForm } from 'react-hook-form';
+
 
 /**
  * OCR Data Correction Modal
@@ -123,11 +124,27 @@ const OCRModal = ({ doc_id, title = "Check Document", onClose, onSubmit, isSubmi
                         </div>
                         <div className="flex-1 border border-gray-200 bg-white p-2 flex items-center justify-center overflow-auto">
                             {isPdf ? (
-                                <iframe
-                                    src={doc.file}
-                                    title={doc.document_type_display}
-                                    className="w-full h-full min-h-[400px] border-0"
-                                />
+                                <div className="flex flex-col items-center justify-center p-6 text-center max-w-sm space-y-3">
+                                    <div className="p-3 bg-stone-900 text-white">
+                                        <FileText size={36} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-xs font-black uppercase tracking-tight text-stone-900">
+                                            Official PDF Document
+                                        </h4>
+                                        <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
+                                            Open this document in Google Chrome / your browser's built-in PDF viewer in a new tab.
+                                        </p>
+                                    </div>
+                                    <a
+                                        href={doc.file}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors"
+                                    >
+                                        <ExternalLink size={14} /> Open in Browser PDF Viewer
+                                    </a>
+                                </div>
                             ) : (
                                 <div
                                     className="transition-transform duration-100 ease-out inline-block"

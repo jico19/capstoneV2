@@ -118,8 +118,10 @@ class IssuedPermitViewSet(BaseModelViewSet):
                     "animal_inspection_certificate": (
                         request.build_absolute_uri(
                             issued_permit_instance.aic_pdf.url
+                            if issued_permit_instance.aic_pdf
+                            else application_instance.aic_pdf.url
                         )
-                        if issued_permit_instance.aic_pdf
+                        if (issued_permit_instance.aic_pdf or application_instance.aic_pdf)
                         else None
                     ),
                 },

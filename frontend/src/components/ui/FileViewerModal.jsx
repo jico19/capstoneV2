@@ -24,11 +24,18 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
 
     if (!isOpen || !fileUrl) return null;
 
-    const isPdf = typeof fileUrl === 'string' && (
-        fileUrl.toLowerCase().endsWith('.pdf') || 
-        fileUrl.includes('application/pdf') ||
-        fileUrl.includes('.pdf?')
+    const resolvedUrl = typeof fileUrl === 'string' && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://') && !fileUrl.startsWith('blob:')
+        ? `${(import.meta.env.VITE_BASE_URL || '').replace(/\/$/, '')}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
+        : fileUrl;
+
+    const isPdf = typeof resolvedUrl === 'string' && (
+        resolvedUrl.toLowerCase().endsWith('.pdf') || 
+        resolvedUrl.includes('application/pdf') ||
+        resolvedUrl.includes('.pdf?')
     );
+
+
+
 
     const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3));
     const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
@@ -113,7 +120,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                         </button>
 
                         <a
-                            href={fileUrl}
+                            href={resolvedUrl}
                             download
                             target="_blank"
                             rel="noreferrer"
@@ -124,7 +131,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                         </a>
 
                         <a
-                            href={fileUrl}
+                            href={resolvedUrl}
                             target="_blank"
                             rel="noreferrer"
                             title="Open in New Tab"
@@ -148,11 +155,36 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                 {/* Content Canvas */}
                 <div className="flex-1 overflow-auto bg-stone-100 flex items-center justify-center p-4 relative select-none">
                     {isPdf ? (
-                        <iframe
-                            src={fileUrl}
-                            title={title}
-                            className="w-full h-full border-0 bg-white"
-                        />
+                        <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-white border border-stone-200 shadow-sm space-y-4">
+                            <div className="p-4 bg-stone-900 text-white">
+                                <FileText size={44} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <h4 className="text-sm font-black uppercase tracking-tight text-stone-900">
+                                    Official PDF Document
+                                </h4>
+                                <p className="text-xs text-stone-500 font-medium leading-relaxed">
+                                    This document is formatted as a PDF. Open it directly in your browser's built-in Google PDF viewer or download a copy.
+                                </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full pt-2">
+                                <a
+                                    href={resolvedUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 text-white text-[11px] font-black uppercase tracking-widest transition-colors"
+                                >
+                                    <ExternalLink size={15} /> Open in Browser PDF Viewer
+                                </a>
+                                <a
+                                    href={resolvedUrl}
+                                    download
+                                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-white text-[11px] font-black uppercase tracking-widest transition-colors"
+                                >
+                                    <Download size={15} /> Download
+                                </a>
+                            </div>
+                        </div>
                     ) : (
                         <div 
                             className="transition-transform duration-100 ease-out inline-block max-w-full max-h-full"
@@ -162,7 +194,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                             }}
                         >
                             <img
-                                src={fileUrl}
+                                src={resolvedUrl}
                                 alt={title}
                                 className="max-w-full max-h-[70vh] object-contain shadow-md border border-stone-300 bg-white"
                                 draggable={false}
@@ -173,7 +205,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
 
                 {/* Footer status */}
                 <div className="px-4 py-2 bg-stone-50 border-t border-stone-200 flex justify-between items-center text-[10px] text-stone-500 font-mono">
-                    <span>{isPdf ? "PDF Document Viewer" : "Image Document Viewer"}</span>
+                    <span>{isPdf ? "PDF Document" : "Image Document Viewer"}</span>
                     <span>Press ESC or click close to dismiss</span>
                 </div>
             </div>

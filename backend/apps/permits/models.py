@@ -49,6 +49,11 @@ class PermitApplication(models.Model):
     is_issued = models.BooleanField(default=False)
     issued_at = models.DateTimeField(null=True, blank=True)
     is_checked = models.BooleanField(default=False)
+
+    # Animal Inspection Certificate (AIC) auto-generated upon MAO review approval
+    aic_number = models.CharField(max_length=20, default="", blank=True)
+    aic_pdf = models.FileField(upload_to='issued_docs/aic/', null=True, blank=True, validators=[validate_file_size])
+    aic_issued_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

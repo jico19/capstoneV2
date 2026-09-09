@@ -99,6 +99,20 @@ class TestPermitWorkflow:
         assert response.status_code == 200
         application.refresh_from_db()
         assert application.status == PermitApplication.Status.FORWARDED_TO_OPV
+        assert application.aic_number != ""
+        assert application.aic_issued_at is not None
+
+        # Verify AIC PDF generation and download endpoint
+        from apps.documents.services import generate_aic_pdf
+        generate_aic_pdf.func(application.pk)
+        application.refresh_from_db()
+        assert bool(application.aic_pdf) is True
+
+        aic_url = reverse('permitapplication-aic', kwargs={'pk': app_id})
+        aic_resp = api_client.get(aic_url)
+        assert aic_resp.status_code == 200
+        assert aic_resp.data['aic_number'] == application.aic_number
+        assert 'AIC_' in aic_resp.data['aic_pdf']
 
         # 3. OPV Reject (Return for Correction)
         api_client.force_authenticate(user=opv_user)

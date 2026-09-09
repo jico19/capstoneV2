@@ -183,8 +183,8 @@ const ApplicationDashboard = () => {
                                                 {
                                                     icon: Eye,
                                                     label: "Check",
-                                                    onclick: () => navigate(`detail/${data.id}`),
-                                                    disable: false
+                                                    onClick: () => navigate(`detail/${data.id}`),
+                                                    disabled: false
                                                 },
                                             ]}
                                         />

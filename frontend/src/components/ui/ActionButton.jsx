@@ -11,11 +11,22 @@ const ActionGroup = ({ buttons = [] }) => {
                 const Icon = btn.icon;
 
                 // Semantic check for destructive actions
-                const labelLower = btn.label.toLowerCase();
+                const label = btn.label || '';
+                const labelLower = label.toLowerCase();
                 const isDestructive =
                     labelLower === 'delete' ||
                     labelLower === 'reject' ||
                     labelLower === 'cancel';
+
+                const handleClick = (e) => {
+                    e.stopPropagation(); // Prevent row click events
+                    const fn = btn.onClick || btn.onclick || btn.action;
+                    if (typeof fn === 'function') {
+                        fn(e);
+                    }
+                };
+
+                const isDisabled = Boolean(btn.disabled || btn.disable);
 
                 return (
                     <div
@@ -23,16 +34,16 @@ const ActionGroup = ({ buttons = [] }) => {
                         className="group relative"
                     >
                         {/* Custom Flat Tooltip - Replacing DaisyUI tooltip for full control */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-none whitespace-nowrap z-50 pointer-events-none">
-                            {btn.label}
-                        </div>
+                        {label && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-none whitespace-nowrap z-50 pointer-events-none">
+                                {label}
+                            </div>
+                        )}
 
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent row click events
-                                btn.onClick();
-                            }}
-                            disabled={btn.disabled}
+                            type="button"
+                            onClick={handleClick}
+                            disabled={isDisabled}
                             className={`
                                 /* Fixed Dimensions - Sharp Square */
                                 h-10 w-10 flex items-center justify-center
@@ -44,7 +55,7 @@ const ActionGroup = ({ buttons = [] }) => {
                                 rounded-none bg-white transition-all duration-75
                                 
                                 /* Interaction States - High Contrast Semantic Fills */
-                                ${btn.disabled
+                                ${isDisabled
                                     ? "bg-gray-50 text-gray-200 border-gray-100 cursor-not-allowed"
                                     : isDestructive
                                         ? "text-gray-400 hover:bg-red-600 hover:text-white hover:border-red-600"

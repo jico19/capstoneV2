@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
-import { ArrowLeft, FileText, HandCoins, Download } from "lucide-react"
+import { ArrowLeft, FileText, HandCoins, Download, FileCheck2, ExternalLink } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
@@ -59,6 +59,46 @@ const ApplicationDetail = () => {
 
                 <div className="space-y-6 md:space-y-10">
                     <ApplicationHeader data={application} />
+
+                    {application.aic_pdf && (
+                        <div className="bg-emerald-50 border border-emerald-300 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <FileCheck2 size={16} className="text-emerald-700" />
+                                    <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest">
+                                        Animal Inspection Certificate (AIC) Issued
+                                    </h3>
+                                    {application.aic_number && (
+                                        <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-0.5 border border-emerald-200">
+                                            AIC #{application.aic_number}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs font-bold text-emerald-800/80 uppercase tracking-wider leading-normal max-w-xl">
+                                    Your application has been inspected and approved by MAO and forwarded to OPV. You can view or download your official AIC copy.
+                                </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                                <a 
+                                    href={application.aic_pdf}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-600 px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors w-full sm:w-auto text-center flex items-center justify-center gap-2"
+                                >
+                                    <ExternalLink size={14} /> Open in Browser PDF Viewer
+                                </a>
+                                <a 
+                                    href={application.aic_pdf}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download={`AIC_${application.application_id || id}.pdf`}
+                                    className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors w-full sm:w-auto text-center flex items-center justify-center gap-2"
+                                >
+                                    <Download size={14} /> Download AIC Copy
+                                </a>
+                            </div>
+                        </div>
+                    )}
                     
                     {(application.status === "RESUBMISSION" || application.status === "OPV_REJECTED") && (
                         <div className="bg-amber-50 border border-amber-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">

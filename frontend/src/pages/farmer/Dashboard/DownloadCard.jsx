@@ -15,6 +15,20 @@ const DownloadCard = ({ title, description, url, fileName, icon: Icon, isPrimary
 
     if (!url) return null;
 
+    const isPdf = typeof url === 'string' && (
+        url.toLowerCase().endsWith('.pdf') || 
+        url.includes('application/pdf') ||
+        url.includes('.pdf?')
+    );
+
+    const handlePreview = () => {
+        if (isPdf) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+            setIsPreviewOpen(true);
+        }
+    };
+
     return (
         <>
             <div className={`border rounded-none p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors ${
@@ -41,10 +55,11 @@ const DownloadCard = ({ title, description, url, fileName, icon: Icon, isPrimary
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
                     <button
                         type="button"
-                        onClick={() => setIsPreviewOpen(true)}
+                        onClick={handlePreview}
                         className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 border border-stone-200 bg-white text-stone-600 font-medium text-[10px] uppercase tracking-widest px-4 py-2 rounded-none hover:bg-stone-100 transition-colors cursor-pointer"
                     >
-                        <Eye size={14} className="text-green-700" /> Preview
+                        {isPdf ? <ExternalLink size={14} className="text-green-700" /> : <Eye size={14} className="text-green-700" />}
+                        {isPdf ? "Open PDF" : "Preview"}
                     </button>
                     <a
                         href={url}

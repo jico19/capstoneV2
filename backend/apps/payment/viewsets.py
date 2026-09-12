@@ -151,7 +151,6 @@ class PaymentViewSet(BaseModelViewSet):
         Pass the issued permit PK to create the checkout session
         """
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
-        total_price = request.data.get("total_price", 0)
 
         # Ownership check
         if request.user.role == 'Farmer' and application.farmer != request.user:
@@ -164,7 +163,7 @@ class PaymentViewSet(BaseModelViewSet):
         get_object_or_404(Permits.IssuedPermit, application=application)
 
         try:
-            data = services.create_checkout_session(application_pk=application.pk, total_price=total_price)
+            data = services.create_checkout_session(application_pk=application.pk)
             return Response(data, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
@@ -177,7 +176,6 @@ class PaymentViewSet(BaseModelViewSet):
         Pass the permit application PK to create a QR Ph payment (Payment Intent/Method attach)
         """
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
-        total_price = request.data.get("total_price", 0)
 
         # Ownership check
         if request.user.role == 'Farmer' and application.farmer != request.user:
@@ -190,7 +188,7 @@ class PaymentViewSet(BaseModelViewSet):
         get_object_or_404(Permits.IssuedPermit, application=application)
 
         try:
-            data = services.create_qrph_payment(application_pk=application.pk, total_price=total_price)
+            data = services.create_qrph_payment(application_pk=application.pk)
             return Response(data, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)

@@ -39,7 +39,6 @@ def agri_user(db):
 
 @pytest.mark.django_db
 class TestPaymentSecurityBaseline:
-    @pytest.mark.xfail(strict=True, reason="fixed by plan 002/003")
     def test_payment_history_detail_is_not_writable(self, agri_user, farmer_user):
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
         history = payment_models.PaymentHistory.objects.create(
@@ -58,7 +57,6 @@ class TestPaymentSecurityBaseline:
         assert client.patch(url, {}, format="json").status_code == status.HTTP_405_METHOD_NOT_ALLOWED
         assert client.delete(url).status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    @pytest.mark.xfail(strict=True, reason="fixed by plan 002/003")
     def test_write_serializer_has_no_writable_money_or_lifecycle_fields(self):
         immutable_fields = [
             "status",

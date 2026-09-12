@@ -43,7 +43,7 @@ class OPVValidationViewSet(BaseModelViewSet):
                 models.PermitApplication.Status.OPV_REJECTED,
                 models.PermitApplication.Status.OPV_VALIDATED,
             ]
-        )
+        ).select_related("farmer")
 
         page = self.paginate_queryset(qs)
         if page is not None:

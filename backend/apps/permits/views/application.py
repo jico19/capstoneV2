@@ -29,13 +29,13 @@ class PermitApplicationViewSet(BaseModelViewSet):
             return models.PermitApplication.objects.none()
 
         if user.role == "Farmer":
-            return models.PermitApplication.objects.filter(farmer=user)
+            qs = models.PermitApplication.objects.filter(farmer=user)
 
         elif user.role == "Agri":
-            return models.PermitApplication.objects.all()
+            qs = models.PermitApplication.objects.all()
 
         elif user.role == "Opv":
-            return models.PermitApplication.objects.filter(
+            qs = models.PermitApplication.objects.filter(
                 status__in=[
                     models.PermitApplication.Status.FORWARDED_TO_OPV,
                     models.PermitApplication.Status.OPV_REJECTED,
@@ -43,7 +43,10 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 ]
             )
 
-        return models.PermitApplication.objects.all()
+        else:
+            qs = models.PermitApplication.objects.all()
+
+        return qs.select_related("farmer")
 
     def _parse_bracket_data(self, data):
         """

@@ -53,7 +53,7 @@ const DocumentVerificationPage = () => {
 
 
     // Fetch existing documents from backend
-    const { data: docData, isLoading } = useQuery({
+    const { data: docData } = useQuery({
         queryKey: ['farmer-documents'],
         queryFn: async () => {
             const res = await api.get('/user/documents/');
@@ -75,22 +75,6 @@ const DocumentVerificationPage = () => {
                     verification_status: docData.verification_status,
                     verification_remarks: docData.verification_remarks,
                 });
-            }
-
-            // Populate existing expirations and license numbers
-            if (docData.documents) {
-                const expMap = {};
-                const licMap = {};
-                docData.documents.forEach((doc) => {
-                    if (doc.expiration_date) {
-                        expMap[doc.document_type] = doc.expiration_date;
-                    }
-                    if (doc.license_number) {
-                        licMap[doc.document_type] = doc.license_number;
-                    }
-                });
-                setExpirations((prev) => ({ ...expMap, ...prev }));
-                setLicenseNumbers((prev) => ({ ...licMap, ...prev }));
             }
         }
     }, [docData, updateUser, user?.verification_status]);
@@ -145,13 +129,16 @@ const DocumentVerificationPage = () => {
         },
         onSuccess: (data) => {
             toast.success("Documents submitted successfully!", {
-                description: "OCR is scanning your files. Expiry and license numbers will auto-populate shortly.",
+                description: "Your documents are now saved and waiting for MAO verification.",
             });
             updateUser({
                 verification_status: data.verification_status,
                 verification_remarks: data.verification_remarks,
             });
+            queryClient.setQueryData(['farmer-documents'], data);
             queryClient.invalidateQueries({ queryKey: ['farmer-documents'] });
+            setFiles({});
+            setPreviews({});
             fetchUserProfile();
         },
         onError: (err) => {
@@ -172,9 +159,94 @@ const DocumentVerificationPage = () => {
         });
     }
 
-    const hasAllThree = DOC_CONFIG.every(
-        (cfg) => files[cfg.type] || existingDocsMap[cfg.type]
-    );
+    const allDocsSaved = DOC_CONFIG.every((cfg) => existingDocsMap[cfg.type]);
+    const waitingForReview = status === 'PENDING_REVIEW' && allDocsSaved;
+
+    if (waitingForReview) {
+        return (
+            <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+                {/* Navigation & Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200 pb-5">
+                    <div>
+                        <Link
+                            to="/farmer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-stone-800 uppercase tracking-widest transition-colors mb-2"
+                        >
+                            <ArrowLeft size={14} /> Back to Dashboard
+                        </Link>
+                        <h1 className="text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-3">
+                            <ShieldCheck className="text-green-700" size={32} />
+                            Account Document Verification
+                        </h1>
+                        <p className="text-xs text-stone-500 mt-1">
+                            Sariaya Municipal Agriculture Office (MAO) Standing Credentials
+                        </p>
+                    </div>
+                </div>
+
+                {/* Waiting for verification */}
+                <div className="bg-amber-50 border-2 border-amber-500 p-8 text-center space-y-5">
+                    <div className="flex justify-center">
+                        <div className="bg-amber-100 p-4 rounded-full">
+                            <Clock className="text-amber-600" size={40} />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-xl font-black uppercase tracking-tight text-stone-900">
+                            Documents Submitted — Waiting for Verification
+                        </h2>
+                        <p className="text-sm text-stone-700 max-w-xl mx-auto font-medium">
+                            Your three required credentials have been uploaded and are now pending
+                            review by the Sariaya Municipal Agriculture Office (MAO). You will
+                            receive an SMS notification once approved.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+                        {DOC_CONFIG.map((cfg) => {
+                            const existing = existingDocsMap[cfg.type];
+                            return (
+                                <div
+                                    key={cfg.type}
+                                    className="bg-white border border-amber-200 p-4 text-left flex items-start gap-3"
+                                >
+                                    <FileCheck size={20} className="text-green-700 mt-0.5 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-stone-400">
+                                            {cfg.title}
+                                        </p>
+                                        <p className="text-xs font-bold text-green-800 mt-0.5">
+                                            On File
+                                        </p>
+                                        {existing?.is_verified && (
+                                            <span className="inline-block mt-1 text-[9px] font-black uppercase bg-green-100 text-green-800 px-1.5 py-0.5">
+                                                Verified
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <p className="text-xs text-stone-500 font-medium">
+                        No further action is needed from you at this time. If you need to
+                        update a document, please contact the MAO.
+                    </p>
+                </div>
+
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        onClick={() => navigate('/farmer')}
+                        className="px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all bg-green-700 hover:bg-green-600 text-white shadow-md shadow-green-700/20"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -278,7 +350,7 @@ const DocumentVerificationPage = () => {
                     const existing = existingDocsMap[cfg.type];
                     const currentFile = files[cfg.type];
                     const preview = previews[cfg.type];
-                    const expiry = expirations[cfg.type] || '';
+                    const expiry = expirations[cfg.type] || existing?.expiration_date || '';
 
                     const isUploaded = !!currentFile || !!existing;
 
@@ -398,7 +470,7 @@ const DocumentVerificationPage = () => {
                                         </div>
                                         <input
                                             type="text"
-                                            value={licenseNumbers[cfg.type] || ''}
+                                            value={licenseNumbers[cfg.type] || existing?.license_number || ''}
                                             onChange={(e) => handleLicenseNoChange(cfg.type, e.target.value)}
                                             placeholder="e.g. 2025-DARFO-IV-A-... or TrPASS-..."
                                             className="w-full bg-white border border-stone-300 text-stone-800 text-xs px-3 py-2.5 rounded-none focus:outline-none focus:border-stone-800 font-mono"

@@ -246,3 +246,78 @@ class KYCVerificationTests(APITestCase):
         doc.refresh_from_db()
         self.assertEqual(doc.license_number, "BAI-2026-999")
         self.assertEqual(str(doc.expiration_date), "2027-12-31")
+
+
+class KYCLifecycleLockdownTests(APITestCase):
+    def setUp(self):
+        self.farmer = User.objects.create_user(
+            username="lock_farmer",
+            password="password123",
+            role="Farmer",
+            phone_no="09191234001",
+            verification_status=User.VerificationStatus.UNVERIFIED,
+        )
+        self.agri = User.objects.create_user(
+            username="lock_agri",
+            password="password123",
+            role="Agri",
+            phone_no="09197654001",
+        )
+
+    def test_public_registration_ignores_client_kyc_and_active_flags(self):
+        url = reverse("user-list")
+        payload = {
+            "username": "sneaky_farmer",
+            "password": "password123",
+            "phone_no": "09191234002",
+            "first_name": "Sneaky",
+            "last_name": "Farmer",
+            "role": "Farmer",
+            "verification_status": User.VerificationStatus.VERIFIED,
+            "is_active": False,
+            "verification_remarks": "I am legit",
+        }
+
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        user = User.objects.get(username="sneaky_farmer")
+        self.assertEqual(user.role, "Farmer")
+        self.assertEqual(user.verification_status, User.VerificationStatus.UNVERIFIED)
+        self.assertTrue(user.is_active)
+        self.assertEqual(user.verification_remarks, "")
+
+    def test_farmer_patch_cannot_flip_own_kyc_or_active(self):
+        self.client.force_authenticate(user=self.farmer)
+        url = reverse("user-detail", kwargs={"pk": self.farmer.pk})
+
+        response = self.client.patch(
+            url,
+            {"verification_status": User.VerificationStatus.VERIFIED, "is_active": False},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.farmer.refresh_from_db()
+        self.assertEqual(self.farmer.verification_status, User.VerificationStatus.UNVERIFIED)
+        self.assertTrue(self.farmer.is_active)
+
+    def test_agri_created_barangay_official_is_verified(self):
+        self.client.force_authenticate(user=self.agri)
+        url = reverse("user-list")
+        payload = {
+            "username": "brgy_captain",
+            "password": "password123",
+            "phone_no": "09191234003",
+            "first_name": "Barangay",
+            "last_name": "Captain",
+            "role": "Barangay",
+            "verification_status": User.VerificationStatus.UNVERIFIED,
+        }
+
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        user = User.objects.get(username="brgy_captain")
+        self.assertEqual(user.role, "Barangay")
+        self.assertEqual(user.verification_status, User.VerificationStatus.VERIFIED)

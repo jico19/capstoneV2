@@ -69,9 +69,6 @@ class UserWriteSerializer(serializers.ModelSerializer):
             'address',
             'barangay',
             'receive_sms',
-            'is_active',
-            'verification_status',
-            'verification_remarks',
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'required': False}
@@ -91,11 +88,12 @@ class UserWriteSerializer(serializers.ModelSerializer):
             else:
                 attrs['role'] = 'Farmer'
 
+        # KYC state is owned by the verify flow, never by the client.
         if attrs.get('role') != 'Farmer':
             attrs['verification_status'] = models.User.VerificationStatus.VERIFIED
         else:
-            if 'verification_status' not in attrs:
-                attrs['verification_status'] = models.User.VerificationStatus.UNVERIFIED
+            attrs['verification_status'] = models.User.VerificationStatus.UNVERIFIED
+        attrs['is_active'] = True
 
         return attrs
 

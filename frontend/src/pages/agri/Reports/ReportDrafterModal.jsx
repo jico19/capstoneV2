@@ -1,24 +1,21 @@
-﻿import React, { useState, useEffect } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { api } from "../../../lib/api";
 import { downloadBlob } from "../../../lib/utils";
 import { toast } from "sonner";
 import {
   X,
   FileText,
-  Sparkles,
   RotateCcw,
   Download,
   Loader2,
-  Building,
   UserCheck,
   CheckCircle2,
-  AlertTriangle,
-  Plus,
-  Trash2,
-  Scale,
-  Calendar,
   Send,
 } from "lucide-react";
+import TransmittalTab from "./TransmittalTab";
+import NarrativeTab from "./NarrativeTab";
+import ObservationsTab from "./ObservationsTab";
+import SignatoriesTab from "./SignatoriesTab";
 
 /**
  * ReportDrafterModal
@@ -32,7 +29,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
   const [generating, setGenerating] = useState(false);
   const [draftData, setDraftData] = useState(null);
 
-  const fetchDraft = async () => {
+  const fetchDraft = useCallback(async () => {
     if (!report) return;
     setLoading(true);
     try {
@@ -51,14 +48,14 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
     } finally {
       setLoading(false);
     }
-  };
+  }, [report, startDate, endDate]);
 
   useEffect(() => {
     if (isOpen) {
       fetchDraft();
       setActiveTab("transmittal");
     }
-  }, [isOpen, report?.reportType, startDate, endDate]);
+  }, [isOpen, fetchDraft]);
 
   if (!isOpen) return null;
 
@@ -157,7 +154,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
         description: "Official LGU Memorandum PDF downloaded successfully.",
       });
       onClose();
-    } catch (err) {
+    } catch {
       toast.error("Generation Failed", {
         description: "Failed to compile the government PDF document.",
       });
@@ -253,337 +250,42 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
             <>
               {/* TAB 1: Transmittal & Routing */}
               {activeTab === "transmittal" && (
-                <div className="space-y-5">
-                  <div className="bg-green-50 border border-green-200 p-3.5 flex items-start gap-3">
-                    <Sparkles size={18} className="text-green-700 flex-shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-xs font-black text-green-950 uppercase tracking-wide">
-                        Memorandum Routing Pre-Filled
-                      </p>
-                      <p className="text-xs text-green-800 leading-relaxed">
-                        The transmittal header is formatted for official Philippine LGU Memorandum routing. You can select a quick recipient preset or edit any line below.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Recipient Presets */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                      Quick Recipient Presets (Click to Auto-Fill)
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setRecipientPreset("mayor")}
-                        className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors flex items-center gap-1.5"
-                      >
-                        <Building size={12} /> Municipal Mayor (Hon. Marcelo P. Gayeta)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRecipientPreset("opv")}
-                        className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors flex items-center gap-1.5"
-                      >
-                        <Building size={12} /> Provincial Veterinarian (OPV Quezon)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRecipientPreset("sb")}
-                        className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors flex items-center gap-1.5"
-                      >
-                        <Scale size={12} /> Sangguniang Bayan (Committee on Agriculture)
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                        MEMORANDUM FOR:
-                      </label>
-                      <input
-                        type="text"
-                        value={draftData.transmittal.memo_for}
-                        onChange={(e) => handleTransmittalChange("memo_for", e.target.value)}
-                        className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                        THROUGH:
-                      </label>
-                      <input
-                        type="text"
-                        value={draftData.transmittal.memo_through}
-                        onChange={(e) => handleTransmittalChange("memo_through", e.target.value)}
-                        className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                        FROM:
-                      </label>
-                      <input
-                        type="text"
-                        value={draftData.transmittal.memo_from}
-                        onChange={(e) => handleTransmittalChange("memo_from", e.target.value)}
-                        className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                        DATE:
-                      </label>
-                      <input
-                        type="text"
-                        value={draftData.transmittal.date}
-                        onChange={(e) => handleTransmittalChange("date", e.target.value)}
-                        className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                      SUBJECT:
-                    </label>
-                    <input
-                      type="text"
-                      value={draftData.transmittal.subject}
-                      onChange={(e) => handleTransmittalChange("subject", e.target.value)}
-                      className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                      LEGAL BASES & REGULATORY REFERENCES:
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={draftData.transmittal.legal_bases}
-                      onChange={(e) => handleTransmittalChange("legal_bases", e.target.value)}
-                      className="w-full border border-stone-300 p-2.5 text-xs font-medium text-stone-800 bg-white focus:outline-none focus:border-green-700"
-                    />
-                  </div>
-                </div>
+                <TransmittalTab
+                  transmittal={draftData.transmittal}
+                  onChange={handleTransmittalChange}
+                  onRecipientPreset={setRecipientPreset}
+                />
               )}
 
               {/* TAB 2: Executive Narrative */}
               {activeTab === "narrative" && (
-                <div className="space-y-5">
-                  {/* Summary Metric Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {draftData.key_metrics?.map((km, idx) => (
-                      <div key={idx} className="bg-stone-50 border border-stone-200 p-3 space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">
-                          {km.label}
-                        </span>
-                        <p className="text-sm font-black text-stone-800">{km.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-green-700" />
-                        I. Executive Summary (Auto-Synthesized Formal Narrative)
-                      </label>
-                      <span className="text-[10px] text-stone-400">Editable Paragraph</span>
-                    </div>
-                    <textarea
-                      rows={5}
-                      value={draftData.executive_summary}
-                      onChange={(e) => setDraftData({ ...draftData, executive_summary: e.target.value })}
-                      className="w-full border border-stone-300 p-3 text-xs leading-relaxed font-medium text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-green-700" />
-                        II. Biosecurity Surveillance & Movement Findings
-                      </label>
-                      <span className="text-[10px] text-stone-400">Editable Paragraph</span>
-                    </div>
-                    <textarea
-                      rows={4}
-                      value={draftData.biosecurity_findings}
-                      onChange={(e) => setDraftData({ ...draftData, biosecurity_findings: e.target.value })}
-                      className="w-full border border-stone-300 p-3 text-xs leading-relaxed font-medium text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                    />
-                  </div>
-                </div>
+                <NarrativeTab
+                  draftData={draftData}
+                  onSummaryChange={(value) => setDraftData({ ...draftData, executive_summary: value })}
+                  onFindingsChange={(value) => setDraftData({ ...draftData, biosecurity_findings: value })}
+                />
               )}
 
               {/* TAB 3: Observations & Recommendations */}
               {activeTab === "observations" && (
-                <div className="space-y-6">
-                  {/* Observations Section */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                      <label className="text-[11px] font-black uppercase tracking-wider text-stone-800">
-                        Operational Observations & Highlights
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleAddObservation}
-                        className="text-[10px] font-bold text-green-700 hover:text-green-900 inline-flex items-center gap-1"
-                      >
-                        <Plus size={14} /> Add Observation
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {draftData.operational_observations?.map((obs, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-stone-400">•</span>
-                          <input
-                            type="text"
-                            value={obs}
-                            onChange={(e) => handleObservationChange(idx, e.target.value)}
-                            className="flex-1 border border-stone-300 p-2 text-xs text-stone-800 bg-white focus:outline-none focus:border-green-700"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteObservation(idx)}
-                            className="text-stone-400 hover:text-red-600 p-1.5 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Recommendations Section */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                      <label className="text-[11px] font-black uppercase tracking-wider text-stone-800">
-                        Policy Recommendations & Action Items
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleAddRecommendation}
-                        className="text-[10px] font-bold text-green-700 hover:text-green-900 inline-flex items-center gap-1"
-                      >
-                        <Plus size={14} /> Add Recommendation
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {draftData.recommendations?.map((rec, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-stone-500 w-5">{idx + 1}.</span>
-                          <input
-                            type="text"
-                            value={rec}
-                            onChange={(e) => handleRecommendationChange(idx, e.target.value)}
-                            className="flex-1 border border-stone-300 p-2 text-xs text-stone-800 bg-white focus:outline-none focus:border-green-700"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteRecommendation(idx)}
-                            className="text-stone-400 hover:text-red-600 p-1.5 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <ObservationsTab
+                  operationalObservations={draftData.operational_observations}
+                  recommendations={draftData.recommendations}
+                  onAddObservation={handleAddObservation}
+                  onChangeObservation={handleObservationChange}
+                  onDeleteObservation={handleDeleteObservation}
+                  onAddRecommendation={handleAddRecommendation}
+                  onChangeRecommendation={handleRecommendationChange}
+                  onDeleteRecommendation={handleDeleteRecommendation}
+                />
               )}
 
               {/* TAB 4: Signatories */}
               {activeTab === "signatories" && (
-                <div className="space-y-6">
-                  <p className="text-xs text-stone-500 leading-relaxed">
-                    Official 3-tier government attestation chain. Ensure the officers and designated titles match current municipal administration records.
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {/* Prepared By */}
-                    <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-green-800">
-                        1. Prepared By (Drafting Officer)
-                      </p>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase font-bold text-stone-400">Full Name</label>
-                        <input
-                          type="text"
-                          value={draftData.signatories.prepared_by_name}
-                          onChange={(e) => handleSignatoryChange("prepared_by_name", e.target.value)}
-                          className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase font-bold text-stone-400">Designation / Title</label>
-                        <input
-                          type="text"
-                          value={draftData.signatories.prepared_by_title}
-                          onChange={(e) => handleSignatoryChange("prepared_by_title", e.target.value)}
-                          className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white focus:outline-none focus:border-green-700"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Verified By */}
-                    <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-700">
-                        2. Certified Correct By (Veterinarian)
-                      </p>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase font-bold text-stone-400">Full Name</label>
-                        <input
-                          type="text"
-                          value={draftData.signatories.verified_by_name}
-                          onChange={(e) => handleSignatoryChange("verified_by_name", e.target.value)}
-                          className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase font-bold text-stone-400">Designation / Title</label>
-                        <input
-                          type="text"
-                          value={draftData.signatories.verified_by_title}
-                          onChange={(e) => handleSignatoryChange("verified_by_title", e.target.value)}
-                          className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white focus:outline-none focus:border-green-700"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Approved By */}
-                    <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-700">
-                        3. Approved By (Municipal Agriculturist)
-                      </p>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase font-bold text-stone-400">Full Name</label>
-                        <input
-                          type="text"
-                          value={draftData.signatories.approved_by_name}
-                          onChange={(e) => handleSignatoryChange("approved_by_name", e.target.value)}
-                          className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase font-bold text-stone-400">Designation / Title</label>
-                        <input
-                          type="text"
-                          value={draftData.signatories.approved_by_title}
-                          onChange={(e) => handleSignatoryChange("approved_by_title", e.target.value)}
-                          className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white focus:outline-none focus:border-green-700"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <SignatoriesTab
+                  signatories={draftData.signatories}
+                  onChange={handleSignatoryChange}
+                />
               )}
             </>
           )}

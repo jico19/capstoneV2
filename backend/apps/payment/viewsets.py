@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from . import models, serializers, services
 from apps.permits import models as Permits
+from apps.permits.services.numbers import get_aic_number
 
 from apps.api.base import BaseModelViewSet
 
@@ -316,7 +317,7 @@ class PaymentViewSet(BaseModelViewSet):
 
             # Use the shared atomic helper (no more duplicate inline logic)
             if not issued_permit.aic_number:
-                issued_permit.aic_number = services._generate_aic_number(issued_permit)
+                issued_permit.aic_number = get_aic_number(issued_permit)
 
             issued_permit.save()
 

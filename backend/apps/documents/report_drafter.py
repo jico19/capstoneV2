@@ -17,6 +17,84 @@ def _format_date_range(start_date, end_date):
     return f"{start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}"
 
 
+def _officer_name(default, requesting_user):
+    if requesting_user:
+        return (requesting_user.get_full_name() or requesting_user.username).upper()
+    return default
+
+
+class ReportDraftBuilder:
+    """Assembles the LGU memorandum envelope shared by every drafted report.
+
+    Each drafter supplies the report-specific narrative, metrics, evidence
+    table, and signatory title; the builder owns the transmittal, signatory,
+    copy-furnished, and top-level framing keys so the remaining payload shape
+    (consumed by document exporters) stays consistent across report types.
+    """
+
+    MEMO_FOR = "HON. MARCELO P. GAYETA, Municipal Mayor"
+    MEMO_THROUGH = "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist"
+    VERIFIED_BY = ("DR. RENATO C. ALPAY", "Municipal Veterinarian / Agri Officer")
+    APPROVED_BY = ("ENGR. LEONARDO R. ABUSTAN", "Municipal Agriculturist")
+
+    def __init__(
+        self,
+        *,
+        report_type,
+        report_title,
+        start_date,
+        end_date,
+        date_str,
+        officer_name,
+        memo_from_party,
+        subject,
+        legal_bases,
+        executive_summary,
+        biosecurity_findings,
+        key_metrics,
+        evidence_table_headers,
+        evidence_table_rows,
+        observations,
+        recommendations,
+        prepared_by_title,
+        copy_furnished,
+    ):
+        self.payload = {
+            "report_type": report_type,
+            "report_title": report_title,
+            "period_str": date_str,
+            "start_date": str(start_date),
+            "end_date": str(end_date),
+            "transmittal": {
+                "memo_for": self.MEMO_FOR,
+                "memo_through": self.MEMO_THROUGH,
+                "memo_from": f"{officer_name}, {memo_from_party}",
+                "subject": subject,
+                "date": timezone.now().strftime("%B %d, %Y"),
+                "legal_bases": legal_bases,
+            },
+            "executive_summary": executive_summary,
+            "biosecurity_findings": biosecurity_findings,
+            "key_metrics": key_metrics,
+            "evidence_table_headers": evidence_table_headers,
+            "evidence_table_rows": evidence_table_rows,
+            "operational_observations": observations,
+            "recommendations": recommendations,
+            "signatories": {
+                "prepared_by_name": officer_name,
+                "prepared_by_title": prepared_by_title,
+                "verified_by_name": self.VERIFIED_BY[0],
+                "verified_by_title": self.VERIFIED_BY[1],
+                "approved_by_name": self.APPROVED_BY[0],
+                "approved_by_title": self.APPROVED_BY[1],
+            },
+            "copy_furnished": copy_furnished,
+        }
+
+    def to_dict(self):
+        return self.payload
+
+
 def draft_permit_issuance_report(start_date, end_date, requesting_user=None):
     """
     Drafts an official LGU Memorandum Accomplishment Report for livestock permit issuance.
@@ -58,9 +136,7 @@ def draft_permit_issuance_report(start_date, end_date, requesting_user=None):
     external_pct = round((outside_sariaya_count / total_permits * 100), 1) if total_permits > 0 else 0.0
 
     date_str = _format_date_range(start_date, end_date)
-    officer_name = "LIVESTOCK REGULATORY STAFF"
-    if requesting_user:
-        officer_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+    officer_name = _officer_name("LIVESTOCK REGULATORY STAFF", requesting_user)
 
     top_brgy_narrative = ""
     if top_origins:
@@ -119,51 +195,40 @@ def draft_permit_issuance_report(start_date, end_date, requesting_user=None):
             "col4": "0.0%",
         })
 
-    return {
-        "report_type": "permit_issuance",
-        "report_title": "LIVESTOCK PERMIT ISSUANCE ACCOMPLISHMENT REPORT",
-        "period_str": date_str,
-        "start_date": str(start_date),
-        "end_date": str(end_date),
-        "transmittal": {
-            "memo_for": "HON. MARCELO P. GAYETA, Municipal Mayor",
-            "memo_through": "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist",
-            "memo_from": f"{officer_name}, Livestock Regulatory Section",
-            "subject": f"ACCOMPLISHMENT REPORT ON LIVESTOCK TRANSPORT PERMIT ISSUANCES ({date_str.upper()})",
-            "date": timezone.now().strftime("%B %d, %Y"),
-            "legal_bases": (
-                "1. Department of Agriculture Administrative Order No. 06, Series of 2021 (National ASF Zoning and Movement Plan)\n"
-                "2. Municipal Ordinance No. 2020-04 (Livestock Biosecurity and Transport Regulatory Measures)\n"
-                "3. Republic Act No. 8485 as amended by RA 10631 (Animal Welfare Act of the Philippines)"
-            ),
-        },
-        "executive_summary": executive_summary,
-        "biosecurity_findings": biosecurity_findings,
-        "key_metrics": [
+    return ReportDraftBuilder(
+        report_type="permit_issuance",
+        report_title="LIVESTOCK PERMIT ISSUANCE ACCOMPLISHMENT REPORT",
+        start_date=start_date,
+        end_date=end_date,
+        date_str=date_str,
+        officer_name=officer_name,
+        memo_from_party="Livestock Regulatory Section",
+        subject=f"ACCOMPLISHMENT REPORT ON LIVESTOCK TRANSPORT PERMIT ISSUANCES ({date_str.upper()})",
+        legal_bases=(
+            "1. Department of Agriculture Administrative Order No. 06, Series of 2021 (National ASF Zoning and Movement Plan)\n"
+            "2. Municipal Ordinance No. 2020-04 (Livestock Biosecurity and Transport Regulatory Measures)\n"
+            "3. Republic Act No. 8485 as amended by RA 10631 (Animal Welfare Act of the Philippines)"
+        ),
+        executive_summary=executive_summary,
+        biosecurity_findings=biosecurity_findings,
+        key_metrics=[
             {"label": "TOTAL LIVESTOCK PERMITS ISSUED", "value": f"{total_permits:,} permits"},
             {"label": "TOTAL SWINE HEAD COUNT TRANSPORTED", "value": f"{total_pigs:,} heads"},
             {"label": "ACTIVE ORIGIN BARANGAYS", "value": f"{active_origins:,} barangays"},
             {"label": "INTER-MUNICIPAL SHIPMENT SHARE", "value": f"{external_pct}% ({outside_sariaya_count:,} permits)"},
         ],
-        "evidence_table_headers": ["ORIGIN BARANGAY", "PERMITS ISSUED", "SWINE VOLUME", "VOLUME SHARE"],
-        "evidence_table_rows": evidence_rows,
-        "operational_observations": observations,
-        "recommendations": recommendations,
-        "signatories": {
-            "prepared_by_name": officer_name,
-            "prepared_by_title": "Livestock Regulatory Staff / Agri Officer",
-            "verified_by_name": "DR. RENATO C. ALPAY",
-            "verified_by_title": "Municipal Veterinarian / Agri Officer",
-            "approved_by_name": "ENGR. LEONARDO R. ABUSTAN",
-            "approved_by_title": "Municipal Agriculturist",
-        },
-        "copy_furnished": [
+        evidence_table_headers=["ORIGIN BARANGAY", "PERMITS ISSUED", "SWINE VOLUME", "VOLUME SHARE"],
+        evidence_table_rows=evidence_rows,
+        observations=observations,
+        recommendations=recommendations,
+        prepared_by_title="Livestock Regulatory Staff / Agri Officer",
+        copy_furnished=[
             "Office of the Municipal Mayor",
             "Office of the Provincial Veterinarian (OPV - Quezon)",
             "Sangguniang Bayan Committee on Agriculture",
             "Records & Regulatory Archives",
         ],
-    }
+    ).to_dict()
 
 
 def draft_barangay_distribution_report(start_date, end_date, requesting_user=None):
@@ -171,9 +236,7 @@ def draft_barangay_distribution_report(start_date, end_date, requesting_user=Non
     Drafts an official LGU Spatial Volume Distribution & Biosecurity Zoning Report.
     """
     date_str = _format_date_range(start_date, end_date)
-    officer_name = "LIVESTOCK REGULATORY STAFF"
-    if requesting_user:
-        officer_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+    officer_name = _officer_name("LIVESTOCK REGULATORY STAFF", requesting_user)
 
     origin_stats = list(
         TransportOrigin.objects.filter(
@@ -242,50 +305,39 @@ def draft_barangay_distribution_report(start_date, end_date, requesting_user=Non
             "col4": "0.0%",
         })
 
-    return {
-        "report_type": "barangay_distribution",
-        "report_title": "BARANGAY LIVESTOCK VOLUME DISTRIBUTION REPORT",
-        "period_str": date_str,
-        "start_date": str(start_date),
-        "end_date": str(end_date),
-        "transmittal": {
-            "memo_for": "HON. MARCELO P. GAYETA, Municipal Mayor",
-            "memo_through": "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist",
-            "memo_from": f"{officer_name}, Spatial & Livestock Division",
-            "subject": f"SPATIAL LIVESTOCK VOLUME DISTRIBUTION AND ORIGIN AUDIT ({date_str.upper()})",
-            "date": timezone.now().strftime("%B %d, %Y"),
-            "legal_bases": (
-                "1. Municipal Ordinance No. 2020-04 (Livestock Transport Regulatory Measures)\n"
-                "2. DA Administrative Order No. 06, Series of 2021 (National ASF Zoning Guidelines)"
-            ),
-        },
-        "executive_summary": executive_summary,
-        "biosecurity_findings": biosecurity_findings,
-        "key_metrics": [
+    return ReportDraftBuilder(
+        report_type="barangay_distribution",
+        report_title="BARANGAY LIVESTOCK VOLUME DISTRIBUTION REPORT",
+        start_date=start_date,
+        end_date=end_date,
+        date_str=date_str,
+        officer_name=officer_name,
+        memo_from_party="Spatial & Livestock Division",
+        subject=f"SPATIAL LIVESTOCK VOLUME DISTRIBUTION AND ORIGIN AUDIT ({date_str.upper()})",
+        legal_bases=(
+            "1. Municipal Ordinance No. 2020-04 (Livestock Transport Regulatory Measures)\n"
+            "2. DA Administrative Order No. 06, Series of 2021 (National ASF Zoning Guidelines)"
+        ),
+        executive_summary=executive_summary,
+        biosecurity_findings=biosecurity_findings,
+        key_metrics=[
             {"label": "TOTAL LIVESTOCK VOLUME", "value": f"{total_pigs:,} heads"},
             {"label": "TOTAL APPLICATIONS", "value": f"{total_apps:,} applications"},
             {"label": "ACTIVE PRODUCER BARANGAYS", "value": f"{total_active_brgys} of 43 barangays"},
             {"label": "TOP PRODUCER CONCENTRATION", "value": f"{round((sum(b['total_pigs'] or 0 for b in top_3) / total_pigs * 100), 1) if total_pigs > 0 else 0}%"},
         ],
-        "evidence_table_headers": ["BARANGAY", "APPLICATIONS", "SWINE TRANSPORTED", "VOLUME SHARE"],
-        "evidence_table_rows": evidence_rows,
-        "operational_observations": observations,
-        "recommendations": recommendations,
-        "signatories": {
-            "prepared_by_name": officer_name,
-            "prepared_by_title": "Livestock Spatial Analyst / Agri Officer",
-            "verified_by_name": "DR. RENATO C. ALPAY",
-            "verified_by_title": "Municipal Veterinarian / Agri Officer",
-            "approved_by_name": "ENGR. LEONARDO R. ABUSTAN",
-            "approved_by_title": "Municipal Agriculturist",
-        },
-        "copy_furnished": [
+        evidence_table_headers=["BARANGAY", "APPLICATIONS", "SWINE TRANSPORTED", "VOLUME SHARE"],
+        evidence_table_rows=evidence_rows,
+        observations=observations,
+        recommendations=recommendations,
+        prepared_by_title="Livestock Spatial Analyst / Agri Officer",
+        copy_furnished=[
             "Office of the Municipal Mayor",
             "Office of the Provincial Veterinarian (OPV)",
             "Sangguniang Bayan Committee on Agriculture",
             "File Copy",
         ],
-    }
+    ).to_dict()
 
 
 def draft_inspector_report(start_date, end_date, requesting_user=None):
@@ -293,9 +345,7 @@ def draft_inspector_report(start_date, end_date, requesting_user=None):
     Drafts an official Field Inspection and Checkpoint Enforcement Audit Report.
     """
     date_str = _format_date_range(start_date, end_date)
-    officer_name = "FIELD SERVICE OFFICER"
-    if requesting_user:
-        officer_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+    officer_name = _officer_name("FIELD SERVICE OFFICER", requesting_user)
 
     logs = InspectorLogs.objects.filter(scanned_at__date__range=[start_date, end_date])
     total_verifications = logs.count()
@@ -360,50 +410,39 @@ def draft_inspector_report(start_date, end_date, requesting_user=None):
             "col4": "0.0%",
         })
 
-    return {
-        "report_type": "inspector_logs",
-        "report_title": "CHECKPOINT INSPECTION & ENFORCEMENT AUDIT REPORT",
-        "period_str": date_str,
-        "start_date": str(start_date),
-        "end_date": str(end_date),
-        "transmittal": {
-            "memo_for": "HON. MARCELO P. GAYETA, Municipal Mayor",
-            "memo_through": "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist",
-            "memo_from": f"{officer_name}, Checkpoint Enforcement Division",
-            "subject": f"AUDIT REPORT ON CHECKPOINT ENFORCEMENT & LIVESTOCK VERIFICATIONS ({date_str.upper()})",
-            "date": timezone.now().strftime("%B %d, %Y"),
-            "legal_bases": (
-                "1. Republic Act No. 8485 (Animal Welfare Act)\n"
-                "2. Municipal Ordinance No. 2020-04 (Mandatory Livestock Transport Checkpoint Verifications)"
-            ),
-        },
-        "executive_summary": executive_summary,
-        "biosecurity_findings": biosecurity_findings,
-        "key_metrics": [
+    return ReportDraftBuilder(
+        report_type="inspector_logs",
+        report_title="CHECKPOINT INSPECTION & ENFORCEMENT AUDIT REPORT",
+        start_date=start_date,
+        end_date=end_date,
+        date_str=date_str,
+        officer_name=officer_name,
+        memo_from_party="Checkpoint Enforcement Division",
+        subject=f"AUDIT REPORT ON CHECKPOINT ENFORCEMENT & LIVESTOCK VERIFICATIONS ({date_str.upper()})",
+        legal_bases=(
+            "1. Republic Act No. 8485 (Animal Welfare Act)\n"
+            "2. Municipal Ordinance No. 2020-04 (Mandatory Livestock Transport Checkpoint Verifications)"
+        ),
+        executive_summary=executive_summary,
+        biosecurity_findings=biosecurity_findings,
+        key_metrics=[
             {"label": "TOTAL CHECKPOINT SCANS", "value": f"{total_verifications:,} scans"},
             {"label": "ACTIVE ENFORCEMENT OFFICERS", "value": f"{active_inspectors} officers"},
             {"label": "UNIQUE PERMITS AUDITED", "value": f"{total_permits_checked:,} permits"},
             {"label": "COMPLIANCE RATE", "value": "100.0%"},
         ],
-        "evidence_table_headers": ["OFFICER NAME", "USERNAME", "SCANS LOGGED", "ACTIVITY SHARE"],
-        "evidence_table_rows": evidence_rows,
-        "operational_observations": observations,
-        "recommendations": recommendations,
-        "signatories": {
-            "prepared_by_name": officer_name,
-            "prepared_by_title": "Livestock Enforcement Officer",
-            "verified_by_name": "DR. RENATO C. ALPAY",
-            "verified_by_title": "Municipal Veterinarian / Agri Officer",
-            "approved_by_name": "ENGR. LEONARDO R. ABUSTAN",
-            "approved_by_title": "Municipal Agriculturist",
-        },
-        "copy_furnished": [
+        evidence_table_headers=["OFFICER NAME", "USERNAME", "SCANS LOGGED", "ACTIVITY SHARE"],
+        evidence_table_rows=evidence_rows,
+        observations=observations,
+        recommendations=recommendations,
+        prepared_by_title="Livestock Enforcement Officer",
+        copy_furnished=[
             "Office of the Municipal Mayor",
             "Chief of Police, Sariaya Municipal Police Station",
             "Office of the Provincial Veterinarian (OPV)",
             "Archives",
         ],
-    }
+    ).to_dict()
 
 
 def draft_revenue_report(start_date, end_date, requesting_user=None):
@@ -411,9 +450,7 @@ def draft_revenue_report(start_date, end_date, requesting_user=None):
     Drafts an official Municipal Regulatory Fee and Revenue Collection Report.
     """
     date_str = _format_date_range(start_date, end_date)
-    officer_name = "REVENUE & ADMINISTRATIVE OFFICER"
-    if requesting_user:
-        officer_name = (requesting_user.get_full_name() or requesting_user.username).upper()
+    officer_name = _officer_name("REVENUE & ADMINISTRATIVE OFFICER", requesting_user)
 
     # Query completed payments
     payments = PaymentHistory.objects.filter(
@@ -475,50 +512,39 @@ def draft_revenue_report(start_date, end_date, requesting_user=None):
             "col4": "0.0%",
         })
 
-    return {
-        "report_type": "revenue_collection",
-        "report_title": "REGULATORY FEES & REVENUE COLLECTION REPORT",
-        "period_str": date_str,
-        "start_date": str(start_date),
-        "end_date": str(end_date),
-        "transmittal": {
-            "memo_for": "HON. MARCELO P. GAYETA, Municipal Mayor",
-            "memo_through": "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist",
-            "memo_from": f"{officer_name}, Revenue Collection Section",
-            "subject": f"ACCOMPLISHMENT REPORT ON LIVESTOCK REGULATORY REVENUE COLLECTIONS ({date_str.upper()})",
-            "date": timezone.now().strftime("%B %d, %Y"),
-            "legal_bases": (
-                "1. Municipal Revenue Code of Sariaya (Schedule of Regulatory & Inspection Fees)\n"
-                "2. Republic Act No. 7160 (Local Government Code of 1991)"
-            ),
-        },
-        "executive_summary": executive_summary,
-        "biosecurity_findings": biosecurity_findings,
-        "key_metrics": [
+    return ReportDraftBuilder(
+        report_type="revenue_collection",
+        report_title="REGULATORY FEES & REVENUE COLLECTION REPORT",
+        start_date=start_date,
+        end_date=end_date,
+        date_str=date_str,
+        officer_name=officer_name,
+        memo_from_party="Revenue Collection Section",
+        subject=f"ACCOMPLISHMENT REPORT ON LIVESTOCK REGULATORY REVENUE COLLECTIONS ({date_str.upper()})",
+        legal_bases=(
+            "1. Municipal Revenue Code of Sariaya (Schedule of Regulatory & Inspection Fees)\n"
+            "2. Republic Act No. 7160 (Local Government Code of 1991)"
+        ),
+        executive_summary=executive_summary,
+        biosecurity_findings=biosecurity_findings,
+        key_metrics=[
             {"label": "TOTAL REVENUE COLLECTED", "value": f"PHP {total_revenue:,.2f}"},
             {"label": "TOTAL PAID TRANSACTIONS", "value": f"{total_transactions:,} transactions"},
             {"label": "AVERAGE REVENUE PER PERMIT", "value": f"PHP {round(total_revenue / total_transactions, 2) if total_transactions > 0 else 0:,.2f}"},
             {"label": "RECONCILIATION ACCURACY", "value": "100.0%"},
         ],
-        "evidence_table_headers": ["PAYMENT METHOD", "TRANSACTIONS", "COLLECTED AMOUNT", "REVENUE SHARE"],
-        "evidence_table_rows": evidence_rows,
-        "operational_observations": observations,
-        "recommendations": recommendations,
-        "signatories": {
-            "prepared_by_name": officer_name,
-            "prepared_by_title": "Revenue Collection Officer / Agri Staff",
-            "verified_by_name": "DR. RENATO C. ALPAY",
-            "verified_by_title": "Municipal Veterinarian / Agri Officer",
-            "approved_by_name": "ENGR. LEONARDO R. ABUSTAN",
-            "approved_by_title": "Municipal Agriculturist",
-        },
-        "copy_furnished": [
+        evidence_table_headers=["PAYMENT METHOD", "TRANSACTIONS", "COLLECTED AMOUNT", "REVENUE SHARE"],
+        evidence_table_rows=evidence_rows,
+        observations=observations,
+        recommendations=recommendations,
+        prepared_by_title="Revenue Collection Officer / Agri Staff",
+        copy_furnished=[
             "Office of the Municipal Mayor",
             "Office of the Municipal Treasurer (MTO)",
             "Commission on Audit (COA - Resident Auditor)",
             "Archives",
         ],
-    }
+    ).to_dict()
 
 
 def get_report_draft(report_type, start_date, end_date, requesting_user=None):

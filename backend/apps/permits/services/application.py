@@ -94,8 +94,8 @@ def approve_application(application, user, remarks):
     with transaction.atomic():
         # Ensure AIC number and issue timestamp on application
         if not application.aic_number:
-            from apps.payment.services import _generate_aic_number
-            application.aic_number = _generate_aic_number(application)
+            from .numbers import get_aic_number
+            application.aic_number = get_aic_number(application)
             application.aic_issued_at = timezone.now()
             application.save(update_fields=["aic_number", "aic_issued_at"])
         elif not application.aic_issued_at:

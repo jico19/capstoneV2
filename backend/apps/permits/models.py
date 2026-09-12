@@ -206,6 +206,16 @@ class IssuedPermit(models.Model):
         return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {issuer}"
 
 
+class AicNumberCounter(models.Model):
+    """Daily counter row that guarantees unique AIC numbers (MM-DD-NNN-YY)."""
+
+    date = models.DateField(unique=True, editable=False)
+    last_number = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"AIC counter {self.date} -> {self.last_number:03d}"
+
+
 class MunicipalConfig(models.Model):
     vet_health_cert_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
     transport_pass_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)

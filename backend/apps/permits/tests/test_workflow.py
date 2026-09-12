@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from apps.permits.models import PermitApplication, OPVValidation, IssuedPermit
 from apps.maps.models import Barangay
@@ -209,8 +210,19 @@ class TestPermitWorkflow:
         assert survey.fattener == 50
         assert survey.total_pigs == 300
 
-        # 5. Transition to RELEASED and verify deduction occurs
-        handle_application_status_change(app, PermitApplication.Status.RELEASED)
+        # 5. Walk the legal transition chain to RELEASED and verify deduction occurs
+        for status in [
+            PermitApplication.Status.SUBMITTED,
+            PermitApplication.Status.OCR_VALIDATED,
+            PermitApplication.Status.FORWARDED_TO_OPV,
+            PermitApplication.Status.OPV_VALIDATED,
+            PermitApplication.Status.PAYMENT_PENDING,
+            PermitApplication.Status.RELEASED,
+        ]:
+            handle_application_status_change(app, status)
+            app.refresh_from_db()
+            assert app.status == status
+
         survey.refresh_from_db()
         assert survey.inahin == 45
         assert survey.bulaw == 40
@@ -253,4 +265,79 @@ class TestPermitWorkflow:
         assert app_inst.pk == app.pk
         assert permit_inst.pk == issued_permit.pk
         assert already is False
+
+
+@pytest.mark.django_db
+class TestStatusTransitionGuard:
+    def _app(self, farmer_user, status=PermitApplication.Status.DRAFT):
+        from django.utils import timezone
+        return PermitApplication.objects.create(
+            farmer=farmer_user,
+            status=status,
+            destination='Lucena',
+            transport_date=timezone.now().date(),
+            purpose='Slaughter',
+        )
+
+    def test_happy_path_chain_allows_every_legal_edge(self, farmer_user):
+        from apps.permits.services import handle_application_status_change
+        app = self._app(farmer_user)
+        chain = [
+            PermitApplication.Status.SUBMITTED,
+            PermitApplication.Status.OCR_VALIDATED,
+            PermitApplication.Status.FORWARDED_TO_OPV,
+            PermitApplication.Status.OPV_VALIDATED,
+            PermitApplication.Status.PAYMENT_PENDING,
+            PermitApplication.Status.RELEASED,
+        ]
+        for status in chain:
+            handle_application_status_change(app, status)
+            app.refresh_from_db()
+            assert app.status == status
+
+    def test_draft_to_released_is_rejected(self, farmer_user):
+        from apps.permits.services import handle_application_status_change
+        app = self._app(farmer_user)
+        with pytest.raises(ValidationError):
+            handle_application_status_change(app, PermitApplication.Status.RELEASED)
+        app.refresh_from_db()
+        assert app.status == PermitApplication.Status.DRAFT
+
+    def test_released_is_terminal(self, farmer_user):
+        from apps.permits.services import handle_application_status_change
+        app = self._app(farmer_user, PermitApplication.Status.RELEASED)
+        with pytest.raises(ValidationError):
+            handle_application_status_change(app, PermitApplication.Status.SUBMITTED)
+        app.refresh_from_db()
+        assert app.status == PermitApplication.Status.RELEASED
+
+    def test_ocr_race_allows_draft_to_validated_and_manual(self, farmer_user):
+        from apps.permits.services import handle_application_status_change
+        app = self._app(farmer_user)
+        handle_application_status_change(app, PermitApplication.Status.OCR_VALIDATED)
+        app.refresh_from_db()
+        assert app.status == PermitApplication.Status.OCR_VALIDATED
+
+        app2 = self._app(farmer_user)
+        handle_application_status_change(app2, PermitApplication.Status.MANUAL)
+        app2.refresh_from_db()
+        assert app2.status == PermitApplication.Status.MANUAL
+
+    def test_same_status_transition_is_noop(self, farmer_user):
+        from apps.permits.services import handle_application_status_change
+        app = self._app(farmer_user, PermitApplication.Status.SUBMITTED)
+        handle_application_status_change(app, PermitApplication.Status.SUBMITTED)
+        app.refresh_from_db()
+        assert app.status == PermitApplication.Status.SUBMITTED
+
+    def test_permit_issued_is_unreachable_from_every_state(self, farmer_user):
+        from apps.permits.services import handle_application_status_change
+        for status, _ in PermitApplication.Status.choices:
+            app = self._app(farmer_user, status)
+            if status == PermitApplication.Status.PERMIT_ISSUED:
+                continue  # same-status no-op
+            with pytest.raises(ValidationError):
+                handle_application_status_change(app, PermitApplication.Status.PERMIT_ISSUED)
+            app.refresh_from_db()
+            assert app.status == status
 

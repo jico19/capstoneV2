@@ -30,9 +30,10 @@ def get_auth_header():
     encoded = base64.b64encode(f"{key}:".encode()).decode()
     return {"Authorization": f"Basic {encoded}", "Content-Type": "application/json"}
 
-def create_checkout_session(application_pk: int, total_price: float):
+def create_checkout_session(application_pk: int):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
     issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
+    fee_pesos = int(issued_permit_instance.permit_fee)
 
     if issued_permit_instance.is_paid:
         if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
@@ -64,7 +65,7 @@ def create_checkout_session(application_pk: int, total_price: float):
                 "line_items": [
                     {
                         "currency": "PHP",
-                        "amount": int(float(total_price) * 100),
+                        "amount": fee_pesos * 100,
                         "name": f"Livestock Transport Permit — {issued_permit_instance.permit_number}",
                         "quantity": 1,
                     }
@@ -104,7 +105,7 @@ def create_checkout_session(application_pk: int, total_price: float):
         defaults={
             'status': models.PaymentHistory.Status.PENDING,
             'method': 'ONLINE',
-            'amount': total_price,
+            'amount': fee_pesos,
             'paymongo_session_id': data["id"],
         }
     )
@@ -113,9 +114,10 @@ def create_checkout_session(application_pk: int, total_price: float):
         "checkout_url": data["attributes"]["checkout_url"],
     }
 
-def create_qrph_payment(application_pk: int, total_price: float):
+def create_qrph_payment(application_pk: int):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
     issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
+    fee_pesos = int(issued_permit_instance.permit_fee)
 
     if issued_permit_instance.is_paid:
         if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
@@ -130,7 +132,7 @@ def create_qrph_payment(application_pk: int, total_price: float):
         raise ValidationError('Already paid.')
 
     headers = get_auth_header()
-    amount_in_cents = int(float(total_price) * 100)
+    amount_in_cents = fee_pesos * 100
 
     # 1. Create Payment Intent
     intent_payload = {
@@ -204,7 +206,7 @@ def create_qrph_payment(application_pk: int, total_price: float):
         defaults={
             'status': models.PaymentHistory.Status.PENDING,
             'method': models.PaymentHistory.Method.QRPH,
-            'amount': total_price,
+            'amount': fee_pesos,
             'paymongo_payment_intent_id': intent_id,
             'paymongo_session_id': "",  # clear session ID if any
             'expires_at': expiry_time
@@ -214,7 +216,7 @@ def create_qrph_payment(application_pk: int, total_price: float):
     return {
         "qr_image_url": qr_image_url,
         "expires_at": expiry_time.isoformat(),
-        "amount": total_price,
+        "amount": fee_pesos,
         "payment_history_id": payment_history.pk
     }
 
@@ -290,6 +292,23 @@ def verify_paymongo_session(application_pk: int, user):
         if settings.DEBUG:
             is_paid = is_paid or (payment_status == 'active')
     
+    # Reconcile the amount the gateway actually collected (cents) with the fee.
+    gateway_amount_cents = attributes.get('amount')
+    expected_cents = int(issued_permit.permit_fee * 100)
+    if is_paid and gateway_amount_cents is not None and int(gateway_amount_cents) != expected_cents:
+        AuditTrail.objects.create(
+            who_performed=user,
+            what_performed=(
+                f"[PAYMENT AMOUNT MISMATCH] - Gateway reported paid with amount "
+                f"{gateway_amount_cents}c but permit fee is {expected_cents}c for "
+                f"Application #{application.application_id}. Release refused."
+            ),
+            when_performed=timezone.now(),
+        )
+        raise ValidationError(
+            "Payment amount does not match the permit fee. Contact the MAO for assistance."
+        )
+
     if is_paid:
         with transaction.atomic():
             # Re-fetch payment history with a lock to prevent concurrent update issues

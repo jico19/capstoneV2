@@ -5,9 +5,61 @@ from apps.api.models import Notification, AuditTrail
 from .. import models, serializers
 from .permit import resubmit_permit
 
+_ST = models.PermitApplication.Status
+
+_VALID_STATUS_TRANSITIONS = {
+    _ST.DRAFT: [
+        _ST.SUBMITTED,           # application.create
+        _ST.OCR_VALIDATED,       # OCR task may observe DRAFT (on_commit race)
+        _ST.MANUAL,              # same race
+    ],
+    _ST.SUBMITTED: [
+        _ST.OCR_VALIDATED,       # check_all_documents_complete
+        _ST.MANUAL,              # check_all_documents_complete
+        _ST.FORWARDED_TO_OPV,    # approve_application
+        _ST.RESUBMISSION,        # reject_application (Agri return)
+    ],
+    _ST.OCR_VALIDATED: [
+        _ST.FORWARDED_TO_OPV,    # approve_application
+        _ST.RESUBMISSION,        # reject_application
+    ],
+    _ST.MANUAL: [
+        _ST.FORWARDED_TO_OPV,    # approve_application
+        _ST.RESUBMISSION,        # reject_application
+    ],
+    _ST.RESUBMISSION: [
+        _ST.SUBMITTED,           # resubmit_application (Agri rejection)
+    ],
+    _ST.FORWARDED_TO_OPV: [
+        _ST.OPV_VALIDATED,       # approve_opv_validation
+        _ST.OPV_REJECTED,        # handle_opv_rejection
+    ],
+    _ST.OPV_VALIDATED: [
+        _ST.PAYMENT_PENDING,     # issue_permit
+    ],
+    _ST.OPV_REJECTED: [
+        _ST.FORWARDED_TO_OPV,    # resubmit_application (OPV rejection)
+    ],
+    _ST.PAYMENT_PENDING: [
+        _ST.RELEASED,            # payment release paths
+    ],
+    _ST.RELEASED: [],            # terminal
+    _ST.PERMIT_ISSUED: [],       # deprecated — never a source or target
+}
+
+# A state absent from the map keys (e.g. RELEASED or PERMIT_ISSUED) has an
+# empty allowed list and accepts nothing.
+
 def handle_application_status_change(application, new_status, reason=None):
     if application.status == new_status:
         return
+
+    allowed = _VALID_STATUS_TRANSITIONS.get(application.status, [])
+    if new_status not in allowed:
+        raise ValidationError(
+            f"Invalid status transition: '{application.status}' → '{new_status}'. "
+            f"Allowed transitions from '{application.status}': {sorted(allowed)}"
+        )
 
     application.status = new_status
     application.save()

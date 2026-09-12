@@ -4,6 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from apps.payment import models as payment_models
@@ -73,7 +74,6 @@ class TestPaymentSecurityBaseline:
         for field_name in immutable_fields:
             assert fields[field_name].read_only is True
 
-    @pytest.mark.xfail(strict=True, reason="fixed by plan 002/003")
     def test_gateway_amount_mismatch_does_not_release(self, agri_user, farmer_user):
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
         payment_models.PaymentHistory.objects.create(
@@ -89,12 +89,15 @@ class TestPaymentSecurityBaseline:
             mock_get.return_value = FakePaymongoResponse(
                 {"data": {"attributes": {"status": "paid", "amount": gateway_amount}}}
             )
-            services.verify_paymongo_session(application.pk, farmer_user)
+            with pytest.raises(ValidationError):
+                services.verify_paymongo_session(application.pk, farmer_user)
 
         application.refresh_from_db()
         assert application.status != PermitApplication.Status.RELEASED
 
-    @pytest.mark.xfail(strict=True, reason="fixed by plan 002/003")
+        from apps.api.models import AuditTrail
+        assert AuditTrail.objects.filter(what_performed__contains="AMOUNT MISMATCH").exists()
+
     def test_checkout_amount_is_always_the_permit_fee(self, agri_user, farmer_user):
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
         fee = int(issued_permit.permit_fee)
@@ -108,10 +111,42 @@ class TestPaymentSecurityBaseline:
                     }
                 }
             )
-            services.create_checkout_session(application.pk, total_price=0.01)
+            services.create_checkout_session(application.pk)
 
         sent_json = mock_post.call_args.kwargs["json"]
         assert sent_json["data"]["attributes"]["line_items"][0]["amount"] == fee * 100
 
         history = payment_models.PaymentHistory.objects.get(issued_permit=issued_permit)
         assert history.amount == fee
+
+    def test_qrph_amount_is_always_the_permit_fee(self, agri_user, farmer_user):
+        application, issued_permit = make_releasable_application(agri_user, farmer_user)
+        fee = int(issued_permit.permit_fee)
+
+        intent_resp = FakePaymongoResponse(
+            {"data": {"id": "pi_test_789", "attributes": {"client_key": "ck_test"}}}
+        )
+        method_resp = FakePaymongoResponse({"data": {"id": "pm_test_789"}})
+        attach_resp = FakePaymongoResponse(
+            {
+                "data": {
+                    "attributes": {
+                        "next_action": {"code": {"image_url": "https://qr.example/qr.png"}}
+                    }
+                }
+            }
+        )
+
+        with mock.patch(
+            "apps.payment.services.requests.post",
+            side_effect=[intent_resp, method_resp, attach_resp],
+        ) as mock_post:
+            result = services.create_qrph_payment(application.pk)
+
+        intent_json = mock_post.call_args_list[0].kwargs["json"]
+        assert intent_json["data"]["attributes"]["amount"] == fee * 100
+
+        history = payment_models.PaymentHistory.objects.get(issued_permit=issued_permit)
+        assert history.method == payment_models.PaymentHistory.Method.QRPH
+        assert history.amount == fee
+        assert result["amount"] == fee

@@ -71,7 +71,7 @@ class UserViewSet(BaseModelViewSet):
         if verification_status_filter:
             queryset = queryset.filter(verification_status=verification_status_filter)
 
-        return queryset
+        return queryset.select_related("barangay", "verified_by").prefetch_related("farmer_documents")
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def me(self, request):

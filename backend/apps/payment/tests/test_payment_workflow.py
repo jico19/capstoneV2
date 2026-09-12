@@ -88,10 +88,11 @@ class TestPaymentWorkflowCharacterization:
 
         assert AuditTrail.objects.filter(what_performed__contains="OR123").exists()
 
-    def test_checkout_uses_client_controlled_amount_in_gateway_payload(
+    def test_checkout_uses_issued_permit_fee_in_gateway_payload(
         self, farmer_user, agri_user
     ):
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
+        fee = int(issued_permit.permit_fee)
 
         payload = {
             "data": {
@@ -101,16 +102,16 @@ class TestPaymentWorkflowCharacterization:
         }
         with mock.patch("apps.payment.services.requests.post") as mock_post:
             mock_post.return_value = FakePaymongoResponse(payload)
-            services.create_checkout_session(application.pk, total_price=0.01)
+            services.create_checkout_session(application.pk)
 
         mock_post.assert_called_once()
         sent_json = mock_post.call_args.kwargs["json"]
-        assert sent_json["data"]["attributes"]["line_items"][0]["amount"] == 1
+        assert sent_json["data"]["attributes"]["line_items"][0]["amount"] == fee * 100
 
         history = payment_models.PaymentHistory.objects.get(issued_permit=issued_permit)
         assert history.status == payment_models.PaymentHistory.Status.PENDING
         assert history.method == "ONLINE"
-        assert history.amount == 0
+        assert history.amount == fee
 
     def test_gateway_short_circuits_when_payment_already_success(
         self, farmer_user, agri_user
@@ -157,7 +158,7 @@ class TestPaymentWorkflowCharacterization:
         issued_permit.save()
 
         with pytest.raises(ValidationError) as exc_info:
-            services.create_checkout_session(application.pk, total_price=150.00)
+            services.create_checkout_session(application.pk)
         assert "already been paid" in str(exc_info.value.detail)
 
     def test_create_checkout_session_rejects_when_not_payment_pending(
@@ -170,5 +171,5 @@ class TestPaymentWorkflowCharacterization:
         issued_permit.save()
 
         with pytest.raises(ValidationError) as exc_info:
-            services.create_checkout_session(application.pk, total_price=150.00)
+            services.create_checkout_session(application.pk)
         assert str(exc_info.value.detail[0]) == "Already paid."

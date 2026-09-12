@@ -14,6 +14,7 @@ def create_permit(files, application, user):
         raise ValidationError("Application has no transport origins.")
 
     required_common = ['traders_pass', 'handlers_license', 'transport_carrier_reg']
+    COMMON_DOC_TYPES = ('traders_pass', 'handlers_license', 'transport_carrier_reg')
     user_farmer_docs = {
         doc.document_type: doc for doc in getattr(user, 'farmer_documents', []).all()
     } if hasattr(user, 'farmer_documents') else {}
@@ -56,6 +57,13 @@ def create_permit(files, application, user):
         doc = serializer.save()
         document_ids.append(doc.id)
 
+        if doc_type in COMMON_DOC_TYPES:
+            models.PermitApplicationDocument.objects.update_or_create(
+                application=application,
+                document_type=doc_type,
+                defaults={'file': file}
+            )
+
     # Save auto-attached verified documents
     for doc_type, file_field in auto_attached_docs.items():
         if not models.SubmittedDocument.objects.filter(origin=origins[0], document_type=doc_type).exists():
@@ -65,6 +73,12 @@ def create_permit(files, application, user):
                 file=file_field
             )
             document_ids.append(doc.id)
+
+        models.PermitApplicationDocument.objects.update_or_create(
+            application=application,
+            document_type=doc_type,
+            defaults={'file': file_field}
+        )
 
     Notification.objects.create(
         type=Notification.Type.INFO,

@@ -28,7 +28,8 @@ class TestMapCRUD:
         url = reverse('hogsurvey-list')
         data = {
             'barangay': barangay.id,
-            'total_pigs': 100,
+            'farmer_name': 'Test Hog Owner',
+            'inahin': 100,
             'survey_date': '2026-05-01'
         }
         response = api_client.post(url, data)
@@ -42,7 +43,7 @@ class TestMapCRUD:
         assert response.data['total_pigs'] == 100
 
         # 3. Update
-        response = api_client.patch(url, {'total_pigs': 150})
+        response = api_client.patch(url, {'inahin': 150})
         assert response.status_code == 200
         assert HogSurvey.objects.get(id=survey_id).total_pigs == 150
 

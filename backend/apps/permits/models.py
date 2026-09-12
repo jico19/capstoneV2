@@ -124,6 +124,39 @@ class SubmittedDocument(models.Model):
     def __str__(self):
         return f"Document → {self.get_document_type_display()} — Origin #{self.origin_id}"
 
+
+class PermitApplicationDocument(models.Model):
+    """Stores documents that belong to the entire PermitApplication, not a
+    single TransportOrigin (e.g. Trader's Pass, Handler's License, Carrier
+    Registration). Supplements origin-scoped SubmittedDocument."""
+
+    class DocumentType(models.TextChoices):
+        TRADERS_PASS = 'traders_pass', "Trader's Pass"
+        HANDLERS_LICENSE = 'handlers_license', "Handler's License"
+        TRANSPORT_CARRIER_REG = 'transport_carrier_reg', "Transport Carrier Registration"
+
+    application = models.ForeignKey(
+        PermitApplication,
+        on_delete=models.CASCADE,
+        related_name='application_documents'
+    )
+    document_type = models.CharField(max_length=30, choices=DocumentType.choices)
+    file = models.FileField(
+        upload_to='submitted_docs/',
+        validators=[
+            FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png']),
+            validate_file_size
+        ]
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('application', 'document_type')]
+
+    def __str__(self):
+        return f"AppDoc → {self.get_document_type_display()} — App #{self.application_id}"
+
+
 class OPVValidation(models.Model):
     
     class Status(models.TextChoices):

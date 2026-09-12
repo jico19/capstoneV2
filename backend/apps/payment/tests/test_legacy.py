@@ -2,7 +2,7 @@
 Tests for payment business logic improvements.
 
 Covers:
-  - Spec #1: AIC number uniqueness (_generate_aic_number helper)
+  - Spec #1: AIC number uniqueness (get_aic_number helper)
   - Spec #2: simulate_payment production guard + role restriction
   - Spec #4: confirm_offline_payment endpoint (Agri-only, full flow)
 
@@ -26,7 +26,7 @@ from apps.permits.models import (
 )
 from apps.maps.models import Barangay
 from apps.payment.models import PaymentHistory
-from apps.payment import services as payment_services
+from apps.permits.services.numbers import get_aic_number
 
 User = get_user_model()
 
@@ -104,13 +104,13 @@ def payment_pending_application(db, farmer, agri):
 
 
 # ---------------------------------------------------------------------------
-# Spec #1: _generate_aic_number — uniqueness + format
+# Spec #1: get_aic_number — uniqueness + format
 # ---------------------------------------------------------------------------
 
 @pytest.mark.django_db(transaction=True)
 class TestGenerateAICNumber:
     """
-    Tests for the _generate_aic_number() helper in payment/services.py.
+    Tests for the get_aic_number() helper in apps/permits/services/numbers.py.
     These tests call the helper directly (unit tests) so they run fast.
     """
 
@@ -139,7 +139,7 @@ class TestGenerateAICNumber:
         from django.db import transaction
         permit = self._make_issued_permit(agri, farmer)
         with transaction.atomic():
-            aic = payment_services._generate_aic_number(permit)
+            aic = get_aic_number(permit)
 
         today = timezone.now().date()
         expected_prefix = today.strftime("%m-%d")
@@ -162,12 +162,12 @@ class TestGenerateAICNumber:
         permit_b = self._make_issued_permit(agri, farmer)
 
         with transaction.atomic():
-            aic_a = payment_services._generate_aic_number(permit_a)
+            aic_a = get_aic_number(permit_a)
             permit_a.aic_number = aic_a
             permit_a.save()
 
         with transaction.atomic():
-            aic_b = payment_services._generate_aic_number(permit_b)
+            aic_b = get_aic_number(permit_b)
             permit_b.aic_number = aic_b
             permit_b.save()
 
@@ -186,7 +186,7 @@ class TestGenerateAICNumber:
         from django.db import transaction
         with transaction.atomic():
             if not issued.aic_number:
-                issued.aic_number = payment_services._generate_aic_number(issued)
+                issued.aic_number = get_aic_number(issued)
                 issued.save()
 
         issued.refresh_from_db()
@@ -209,7 +209,7 @@ class TestGenerateAICNumber:
 
         new_permit = self._make_issued_permit(agri, farmer)
         with transaction.atomic():
-            aic = payment_services._generate_aic_number(new_permit)
+            aic = get_aic_number(new_permit)
 
         counter_part = aic.split("-")[2]
         assert counter_part == "003", f"Expected counter '003', got '{counter_part}' in '{aic}'"

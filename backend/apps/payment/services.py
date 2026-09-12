@@ -11,38 +11,11 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
+from apps.permits.services.numbers import get_aic_number
 from apps.documents.services import generate_permit_pdf, generate_aic_pdf, generate_collection_report_pdf
 from apps.api.models import AuditTrail
 
 logger = logging.getLogger(__name__)
-
-def _generate_aic_number(issued_permit_instance) -> str:
-    """
-    Atomically generates a unique AIC number for a given IssuedPermit.
-    Uses select_for_update to lock matching rows and prevent duplicate numbers
-    on concurrent payments on the same day.
-
-    Format: MM-DD-NNN-YY  (e.g. 08-25-001-26)
-
-    MUST be called inside a transaction.atomic() block.
-    """
-    from apps.permits.models import IssuedPermit
-    today = timezone.now().date()
-    mm_dd = today.strftime("%m-%d")
-    yy = today.strftime("%y")
-    prefix = f"{mm_dd}-"
-
-    # Lock all rows with today's prefix so concurrent requests block here
-    # instead of reading the same count simultaneously.
-    IssuedPermit.objects.select_for_update().filter(
-        aic_number__startswith=prefix
-    ).values_list('id', flat=True)
-
-    today_count = IssuedPermit.objects.filter(
-        aic_number__startswith=prefix
-    ).exclude(pk=issued_permit_instance.pk).count()
-
-    return f"{mm_dd}-{today_count + 1:03d}-{yy}"
 
 def _release_permit_and_queue_pdfs(application):
     """Advance application to RELEASED status and queue PDF generation tasks."""
@@ -69,7 +42,7 @@ def create_checkout_session(application_pk: int, total_price: float):
                 
                 # Generate AIC number using the atomic helper
                 if not issued_permit_instance.aic_number:
-                    issued_permit_instance.aic_number = _generate_aic_number(issued_permit_instance)
+                    issued_permit_instance.aic_number = get_aic_number(issued_permit_instance)
                     issued_permit_instance.save()
 
                 if not issued_permit_instance.permit_pdf:
@@ -149,7 +122,7 @@ def create_qrph_payment(application_pk: int, total_price: float):
             with transaction.atomic():
                 # Generate AIC number using the atomic helper
                 if not issued_permit_instance.aic_number:
-                    issued_permit_instance.aic_number = _generate_aic_number(issued_permit_instance)
+                    issued_permit_instance.aic_number = get_aic_number(issued_permit_instance)
                     issued_permit_instance.save()
 
                 _release_permit_and_queue_pdfs(application)
@@ -301,15 +274,21 @@ def verify_paymongo_session(application_pk: int, user):
 
     payment_status = attributes.get('status')
     
-    # 6. PROTOTYPE SIMULATION:
-    # For this prototype:
-    # - Checkout Session: 'active' status is treated as 'paid' to simulate success.
-    # - Payment Intent: 'awaiting_next_action' or 'succeeded' status is treated as 'paid' to simulate success.
+    # 6. Real PayMongo paid statuses:
+    # - Checkout Session: 'paid'
+    # - Payment Intent: 'succeeded'
+    # PROTOTYPE SIMULATION (DEBUG builds only): a checkout session still
+    # 'active', or an intent 'awaiting_next_action', is treated as 'paid' to
+    # mimic the gateway settling instantly. Production NEVER simulates.
     is_paid = False
     if payment_history.paymongo_payment_intent_id:
         is_paid = (payment_status == 'succeeded')
+        if settings.DEBUG:
+            is_paid = is_paid or (payment_status == 'awaiting_next_action')
     else:
-        is_paid = (payment_status == 'active')
+        is_paid = (payment_status == 'paid')
+        if settings.DEBUG:
+            is_paid = is_paid or (payment_status == 'active')
     
     if is_paid:
         with transaction.atomic():
@@ -334,7 +313,7 @@ def verify_paymongo_session(application_pk: int, user):
             
             # Generate the unique AIC number using the atomic helper
             if not issued_permit.aic_number:
-                issued_permit.aic_number = _generate_aic_number(issued_permit)
+                issued_permit.aic_number = get_aic_number(issued_permit)
 
             issued_permit.save()
 
@@ -418,7 +397,7 @@ def farmer_simulate_payment(application_pk: int, user, payment_method: str):
 
         # Atomically generate AIC number
         if not issued_permit.aic_number:
-            issued_permit.aic_number = _generate_aic_number(issued_permit)
+            issued_permit.aic_number = get_aic_number(issued_permit)
 
         issued_permit.save()
 
@@ -500,7 +479,7 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
 
         # Generate AIC number atomically
         if not issued_permit.aic_number:
-            issued_permit.aic_number = _generate_aic_number(issued_permit)
+            issued_permit.aic_number = get_aic_number(issued_permit)
 
         issued_permit.save()
 

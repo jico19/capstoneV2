@@ -177,7 +177,7 @@ def verify_permit(qr_token, user):
 
     # 2. Notify Farmer via SMS
     farmer = application_instance.farmer
-    if farmer.phone_no:
+    if farmer.phone_no and getattr(farmer, 'receive_sms', True):
         from apps.sms.task import send_scan_notification_sms
         timestamp_str = timezone.now().strftime('%Y-%m-%d %H:%M')
         transaction.on_commit(lambda: send_scan_notification_sms.enqueue(

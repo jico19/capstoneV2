@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, FileCheck2, ExternalLink } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
 import OPVApprovalControls from "./OPVApprovalControl"
 import { api } from "../../../lib/api"
@@ -216,7 +216,7 @@ const OPVApplicationDetail = () => {
                     )}
 
                     {/* Document Section */}
-                    <section className="space-y-8">
+                    <section className="space-y-6">
                         <div className="flex items-center gap-6">
                             <div className="space-y-1">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
@@ -224,6 +224,44 @@ const OPVApplicationDetail = () => {
                             </div>
                             <div className="h-[2px] flex-1 bg-gray-100"></div>
                         </div>
+
+                        {application.aic_pdf && (
+                            <div className="bg-emerald-50/70 border-2 border-emerald-600 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                                            MAO Official Certificate
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-emerald-950">
+                                            AIC No: {application.aic_number || "PENDING"}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-base font-black text-stone-900 uppercase tracking-tight">
+                                        Animal Inspection Certificate (AIC)
+                                    </h3>
+                                    <p className="text-xs text-stone-600 font-medium">
+                                        Certified by the Municipal Agriculture Office. Swine health & origin verified prior to provincial forwarding.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => viewDocument(`aic-${application.id}`)}
+                                        className="bg-emerald-800 hover:bg-emerald-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 transition-colors flex items-center gap-1.5"
+                                    >
+                                        <FileCheck2 size={14} /> Inspect AIC
+                                    </button>
+                                    <a
+                                        href={application.aic_pdf}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="border border-emerald-600 hover:bg-emerald-100 text-emerald-900 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 transition-colors flex items-center gap-1.5"
+                                    >
+                                        <ExternalLink size={14} /> Open PDF
+                                    </a>
+                                </div>
+                            </div>
+                        )}
                         
                         <DocumentList 
                             documents={application.all_documents} 

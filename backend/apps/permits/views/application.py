@@ -284,3 +284,25 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 {"error": "Invalid token"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=True, methods=["get"])
+    def aic(self, request, pk=None):
+        """
+        Endpoint to retrieve details and URL of the Animal Inspection Certificate (AIC).
+        """
+        application = self.get_object()
+        if not application.aic_pdf:
+            return Response(
+                {"error": "Animal Inspection Certificate (AIC) has not been generated yet."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(
+            {
+                "aic_number": application.aic_number,
+                "aic_pdf": request.build_absolute_uri(application.aic_pdf.url),
+                "aic_issued_at": application.aic_issued_at,
+                "application_id": application.application_id,
+            },
+            status=status.HTTP_200_OK,
+        )

@@ -49,6 +49,11 @@ class PermitApplication(models.Model):
     is_issued = models.BooleanField(default=False)
     issued_at = models.DateTimeField(null=True, blank=True)
     is_checked = models.BooleanField(default=False)
+
+    # Animal Inspection Certificate (AIC) auto-generated upon MAO review approval
+    aic_number = models.CharField(max_length=20, default="", blank=True)
+    aic_pdf = models.FileField(upload_to='issued_docs/aic/', null=True, blank=True, validators=[validate_file_size])
+    aic_issued_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -199,6 +204,16 @@ class IssuedPermit(models.Model):
         # Fallback to "System" if the issuing user is None (e.g. deleted user)
         issuer = self.issued_by.username if self.issued_by else "System"
         return f"Issued -> ID:{self.pk} - Application ID:{self.application.id} - {issuer}"
+
+
+class AicNumberCounter(models.Model):
+    """Daily counter row that guarantees unique AIC numbers (MM-DD-NNN-YY)."""
+
+    date = models.DateField(unique=True, editable=False)
+    last_number = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"AIC counter {self.date} -> {self.last_number:03d}"
 
 
 class MunicipalConfig(models.Model):

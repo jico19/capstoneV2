@@ -81,3 +81,9 @@ class PaymentWriteAndDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.PaymentHistory
         fields = '__all__'
+        read_only_fields = [
+            'status', 'amount', 'method', 'or_number', 'confirmed_by',
+            'confirmed_at', 'paymongo_session_id',
+            'paymongo_payment_intent_id', 'paymongo_payment_id',
+            'expires_at', 'issued_permit', 'created_at',
+        ]

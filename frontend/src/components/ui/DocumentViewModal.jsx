@@ -27,6 +27,8 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
 
+
+
     const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3));
     const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
     const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
@@ -71,13 +73,26 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
     const extracted = doc?.ocr?.extracted_field || {};
     const remarks = doc?.ocr?.remarks || {};
 
-    const isPdf = typeof doc?.file === 'string' && (
-        doc.file.toLowerCase().endsWith('.pdf') || 
-        doc.file.includes('application/pdf') ||
-        doc.file.includes('.pdf?')
+    const resolveFileUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+            return url;
+        }
+        const base = (import.meta.env.VITE_BASE_URL || '').replace(/\/$/, '');
+        return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
+    const fileUrl = resolveFileUrl(doc?.file);
+
+    const isPdf = typeof fileUrl === 'string' && (
+        fileUrl.toLowerCase().endsWith('.pdf') || 
+        fileUrl.includes('application/pdf') ||
+        fileUrl.includes('.pdf?') ||
+        doc?.document_type === 'aic'
     );
 
     return (
+
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 md:p-12 overflow-hidden">
             <div className="bg-white w-full max-w-7xl h-full flex flex-col border border-stone-200 rounded-none overflow-hidden">
 
@@ -157,7 +172,7 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
 
                             <div className="flex items-center gap-1.5">
                                 <a 
-                                    href={doc.file} 
+                                    href={fileUrl} 
                                     download
                                     title="Download File"
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-100 transition-colors rounded-none"
@@ -165,7 +180,7 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                                     <Download size={14} /> Download
                                 </a>
                                 <a 
-                                    href={doc.file} 
+                                    href={fileUrl} 
                                     target="_blank" 
                                     rel="noreferrer" 
                                     title="Open in new window"
@@ -177,13 +192,38 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                         </div>
 
                         {/* Visual Canvas */}
-                        <div className="flex-1 w-full flex items-center justify-center overflow-auto">
+                        <div className="flex-1 w-full flex items-center justify-center overflow-auto p-4">
                             {isPdf ? (
-                                <iframe
-                                    src={doc.file}
-                                    title={doc.document_type_display}
-                                    className="w-full h-full min-h-[450px] border border-stone-200 bg-white"
-                                />
+                                <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-white border border-stone-200 shadow-sm space-y-4">
+                                    <div className="p-4 bg-stone-900 text-white">
+                                        <FileText size={44} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <h4 className="text-sm font-black uppercase tracking-tight text-stone-900">
+                                            Official PDF Document
+                                        </h4>
+                                        <p className="text-xs text-stone-500 font-medium leading-relaxed">
+                                            This certificate is formatted as an official PDF. View it in your browser's built-in Google PDF viewer or download a local copy.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-2 w-full pt-2">
+                                        <a
+                                            href={fileUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 text-white text-[11px] font-black uppercase tracking-widest transition-colors"
+                                        >
+                                            <ExternalLink size={15} /> Open in Browser PDF Viewer
+                                        </a>
+                                        <a
+                                            href={fileUrl}
+                                            download
+                                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-white text-[11px] font-black uppercase tracking-widest transition-colors"
+                                        >
+                                            <Download size={15} /> Download PDF
+                                        </a>
+                                    </div>
+                                </div>
                             ) : (
                                 <div 
                                     className="bg-white p-2 border border-stone-200 inline-block transition-transform duration-100 ease-out"
@@ -193,7 +233,7 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                                     }}
                                 >
                                     <img
-                                        src={doc.file}
+                                        src={fileUrl}
                                         alt="Document Visual"
                                         className="max-w-full max-h-[60vh] object-contain"
                                     />
@@ -244,6 +284,25 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                                         )}
                                     </div>
                                 ))
+                            ) : doc?.is_generated || doc?.document_type === 'aic' ? (
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-green-50 border-l-4 border-green-700">
+                                        <h5 className="text-xs font-black uppercase tracking-wider text-green-900">
+                                            Official Municipal Certification
+                                        </h5>
+                                        <p className="text-xs text-green-800 mt-1.5 leading-relaxed font-medium">
+                                            This Animal Inspection Certificate (AIC) was auto-generated and officially certified by the Municipal Agriculture Office (MAO) of Sariaya, Quezon.
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-200 space-y-1.5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Inspection Status</p>
+                                        <p className="text-xs font-bold text-stone-700">Verified apparently healthy at time of inspection with zero reported outbreak origin.</p>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-200 space-y-1.5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Validity Window</p>
+                                        <p className="text-xs font-bold text-stone-700">Valid within 48 hours for animal movement within the Province of Quezon.</p>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="text-center py-16 bg-stone-50 border border-stone-200 border-dashed">
                                     <FileText className="mx-auto mb-4 text-stone-200" size={40} />

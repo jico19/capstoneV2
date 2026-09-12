@@ -1,7 +1,10 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.static import serve
+import re
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
@@ -21,4 +24,14 @@ urlpatterns = [
 ]
 
 urlpatterns += router.urls
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.MEDIA_URL.startswith("/"):
+    media_pattern = r"^%s(?P<path>.*)$" % re.escape(settings.MEDIA_URL.lstrip("/"))
+    urlpatterns += [
+        re_path(
+            media_pattern,
+            xframe_options_exempt(serve),
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]
+

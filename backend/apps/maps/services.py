@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import Sum, Q
 from rest_framework.exceptions import ValidationError
 from apps.api.utils import parse_date_range_strings
-from apps.permits.models import PermitApplication
+from apps.permits.models import PermitApplication, TransportOrigin
 from .models import Barangay, HogSurvey
 
 class HogSurveyService:
@@ -193,22 +193,20 @@ class HogSurveyService:
         Calculates the total number of pigs being transported out of each barangay
         based on active/released permits.
         """
-        # We only count permits that have reached 'Permit Issued' or later
-        active_permits = PermitApplication.objects.filter(
-            status__in=[
-                PermitApplication.Status.PERMIT_ISSUED,
+        # We only count origins of permits that have been issued and released
+        # (PAYMENT_PENDING == issued but unpaid; RELEASED == fully cleared).
+        active_origins = TransportOrigin.objects.filter(
+            application__status__in=[
                 PermitApplication.Status.PAYMENT_PENDING,
                 PermitApplication.Status.RELEASED,
             ]
-        )
-
-        volume_data = active_permits.values("origin_barangay__name").annotate(
+        ).values("barangay__name").annotate(
             total_transported=Sum("number_of_pigs")
         )
 
         # Convert volume_data to a dictionary for faster lookups
         volume_map = {
-            v["origin_barangay__name"]: v["total_transported"] for v in volume_data
+            v["barangay__name"]: v["total_transported"] for v in active_origins
         }
 
         volume_payload = []

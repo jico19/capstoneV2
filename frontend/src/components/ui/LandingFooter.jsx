@@ -18,11 +18,13 @@ const ACCOUNT_LINKS = [
   { label: "Sign Up",   path: "/register",  disabled: false },
 ];
 
+const GMAPS_URL = "https://www.google.com/maps/place/New+Sariaya+Municipal+Hall/@13.9569516,121.5118002,1151m/data=!3m1!1e3!4m6!3m5!1s0x33bd4f001084db1b:0xb64703c8f579b191!8m2!3d13.9566288!4d121.5140318!16s%2Fg%2F11xd8mkr77?entry=ttu";
+
 const CONTACT_ITEMS = [
-  { icon: PhoneIcon,    alt: "Phone",    label: "+63 42 123 4567",                          href: "tel:+63421234567"                  },
-  { icon: MailIcon,     alt: "Email",    label: "support@farmpass.gov.ph",                  href: "mailto:support@farmpass.gov.ph"    },
-  { icon: LocationIcon, alt: "Location", label: "Sariaya Municipal Agriculture Office, Quezon", href: "#"                             },
-  { icon: WebIcon,      alt: "Website",  label: "www.farmpass.gov.ph",                      href: "https://farmpass.gov.ph"           },
+  { icon: PhoneIcon,    alt: "Phone",    label: "(042) Sariaya MAO",                         href: "tel:0420000000"                    },
+  { icon: MailIcon,     alt: "Email",    label: "agri@sariaya.gov.ph",                       href: "mailto:agri@sariaya.gov.ph"        },
+  { icon: LocationIcon, alt: "Location", label: "New Municipal Hall, Sariaya, Quezon",      href: GMAPS_URL                           },
+  { icon: WebIcon,      alt: "Website",  label: "www.sariaya.gov.ph",                        href: "https://www.sariaya.gov.ph"        },
 ];
 
 export default function Footer() {
@@ -57,12 +59,12 @@ export default function Footer() {
 
           {/* Tagline */}
           <p className="text-[14px] leading-[1.7] text-white/50 mb-6 max-w-[260px] max-[1024px]:max-w-full">
-            Streamlining livestock transport permits for Filipino farmers — fast, secure, and paperless.
+            Streamlining livestock transport permits for Filipino farmers. Fast, secure, and paperless.
           </p>
 
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-[14px] py-[6px] bg-[#f5a623]/10 border border-[#f5a623]/25 rounded-full text-[11px] font-semibold text-[#f5a623] tracking-[0.04em] uppercase">
-            <span className="animate-footer-pulse w-[6px] h-[6px] bg-[#f5a623] rounded-full" />
+            <span className="w-[6px] h-[6px] bg-[#f5a623] rounded-full" />
             Official Municipal Agriculture Portal
           </div>
         </div>
@@ -108,7 +110,7 @@ export default function Footer() {
                   <span className="text-[#f5a623] text-[16px] leading-none transition-transform duration-200 group-hover:translate-x-[3px]">›</span>
                   {label}
                   {disabled && (
-                    <span className="text-[9px] font-bold tracking-[0.08em] uppercase bg-[#f5a623]/15 text-[#f5a623] border border-[#f5a623]/30 rounded-[4px] px-[5px] py-[1px] ml-1">
+                    <span className="text-[9px] font-bold tracking-[0.08em] uppercase bg-[#f5a623]/15 text-[#f5a623] border border-[#f5a623]/30 rounded px-[5px] py-[1px] ml-1">
                       Soon
                     </span>
                   )}
@@ -127,7 +129,7 @@ export default function Footer() {
           <ul className="list-none p-0 m-0 flex flex-col gap-[14px]">
             {CONTACT_ITEMS.map(({ icon, alt, label, href }) => (
               <li key={alt} className="group flex items-start gap-3">
-                <div className="w-[34px] h-[34px] bg-[#1b6b3a]/30 border border-[#1b6b3a]/50 rounded-[8px] flex items-center justify-center shrink-0 transition-all duration-200 group-hover:bg-[#f5a623]/15 group-hover:border-[#f5a623]/40">
+                <div className="w-[34px] h-[34px] bg-[#1b6b3a]/30 border border-[#1b6b3a]/50 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 group-hover:bg-[#f5a623]/15 group-hover:border-[#f5a623]/40">
                   <img
                     src={icon} alt={alt}
                     className="w-4 h-4 object-contain transition-all duration-200"
@@ -156,9 +158,9 @@ export default function Footer() {
             © {new Date().getFullYear()} FarmPass · Sariaya Municipal Agriculture Office · All rights reserved.
           </p>
           <div className="flex items-center gap-[10px]">
-            {["Privacy Policy", "Terms of Use", "Accessibility"].map((item, i, arr) => (
+            {["Data Privacy Act Compliant", "Municipal Government of Sariaya"].map((item, i, arr) => (
               <span key={item} className="flex items-center gap-[10px]">
-                <a href="#" className="text-[12.5px] text-white/30 no-underline transition-colors duration-200 hover:text-[#f5a623]">{item}</a>
+                <span className="text-[12.5px] text-white/30">{item}</span>
                 {i < arr.length - 1 && <span className="text-white/15 text-[12px]">·</span>}
               </span>
             ))}

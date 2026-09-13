@@ -96,9 +96,6 @@ export default function AboutContact() {
 
         {/* Centered header */}
         <div className="text-center mb-10">
-          <span className="inline-block font-jakarta text-[0.75rem] font-bold tracking-[0.14em] uppercase text-brand-amber bg-brand-amber/10 border border-brand-amber/25 rounded-full px-[0.9rem] py-[0.3rem] mb-3">
-            Get in Touch
-          </span>
           <h2 className="font-archivo text-[clamp(1.6rem,3vw,2.4rem)] text-white tracking-[-0.02em] mb-2">Contact Us</h2>
           <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-white/50 leading-[1.7]">
             Multiple ways to reach us for your permit and application needs

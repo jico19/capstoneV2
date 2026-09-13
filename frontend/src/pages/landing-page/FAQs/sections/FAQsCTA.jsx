@@ -22,13 +22,6 @@ export default function FAQsCTA() {
       <div ref={ref}
         className="reveal-block relative max-w-[60rem] mx-auto bg-brand-primary rounded-[1.25rem] px-8 py-12 text-center overflow-hidden box-border max-[640px]:px-6 max-[640px]:py-8">
 
-        {/* Dot grid */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)", backgroundSize: "2rem 2rem" }} />
-
-        {/* Glow orb */}
-        <div className="absolute w-80 h-80 -top-24 -right-16 rounded-full blur-[40px] pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(27,107,58,0.4) 0%, transparent 70%)" }} />
 
         <div className="relative z-[1]">
           <h2 className="font-archivo text-[clamp(1.4rem,3vw,2rem)] text-white tracking-[-0.02em] mb-2">

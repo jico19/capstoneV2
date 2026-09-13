@@ -33,3 +33,14 @@ Frontend:
 - UI portals are keyed by role under `frontend/src/pages/`: `farmer`, `agri`, `opv`, `inspector`, `barangay`, `auth`, `landing-page` (public), `shared`. Routing in `frontend/src/routes/`.
 - Workflow actions (approve/reject/validate) follow a fixed pattern — see `backend/apps/permits/services/opv.py`: check `staff.role`, guard current status, wrap in `transaction.atomic()`, then create a formal `AuditTrail` entry.
 - DRF defaults: `LimitOffsetPagination` with `PAGE_SIZE=10`; throttling `anon 10/min`, `user 100/min` — heavy bulk seeding or load testing can trip the limits.
+
+<!-- antislop:start -->
+## antislop
+For UI, copy, people, mobile layout, or code comments work, read `antislop.md` (core) and then the skill for the task:
+- UI / visual: `skills/antislop-ui/SKILL.md`
+- Copy & text: `skills/antislop-copywriting/SKILL.md`
+- People: `skills/antislop-human/SKILL.md`
+- Mobile / responsive: `skills/antislop-layoutmobile/SKILL.md`
+- Code comments: `skills/antislop-code/SKILL.md`
+Before starting, ask the user when antislop applies: during the work, or after it is done.
+<!-- antislop:end -->

@@ -38,19 +38,15 @@ export default function Downloads() {
 
         {/* Buttons */}
         <div className="flex flex-wrap gap-[0.85rem] max-[640px]:flex-col">
-          {DOWNLOADS.map(({ label, file }, i) => (
-            <a key={i} href={file} download={file !== "#"}
-              onClick={(e) => { if (file === "#") e.preventDefault(); }}
-              className="group inline-flex items-center gap-[0.6rem] px-[1.4rem] py-[0.8rem] bg-white/[0.06] border-[1.5px] border-white/18 rounded-[0.7rem]
-                font-jakarta text-[clamp(0.82rem,1.1vw,0.92rem)] font-semibold text-white no-underline whitespace-nowrap cursor-pointer
-                transition-[background,border-color,transform,box-shadow,color] duration-[250ms]
-                hover:bg-brand-amber hover:border-brand-amber hover:text-brand-primary hover:-translate-y-[0.2rem] hover:shadow-[0_0.5rem_1.5rem_rgba(245,166,35,0.25)]
+          {DOWNLOADS.map(({ label }, i) => (
+            <span key={i}
+              className="inline-flex items-center gap-[0.6rem] px-[1.4rem] py-[0.8rem] bg-white/[0.04] border-[1.5px] border-white/10 rounded-[0.7rem]
+                font-jakarta text-[clamp(0.82rem,1.1vw,0.92rem)] font-semibold text-white/40 whitespace-nowrap cursor-default
                 max-[640px]:w-full max-[640px]:whitespace-normal">
-              <img src={DocumentIcon} alt="" className="w-[1.1rem] h-[1.1rem] object-contain shrink-0
-                  [filter:brightness(0)_invert(1)_opacity(0.85)] group-hover:[filter:brightness(0)_opacity(0.7)]" />
+              <img src={DocumentIcon} alt="" className="w-[1.1rem] h-[1.1rem] object-contain shrink-0 opacity-40" />
               <span className="flex-1">{label}</span>
-              <span className="text-[0.85rem] opacity-60 ml-auto group-hover:opacity-100 group-hover:translate-y-[2px] transition-[opacity,transform] duration-200">↓</span>
-            </a>
+              <span className="text-[0.75rem] font-normal text-white/30 ml-auto">Coming soon</span>
+            </span>
           ))}
         </div>
       </div>

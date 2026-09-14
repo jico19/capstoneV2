@@ -384,11 +384,19 @@ const RegisterPage = () => {
                             </div>
 
                             {/* Part 3: Secure? */}
-                            <div className={`space-y-4 transition-opacity duration-300 ${isOTPVerified ? "opacity-100" : "opacity-40"}`}>
+                            <div className={`space-y-4 transition-opacity duration-300 ${isOTPVerified ? "opacity-100" : "opacity-60"}`}>
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-xs font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 3</span>
                                     <h3 className="text-xs font-black uppercase tracking-widest text-stone-600">Choose Password</h3>
                                 </div>
+                                {!isOTPVerified && (
+                                    <div className="bg-amber-50 border border-amber-200 px-3 py-2.5 flex items-center gap-2">
+                                        <Lock size={14} className="text-amber-700 flex-shrink-0" />
+                                        <p className="text-xs font-bold text-amber-800">
+                                            Verify your phone number first (Step 2) to unlock this section.
+                                        </p>
+                                    </div>
+                                )}
                                 <div className="space-y-2">
                                     <label className="text-xs font-black uppercase tracking-widest text-stone-800">Create a Secure Password</label>
                                     <div className="relative">

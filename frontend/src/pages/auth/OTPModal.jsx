@@ -99,6 +99,10 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                                 <input
                                     key={index}
                                     type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    autoComplete={index === 0 ? "one-time-code" : "off"}
+                                    aria-label={`Digit ${index + 1} of 6`}
                                     maxLength="1"
                                     ref={(el) => (inputRefs.current[index] = el)}
                                     value={data}

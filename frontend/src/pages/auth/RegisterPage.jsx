@@ -347,6 +347,7 @@ const RegisterPage = () => {
                                             {/* Register mobile phone input. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                             <input
                                                 type="tel"
+                                                inputMode="tel"
                                                 {...register("phone", {
                                                     required: "Mobile number is required",
                                                     pattern: {

@@ -109,7 +109,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                             ))}
                         </div>
                         {modalError && (
-                            <p className="text-xs font-bold text-red-600 uppercase tracking-widest">{modalError}</p>
+                            <p className="text-xs font-bold text-red-600">{modalError}</p>
                         )}
                     </div>
 
@@ -117,7 +117,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                         <button
                             onClick={handleSubmit}
                             disabled={isVerifying || otp.join('').length < 6}
-                            className="w-full py-4 bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-wider text-xs disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isVerifying ? (
                                 <>
@@ -128,11 +128,11 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                         </button>
 
                         <div className="flex flex-col gap-2">
-                            <p className="text-xs font-black text-stone-600 uppercase tracking-widest">Didn't get the code?</p>
+                            <p className="text-xs font-medium text-stone-600">Didn't get the code?</p>
                             <button
                                 onClick={onResend}
                                 disabled={isResending}
-                                className="text-stone-900 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-70 transition-opacity"
+                                className="text-stone-900 font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 hover:opacity-70 transition-opacity"
                             >
                                 {isResending ? (
                                     <>

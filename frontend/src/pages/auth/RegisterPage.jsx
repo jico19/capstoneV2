@@ -267,7 +267,7 @@ const RegisterPage = () => {
                             <div className="bg-red-50 border-l-4 border-red-600 p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={18} />
                                 <div>
-                                    <p className="text-xs font-black text-red-700 uppercase tracking-widest leading-none mb-1">Registration Error</p>
+                                    <p className="text-xs font-bold text-red-700 leading-none mb-1">Registration Error</p>
                                     <p className="text-xs font-medium text-red-600">{globalError}</p>
                                 </div>
                             </div>
@@ -278,11 +278,11 @@ const RegisterPage = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-xs font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 1</span>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-600">Your Details</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-wide text-stone-600">Your Details</h3>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-stone-800">Your First Name</label>
+                                        <label className="text-xs font-bold text-stone-800">Your First Name</label>
                                         {/* Register first name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
@@ -294,10 +294,10 @@ const RegisterPage = () => {
                                             placeholder="Example: JUAN"
                                             readOnly={isOTPVerified}
                                         />
-                                        {errors.first_name && <p className="text-xs font-bold text-red-600 uppercase mt-1">{errors.first_name.message}</p>}
+                                        {errors.first_name && <p className="text-xs font-bold text-red-600 mt-1">{errors.first_name.message}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-stone-800">Your Last Name</label>
+                                        <label className="text-xs font-bold text-stone-800">Your Last Name</label>
                                         {/* Register last name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
@@ -309,7 +309,7 @@ const RegisterPage = () => {
                                             placeholder="Example: DELA CRUZ"
                                             readOnly={isOTPVerified}
                                         />
-                                        {errors.last_name && <p className="text-xs font-bold text-red-600 uppercase mt-1">{errors.last_name.message}</p>}
+                                        {errors.last_name && <p className="text-xs font-bold text-red-600 mt-1">{errors.last_name.message}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -318,11 +318,11 @@ const RegisterPage = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-xs font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 2</span>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-600">Contact Info</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-wide text-stone-600">Contact Info</h3>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-stone-800">Your Username</label>
+                                        <label className="text-xs font-bold text-stone-800">Your Username</label>
                                         {/* Register login name input with required rule. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
                                         <input
                                             type="text"
@@ -337,11 +337,11 @@ const RegisterPage = () => {
                                             placeholder="Example: juan_sariaya"
                                             readOnly={isOTPVerified}
                                         />
-                                        <p className="text-xs text-stone-600 font-bold uppercase tracking-wide mt-1">This is created automatically from your name.</p>
-                                        {errors.username && <p className="text-xs font-bold text-red-600 uppercase mt-1">{errors.username.message}</p>}
+                                        <p className="text-xs text-stone-600 font-medium mt-1">This is created automatically from your name.</p>
+                                        {errors.username && <p className="text-xs font-bold text-red-600 mt-1">{errors.username.message}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-stone-800">Your Mobile Number</label>
+                                        <label className="text-xs font-bold text-stone-800">Your Mobile Number</label>
                                         <div className="relative">
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600" size={16} />
                                             {/* Register mobile phone input. Custom onChange is passed within register options to prevent overriding hook-form state mapping. */}
@@ -377,8 +377,8 @@ const RegisterPage = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-xs text-stone-600 font-bold uppercase tracking-wide mt-1">We will send a 6-digit text code to this number.</p>
-                                        {errors.phone && <p className="text-xs font-bold text-red-600 uppercase mt-1">{errors.phone.message}</p>}
+                                        <p className="text-xs text-stone-600 font-medium mt-1">We will send a 6-digit text code to this number.</p>
+                                        {errors.phone && <p className="text-xs font-bold text-red-600 mt-1">{errors.phone.message}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -387,7 +387,7 @@ const RegisterPage = () => {
                             <div className={`space-y-4 transition-opacity duration-300 ${isOTPVerified ? "opacity-100" : "opacity-60"}`}>
                                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                     <span className="text-xs font-black text-green-700 bg-green-50 px-2 py-0.5">STEP 3</span>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-600">Choose Password</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-wide text-stone-600">Choose Password</h3>
                                 </div>
                                 {!isOTPVerified && (
                                     <div className="bg-amber-50 border border-amber-200 px-3 py-2.5 flex items-center gap-2">
@@ -398,7 +398,7 @@ const RegisterPage = () => {
                                     </div>
                                 )}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-stone-800">Create a Secure Password</label>
+                                    <label className="text-xs font-bold text-stone-800">Create a Secure Password</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600" size={18} />
                                         {/* Register password input. The field validation is conditional: it's required only after OTP has been verified and the field is enabled. */}
@@ -417,11 +417,11 @@ const RegisterPage = () => {
                                             disabled={!isOTPVerified}
                                         />
                                     </div>
-                                    <p className="text-xs text-stone-600 font-bold uppercase tracking-wide mt-1">Write this down so you do not forget it.</p>
-                                    {errors.password && <p className="text-xs font-bold text-red-600 uppercase mt-1">{errors.password.message}</p>}
+                                    <p className="text-xs text-stone-600 font-medium mt-1">Write this down so you do not forget it.</p>
+                                    {errors.password && <p className="text-xs font-bold text-red-600 mt-1">{errors.password.message}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-stone-800">Confirm Your Password</label>
+                                    <label className="text-xs font-bold text-stone-800">Confirm Your Password</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600" size={18} />
                                         <input
@@ -436,7 +436,7 @@ const RegisterPage = () => {
                                             disabled={!isOTPVerified}
                                         />
                                     </div>
-                                    {errors.confirm_password && <p className="text-xs font-bold text-red-600 uppercase mt-1">{errors.confirm_password.message}</p>}
+                                    {errors.confirm_password && <p className="text-xs font-bold text-red-600 mt-1">{errors.confirm_password.message}</p>}
                                     {isOTPVerified && (
                                         <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-2 flex items-center gap-1">
                                             <CheckCircle2 size={12} strokeWidth={3} /> Phone Verified. You can now set your password.
@@ -452,7 +452,7 @@ const RegisterPage = () => {
                                 id="submit-registration"
                                 type="submit"
                                 disabled={isSubmitting || isSendingOTP}
-                                className={`w-full py-5 rounded-none font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${isOTPVerified
+                                className={`w-full py-5 rounded-none font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${isOTPVerified
                                     ? "bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20"
                                     : "bg-stone-900 hover:bg-black text-white"
                                     }`}
@@ -470,7 +470,7 @@ const RegisterPage = () => {
                                 )}
                             </button>
                             {!isOTPVerified && (
-                                <p className="text-xs text-stone-600 font-black uppercase tracking-widest mt-4 text-center">
+                                <p className="text-xs text-stone-600 font-medium mt-4 text-center">
                                     We will send a 6-digit code to verify your identity.
                                 </p>
                             )}
@@ -482,7 +482,7 @@ const RegisterPage = () => {
                         <p className="text-stone-600 text-xs font-medium">
                             Already part of our network?
                         </p>
-                        <Link to="/login" className="inline-block mt-4 border-2 border-stone-200 hover:bg-stone-50 text-stone-900 px-10 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors">
+                        <Link to="/login" className="inline-block mt-4 border-2 border-stone-200 hover:bg-stone-50 text-stone-900 px-10 py-4 text-[10px] font-black uppercase tracking-wider rounded-none transition-colors">
                             Log In Here
                         </Link>
                     </div>

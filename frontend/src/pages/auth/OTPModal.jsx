@@ -109,7 +109,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                             ))}
                         </div>
                         {modalError && (
-                            <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{modalError}</p>
+                            <p className="text-xs font-bold text-red-600 uppercase tracking-widest">{modalError}</p>
                         )}
                     </div>
 
@@ -128,11 +128,11 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                         </button>
 
                         <div className="flex flex-col gap-2">
-                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Didn't get the code?</p>
+                            <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Didn't get the code?</p>
                             <button
                                 onClick={onResend}
                                 disabled={isResending}
-                                className="text-stone-900 font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:opacity-70 transition-opacity"
+                                className="text-stone-900 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-70 transition-opacity"
                             >
                                 {isResending ? (
                                     <>

@@ -72,7 +72,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute right-4 top-4 text-stone-400 hover:text-stone-900 transition-colors"
+                    className="absolute right-4 top-4 text-stone-500 hover:text-stone-900 transition-colors"
                 >
                     <X size={20} />
                 </button>
@@ -86,7 +86,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
 
                     <div className="space-y-2">
                         <h3 className="text-2xl font-black text-stone-900 uppercase tracking-tighter">Verify Your Phone</h3>
-                        <p className="text-sm font-medium text-stone-500">
+                        <p className="text-sm font-medium text-stone-600">
                             We sent a 6-digit code to <br />
                             <span className="font-mono font-black text-stone-800">{phone}</span>
                         </p>
@@ -128,7 +128,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                         </button>
 
                         <div className="flex flex-col gap-2">
-                            <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Didn't get the code?</p>
+                            <p className="text-xs font-black text-stone-600 uppercase tracking-widest">Didn't get the code?</p>
                             <button
                                 onClick={onResend}
                                 disabled={isResending}

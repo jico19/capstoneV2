@@ -84,7 +84,7 @@ export default function LandingNavbar({ activePage }) {
               <button
                 key={key}
                 type="button"
-                className={`nav-link relative px-[18px] py-[6px] text-[15px] cursor-pointer rounded-[22px] whitespace-nowrap bg-transparent border-none font-jakarta transition-colors duration-150
+                className={`nav-link relative px-[18px] py-[6px] text-[15px] cursor-pointer rounded-md whitespace-nowrap bg-transparent border-none font-jakarta transition-colors duration-150
                   hover:bg-[#0a2a1a] hover:text-[#f5a623]
                   ${currentActivePage === key
                     ? "font-bold underline underline-offset-[3px] text-[#0a2a1a]"
@@ -107,7 +107,7 @@ export default function LandingNavbar({ activePage }) {
                 className="navbar-links-rect"
                 x={0} y={0}
                 width={SVG_W} height={SVG_H}
-                rx={22} ry={22}
+                rx={6} ry={6}
                 pathLength={100}
               />
             </svg>
@@ -118,7 +118,7 @@ export default function LandingNavbar({ activePage }) {
         <div className="animate-navbar-drop-actions flex items-center gap-3 shrink-0">
           <button
             type="button"
-            className="text-[15px] font-medium text-[#0a2a1a] bg-transparent border-none cursor-pointer px-4 py-2 rounded-lg font-jakarta transition-colors duration-150 hover:text-[#1b6b3a] max-[910px]:text-sm max-[910px]:px-1"
+            className="text-[15px] font-medium text-[#0a2a1a] bg-transparent border border-transparent cursor-pointer px-4 py-2 rounded-md font-jakarta transition-colors duration-150 hover:text-[#1b6b3a] max-[910px]:text-sm max-[910px]:px-1"
             onClick={() => {
               navigate("/login");
               window.scrollTo({ top: 0, behavior: "smooth" });
@@ -144,14 +144,14 @@ export default function LandingNavbar({ activePage }) {
 
       {/* MOBILE DROPDOWN */}
       <div
-        className={`fixed top-[68px] left-0 right-0 bg-white border-b border-[#e8e8e8] flex-col gap-[2px] shadow-[0_8px_24px_rgba(0,0,0,0.08)] z-[99] overflow-hidden transition-[max-height,opacity,padding] duration-350 ease-in-out hidden max-[910px]:flex
+        className={`fixed top-[68px] left-0 right-0 bg-white border-b border-stone-200 flex-col gap-[2px] z-[99] overflow-hidden transition-[max-height,opacity,padding] duration-350 ease-in-out hidden max-[910px]:flex
           ${menuOpen ? "max-h-[360px] opacity-100 px-5 pt-3 pb-5" : "max-h-0 opacity-0 px-5 py-0"}`}
       >
         {NAV_LINKS.map(({ key, label }) => (
           <button
             key={key}
             type="button"
-            className={`w-full text-left px-4 py-3 text-[15px] border-none rounded-[10px] cursor-pointer font-jakarta transition-all duration-150
+            className={`w-full text-left px-4 py-3 text-[15px] border-none rounded-md cursor-pointer font-jakarta transition-all duration-150
               hover:bg-[#0a2a1a] hover:text-[#f5a623]
               ${currentActivePage === key
                 ? "font-bold bg-[#f0f7f3] text-[#0a2a1a]"
@@ -162,10 +162,10 @@ export default function LandingNavbar({ activePage }) {
             {label}
           </button>
         ))}
-        <div className="pt-2 mt-2 border-t border-[#f0f0f0] flex flex-col gap-2">
+        <div className="pt-2 mt-2 border-t border-stone-200 flex flex-col gap-2">
           <button
             type="button"
-            className="w-full text-center py-2.5 text-[15px] font-medium text-[#0a2a1a] bg-[#f8faf8] border border-[#e2ece6] rounded-[10px] cursor-pointer font-jakarta transition-colors hover:text-[#1b6b3a]"
+            className="w-full text-center py-2.5 text-[15px] font-medium text-[#0a2a1a] bg-[#f8faf8] border border-stone-200 rounded-md cursor-pointer font-jakarta transition-colors hover:text-[#1b6b3a]"
             onClick={() => {
               navigate("/login");
               setMenuOpen(false);

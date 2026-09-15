@@ -155,6 +155,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     origins = TransportOriginListSerializer(many=True, read_only=True)
     permit_fee = serializers.SerializerMethodField()
     aic_pdf = serializers.SerializerMethodField()
+    opv_validation = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
@@ -176,6 +177,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "aic_number",
             "aic_pdf",
             "aic_issued_at",
+            "opv_validation",
         ]
 
     def get_aic_pdf(self, obj):
@@ -217,6 +219,11 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         if hasattr(obj, "issued_permit"):
             return float(obj.issued_permit.permit_fee)
         return float(MunicipalConfig.get_fee())
+
+    def get_opv_validation(self, obj):
+        if hasattr(obj, "opv_validation") and obj.opv_validation:
+            return OPVValidationDetailSerializer(obj.opv_validation, context=self.context).data
+        return None
 
 
 class PermitApplicationWriteSerializer(serializers.ModelSerializer):
@@ -301,6 +308,8 @@ class OPVValidationDetailSerializer(serializers.ModelSerializer):
             "status",
             "status_display",
             "remarks",
+            "aic_verified",
+            "aic_verified_at",
             "veterinary_health_certificate",
             "transportation_pass",
             "validated_at",
@@ -318,6 +327,8 @@ class OPVValidationWriteSerializer(serializers.ModelSerializer):
             "application",
             "status",
             "remarks",
+            "aic_verified",
+            "aic_verified_at",
             "veterinary_health_certificate",
             "transportation_pass",
         ]

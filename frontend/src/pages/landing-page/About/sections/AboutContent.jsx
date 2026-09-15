@@ -76,8 +76,7 @@ export default function AboutContent() {
               maintaining strict compliance and disease control measures.
             </p>
             <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-[#444] leading-[1.8] mb-4">
-              By leveraging cutting-edge technologies including Optical Character Recognition (OCR), Machine
-              Learning fraud detection, and Geospatial analytics, we're transforming a traditionally manual,
+              By leveraging OCR document scanning, machine learning fraud detection, and geospatial analytics, we're transforming a traditionally manual,
               time-consuming process into a digital experience that takes minutes.
             </p>
             <h3 className="font-archivo text-[clamp(1rem,1.5vw,1.5rem)] text-brand-primary tracking-[-0.01em] mb-2.5">
@@ -121,7 +120,7 @@ export default function AboutContent() {
                     {code}
                   </div>
                   <p className="font-jakarta text-[clamp(0.82rem,1.1vw,0.9rem)] text-[#444] leading-[1.65] m-0">
-                    <strong className="text-brand-primary">{title}</strong> — {desc}
+                    <strong className="text-brand-primary">{title}</strong>: {desc}
                   </p>
                 </div>
               ))}

@@ -29,22 +29,14 @@ export default function CTA() {
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: "linear-gradient(180deg, rgba(6,26,15,0.80) 0%, rgba(10,42,26,0.62) 45%, rgba(6,26,15,0.90) 100%)" }} />
 
-      {/* Dot grid */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)", backgroundSize: "36px 36px" }} />
-
-      {/* Rings */}
-      <div className="absolute w-[600px] h-[600px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.04] pointer-events-none" />
-      <div className="absolute w-[900px] h-[900px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.04] pointer-events-none" />
-
       {/* Content */}
       <div ref={ctaRef}
         className="reveal-block relative z-[1] max-w-[720px] mx-auto px-10 pb-20 text-center max-[600px]:px-6 max-[600px]:pb-16">
 
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-[18px] py-[7px] bg-brand-amber/12 border border-brand-amber/30 rounded-full font-jakarta text-[12px] font-bold text-brand-amber tracking-[0.05em] uppercase mb-8">
-          <span className="animate-cta-pulse w-[7px] h-[7px] bg-brand-amber rounded-full" />
-          Join 500+ Filipino Farmers
+          <span className="w-[7px] h-[7px] bg-brand-amber rounded-full" />
+          Official Municipal Portal
         </div>
 
         {/* Title */}
@@ -58,7 +50,7 @@ export default function CTA() {
         {/* Subtitle */}
         <p className="font-jakarta text-[17px] text-white/60 leading-[1.75] mb-12 max-w-[520px] mx-auto">
           Say goodbye to long queues and paperwork. FarmPass lets you apply
-          for livestock transport permits online — fast, secure, and free.
+          for livestock transport permits online. Fast, secure, and free.
         </p>
 
         {/* Actions */}
@@ -83,7 +75,7 @@ export default function CTA() {
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
-            Already have an account? Sign in →
+            Already have an account? Sign in
           </button>
         </div>
 

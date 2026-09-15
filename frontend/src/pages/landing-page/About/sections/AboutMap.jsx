@@ -9,17 +9,11 @@ export default function AboutMap() {
   const contentRef = useScrollReveal({ threshold: 0.1 });
 
   return (
-    <section className="bg-brand-bg py-16 relative overflow-hidden max-[640px]:py-12
-      before:content-[''] before:absolute before:-bottom-24 before:-left-24 before:w-96 before:h-96
-      before:rounded-full before:border-[4rem] before:border-brand-primary/[0.03] before:pointer-events-none">
-
+    <section className="bg-brand-bg py-16 relative overflow-hidden max-[640px]:py-12">
       <div className="max-w-[64rem] mx-auto px-8 max-[640px]:px-5">
 
         {/* Header */}
         <div ref={headerRef} className="reveal-block text-center mb-10">
-          <span className="inline-block font-jakarta text-[0.75rem] font-bold tracking-[0.14em] uppercase text-brand-primary-mid bg-brand-primary-mid/[0.08] border border-brand-primary-mid/20 rounded-full px-[0.9rem] py-[0.3rem] mb-3">
-            Where to Find Us
-          </span>
           <h2 className="font-archivo text-[clamp(1.6rem,3vw,2.4rem)] text-brand-primary tracking-[-0.02em] mb-2">Find Us</h2>
           <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-[#6c757d] leading-[1.7]">
             Visit the Sariaya Municipal Agriculture Office

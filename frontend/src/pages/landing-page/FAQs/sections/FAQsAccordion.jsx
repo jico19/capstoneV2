@@ -6,7 +6,7 @@ const CATEGORIES = [
     items: [
       {
         q: "What is FarmPass?",
-        a: "FarmPass is a web-based livestock transport permit issuance system for Sariaya Municipal Agriculture Office. It uses OCR document validation, and Geospatial monitoring to process permits quickly and securely — all online, 24/7."
+        a: "FarmPass is a web-based livestock transport permit issuance system for Sariaya Municipal Agriculture Office. It uses OCR document validation, and Geospatial monitoring to process permits quickly and securely, all online, 24/7."
       },
       {
         q: "Who can use FarmPass?",
@@ -44,7 +44,7 @@ const CATEGORIES = [
       },
       {
         q: "What if my application is rejected?",
-        a: "You'll receive an SMS with the rejection reason. Fix the issues and submit a new application. Rejected applications don't incur charges — you only pay after approval."
+        a: "You'll receive an SMS with the rejection reason. Fix the issues and submit a new application. Rejected applications don't incur charges; you only pay after approval."
       },
     ],
   },
@@ -151,9 +151,7 @@ export default function FAQsAccordion() {
   return (
     <section className="bg-brand-bg pt-16 pb-8 relative overflow-hidden max-[640px]:pt-12 max-[640px]:pb-6">
 
-      {/* Circle */}
-      <div className="absolute top-1/2 -translate-y-1/2 -left-24 w-[22rem] h-[22rem] rounded-full border-[4rem] border-brand-primary-mid/[0.06] pointer-events-none max-[640px]:hidden" />
-      <div className="absolute top-1/2 -translate-y-1/2 -right-24 w-[18rem] h-[18rem] rounded-full border-[3.5rem] border-brand-primary-mid/[0.05] pointer-events-none max-[640px]:hidden" />
+
 
       <div className="max-w-[65rem] mx-auto px-8 flex flex-col gap-10 max-[640px]:px-5">
         {CATEGORIES.map((cat, i) => <Category key={i} cat={cat} />)}

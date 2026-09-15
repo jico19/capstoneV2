@@ -2,21 +2,7 @@ export default function AboutHero() {
   return (
     <section className="relative bg-brand-primary px-10 pt-20 pb-28 overflow-hidden text-center max-[640px]:px-6 max-[640px]:pt-16 max-[640px]:pb-24">
 
-      {/* Dot grid */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)", backgroundSize: "2rem 2rem" }} />
 
-      {/* Orbs */}
-      <div className="absolute w-[32rem] h-[32rem] -top-48 -right-24 rounded-full blur-[60px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(27,107,58,0.45) 0%, transparent 70%)" }} />
-      <div className="absolute w-80 h-80 -bottom-32 -left-16 rounded-full blur-[60px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(245,166,35,0.1) 0%, transparent 70%)" }} />
-
-      {/* Blobs — hidden on mobile */}
-      <div className="animate-about-blob-1 absolute w-96 h-64 top-[8%] left-[4%] rounded-[60%_40%_70%_30%/50%_60%_40%_50%] border-2 border-white/50 opacity-[0.05] pointer-events-none max-[640px]:hidden"
-        style={{ transform: "rotate(20deg)" }} />
-      <div className="animate-about-blob-2 absolute w-72 h-48 bottom-[12%] right-[4%] rounded-[60%_40%_70%_30%/50%_60%_40%_50%] border-2 border-white/50 opacity-[0.05] pointer-events-none max-[640px]:hidden"
-        style={{ transform: "rotate(-15deg)" }} />
 
       {/* Content */}
       <div className="relative z-[1]">

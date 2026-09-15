@@ -143,15 +143,31 @@ class TestPermitWorkflow:
         # 5. OPV Approve (Final Validation)
         api_client.force_authenticate(user=opv_user)
         url = reverse('opvvalidation-approve', kwargs={'pk': app_id})
-        data = {
+        
+        # 5a. OPV Approve without AIC verification should fail
+        fail_data = {
             'remarks': 'All good',
             'veterinary_health_certificate': dummy_image,
-            'transportation_pass': dummy_image
+            'transportation_pass': dummy_image,
+        }
+        fail_resp = api_client.post(url, fail_data, format='multipart')
+        assert fail_resp.status_code == 400
+        assert "Animal Inspection Certificate (AIC) must be verified" in fail_resp.data.get('error', '')
+
+        # 5b. OPV Approve with AIC verification succeeds
+        dummy_image.seek(0)
+        data = {
+            'remarks': 'All good',
+            'aic_verified': 'true',
+            'veterinary_health_certificate': dummy_image,
+            'transportation_pass': dummy_image,
         }
         response = api_client.post(url, data, format='multipart')
         assert response.status_code == 200
         application.refresh_from_db()
         assert application.status == PermitApplication.Status.OPV_VALIDATED
+        assert application.opv_validation.aic_verified is True
+        assert application.opv_validation.aic_verified_at is not None
 
         # 6. Agri Issue Permit
         api_client.force_authenticate(user=agri_user)

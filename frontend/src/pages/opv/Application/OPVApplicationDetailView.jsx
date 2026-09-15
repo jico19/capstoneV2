@@ -55,18 +55,20 @@ const OPVApplicationDetail = () => {
                     try {
                         const formData = new FormData()
                         formData.append('remarks', data.remarks)
+                        formData.append('aic_verified', data.aic_verified ? 'true' : 'false')
                         formData.append('veterinary_health_certificate', data.veterinary_health_certificate[0])
                         formData.append('transportation_pass', data.transportation_pass[0])
 
                         await api.post(`opv/${id}/approve/`, formData)
                         query.invalidateQueries({ queryKey: ['application'] })
                         toast.success("Validation Complete", {
-                            description: "Health documents uploaded and application validated."
+                            description: "AIC verified, health documents uploaded, and application validated."
                         })
                         resolve()
                     } catch (error) {
+                        const errMsg = error.response?.data?.error || "Could not complete the validation process."
                         toast.error("Validation Failed", {
-                            description: "Could not complete the validation process."
+                            description: errMsg
                         })
                         reject(error)
                     } finally {
@@ -228,13 +230,22 @@ const OPVApplicationDetail = () => {
                         {application.aic_pdf && (
                             <div className="bg-emerald-50/70 border-2 border-emerald-600 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <span className="bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
                                             MAO Official Certificate
                                         </span>
                                         <span className="text-xs font-mono font-bold text-emerald-950">
                                             AIC No: {application.aic_number || "PENDING"}
                                         </span>
+                                        {application.opv_validation?.aic_verified ? (
+                                            <span className="bg-emerald-800 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 flex items-center gap-1">
+                                                <FileCheck2 size={10} /> Verified by OPV
+                                            </span>
+                                        ) : application.status === "FORWARDED_TO_OPV" ? (
+                                            <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                                                Awaiting OPV Verification
+                                            </span>
+                                        ) : null}
                                     </div>
                                     <h3 className="text-base font-black text-stone-900 uppercase tracking-tight">
                                         Animal Inspection Certificate (AIC)
@@ -280,6 +291,8 @@ const OPVApplicationDetail = () => {
                                 <div className="h-[2px] flex-1 bg-gray-100"></div>
                             </div>
                             <OPVApprovalControls
+                                aicNumber={application.aic_number}
+                                onInspectAic={() => viewDocument(`aic-${application.id}`)}
                                 onApprove={onApprove}
                                 onReject={onReject}
                                 onResubmit={onResubmit}

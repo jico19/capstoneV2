@@ -6,6 +6,12 @@ from .. import models
 from .application import handle_application_status_change
 
 def create_approve_opv_validation(application_id: int, files, staff, data):
+    aic_verified = data.get('aic_verified')
+    if aic_verified in (True, 'true', 'True', '1', 1):
+        is_aic_verified = True
+    else:
+        raise ValidationError("Animal Inspection Certificate (AIC) must be verified before approving.")
+
     if not files or len(files) < 2:
         raise ValidationError("No documents uploaded. Please upload the required documents.")
     
@@ -20,10 +26,14 @@ def create_approve_opv_validation(application_id: int, files, staff, data):
                 "opv_staff": staff,
                 "status": models.OPVValidation.Status.VALIDATED,
                 "remarks": data.get('remarks', ''),
+                "aic_verified": is_aic_verified,
+                "aic_verified_at": timezone.now(),
                 "veterinary_health_certificate": files['veterinary_health_certificate'],
                 "transportation_pass": files['transportation_pass'],
             }
         )
+    except ValidationError:
+        raise
     except Exception as e:
         raise ValidationError(f"Error saving OPV validation: {e}")
 

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { CheckCircle2, CheckCircle, XCircle, MessageSquare, UploadCloud } from 'lucide-react';
+import { CheckCircle2, CheckCircle, XCircle, MessageSquare, UploadCloud, FileCheck2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 /**
  * OPV Approval & Validation Controls
  * Friendly-first design with natural language and industrial flat UI.
- * Validation Logic: Documents are only required for Approval. Remarks are required for both.
+ * Validation Logic: Documents and AIC Verification are required for Approval. Remarks are required for all actions.
  */
 const COMMON_FEEDBACK_OPTIONS = [
     { value: "", label: "Select common feedback template..." },
@@ -19,8 +19,13 @@ const COMMON_FEEDBACK_OPTIONS = [
     { value: "custom", label: "Other / Custom Feedback (Specify below)" }
 ];
 
-const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
-    const { register, trigger, getValues, setError, watch, setValue, formState: { errors } } = useForm();
+const OPVApprovalControls = ({ onApprove, onReject, onResubmit, aicNumber, onInspectAic }) => {
+    const { register, trigger, getValues, setError, clearErrors, watch, setValue, formState: { errors } } = useForm({
+        defaultValues: {
+            remarks: '',
+            aic_verified: false,
+        }
+    });
     const [activeAction, setActiveAction] = useState(null);
     const isProcessing = activeAction !== null;
 
@@ -83,7 +88,20 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
         // 1. Validate Remarks
         const isRemarksValid = await trigger('remarks');
 
-        // 2. Validate Documents (Only required for approval)
+        // 2. Validate AIC Verification
+        const isAicVerified = getValues('aic_verified');
+        let isAicValid = true;
+        if (!isAicVerified) {
+            setError('aic_verified', {
+                type: 'manual',
+                message: 'You must inspect and verify the Animal Inspection Certificate (AIC) before approving.'
+            });
+            isAicValid = false;
+        } else {
+            clearErrors('aic_verified');
+        }
+
+        // 3. Validate Documents (Only required for approval)
         let isDocsValid = true;
         documents.forEach(doc => {
             const files = getValues(doc.id);
@@ -93,7 +111,7 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
             }
         });
 
-        if (isRemarksValid && isDocsValid) {
+        if (isRemarksValid && isAicValid && isDocsValid) {
             setActiveAction('approve');
             try {
                 await onApprove(getValues());
@@ -150,7 +168,71 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
                 </div>
             </div>
 
-            {/* 2. Document Uploads */}
+            {/* 2. Municipal AIC Verification */}
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                        <FileCheck2 size={24} className="text-green-600" />
+                        Municipal AIC Verification
+                    </h2>
+                    <p className="text-sm text-gray-500 font-medium">
+                        Confirm that the Animal Inspection Certificate issued by MAO is authentic and verified.
+                    </p>
+                </div>
+
+                <div className={`p-5 border-2 transition-colors ${
+                    errors.aic_verified 
+                        ? 'border-red-600 bg-red-50/70' 
+                        : watchedFiles.aic_verified 
+                            ? 'border-emerald-600 bg-emerald-50/40' 
+                            : 'border-stone-200 bg-stone-50/60'
+                }`}>
+                    <label className="flex items-start gap-4 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            disabled={isProcessing}
+                            {...register('aic_verified')}
+                            className="mt-0.5 h-5 w-5 rounded-none border-stone-400 text-emerald-700 focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <div className="space-y-1 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-stone-900">
+                                    I certify and verify Animal Inspection Certificate (AIC)
+                                </span>
+                                {aicNumber && (
+                                    <span className="font-mono text-xs font-bold text-emerald-950 bg-emerald-100 px-2 py-0.5 border border-emerald-300">
+                                        No. {aicNumber}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-xs text-stone-600 leading-relaxed font-normal">
+                                I confirm having reviewed the Municipal Agriculture Office issuance, origin barangay(s), and animal count for this transport request.
+                            </p>
+                        </div>
+                    </label>
+
+                    {onInspectAic && (
+                        <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between">
+                            <span className="text-stone-500 text-[11px] font-medium">Need to inspect before verifying?</span>
+                            <button
+                                type="button"
+                                onClick={onInspectAic}
+                                className="text-[10px] font-black uppercase tracking-wider text-emerald-800 hover:text-emerald-950 underline underline-offset-2 transition-colors"
+                            >
+                                Open AIC Preview
+                            </button>
+                        </div>
+                    )}
+
+                    {errors.aic_verified && (
+                        <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mt-2">
+                            {errors.aic_verified.message}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* 3. Document Uploads */}
             <div className="space-y-6">
                 <div className="space-y-1">
                     <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3">
@@ -200,6 +282,20 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit }) => {
 
             {/* 3. Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
+                <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={handleRejectClick}
+                    className="w-full sm:w-auto border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {activeAction === 'reject' ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                    ) : (
+                        <XCircle size={18} strokeWidth={3} />
+                    )}
+                    Reject Request
+                </button>
+
                 <button
                     type="button"
                     disabled={isProcessing}

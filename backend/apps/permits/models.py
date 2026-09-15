@@ -169,6 +169,8 @@ class OPVValidation(models.Model):
     status = models.CharField(max_length=20, choices=Status, default=Status.PENDING)
     remarks = models.TextField(blank=True)
     validated_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    aic_verified = models.BooleanField(default=False)
+    aic_verified_at = models.DateTimeField(null=True, blank=True)
     
     veterinary_health_certificate   = models.FileField(upload_to='opv_docs/vhc/', null=True, blank=True, validators=[validate_file_size])
     transportation_pass = models.FileField(upload_to='opv_docs/pass/', null=True, blank=True, validators=[validate_file_size])

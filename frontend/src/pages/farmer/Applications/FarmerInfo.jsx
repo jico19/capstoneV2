@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetMaps } from '../../../hooks/useMaps';
-import { Navigation, Calendar, Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, User, Phone } from "lucide-react";
+import { Navigation, Calendar, Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, User, Phone, MapPin } from "lucide-react";
+import { getMunicipalities, getBarangays, buildDestinationString } from '../../../lib/region4a';
 
 const ANIMAL_CATEGORIES = [
     {
@@ -123,6 +124,40 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
     };
 
     const globalTotal = getGlobalTotal();
+
+    const municipalities = useMemo(() => getMunicipalities(), []);
+    const municipalitiesByProvince = useMemo(() => {
+        const grouped = {};
+        for (const item of municipalities) {
+            if (!grouped[item.province]) {
+                grouped[item.province] = [];
+            }
+            grouped[item.province].push(item);
+        }
+        return grouped;
+    }, [municipalities]);
+
+    const selectedMuniKey = watch('destination_municipality');
+    const selectedBarangay = watch('destination_barangay');
+    const destinationStreet = watch('destination_street');
+    const availableBarangays = useMemo(() => getBarangays(selectedMuniKey), [selectedMuniKey]);
+
+    const prevMuniKey = useRef(selectedMuniKey);
+    useEffect(() => {
+        if (prevMuniKey.current && prevMuniKey.current !== selectedMuniKey) {
+            setValue('destination_barangay', '', { shouldValidate: true });
+        }
+        prevMuniKey.current = selectedMuniKey;
+    }, [selectedMuniKey, setValue]);
+
+    useEffect(() => {
+        const formatted = buildDestinationString({
+            street: destinationStreet,
+            barangay: selectedBarangay,
+            municipalityKey: selectedMuniKey
+        });
+        setValue('destination', formatted, { shouldValidate: !!selectedBarangay });
+    }, [selectedMuniKey, selectedBarangay, destinationStreet, setValue]);
 
     if (isLoading) return <div className="p-12 text-center font-bold text-stone-400 uppercase tracking-widest text-xs bg-white border border-stone-200">Loading Barangay Data...</div>;
     if (isError) return <div className="p-12 text-center text-red-600 font-bold bg-red-50 border border-red-200 uppercase tracking-widest text-xs">Failed to load barangay data.</div>;
@@ -294,58 +329,141 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
             </div>
 
             {/* Common Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-stone-100">
-                <div className="space-y-2">
+            <div className="space-y-6 pt-4 border-t border-stone-100">
+                {/* Destination Section */}
+                <div className="space-y-3">
                     <div>
                         <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">Where are the pigs going? (Destination)</label>
                         <p className="text-[11px] text-stone-400 font-medium">Specify the farm, buyer, or slaughterhouse address.</p>
                     </div>
-                    <div className="relative">
-                        <Navigation className="absolute left-3 top-4 text-stone-400" size={16} />
-                        <input 
-                            type="text" 
-                            placeholder="Enter destination address" 
-                            className={inputClass(errors.destination)} 
-                            {...register('destination', { required: true })} 
-                        />
-                    </div>
-                    {errors.destination && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Destination is required</p>}
-                </div>
-                <div className="space-y-2">
-                    <div>
-                        <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">When will you transport the pigs? (Travel Date)</label>
-                        <p className="text-[11px] text-stone-400 font-medium">Select the date you plan to move the animals.</p>
-                    </div>
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-4 text-stone-400" size={16} />
-                        <input 
-                            type="date" 
-                            min={minDate} 
-                            className={inputClass(errors.transport_date)} 
-                            {...register('transport_date', { required: true })} 
-                        />
-                    </div>
-                    {errors.transport_date && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Date is required</p>}
-                </div>
-            </div>
 
-            <div className="space-y-2 pt-2">
-                <div>
-                    <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">Why are the pigs being transported? (Purpose)</label>
-                    <p className="text-[11px] text-stone-400 font-medium">Select the main reason for moving the animals.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Municipality Dropdown */}
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-stone-500 uppercase tracking-widest block">
+                                Destination City / Municipality <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                className={selectClass(errors.destination_municipality)}
+                                {...register('destination_municipality', { required: 'Please select municipality' })}
+                            >
+                                <option value="">-- SELECT MUNICIPALITY / CITY --</option>
+                                {Object.entries(municipalitiesByProvince).map(([province, list]) => (
+                                    <optgroup key={province} label={`PROVINCE OF ${province}`}>
+                                        {list.map((m) => (
+                                            <option key={m.key} value={m.key}>
+                                                {m.municipality}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                            {errors.destination_municipality && (
+                                <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">
+                                    {errors.destination_municipality.message || 'Municipality is required'}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Barangay Dropdown */}
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-stone-500 uppercase tracking-widest block">
+                                Destination Barangay <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                disabled={!selectedMuniKey}
+                                className={`${selectClass(errors.destination_barangay)} disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed`}
+                                {...register('destination_barangay', { required: 'Please select barangay' })}
+                            >
+                                <option value="">
+                                    {!selectedMuniKey ? '-- SELECT MUNICIPALITY FIRST --' : '-- SELECT BARANGAY --'}
+                                </option>
+                                {availableBarangays.map((b) => (
+                                    <option key={b} value={b}>
+                                        {b}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.destination_barangay && (
+                                <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">
+                                    {errors.destination_barangay.message || 'Barangay is required'}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Specific Street Address / Landmark (Optional) */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-stone-500 uppercase tracking-widest block">
+                            Specific Farm, Facility, or Street Address <span className="text-stone-400 font-normal">(Optional)</span>
+                        </label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-3.5 text-stone-400" size={16} />
+                            <input
+                                type="text"
+                                placeholder="e.g. Purok 4, Green Valley Farm, Slaughterhouse Compound"
+                                className={inputClass(false)}
+                                {...register('destination_street')}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Hidden synchronized destination input for form submission */}
+                    <input
+                        type="hidden"
+                        {...register('destination', { required: 'Destination is required' })}
+                    />
+
+                    {/* Destination Preview Tag */}
+                    {watch('destination') && (
+                        <div className="p-3 bg-stone-50 border border-stone-200 flex items-start gap-2">
+                            <Navigation size={14} className="text-green-700 mt-0.5 shrink-0" />
+                            <div className="text-xs">
+                                <span className="font-bold text-stone-500 uppercase text-[9px] tracking-wider block">Formatted Permit Destination:</span>
+                                <span className="font-black text-stone-800 uppercase tracking-wide">{watch('destination')}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <select 
-                    className={selectClass(errors.purpose)} 
-                    {...register('purpose', { required: true })} 
-                >
-                    <option value="">-- SELECT PURPOSE --</option>
-                    <option value="Slaughter">Slaughter / Katayan (For Meat)</option>
-                    <option value="Breeding">Breeding / Pampalahi</option>
-                    <option value="Fattening">Fattening / Pagpapataba</option>
-                    <option value="Sale / Commercial">Sale to Buyer / Pagbebenta</option>
-                    <option value="Transfer / Relocation">Transfer to another Farm / Paglipat ng Bukid</option>
-                </select>
-                {errors.purpose && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Purpose is required</p>}
+
+                {/* Travel Date & Purpose */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-stone-100">
+                    <div className="space-y-2">
+                        <div>
+                            <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">When will you transport the pigs? (Travel Date)</label>
+                            <p className="text-[11px] text-stone-400 font-medium">Select the date you plan to move the animals.</p>
+                        </div>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-4 text-stone-400" size={16} />
+                            <input 
+                                type="date" 
+                                min={minDate} 
+                                className={inputClass(errors.transport_date)} 
+                                {...register('transport_date', { required: true })} 
+                            />
+                        </div>
+                        {errors.transport_date && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Date is required</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <div>
+                            <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">Why are the pigs being transported? (Purpose)</label>
+                            <p className="text-[11px] text-stone-400 font-medium">Select the main reason for moving the animals.</p>
+                        </div>
+                        <select 
+                            className={selectClass(errors.purpose)} 
+                            {...register('purpose', { required: true })} 
+                        >
+                            <option value="">-- SELECT PURPOSE --</option>
+                            <option value="Slaughter">Slaughter / Katayan (For Meat)</option>
+                            <option value="Breeding">Breeding / Pampalahi</option>
+                            <option value="Fattening">Fattening / Pagpapataba</option>
+                            <option value="Sale / Commercial">Sale to Buyer / Pagbebenta</option>
+                            <option value="Transfer / Relocation">Transfer to another Farm / Paglipat ng Bukid</option>
+                        </select>
+                        {errors.purpose && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Purpose is required</p>}
+                    </div>
+                </div>
             </div>
 
             <div className="flex justify-end pt-6 border-t border-stone-200">

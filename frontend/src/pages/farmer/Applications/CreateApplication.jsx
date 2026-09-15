@@ -245,6 +245,8 @@ const CreateApplication = () => {
                                 nextStep={() => {
                                     const step1Fields = [
                                         'destination', 
+                                        'destination_municipality',
+                                        'destination_barangay',
                                         'transport_date', 
                                         'purpose',
                                         ...origins.map(o => `barangay_${o.id}`),

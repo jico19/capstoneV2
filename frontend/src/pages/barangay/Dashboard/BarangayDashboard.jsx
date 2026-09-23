@@ -261,6 +261,13 @@ const BarangayDashboard = () => {
                             <span className="flex items-center gap-2"><History size={16} className="text-amber-600" /> View Submission Logs</span>
                             <ArrowRight size={14} />
                         </Link>
+                        <Link 
+                            to="/barangay/cis-generator/" 
+                            className="flex items-center justify-between p-3 border border-stone-200 hover:bg-stone-50 transition-colors font-bold text-xs uppercase text-stone-700"
+                        >
+                            <span className="flex items-center gap-2"><FileText size={16} className="text-blue-600" /> Generate CIS Form</span>
+                            <ArrowRight size={14} />
+                        </Link>
                     </div>
                 </div>
             </div>

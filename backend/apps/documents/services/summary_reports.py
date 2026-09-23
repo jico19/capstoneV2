@@ -1,21 +1,13 @@
 import csv
 import logging
 import os
-from datetime import timedelta
 from io import BytesIO, StringIO
 
-import qrcode
-from django.conf import settings
-from django.core.files import File
-from django.db import transaction
 from django.db.models import Count, Sum
-from django.tasks import task
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
@@ -27,22 +19,59 @@ from apps.documents.pdf_builder import (
     TEXT_MUTED as PDF_TEXT_MUTED,
     BORDER_COLOR as PDF_BORDER_COLOR,
     ACCENT_BG as PDF_ACCENT_BG,
+    OFFICIAL_LOGO,
+    AGRI_LOGO,
+    format_date_range,
+    make_numbered_canvas,
 )
 
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
-from apps.permits.models import (
-    IssuedPermit,
-    PermitApplication,
-    TransportOrigin,
-    SubmittedDocument,
-    OCRValidationResult,
-    MunicipalConfig,
-)
+from apps.permits.models import IssuedPermit, TransportOrigin
 
 logger = logging.getLogger(__name__)
 
-from apps.documents.services import make_numbered_canvas
+
+def _metric_table_style(text_main, border_color, header_bg="#f5f5f4"):
+    return TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(header_bg)),
+        ("TEXTCOLOR", (0, 0), (-1, 0), text_main),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+        ("TOPPADDING", (0, 0), (-1, 0), 6),
+        ("GRID", (0, 0), (-1, -1), 0.5, border_color),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+    ])
+
+
+def _draw_certification_box(p, current_y, text, text_main, accent_bg):
+    summary_style = ParagraphStyle(
+        name='CertificationBox',
+        fontName='Helvetica-Oblique',
+        fontSize=8.5,
+        leading=12,
+        textColor=text_main,
+    )
+    p_summary = Paragraph(text, summary_style)
+    _, p_h = p_summary.wrap(17.2 * cm, A4[1])
+
+    padding = 10
+    box_h = p_h + padding * 2
+
+    p.setFillColor(accent_bg)
+    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
+    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
+    return current_y - (box_h + 1.2 * cm)
+
+
+def _draw_section_header(p, current_y, label, text_main):
+    p.setFillColor(text_main)
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(1.5 * cm, current_y, label)
+    return current_y - 0.4 * cm
 
 def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
     """
@@ -68,11 +97,7 @@ def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
     manual_amount = manual_payments.aggregate(Sum("amount"))["amount__sum"] or 0
     manual_count = manual_payments.count()
 
-    date_range_str = (
-        f"{start_date.strftime('%B %d, %Y')} — {end_date.strftime('%B %d, %Y')}"
-    )
-    if start_date == end_date:
-        date_range_str = start_date.strftime("%B %d, %Y")
+    date_range_str = format_date_range(start_date, end_date)
 
     pdf = OfficialMemorandumPDF()
     p, width, height = pdf.p, pdf.width, pdf.height
@@ -84,10 +109,7 @@ def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
     current_y = height - 4.2 * cm
 
     # Section I: Summary of Key Metrics
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "I. SUMMARY OF KEY FINANCIAL METRICS")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "I. SUMMARY OF KEY FINANCIAL METRICS", TEXT_MAIN)
 
     metric_data = [
         ["METRIC DESCRIPTION", "REPORTED VALUE"],
@@ -95,27 +117,13 @@ def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
         ["TOTAL SUCCESSFUL TRANSACTIONS", f"{total_transactions} payments"],
     ]
     metric_table = Table(metric_data, colWidths=[12 * cm, 6 * cm])
-    metric_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f5f5f4")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_MAIN),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-        ("TOPPADDING", (0, 0), (-1, 0), 6),
-        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
-        ("FONTSIZE", (0, 1), (-1, -1), 8),
-        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-    ]))
+    metric_table.setStyle(_metric_table_style(TEXT_MAIN, BORDER_COLOR))
     m_tw, m_th = metric_table.wrapOn(p, width, height)
     metric_table.drawOn(p, 1.5 * cm, current_y - m_th)
     current_y -= (m_th + 0.6 * cm)
 
     # Section II: Breakdown Table
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "II. DETAILED CHANNEL RECAPITULATION")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "II. DETAILED CHANNEL RECAPITULATION", TEXT_MAIN)
 
     data = [
         ["PAYMENT CHANNEL", "TRANSACTION COUNT", "TOTAL COLLECTED"],
@@ -141,10 +149,7 @@ def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
     current_y -= (th + 0.6 * cm)
 
     # Section III: Certification
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "III. OFFICIAL OFFICE CERTIFICATION")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "III. OFFICIAL OFFICE CERTIFICATION", TEXT_MAIN)
 
     text = (
         f"This certifies that for the period from {start_date.strftime('%B %d, %Y')} to "
@@ -153,23 +158,7 @@ def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
         f"have been verified against the PayMongo checkout gateway, and manual payments have been "
         f"reconciled with the Municipal Treasurer's collection registers."
     )
-    summary_style = ParagraphStyle(
-        name='SummaryStyle_Collection',
-        fontName='Helvetica-Oblique',
-        fontSize=8.5,
-        leading=12,
-        textColor=TEXT_MAIN
-    )
-    p_summary = Paragraph(text, summary_style)
-    p_w, p_h = p_summary.wrap(17.2 * cm, height)
-    
-    padding = 10
-    box_h = p_h + padding * 2
-    
-    p.setFillColor(ACCENT_BG)
-    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
-    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
-    current_y -= (box_h + 1.2 * cm)
+    current_y = _draw_certification_box(p, current_y, text, TEXT_MAIN, ACCENT_BG)
 
 # Signatory Block, footer, and finalize
     pdf.draw_signatories(
@@ -204,11 +193,7 @@ def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
         "inspector__username", "inspector__first_name", "inspector__last_name"
     ).annotate(count=Count("id")).order_by("-count")[:5]
 
-    date_range_str = (
-        f"{start_date.strftime('%B %d, %Y')} — {end_date.strftime('%B %d, %Y')}"
-    )
-    if start_date == end_date:
-        date_range_str = start_date.strftime("%B %d, %Y")
+    date_range_str = format_date_range(start_date, end_date)
 
     pdf = OfficialMemorandumPDF()
     p, width, height = pdf.p, pdf.width, pdf.height
@@ -221,10 +206,7 @@ def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
     current_y = height - 4.2 * cm
 
     # Section I: Summary of Key Metrics
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "I. SUMMARY OF KEY ENFORCEMENT METRICS")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "I. SUMMARY OF KEY ENFORCEMENT METRICS", TEXT_MAIN)
 
     metric_data = [
         ["METRIC DESCRIPTION", "REPORTED VALUE"],
@@ -233,27 +215,13 @@ def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
         ["UNIQUE PERMITS VERIFIED", f"{total_permits_checked} unique permits"],
     ]
     metric_table = Table(metric_data, colWidths=[12 * cm, 6 * cm])
-    metric_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f5f5f4")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_MAIN),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-        ("TOPPADDING", (0, 0), (-1, 0), 6),
-        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
-        ("FONTSIZE", (0, 1), (-1, -1), 8),
-        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-    ]))
+    metric_table.setStyle(_metric_table_style(TEXT_MAIN, BORDER_COLOR))
     m_tw, m_th = metric_table.wrapOn(p, width, height)
     metric_table.drawOn(p, 1.5 * cm, current_y - m_th)
     current_y -= (m_th + 0.6 * cm)
 
     # Section II: Breakdown Table
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "II. TOP VERIFYING ENFORCEMENT OFFICERS")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "II. TOP VERIFYING ENFORCEMENT OFFICERS", TEXT_MAIN)
 
     data = [["INSPECTOR USERNAME", "OFFICER FULL NAME", "VERIFICATIONS LOGGED"]]
     for c in inspector_counts:
@@ -284,10 +252,7 @@ def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
     current_y -= (th + 0.6 * cm)
 
     # Section III: Certification
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "III. OFFICIAL OFFICE CERTIFICATION")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "III. OFFICIAL OFFICE CERTIFICATION", TEXT_MAIN)
 
     text = (
         f"This certifies that for the period from {start_date.strftime('%B %d, %Y')} to "
@@ -296,23 +261,7 @@ def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
         f"enforcement officers participated in duties, validating {total_permits_checked} unique transport permits "
         f"via the FarmPass verification scan module."
     )
-    summary_style = ParagraphStyle(
-        name='SummaryStyle_Inspector',
-        fontName='Helvetica-Oblique',
-        fontSize=8.5,
-        leading=12,
-        textColor=TEXT_MAIN
-    )
-    p_summary = Paragraph(text, summary_style)
-    p_w, p_h = p_summary.wrap(17.2 * cm, height)
-    
-    padding = 10
-    box_h = p_h + padding * 2
-    
-    p.setFillColor(ACCENT_BG)
-    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
-    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
-    current_y -= (box_h + 1.2 * cm)
+    current_y = _draw_certification_box(p, current_y, text, TEXT_MAIN, ACCENT_BG)
 
     # Signatory Block, footer, and finalize
     pdf.draw_signatories(
@@ -357,11 +306,7 @@ def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=No
         pig_count=Sum("number_of_pigs")
     ).order_by("-pig_count")[:5]
 
-    date_range_str = (
-        f"{start_date.strftime('%B %d, %Y')} — {end_date.strftime('%B %d, %Y')}"
-    )
-    if start_date == end_date:
-        date_range_str = start_date.strftime("%B %d, %Y")
+    date_range_str = format_date_range(start_date, end_date)
 
     pdf = OfficialMemorandumPDF()
     p, width, height = pdf.p, pdf.width, pdf.height
@@ -374,10 +319,7 @@ def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=No
     current_y = height - 4.2 * cm
 
     # Section I: Summary of Key Metrics
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "I. SUMMARY OF KEY DISTRIBUTION METRICS")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "I. SUMMARY OF KEY DISTRIBUTION METRICS", TEXT_MAIN)
 
     metric_data = [
         ["METRIC DESCRIPTION", "REPORTED VALUE"],
@@ -386,27 +328,13 @@ def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=No
         ["ACTIVE TRANSPORT CORRIDOR ROUTES", f"{active_routes} routes"],
     ]
     metric_table = Table(metric_data, colWidths=[12 * cm, 6 * cm])
-    metric_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f5f5f4")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_MAIN),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-        ("TOPPADDING", (0, 0), (-1, 0), 6),
-        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
-        ("FONTSIZE", (0, 1), (-1, -1), 8),
-        ("ALIGN", (1, 1), (1, -1), "RIGHT"),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-    ]))
+    metric_table.setStyle(_metric_table_style(TEXT_MAIN, BORDER_COLOR))
     m_tw, m_th = metric_table.wrapOn(p, width, height)
     metric_table.drawOn(p, 1.5 * cm, current_y - m_th)
     current_y -= (m_th + 0.6 * cm)
 
     # Section II: Breakdown Table
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "II. TOP TRANSPORT ORIGINS BY VOLUME")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "II. TOP TRANSPORT ORIGINS BY VOLUME", TEXT_MAIN)
 
     data = [["ORIGIN BARANGAY", "PERMITS GRANTED", "PIGS SHIPPED"]]
     for o in origin_counts:
@@ -434,10 +362,7 @@ def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=No
     current_y -= (th + 0.6 * cm)
 
     # Section III: Certification
-    p.setFillColor(TEXT_MAIN)
-    p.setFont("Helvetica-Bold", 9)
-    p.drawString(1.5 * cm, current_y, "III. OFFICIAL OFFICE CERTIFICATION")
-    current_y -= 0.4 * cm
+    current_y = _draw_section_header(p, current_y, "III. OFFICIAL OFFICE CERTIFICATION", TEXT_MAIN)
 
     text = (
         f"This certifies that for the period from {start_date.strftime('%B %d, %Y')} to "
@@ -446,23 +371,7 @@ def generate_permit_issuance_report_pdf(start_date, end_date, requesting_user=No
         f"transported across {active_routes} active origin barangay routes. All permits were issued "
         f"subsequent to health certificate validation by the Office of the Provincial Veterinarian."
     )
-    summary_style = ParagraphStyle(
-        name='SummaryStyle_Permit',
-        fontName='Helvetica-Oblique',
-        fontSize=8.5,
-        leading=12,
-        textColor=TEXT_MAIN
-    )
-    p_summary = Paragraph(text, summary_style)
-    p_w, p_h = p_summary.wrap(17.2 * cm, height)
-    
-    padding = 10
-    box_h = p_h + padding * 2
-    
-    p.setFillColor(ACCENT_BG)
-    p.rect(1.5 * cm, current_y - box_h, 18 * cm, box_h, fill=True, stroke=True)
-    p_summary.drawOn(p, 1.9 * cm, current_y - box_h + padding)
-    current_y -= (box_h + 1.2 * cm)
+    current_y = _draw_certification_box(p, current_y, text, TEXT_MAIN, ACCENT_BG)
 
     # Signatory Block, footer, and finalize
     pdf.draw_signatories(
@@ -538,19 +447,15 @@ def generate_barangay_distribution_pdf(start_date, end_date):
     )
 
     date_range_str = (
-        f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}"
+        start_date.strftime("%B %d, %Y")
+        if start_date == end_date
+        else format_date_range(start_date, end_date, fmt="%b %d, %Y")
     )
-    if start_date == end_date:
-        date_range_str = start_date.strftime("%B %d, %Y")
 
     # Branding Colors
     ACCENT_BLUE = colors.HexColor("#1e3a5f")
 
     # Logos
-    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
-
     official_img = ""
     if os.path.exists(OFFICIAL_LOGO):
         official_img = Image(OFFICIAL_LOGO, width=2.0 * cm, height=2.0 * cm)
@@ -617,7 +522,6 @@ def generate_barangay_distribution_pdf(start_date, end_date):
 
     canvas_factory = make_numbered_canvas(
         report_title="Barangay Volume Distribution",
-        report_subtitle="BARANGAY VOLUME DISTRIBUTION",
         date_range_str=date_range_str,
         footer_text=f"Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
         primary_color=ACCENT_BLUE
@@ -693,11 +597,9 @@ def generate_formal_government_report_pdf(draft_data):
         bottomMargin=2.0 * cm,
     )
 
-    PRIMARY_GREEN = colors.HexColor("#166534")
-    TEXT_MAIN = colors.HexColor("#1c1917")
-    TEXT_MUTED = colors.HexColor("#57534e")
-    BORDER_COLOR = colors.HexColor("#d6d3d1")
-    BG_LIGHT = colors.HexColor("#f5f5f4")
+    PRIMARY_GREEN, TEXT_MAIN, TEXT_MUTED, BORDER_COLOR, BG_LIGHT = (
+        PDF_GREEN, PDF_TEXT_MAIN, PDF_TEXT_MUTED, PDF_BORDER_COLOR, colors.HexColor("#f5f5f4")
+    )
 
     styles = getSampleStyleSheet()
 
@@ -764,10 +666,6 @@ def generate_formal_government_report_pdf(draft_data):
     )
 
     # 1. Header with Dual Logos
-    ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-    OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-    AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
-
     logo_w = 1.8 * cm
     official_img = Image(OFFICIAL_LOGO, width=logo_w, height=logo_w) if os.path.exists(OFFICIAL_LOGO) else ""
     agri_img = Image(AGRI_LOGO, width=logo_w, height=logo_w) if os.path.exists(AGRI_LOGO) else ""
@@ -957,7 +855,6 @@ def generate_formal_government_report_pdf(draft_data):
 
     canvas_factory = make_numbered_canvas(
         report_title=doc_title,
-        report_subtitle=doc_title,
         date_range_str=period_str,
         footer_text=f"Official LGU Memorandum • Generated by FarmPass System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}",
         primary_color=PRIMARY_GREEN,

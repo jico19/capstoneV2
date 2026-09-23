@@ -11,6 +11,8 @@ from .services import (
     validate_transport_carrier,
     extract_traders_pass,
     validate_traders_pass,
+    extract_cis,
+    validate_cis,
     parse_date,
     check_all_documents_complete
 )
@@ -37,7 +39,7 @@ def extract_document_info(document_id: int, attempt=3):
         logger.error(f"SubmittedDocument with ID {document_id} not found.")
         return
 
-    allowed_types = ['transport_carrier_reg', 'handlers_license', 'traders_pass']
+    allowed_types = ['transport_carrier_reg', 'handlers_license', 'traders_pass', 'cis']
 
     if doc.document_type not in allowed_types:
         permits.OCRValidationResult.objects.update_or_create(
@@ -109,6 +111,9 @@ def extract_document_info(document_id: int, attempt=3):
         elif doc.document_type == 'traders_pass':
             extracted = extract_traders_pass(text)
             errors = validate_traders_pass(extracted)
+        elif doc.document_type == 'cis':
+            extracted = extract_cis(text)
+            errors = validate_cis(extracted, doc.origin)
 
         permits.OCRValidationResult.objects.update_or_create(
                 document=doc,

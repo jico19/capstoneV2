@@ -1,7 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
 from apps.api.base import BaseModelViewSet
 from .. import models, serializers, services
@@ -57,99 +56,38 @@ class OPVValidationViewSet(BaseModelViewSet):
     def approve(self, request, pk=None):
         """Approve the application attached with documents."""
         application_instance = get_object_or_404(models.PermitApplication, pk=pk)
-        data = request.data
-        files = request.FILES
 
-        try:
-            services.approve_opv_validation(
-                application=application_instance,
-                staff=request.user,
-                data=data,
-                files=files
-            )
-            return Response({"msg": "Approved successfully"}, status=status.HTTP_200_OK)
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {
-                    "error": (
-                        str(e.detail[0])
-                        if isinstance(e.detail, list)
-                        else str(e.detail)
-                    )
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        services.approve_opv_validation(
+            application=application_instance,
+            staff=request.user,
+            data=request.data,
+            files=request.FILES
+        )
+        return Response({"msg": "Approved successfully"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         """Reject the applications with reason"""
         application_instance = get_object_or_404(models.PermitApplication, pk=pk)
-        data = request.data
 
-        try:
-            services.reject_opv_validation(
-                application=application_instance,
-                staff=request.user,
-                data=data
-            )
-            return Response({"msg": "Rejected successfully"}, status=status.HTTP_200_OK)
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {
-                    "error": (
-                        str(e.detail[0])
-                        if isinstance(e.detail, list)
-                        else str(e.detail)
-                    )
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        services.reject_opv_validation(
+            application=application_instance,
+            staff=request.user,
+            data=request.data
+        )
+        return Response({"msg": "Rejected successfully"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def resubmit(self, request, pk=None):
         """Return the applications for resubmission with reason"""
         application_instance = get_object_or_404(models.PermitApplication, pk=pk)
-        data = request.data
 
-        try:
-            services.request_opv_resubmission(
-                application=application_instance,
-                staff=request.user,
-                data=data
-            )
-            return Response(
-                {"msg": "Returned for resubmission successfully"},
-                status=status.HTTP_200_OK,
-            )
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {
-                    "error": (
-                        str(e.detail[0])
-                        if isinstance(e.detail, list)
-                        else str(e.detail)
-                    )
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        services.request_opv_resubmission(
+            application=application_instance,
+            staff=request.user,
+            data=request.data
+        )
+        return Response(
+            {"msg": "Returned for resubmission successfully"},
+            status=status.HTTP_200_OK,
+        )

@@ -77,23 +77,32 @@ class UserWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get('request')
         user = request.user if request else None
+        is_create = self.instance is None
 
-        if not user or not user.is_authenticated or user.role not in ['Admin', 'Agri']:
-            attrs['role'] = 'Farmer'
-        else:
-            role = attrs.get('role')
-            if role:
-                if user.role == 'Agri' and role not in ['Farmer', 'Barangay']:
-                    raise serializers.ValidationError({"role": "Agri can only register Farmers and Barangay Officials."})
-            else:
+        if is_create:
+            if not user or not user.is_authenticated or user.role not in ['Admin', 'Agri']:
                 attrs['role'] = 'Farmer'
+            else:
+                role = attrs.get('role')
+                if role:
+                    if user.role == 'Agri' and role not in ['Farmer', 'Barangay']:
+                        raise serializers.ValidationError({"role": "Agri can only register Farmers and Barangay Officials."})
+                else:
+                    attrs['role'] = 'Farmer'
 
-        # KYC state is owned by the verify flow, never by the client.
-        if attrs.get('role') != 'Farmer':
-            attrs['verification_status'] = models.User.VerificationStatus.VERIFIED
+            # KYC state is owned by the verify flow, never by the client.
+            attrs['verification_status'] = (
+                models.User.VerificationStatus.VERIFIED
+                if attrs.get('role') != 'Farmer'
+                else models.User.VerificationStatus.UNVERIFIED
+            )
+            attrs['is_active'] = True
         else:
-            attrs['verification_status'] = models.User.VerificationStatus.UNVERIFIED
-        attrs['is_active'] = True
+            # A profile save must never mutate privilege or KYC state.
+            if not (user and user.is_authenticated and user.role in ['Admin', 'Agri'] and attrs.get('role')):
+                attrs.pop('role', None)
+            attrs.pop('verification_status', None)
+            attrs.pop('is_active', None)
 
         return attrs
 

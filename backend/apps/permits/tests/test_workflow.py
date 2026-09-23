@@ -178,6 +178,40 @@ class TestPermitWorkflow:
         assert application.status == PermitApplication.Status.PAYMENT_PENDING
         assert IssuedPermit.objects.filter(application=application).exists()
 
+    def test_hog_survey_deduction_failure_blocks_release(self, farmer_user, agri_user):
+        from unittest import mock
+        from django.utils import timezone
+        import uuid
+        import pytest as _pytest
+        from apps.payment import services as payment_services
+
+        application = PermitApplication.objects.create(
+            farmer=farmer_user,
+            status=PermitApplication.Status.PAYMENT_PENDING,
+            destination='Lucena',
+            transport_date=timezone.now().date(),
+            purpose='Slaughter',
+        )
+        issued_permit = IssuedPermit.objects.create(
+            permit_number=uuid.uuid4().hex[:13].upper(),
+            application=application,
+            issued_by=agri_user,
+            qr_token=str(uuid.uuid4()),
+            permit_fee=150.00,
+        )
+
+        with mock.patch(
+            "apps.permits.services.permit.deduct_hog_survey_for_application",
+            side_effect=RuntimeError("survey crash"),
+        ):
+            with _pytest.raises(RuntimeError):
+                payment_services.confirm_offline_payment(application.pk, agri_user, "OR-HS1")
+
+        application.refresh_from_db()
+        assert application.status != PermitApplication.Status.RELEASED
+        issued_permit.refresh_from_db()
+        assert issued_permit.is_paid is False
+
     def test_hog_survey_deduction_and_restoration(self, farmer_user, barangay):
         from apps.maps.models import HogSurvey
         from apps.permits.models import TransportOrigin

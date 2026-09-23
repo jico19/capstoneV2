@@ -4,6 +4,23 @@ export const api = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
 });
 
+let refreshPromise = null;
+
+async function refreshAccessToken() {
+    const authStorage = sessionStorage.getItem('auth-context');
+    if (!authStorage) throw new Error('no auth context');
+    const parsed = JSON.parse(authStorage);
+    const refreshToken = parsed?.state?.refresh;
+    if (!refreshToken) throw new Error('no refresh token');
+    const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/token/refresh/`, { refresh: refreshToken });
+    parsed.state.access = res.data.access;
+    if (res.data.refresh) parsed.state.refresh = res.data.refresh;
+    sessionStorage.setItem('auth-context', JSON.stringify(parsed));
+    const { default: useAuthStore } = await import('../store/authStore');
+    useAuthStore.setState({ access: res.data.access, refresh: res.data.refresh || parsed.state.refresh });
+    return res.data.access;
+}
+
 // Request Interceptor: Attach the access token from sessionStorage
 api.interceptors.request.use(
     (config) => {
@@ -33,32 +50,17 @@ api.interceptors.response.use(
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
+            if (!refreshPromise) {
+                refreshPromise = refreshAccessToken().finally(() => { refreshPromise = null; });
+            }
             try {
-                const authStorage = sessionStorage.getItem('auth-context');
-                if (authStorage) {
-                    const parsed = JSON.parse(authStorage);
-                    const refreshToken = parsed?.state?.refresh;
-                    if (refreshToken) {
-                        // Request a new access token
-                        const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/token/refresh/`, {
-                            refresh: refreshToken,
-                        });
-                        const newAccess = res.data.access;
-
-                        // Save the new access token back to sessionStorage
-                        parsed.state.access = newAccess;
-                        sessionStorage.setItem('auth-context', JSON.stringify(parsed));
-
-                        // Retry the original request
-                        originalRequest.headers.Authorization = `Bearer ${newAccess}`;
-                        return api(originalRequest);
-                    }
-                }
+                const newAccess = await refreshPromise;
+                originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+                return api(originalRequest);
             } catch (refreshError) {
                 console.error("Token refresh failed, logging out", refreshError);
-                // Clear storage and redirect to login if refresh fails
                 sessionStorage.clear();
-                window.location.href = '/login';
+                if (!window.__fp_refresh_redirected) { window.__fp_refresh_redirected = true; window.location.href = '/login'; }
             }
         }
 

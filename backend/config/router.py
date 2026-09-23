@@ -4,6 +4,7 @@ from apps.maps import viewsets as MapsViewSets
 from apps.api import viewsets as UserViewSet
 from apps.payment import viewsets as PaymentViewSets
 from apps.inspector import viewsets as InspectorViewSets
+from apps.documents import views as DocumentViews
 
 router = DefaultRouter()
 
@@ -31,3 +32,6 @@ router.register(r'payment', PaymentViewSets.PaymentViewSet, basename='payment')
 
 # Inspector
 router.register(r'inspector', InspectorViewSets.InspectorLogViewSet)
+
+# Documents
+router.register(r'cis-template', DocumentViews.CISTemplateViewSet, basename='cis-template')

@@ -120,6 +120,11 @@ def extract_handlers_license(text):
     if not reg_no:
         reg_no = find(r'Registration\s*Number\s*[:\n]\s*([^\n]+)')
 
+    # block_dates handles both stacked (dates above labels) and inline layouts
+    block_dates = _extract_block_dates(text)
+    issue_date = block_dates.get('date_of_issuance') or find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF ISSUANCE', re.IGNORECASE | re.MULTILINE)
+    expiry_date = block_dates.get('date_of_expiration') or find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF EXPIRATION', re.IGNORECASE | re.MULTILINE)
+
     return {
         'registration_number': reg_no,
         'license_number': reg_no,
@@ -127,8 +132,8 @@ def extract_handlers_license(text):
         'business_name': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*BUSINESS NAME', re.IGNORECASE | re.MULTILINE),
         'address': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*ADDRESS', re.IGNORECASE | re.MULTILINE),
         'area_of_coverage': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*AREA OF COVERAGE', re.IGNORECASE | re.MULTILINE),
-        'date_of_issuance': find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF ISSUANCE', re.IGNORECASE | re.MULTILINE),
-        'date_of_expiration': find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF EXPIRATION', re.IGNORECASE | re.MULTILINE),
+        'date_of_issuance': issue_date,
+        'date_of_expiration': expiry_date,
     }
 
 def extract_transport_carrier(text):
@@ -142,6 +147,10 @@ def extract_transport_carrier(text):
     if not lic_no:
         lic_no = find(r'License\s*Number\s*[:\n]\s*([^\n]+)')
 
+    block_dates = _extract_block_dates(text)
+    issue_date = block_dates.get('date_of_issuance') or find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF ISSUANCE', re.IGNORECASE | re.MULTILINE)
+    expiry_date = block_dates.get('date_of_expiration') or find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF EXPIRATION', re.IGNORECASE | re.MULTILINE)
+
     return {
         'license_number': lic_no,
         'name_of_applicant': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*NAME OF APPLICANT', re.IGNORECASE | re.MULTILINE),
@@ -152,8 +161,8 @@ def extract_transport_carrier(text):
         'temporary_conduction_sticker': find(r'(N/A|[\w\d]+)\s*\n\s*TEMPORARY', re.IGNORECASE | re.MULTILINE),
         'maker_brand': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*MAKER\s*/\s*BRAND', re.IGNORECASE | re.MULTILINE),
         'body_type': find(r'^(?:.*?\n)?([^\n]+)\s*\n\s*BODY TYPE', re.IGNORECASE | re.MULTILINE),
-        'date_of_issuance': find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF ISSUANCE', re.IGNORECASE | re.MULTILINE),
-        'date_of_expiration': find(r'(\w+\s+\d{1,2},?\s*\d{4})\s*\n\s*DATE OF EXPIRATION', re.IGNORECASE | re.MULTILINE),
+        'date_of_issuance': issue_date,
+        'date_of_expiration': expiry_date,
     }
 
 
@@ -165,45 +174,26 @@ def extract_traders_pass(text):
         return match.group(1).strip() if match else None
 
     # TrPASS Code regex: e.g. TrPASS-OPV-QZN-00014-V1 or TrPASS-OPV-QZN-00014
-    pass_code = find(r'(TrPASS-OPV-[A-Z]+-[\w\-]+)')
+    block = _extract_two_column_doc(text)
+
+    pass_code = block.get('pass_code') or find(r'(TrPASS-OPV-[A-Z]+-[\w\-]+)')
     if not pass_code:
         pass_code = find(r'T[ri]PASS\s*Code\s*[:\n]\s*([^\n]+)')
 
-    # In OCR.space, lines often appear as:
-    # TrPASS-OPV-QZN-00014-V1
-    # Darrel A?onuevo
-    # Darrel Affonueva Trucking Services
-    # Poblacion, San Antonio, Quezon
-    # Or labels with colons
-    hauler = find(r'Name of Hauler\s*:\s*([^\n]+)')
-    biz_name = find(r'Name of Business\s*:\s*([^\n]+)')
-    address = find(r'Business Address\s*:\s*([^\n]+)')
-    plate_no = find(r'Plate Number\s*:\s*([^\n]+)')
-    vehicle_type = find(r'Type of Vehicle\s*:\s*([^\n]+)')
+    # OCR.space often stacks labels in one column and values in another:
+    #   TiPASS Code :
+    #   Name of Hauler:
+    #   ...
+    #   TrPASS-OPV-QZN-00014-V1
+    #   Darrel Aonuevo
+    #   ...
+    hauler = block.get('hauler') or find(r'Name of Hauler\s*:\s*([^\n]+)')
+    biz_name = block.get('biz') or find(r'Name of Business\s*:\s*([^\n]+)')
+    address = block.get('address') or find(r'Business Address\s*:\s*([^\n]+)')
+    plate_no = block.get('plate') or find(r'Plate Number\s*:\s*([^\n]+)')
+    vehicle_type = block.get('vehicle') or find(r'Type of Vehicle\s*:\s*([^\n]+)')
+
     issue_date = find(r'Issue Date\s*:\s*(\d{1,2}/\d{1,2}/\d{4}|\w+\s+\d{1,2},?\s*\d{4})')
-
-    # If key-value colons were on lines below:
-    if not hauler:
-        # Check if values are clustered under the block
-        m = re.search(
-            r'(TrPASS-OPV-[^\n]+)\n([^\n]+)\n([^\n]+)\n([^\n]+)',
-            text
-        )
-        if m:
-            if not pass_code:
-                pass_code = m.group(1).strip()
-            hauler = m.group(2).strip()
-            biz_name = m.group(3).strip()
-            address = m.group(4).strip()
-
-    if not plate_no:
-        m_plate = re.search(r'\n([A-Z]{2,4}\s?\d{3,4})\nSilver|Gray|White|Black|Red|Blue|JITNEY', text, re.IGNORECASE)
-        if m_plate:
-            plate_no = m_plate.group(1).strip()
-        else:
-            m_gen = re.search(r'\b([A-Z]{3}\s*\d{3,4})\b', text)
-            if m_gen:
-                plate_no = m_gen.group(1).strip()
 
     # Calculate default 1-year expiration from issue date if found
     expiration_date_str = None
@@ -239,6 +229,92 @@ def parse_date(date_str):
         except (ValueError, AttributeError):
             continue
     return None
+
+
+_MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December'
+_DATE_PATTERN = re.compile(r'\b((?:{months})\s+\d{{1,2}},?\s*\d{{4}})\b'.format(months=_MONTHS), re.IGNORECASE)
+
+
+def _extract_block_dates(text):
+    """Handle stacked date blocks: dates on separate lines, labels below.
+
+    OCR.space reads table docs as a label column then a value column, e.g.:
+        October 28, 2025
+        October 28, 2026
+        DATE OF ISSUANCE
+        DATE OF EXPIRATION
+    """
+    label_hits = [
+        (m.start(), m.group(1).upper())
+        for m in re.finditer(r'DATE OF (ISSUANCE|EXPIRATION)', text, re.IGNORECASE)
+    ]
+    if not label_hits:
+        return {}
+    first_label_pos = label_hits[0][0]
+    dates = re.findall(_DATE_PATTERN, text[:first_label_pos])
+    out = {}
+    for (_, label), date_str in zip(label_hits, dates):
+        key = 'date_of_issuance' if label == 'ISSUANCE' else 'date_of_expiration'
+        out[key] = date_str.strip()
+    return out
+
+
+def _extract_two_column_doc(text):
+    """Parse docs whose OCR text stacks a label column then a value column.
+
+    Matches table-style documents (e.g. Trader's Pass) where OCR.space emits
+    all labels first, then all values:
+        TiPASS Code :
+        Name of Hauler:
+        Name of Business:
+        Business Address :
+        TrPASS-OPV-QZN-00014-V1
+        Darrel Aonuevo
+        ...
+    """
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+
+    first_group = ('TIPASS CODE', 'NAME OF HAULER', 'NAME OF BUSINESS', 'BUSINESS ADDRESS')
+    second_group = ('TYPE OF VEHICLE', 'PLATE NUMBER', 'COLOR', 'ORIGIN', 'DESTINATION')
+
+    def label_of(line):
+        upper = line.upper()
+        for group in (first_group, second_group):
+            for lbl in group:
+                if upper.startswith(lbl):
+                    return lbl
+        return None
+
+    g1_ix, g2_ix = [], []
+    for i, ln in enumerate(lines):
+        lbl = label_of(ln)
+        if lbl in first_group:
+            g1_ix.append(i)
+        elif lbl in second_group:
+            g2_ix.append(i)
+
+    def values_between(start, end):
+        out = []
+        for ln in lines[start:end]:
+            upper = ln.upper()
+            if re.match(r'TRPASS-OPV-', upper):
+                continue
+            if upper.startswith(('**', 'VALID ONLY', 'GF FINANCE', 'PGQ-', 'REV.', 'ISSUE DATE')):
+                continue
+            out.append(ln)
+        return out
+
+    vals1 = values_between(max(g1_ix) + 1, min(g2_ix) if g2_ix else len(lines)) if g1_ix else []
+    vals2 = values_between(max(g2_ix) + 1, len(lines)) if g2_ix else []
+
+    result = {}
+    for idx, key in ((0, 'hauler'), (1, 'biz'), (2, 'address')):
+        if idx < len(vals1):
+            result[key] = vals1[idx]
+    for idx, key in ((0, 'vehicle'), (1, 'plate'), (2, 'color'), (3, 'origin'), (4, 'destination')):
+        if idx < len(vals2):
+            result[key] = vals2[idx]
+    return result
 
 
 def validate_handlers_license(extracted):
@@ -301,6 +377,141 @@ def validate_traders_pass(extracted):
         expiry = parse_date(expiry_str)
         if expiry and expiry < today:
             errors['date_of_expiration'] = f'Trader\'s pass expired as of {expiry.strftime("%B %d, %Y")}.'
+
+    return errors
+
+
+_UNIT_WORDS = {
+    'ONE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5, 'SIX': 6,
+    'SEVEN': 7, 'EIGHT': 8, 'NINE': 9, 'TEN': 10, 'ELEVEN': 11,
+    'TWELVE': 12, 'THIRTEEN': 13, 'FOURTEEN': 14, 'FIFTEEN': 15,
+    'SIXTEEN': 16, 'SEVENTEEN': 17, 'EIGHTEEN': 18, 'NINETEEN': 19,
+}
+_TENS_WORDS = {
+    'TWENTY': 20, 'THIRTY': 30, 'FORTY': 40, 'FIFTY': 50,
+    'SIXTY': 60, 'SEVENTY': 70, 'EIGHTY': 80, 'NINETY': 90,
+}
+
+
+def _words_to_int(words):
+    """Parse an English number like 'TEN' or 'ONE HUNDRED TWENTY-THREE'.
+
+    Returns the integer or None when the phrase is not a number.
+    """
+    if not words:
+        return None
+    total = 0
+    current = 0
+    for token in re.split(r'[\s\-]+', words.strip().upper()):
+        if not token:
+            continue
+        if token in _UNIT_WORDS:
+            current += _UNIT_WORDS[token]
+        elif token in _TENS_WORDS:
+            current += _TENS_WORDS[token]
+        elif token == 'HUNDRED':
+            current *= 100
+        elif token == 'THOUSAND':
+            total += (current if current else 1) * 1000
+            current = 0
+        else:
+            return None
+    return total + current
+
+
+def extract_cis(text):
+    """Extract filled fields from the standardized barangay CIS document.
+
+    The certificate carries a fixed boilerplate sentence; only the pig count,
+    origin, shipment date, destination, and shipper details vary.
+    """
+    text = re.sub(r'\r\n|\r', '\n', text)
+
+    def find(pattern, flags=re.IGNORECASE | re.MULTILINE):
+        match = re.search(pattern, text, flags)
+        return match.group(1).strip() if match else None
+
+    # 'TEN (10) of swine'
+    count_match = re.search(r'certify that\s+([\w\s\-]+)\(\s*(\d+)\s*\)\s+of swine', text, re.IGNORECASE)
+    if count_match:
+        number_of_animals_text = count_match.group(1).strip().upper()
+        number_of_animals = int(count_match.group(2))
+    else:
+        # Word-only form, e.g. 'certify that TEN of swine'
+        number_of_animals_text = find(r'certify that\s+([A-Z\s\-]+?)\s+of swine')
+        number_of_animals_text = (number_of_animals_text or '').upper()
+        number_of_animals = _words_to_int(number_of_animals_text)
+
+    from_date_match = re.search(
+        r'from\s+(.+?)\s+shipped on\s+(.+?)(?:\n|$)', text, re.IGNORECASE | re.MULTILINE
+    )
+    if from_date_match:
+        origin = from_date_match.group(1).strip()
+        shipment_date_raw = from_date_match.group(2).strip()
+    else:
+        origin = find(r'from\s+([^\n]+)')
+        shipment_date_raw = find(r'shipped on\s+([^\n]+)')
+
+    shipment_date = None
+    if shipment_date_raw:
+        parsed_date = parse_date(shipment_date_raw.strip())
+        if parsed_date:
+            shipment_date = parsed_date.strftime('%Y-%m-%d')
+
+    destination = find(r'to\s+(.+?)\s+are for immediate slaughter')
+
+    proprietor_name = find(r'([^\n]+)\s*\n\s*PROPRIETOR\s*/\s*SHIPPER')
+    business_name = find(r'PROPRIETOR\s*/\s*SHIPPER\s*\n\s*([^\n]+)')
+
+    return {
+        'number_of_animals': number_of_animals,
+        'number_of_animals_text': number_of_animals_text,
+        'origin': origin,
+        'shipment_date': shipment_date,
+        'destination': destination,
+        'proprietor_name': proprietor_name,
+        'business_name': business_name,
+    }
+
+
+def validate_cis(extracted, application_origin):
+    """Cross-check extracted CIS fields against a TransportOrigin.
+
+    Returns an empty dict when everything matches, otherwise a dict of
+    field -> error message.
+    """
+    errors = {}
+
+    count = extracted.get('number_of_animals')
+    if count is None:
+        errors['number_of_animals'] = 'Pig count could not be extracted.'
+    elif count != application_origin.number_of_pigs:
+        errors['number_of_animals'] = (
+            f'CIS pig count ({count}) does not match the declared '
+            f'{application_origin.number_of_pigs} pigs for this origin.'
+        )
+
+    shipment_date = extracted.get('shipment_date')
+    transport_date = application_origin.application.transport_date
+    if not shipment_date:
+        errors['shipment_date'] = 'Shipment date could not be extracted.'
+    else:
+        try:
+            shipped = datetime.strptime(shipment_date, '%Y-%m-%d').date()
+        except ValueError:
+            errors['shipment_date'] = f'Could not parse shipment date: {shipment_date}.'
+        else:
+            if abs((shipped - transport_date).days) > 3:
+                errors['shipment_date'] = (
+                    f'Shipment date ({shipment_date}) is more than 3 days from '
+                    f'the transport date ({transport_date}).'
+                )
+
+    if not extracted.get('destination'):
+        errors['destination'] = 'Destination could not be extracted.'
+
+    if not extracted.get('proprietor_name'):
+        errors['proprietor_name'] = 'Proprietor/shipper name could not be extracted.'
 
     return errors
 

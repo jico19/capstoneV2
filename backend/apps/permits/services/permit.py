@@ -334,15 +334,11 @@ def deduct_hog_survey_for_application(application):
                 continue
 
             # Decrement counts safely without going below 0
-            target_survey.inahin = max(0, target_survey.inahin - origin.inahin)
-            target_survey.barako = max(0, target_survey.barako - origin.barako)
-            target_survey.fattener = max(0, target_survey.fattener - origin.fattener)
-            target_survey.grower = max(0, target_survey.grower - origin.grower)
-            target_survey.bulaw = max(0, target_survey.bulaw - origin.bulaw)
-            target_survey.starter = max(0, target_survey.starter - origin.starter)
-            target_survey.total_pigs = (
-                target_survey.inahin + target_survey.barako + target_survey.fattener +
-                target_survey.grower + target_survey.bulaw + target_survey.starter
+            for field in models.TransportOrigin.PIG_FIELDS:
+                origin_value = getattr(origin, field)
+                setattr(target_survey, field, max(0, getattr(target_survey, field) - origin_value))
+            target_survey.total_pigs = sum(
+                getattr(target_survey, field) for field in models.TransportOrigin.PIG_FIELDS
             )
             target_survey.save()
             logger.info(

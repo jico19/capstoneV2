@@ -93,15 +93,10 @@ class HogSurveyService:
                 farmer_name = str(get_field(row, 'farmer_name', 'farmer', 'owner_name', 'owner', 'Farmer Name', 'Farmer / Owner Name')).strip()
                 contact_number = str(get_field(row, 'contact_number', 'contact_no', 'phone_no', 'cellphone_number', 'contact', 'Cellphone Number', 'Contact Number')).strip()
 
-                inahin = safe_int(row.get('inahin'))
-                barako = safe_int(row.get('barako'))
-                fattener = safe_int(row.get('fattener'))
-                grower = safe_int(row.get('grower'))
-                starter = safe_int(row.get('starter'))
-                bulaw = safe_int(row.get('bulaw'))
+                values = {f: safe_int(row.get(f)) for f in HogSurvey.PIG_FIELDS}
 
                 total_pigs = safe_int(row.get('total_pigs'))
-                calculated_total = inahin + barako + fattener + grower + starter + bulaw
+                calculated_total = sum(values.values())
                 if total_pigs == 0 or total_pigs != calculated_total:
                     total_pigs = calculated_total
 
@@ -110,12 +105,7 @@ class HogSurveyService:
                     'farmer_name': farmer_name,
                     'contact_number': contact_number,
                     'survey_date': survey_date,
-                    'inahin': inahin,
-                    'barako': barako,
-                    'fattener': fattener,
-                    'grower': grower,
-                    'starter': starter,
-                    'bulaw': bulaw,
+                    **values,
                     'total_pigs': total_pigs,
                 })
                 dates_in_csv.add(survey_date)

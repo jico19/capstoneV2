@@ -7,9 +7,16 @@ from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from . import models, serializers, services
 from apps.permits import models as Permits
-from apps.permits.services.numbers import get_aic_number
 
 from apps.api.base import BaseModelViewSet
+
+
+def _can_manage_payment(user, application):
+    """Only the owning Farmer, or Agri/Admin staff, may manage payment sessions."""
+    if user.role == 'Farmer':
+        return application.farmer_id == user.id
+    return user.role in ('Agri', 'Admin')
+
 
 class PaymentViewSet(BaseModelViewSet):
     queryset = models.PaymentHistory.objects.all()
@@ -153,7 +160,7 @@ class PaymentViewSet(BaseModelViewSet):
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
 
         # Ownership check
-        if request.user.role == 'Farmer' and application.farmer != request.user:
+        if not _can_manage_payment(request.user, application):
             return Response({"error": "Unauthorized access to this application"}, status=status.HTTP_403_FORBIDDEN)
 
         if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
@@ -178,7 +185,7 @@ class PaymentViewSet(BaseModelViewSet):
         application = get_object_or_404(Permits.PermitApplication, pk=pk)
 
         # Ownership check
-        if request.user.role == 'Farmer' and application.farmer != request.user:
+        if not _can_manage_payment(request.user, application):
             return Response({"error": "Unauthorized access to this application"}, status=status.HTTP_403_FORBIDDEN)
 
         if application.status != Permits.PermitApplication.Status.PAYMENT_PENDING:
@@ -325,18 +332,10 @@ class PaymentViewSet(BaseModelViewSet):
             issued_permit.payment_method = 'ONLINE'
             issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
 
-            # Use the shared atomic helper (no more duplicate inline logic)
-            if not issued_permit.aic_number:
-                issued_permit.aic_number = get_aic_number(issued_permit)
-
+            services.ensure_aic_number(issued_permit)
             issued_permit.save()
 
-            from apps.permits.services import handle_application_status_change
-            handle_application_status_change(application, Permits.PermitApplication.Status.RELEASED)
-
-            from apps.documents.services import generate_permit_pdf, generate_aic_pdf
-            generate_permit_pdf.enqueue(permit_application_id=application.pk)
-            generate_aic_pdf.enqueue(permit_application_id=application.pk)
+            services._release_permit_and_queue_pdfs(application)
 
         return Response({"msg": "Payment simulated successfully", "verified": True}, status=status.HTTP_200_OK)
 

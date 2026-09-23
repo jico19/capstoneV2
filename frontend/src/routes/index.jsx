@@ -56,7 +56,8 @@ const AgriSystemSettings = lazy(() => import("../pages/agri/SystemSettings/AgriS
 // barangay
 const BarangayDashboard = lazy(() => import("../pages/barangay/Dashboard/BarangayDashboard"));
 const HogSurveyPage = lazy(() => import("../pages/barangay/HogSurvey/HogSurveyPage"));
-const BarangayAuditPage = lazy(() => import("../pages/barangay/Audit/BarangayAuditPage"));
+
+const CISGeneratorPage = lazy(() => import("../pages/barangay/CIS/CISGeneratorPage"));
 
 // Opv
 const OpvDashboard = lazy(() => import("../pages/opv/Dashboard/OpvDashboard"));
@@ -136,7 +137,8 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: withSuspense(BarangayDashboard) },
             { path: 'hog-surveys/', element: withSuspense(HogSurveyPage) },
-            { path: 'audit-logs/', element: withSuspense(BarangayAuditPage) },
+            { path: 'cis-generator/', element: withSuspense(CISGeneratorPage) },
+            { path: 'audit-logs/', element: withSuspense(AuditTrailPage) },
             { path: 'settings/', element: withSuspense(SettingsPage) },
         ]
     },

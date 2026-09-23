@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -11,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from .base import BaseModelViewSet
+
+logger = logging.getLogger(__name__)
 
 
 def safe_parse_date(val):

@@ -21,6 +21,77 @@ BORDER_COLOR = colors.HexColor("#d6d3d1")  # Stone-300
 ACCENT_BG = colors.HexColor("#fafaf9")  # Stone-50
 
 
+def format_date_range(start_date, end_date, fmt="%B %d, %Y", sep=" — "):
+    """Render a date-range label, collapsing to a single date when both ends match."""
+    if start_date == end_date:
+        return start_date.strftime(fmt)
+    return f"{start_date.strftime(fmt)}{sep}{end_date.strftime(fmt)}"
+
+
+class NumberedCanvas(canvas.Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+        self.report_title = "Report"
+        self.date_range_str = ""
+        self.footer_text = ""
+        self.primary_color = GREEN
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_elements(num_pages)
+            super().showPage()
+        super().save()
+
+    def draw_page_elements(self, page_count):
+        self.saveState()
+        width, height = self._pagesize
+
+        if self._pageNumber > 1:
+            self.setFont("Helvetica-Bold", 8)
+            self.setFillColor(TEXT_MAIN)
+            self.drawString(1 * cm, height - 1.5 * cm, f"SARIAYA MUNICIPAL AGRICULTURE OFFICE • {self.report_title.upper()}")
+
+            self.setFont("Helvetica", 8)
+            self.setFillColor(TEXT_MUTED)
+            self.drawRightString(width - 1 * cm, height - 1.5 * cm, f"Period: {self.date_range_str}")
+
+            self.setStrokeColor(self.primary_color)
+            self.setLineWidth(0.5)
+            self.line(1 * cm, height - 1.8 * cm, width - 1 * cm, height - 1.8 * cm)
+
+        self.setStrokeColor(BORDER_COLOR)
+        self.setLineWidth(0.5)
+        self.line(1 * cm, 1.8 * cm, width - 1 * cm, 1.8 * cm)
+
+        self.setFont("Helvetica-Oblique", 8)
+        self.setFillColor(TEXT_MUTED)
+        self.drawString(1 * cm, 1.2 * cm, self.footer_text)
+
+        self.setFont("Helvetica", 8)
+        self.setFillColor(TEXT_MUTED)
+        self.drawRightString(width - 1 * cm, 1.2 * cm, f"Page {self._pageNumber} of {page_count}")
+
+        self.restoreState()
+
+
+def make_numbered_canvas(report_title, date_range_str, footer_text, primary_color):
+    class CustomNumberedCanvas(NumberedCanvas):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.report_title = report_title
+            self.date_range_str = date_range_str
+            self.footer_text = footer_text
+            self.primary_color = primary_color
+    return CustomNumberedCanvas
+
+
 class OfficialMemorandumPDF:
     """Low-level canvas LGU report: shared letterhead header, title band,
     three-column signatory block, and footer. Builders call draw_header(),

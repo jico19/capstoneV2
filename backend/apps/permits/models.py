@@ -73,6 +73,8 @@ class TransportOrigin(models.Model):
     source_phone_no = models.CharField(max_length=20, blank=True, default="")
     number_of_pigs = models.PositiveIntegerField(default=0)
 
+    PIG_FIELDS = ("inahin", "barako", "fattener", "grower", "bulaw", "starter")
+
     inahin = models.PositiveIntegerField(default=0)
     barako = models.PositiveIntegerField(default=0)
     fattener = models.PositiveIntegerField(default=0)
@@ -85,9 +87,7 @@ class TransportOrigin(models.Model):
         return f"{self.barangay.name} ({self.number_of_pigs} pigs){source_info}"
 
     def save(self, *args, **kwargs):
-        total = (
-            self.inahin + self.barako + self.fattener + self.grower + self.bulaw + self.starter
-        )
+        total = sum(getattr(self, field) for field in self.PIG_FIELDS)
         # If types are not specified but number_of_pigs is, default to fattener for backward compatibility/tests
         if total == 0 and self.number_of_pigs > 0:
             self.fattener = self.number_of_pigs

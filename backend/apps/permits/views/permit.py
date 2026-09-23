@@ -54,31 +54,15 @@ class IssuedPermitViewSet(BaseModelViewSet):
 
         permit_fee = request.data.get("permit_fee", 150.00)
 
-        try:
-            issued_permit = services.issue_permit(
-                application=application_instance,
-                user=request.user,
-                permit_fee=permit_fee
-            )
-            return Response(
-                {"msg": "Permit issued successfully!", "id": issued_permit.id},
-                status=status.HTTP_201_CREATED,
-            )
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {"error": e.detail[0] if isinstance(e.detail, list) else e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        issued_permit = services.issue_permit(
+            application=application_instance,
+            user=request.user,
+            permit_fee=permit_fee
+        )
+        return Response(
+            {"msg": "Permit issued successfully!", "id": issued_permit.id},
+            status=status.HTTP_201_CREATED,
+        )
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -95,43 +79,6 @@ class IssuedPermitViewSet(BaseModelViewSet):
                 application=application_instance,
                 user=request.user
             )
-
-            return Response(
-                {
-                    "veterinary_health_certificate": (
-                        request.build_absolute_uri(
-                            opv_docs_instance.veterinary_health_certificate.url
-                        )
-                        if opv_docs_instance.veterinary_health_certificate
-                        else None
-                    ),
-                    "transportation_pass": (
-                        request.build_absolute_uri(
-                            opv_docs_instance.transportation_pass.url
-                        )
-                        if opv_docs_instance.transportation_pass
-                        else None
-                    ),
-                    "issued_permit_pdf": request.build_absolute_uri(
-                        issued_permit_instance.permit_pdf.url
-                    ),
-                    "animal_inspection_certificate": (
-                        request.build_absolute_uri(
-                            issued_permit_instance.aic_pdf.url
-                            if issued_permit_instance.aic_pdf
-                            else application_instance.aic_pdf.url
-                        )
-                        if (issued_permit_instance.aic_pdf or application_instance.aic_pdf)
-                        else None
-                    ),
-                },
-                status=status.HTTP_200_OK,
-            )
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         except ValidationError as e:
             code = getattr(e, "code", None)
             if code == "not_found":
@@ -144,15 +91,39 @@ class IssuedPermitViewSet(BaseModelViewSet):
                     {"error": e.detail[0] if isinstance(e.detail, list) else e.detail},
                     status=status.HTTP_202_ACCEPTED,
                 )
-            return Response(
-                {"error": e.detail[0] if isinstance(e.detail, list) else e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise
+
+        return Response(
+            {
+                "veterinary_health_certificate": (
+                    request.build_absolute_uri(
+                        opv_docs_instance.veterinary_health_certificate.url
+                    )
+                    if opv_docs_instance.veterinary_health_certificate
+                    else None
+                ),
+                "transportation_pass": (
+                    request.build_absolute_uri(
+                        opv_docs_instance.transportation_pass.url
+                    )
+                    if opv_docs_instance.transportation_pass
+                    else None
+                ),
+                "issued_permit_pdf": request.build_absolute_uri(
+                    issued_permit_instance.permit_pdf.url
+                ),
+                "animal_inspection_certificate": (
+                    request.build_absolute_uri(
+                        issued_permit_instance.aic_pdf.url
+                        if issued_permit_instance.aic_pdf
+                        else application_instance.aic_pdf.url
+                    )
+                    if (issued_permit_instance.aic_pdf or application_instance.aic_pdf)
+                    else None
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class MunicipalConfigViewSet(viewsets.ViewSet):

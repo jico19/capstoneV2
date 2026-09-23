@@ -103,6 +103,7 @@ const Sidebar = ({ children }) => {
                     <MenuSection title="Barangay Official">
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" to='/barangay' />
                         <SidebarItem icon={FileText} label="Hog Surveys" to='/barangay/hog-surveys/' />
+                        <SidebarItem icon={FileText} label="CIS Generator" to='/barangay/cis-generator/' />
                         <SidebarItem icon={History} label="Audit Logs" to='/barangay/audit-logs/' />
                         <SidebarItem icon={Settings} label="Settings" to='/barangay/settings/' />
                     </MenuSection>

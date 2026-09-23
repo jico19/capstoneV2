@@ -51,9 +51,8 @@ const useAuthStore = create(
                 try {
                     const access = useAuthStore.getState().access;
                     if (!access) return null;
-                    const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/user/me/`, {
-                        headers: { Authorization: `Bearer ${access}` }
-                    });
+                    const { api } = await import('../lib/api');
+                    const res = await api.get('/user/me/');
                     if (res.data) {
                         set((state) => ({
                             user: {

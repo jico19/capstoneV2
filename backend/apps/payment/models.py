@@ -18,6 +18,7 @@ class PaymentHistory(models.Model):
         OFFLINE = 'gcash', 'Gcash'
         CARD = 'card', 'Card'
         QRPH = 'qrph', 'Sari-Sari Store (QR Ph)'
+        ONLINE = 'ONLINE', 'Online'
 
     class Status(models.TextChoices):
         PENDING     = 'PENDING',    'Pending'

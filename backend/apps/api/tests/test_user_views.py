@@ -321,3 +321,61 @@ class KYCLifecycleLockdownTests(APITestCase):
         user = User.objects.get(username="brgy_captain")
         self.assertEqual(user.role, "Barangay")
         self.assertEqual(user.verification_status, User.VerificationStatus.VERIFIED)
+
+
+class ProfilePatchPreservesPrivilegeTests(APITestCase):
+    """A profile save must never overwrite role / KYC state."""
+
+    def test_barangay_profile_patch_preserves_role(self):
+        user = User.objects.create_user(
+            username="brgy_prof",
+            password="password123",
+            role="Barangay",
+            phone_no="09191234004",
+            verification_status=User.VerificationStatus.VERIFIED,
+        )
+        self.client.force_authenticate(user=user)
+        url = reverse("user-detail", kwargs={"pk": user.pk})
+
+        response = self.client.patch(url, {"first_name": "New"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user.refresh_from_db()
+        self.assertEqual(user.role, "Barangay")
+        self.assertEqual(user.verification_status, User.VerificationStatus.VERIFIED)
+
+    def test_verified_farmer_profile_patch_preserves_kyc(self):
+        user = User.objects.create_user(
+            username="farmer_prof",
+            password="password123",
+            role="Farmer",
+            phone_no="09191234005",
+            verification_status=User.VerificationStatus.VERIFIED,
+        )
+        self.client.force_authenticate(user=user)
+        url = reverse("user-detail", kwargs={"pk": user.pk})
+
+        response = self.client.patch(url, {"phone_no": "09191234006"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user.refresh_from_db()
+        self.assertEqual(user.role, "Farmer")
+        self.assertEqual(user.verification_status, User.VerificationStatus.VERIFIED)
+
+    def test_public_registration_still_forces_farmer(self):
+        url = reverse("user-list")
+        payload = {
+            "username": "pretend_barangay",
+            "password": "password123",
+            "phone_no": "09191234007",
+            "first_name": "Pretend",
+            "last_name": "Barangay",
+            "role": "Barangay",
+        }
+
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        user = User.objects.get(username="pretend_barangay")
+        self.assertEqual(user.role, "Farmer")
+        self.assertEqual(user.verification_status, User.VerificationStatus.UNVERIFIED)

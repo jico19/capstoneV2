@@ -59,7 +59,7 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 "barangay": data.get(f"origins[{i}][barangay]"),
             }
             # Parse pig types and counts if present
-            for field in ["inahin", "barako", "fattener", "grower", "bulaw", "starter", "number_of_pigs", "source_farmer_name", "source_phone_no"]:
+            for field in [*models.TransportOrigin.PIG_FIELDS, "number_of_pigs", "source_farmer_name", "source_phone_no"]:
                 key = f"origins[{i}][{field}]"
                 if key in data:
                     origin[field] = data.get(key)
@@ -99,46 +99,34 @@ class PermitApplicationViewSet(BaseModelViewSet):
             "origins": self._parse_bracket_data(request.data),
         }
 
-        try:
-            with transaction.atomic():
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
 
-                if not request.FILES:
-                    return Response(
-                        {
-                            "error": "Validation failed",
-                            "detail": "At least one document is required.",
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                application = serializer.save(farmer=request.user)
-
-                # Link documents using the saved application and files
-                services.create_permit(
-                    files=request.FILES, application=application, user=request.user
+            if not request.FILES:
+                return Response(
+                    {
+                        "error": "Validation failed",
+                        "detail": "At least one document is required.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
-                services.handle_application_status_change(
-                    application, models.PermitApplication.Status.SUBMITTED
-                )
+            application = serializer.save(farmer=request.user)
 
-            return Response(
-                {"msg": "Application submitted successfully", "id": application.pk},
-                status=status.HTTP_201_CREATED,
+            # Link documents using the saved application and files
+            services.create_permit(
+                files=request.FILES, application=application, user=request.user
             )
 
-        except ValidationError as e:
-            return Response(
-                {"error": "Validation failed", "detail": e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
+            services.handle_application_status_change(
+                application, models.PermitApplication.Status.SUBMITTED
             )
-        except Exception as e:
-            return Response(
-                {"error": "Failed to create application", "detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+
+        return Response(
+            {"msg": "Application submitted successfully", "id": application.pk},
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
@@ -148,31 +136,15 @@ class PermitApplicationViewSet(BaseModelViewSet):
         application_instance = self.get_object()
         remarks = request.data.get("remarks", "").strip()
 
-        try:
-            services.approve_application(
-                application=application_instance,
-                user=request.user,
-                remarks=remarks
-            )
-            return Response(
-                {"msg": "Application approved and forwarded to OPV"},
-                status=status.HTTP_200_OK,
-            )
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {"error": "Validation failed", "detail": e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        services.approve_application(
+            application=application_instance,
+            user=request.user,
+            remarks=remarks
+        )
+        return Response(
+            {"msg": "Application approved and forwarded to OPV"},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
@@ -182,31 +154,15 @@ class PermitApplicationViewSet(BaseModelViewSet):
         application_instance = self.get_object()
         remarks = request.data.get("remarks", "").strip()
 
-        try:
-            services.reject_application(
-                application=application_instance,
-                user=request.user,
-                remarks=remarks
-            )
-            return Response(
-                {"msg": "Application rejected and returned for resubmission"},
-                status=status.HTTP_200_OK,
-            )
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {"error": "Validation failed", "detail": e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        services.reject_application(
+            application=application_instance,
+            user=request.user,
+            remarks=remarks
+        )
+        return Response(
+            {"msg": "Application rejected and returned for resubmission"},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=["post"])
     def resubmit(self, request, pk=None):
@@ -223,32 +179,16 @@ class PermitApplicationViewSet(BaseModelViewSet):
             "origins": self._parse_bracket_data(request.data),
         }
 
-        try:
-            services.resubmit_application(
-                application=application_instance,
-                user=request.user,
-                serializer_data=data,
-                files=request.FILES,
-            )
-            return Response(
-                {"msg": "Application resubmitted successfully"},
-                status=status.HTTP_200_OK,
-            )
-        except PermissionDenied as e:
-            return Response(
-                {"error": e.detail if hasattr(e, "detail") else str(e)},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except ValidationError as e:
-            return Response(
-                {"error": "Validation failed", "detail": e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        services.resubmit_application(
+            application=application_instance,
+            user=request.user,
+            serializer_data=data,
+            files=request.FILES,
+        )
+        return Response(
+            {"msg": "Application resubmitted successfully"},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=["get"])
     def verify(self, request, pk=None):

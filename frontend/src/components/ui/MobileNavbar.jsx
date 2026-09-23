@@ -52,7 +52,7 @@ const MobileNavbar = () => {
                 return [
                     { icon: LayoutDashboard, label: 'Home', to: '/barangay' },
                     { icon: FileText, label: 'Surveys', to: '/barangay/hog-surveys/' },
-                    { icon: History, label: 'Logs', to: '/barangay/audit-logs/' },
+                    { icon: FileText, label: 'CIS', to: '/barangay/cis-generator/' },
                     { icon: Settings, label: 'Settings', to: '/barangay/settings/' },
                 ];
             default:

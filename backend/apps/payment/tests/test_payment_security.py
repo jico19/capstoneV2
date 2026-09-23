@@ -38,6 +38,26 @@ def agri_user(db):
     )
 
 
+@pytest.fixture
+def barangay_user(db):
+    return User.objects.create_user(
+        username="sec-barangay",
+        password="password",
+        role="Barangay",
+        phone_no="09333333333",
+    )
+
+
+@pytest.fixture
+def inspector_user(db):
+    return User.objects.create_user(
+        username="sec-inspector",
+        password="password",
+        role="Inspector",
+        phone_no="09444444444",
+    )
+
+
 @pytest.mark.django_db
 class TestPaymentSecurityBaseline:
     def test_payment_history_detail_is_not_writable(self, agri_user, farmer_user):
@@ -150,3 +170,50 @@ class TestPaymentSecurityBaseline:
         assert history.method == payment_models.PaymentHistory.Method.QRPH
         assert history.amount == fee
         assert result["amount"] == fee
+
+
+@pytest.mark.django_db
+class TestPaymentActionAuthorization:
+    def test_barangay_cannot_start_checkout_for_foreign_application(
+        self, agri_user, farmer_user, barangay_user
+    ):
+        application, _ = make_releasable_application(agri_user, farmer_user)
+        client = APIClient()
+        client.force_authenticate(user=barangay_user)
+
+        url = reverse("payment-checkout-session", kwargs={"pk": application.pk})
+        response = client.post(url, {}, format="json")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_inspector_cannot_create_qrph_for_foreign_application(
+        self, agri_user, farmer_user, inspector_user
+    ):
+        application, _ = make_releasable_application(agri_user, farmer_user)
+        client = APIClient()
+        client.force_authenticate(user=inspector_user)
+
+        url = reverse("payment-create-qrph-payment", kwargs={"pk": application.pk})
+        response = client.post(url, {}, format="json")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_owning_farmer_can_start_checkout(self, agri_user, farmer_user):
+        application, _ = make_releasable_application(agri_user, farmer_user)
+        client = APIClient()
+        client.force_authenticate(user=farmer_user)
+
+        url = reverse("payment-checkout-session", kwargs={"pk": application.pk})
+        response = client.post(url, {}, format="json")
+
+        assert response.status_code != status.HTTP_403_FORBIDDEN
+
+    def test_agri_can_start_checkout_for_any_application(self, agri_user, farmer_user):
+        application, _ = make_releasable_application(agri_user, farmer_user)
+        client = APIClient()
+        client.force_authenticate(user=agri_user)
+
+        url = reverse("payment-checkout-session", kwargs={"pk": application.pk})
+        response = client.post(url, {}, format="json")
+
+        assert response.status_code != status.HTTP_403_FORBIDDEN

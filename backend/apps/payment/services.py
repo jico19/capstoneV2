@@ -18,11 +18,34 @@ from apps.api.models import AuditTrail
 logger = logging.getLogger(__name__)
 
 def _release_permit_and_queue_pdfs(application):
-    """Advance application to RELEASED status and queue PDF generation tasks."""
+    """Advance application to RELEASED status; queue PDF tasks after commit."""
+    from django.db import transaction as db_tx
     from apps.permits.services import handle_application_status_change
     handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
-    generate_permit_pdf.enqueue(permit_application_id=application.pk)
-    generate_aic_pdf.enqueue(permit_application_id=application.pk)
+    p_app_pk = application.pk
+    db_tx.on_commit(lambda f=generate_permit_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+    db_tx.on_commit(lambda f=generate_aic_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+
+
+def ensure_aic_number(issued_permit):
+    """Assign a unique AIC number if none is set yet. Caller persists."""
+    if not issued_permit.aic_number:
+        issued_permit.aic_number = get_aic_number(issued_permit)
+    return issued_permit.aic_number
+
+
+def _paymongo_post(url, payload):
+    """POST helper: auth header, timeout, status-200 check, consistent error mapping."""
+    try:
+        res = requests.post(
+            url, json=payload, headers=get_auth_header(), timeout=15
+        )
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        logger.error("PayMongo connection error: %s", e)
+        raise ValidationError("Payment provider is unreachable. Please try again later.")
+    if res.status_code != 200:
+        raise ValidationError(res.json())
+    return res
 
 
 def get_auth_header():
@@ -38,18 +61,9 @@ def create_checkout_session(application_pk: int):
     if issued_permit_instance.is_paid:
         if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
             with transaction.atomic():
-                from apps.permits.services import handle_application_status_change
-                handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
-                
-                # Generate AIC number using the atomic helper
-                if not issued_permit_instance.aic_number:
-                    issued_permit_instance.aic_number = get_aic_number(issued_permit_instance)
-                    issued_permit_instance.save()
-
-                if not issued_permit_instance.permit_pdf:
-                    generate_permit_pdf.enqueue(permit_application_id=application.pk)
-                if not issued_permit_instance.aic_pdf:
-                    generate_aic_pdf.enqueue(permit_application_id=application.pk)
+                ensure_aic_number(issued_permit_instance)
+                issued_permit_instance.save()
+                _release_permit_and_queue_pdfs(application)
             raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
         raise ValidationError('Already paid.')
 
@@ -83,19 +97,7 @@ def create_checkout_session(application_pk: int):
         }
     }
 
-    try:
-        res = requests.post(
-            f"{settings.PAYMONGO_URL}/checkout_sessions",
-            json=payload,
-            headers=get_auth_header(),
-            timeout=15,
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        logger.error("PayMongo connection error: %s", e)
-        raise ValidationError("Payment provider is unreachable. Please try again later.")
-    
-    if res.status_code != 200:
-        raise ValidationError(res.json())
+    res = _paymongo_post(f"{settings.PAYMONGO_URL}/checkout_sessions", payload)
 
     data = res.json()["data"]
 
@@ -122,19 +124,13 @@ def create_qrph_payment(application_pk: int):
     if issued_permit_instance.is_paid:
         if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
             with transaction.atomic():
-                # Generate AIC number using the atomic helper
-                if not issued_permit_instance.aic_number:
-                    issued_permit_instance.aic_number = get_aic_number(issued_permit_instance)
-                    issued_permit_instance.save()
-
+                ensure_aic_number(issued_permit_instance)
+                issued_permit_instance.save()
                 _release_permit_and_queue_pdfs(application)
             raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
         raise ValidationError('Already paid.')
 
-    headers = get_auth_header()
     amount_in_cents = fee_pesos * 100
-
-    # 1. Create Payment Intent
     intent_payload = {
         "data": {
             "attributes": {
@@ -145,13 +141,7 @@ def create_qrph_payment(application_pk: int):
             }
         }
     }
-    try:
-        intent_res = requests.post(f"{settings.PAYMONGO_URL}/payment_intents", json=intent_payload, headers=headers, timeout=15)
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        logger.error("PayMongo connection error: %s", e)
-        raise ValidationError("Payment provider is unreachable. Please try again later.")
-    if intent_res.status_code != 200:
-        raise ValidationError(intent_res.json())
+    intent_res = _paymongo_post(f"{settings.PAYMONGO_URL}/payment_intents", intent_payload)
     intent_data = intent_res.json()["data"]
     intent_id = intent_data["id"]
     client_key = intent_data["attributes"]["client_key"]
@@ -165,13 +155,7 @@ def create_qrph_payment(application_pk: int):
             }
         }
     }
-    try:
-        method_res = requests.post(f"{settings.PAYMONGO_URL}/payment_methods", json=method_payload, headers=headers, timeout=15)
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        logger.error("PayMongo connection error: %s", e)
-        raise ValidationError("Payment provider is unreachable. Please try again later.")
-    if method_res.status_code != 200:
-        raise ValidationError(method_res.json())
+    method_res = _paymongo_post(f"{settings.PAYMONGO_URL}/payment_methods", method_payload)
     method_id = method_res.json()["data"]["id"]
 
     # 3. Attach Payment Method to Payment Intent
@@ -183,19 +167,11 @@ def create_qrph_payment(application_pk: int):
             }
         }
     }
-    try:
-        attach_res = requests.post(
-            f"{settings.PAYMONGO_URL}/payment_intents/{intent_id}/attach", 
-            json=attach_payload, 
-            headers=headers,
-            timeout=15,
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        logger.error("PayMongo connection error: %s", e)
-        raise ValidationError("Payment provider is unreachable. Please try again later.")
-    if attach_res.status_code != 200:
-        raise ValidationError(attach_res.json())
-    
+    attach_res = _paymongo_post(
+        f"{settings.PAYMONGO_URL}/payment_intents/{intent_id}/attach",
+        attach_payload,
+    )
+
     attach_data = attach_res.json()["data"]
     qr_image_url = attach_data["attributes"]["next_action"]["code"]["image_url"]
 
@@ -229,7 +205,8 @@ def verify_paymongo_session(application_pk: int, user):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
 
     # Ownership check
-    if user.role == 'Farmer' and application.farmer != user:
+    is_owner_or_staff = (user.role == 'Farmer' and application.farmer_id == user.id) or user.role in ('Agri', 'Admin')
+    if not is_owner_or_staff:
         raise PermissionDenied("Unauthorized access to this application")
     
     # 2. Get the issued permit and its associated payment history
@@ -329,10 +306,9 @@ def verify_paymongo_session(application_pk: int, user):
             issued_permit.is_paid = True
             issued_permit.payment_method = 'ONLINE'
             issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
-            
+
             # Generate the unique AIC number using the atomic helper
-            if not issued_permit.aic_number:
-                issued_permit.aic_number = get_aic_number(issued_permit)
+            ensure_aic_number(issued_permit)
 
             issued_permit.save()
 
@@ -395,6 +371,23 @@ def farmer_simulate_payment(application_pk: int, user, payment_method: str):
         raise ValidationError("This permit has already been paid.")
 
     with transaction.atomic():
+        # Lock rows in verify-path order (PaymentHistory -> IssuedPermit -> PermitApplication)
+        # and re-check guards so concurrent release attempts serialize at the DB level.
+        payment_history = models.PaymentHistory.objects.select_for_update().filter(
+            issued_permit=issued_permit
+        ).first()
+        issued_permit = permits.IssuedPermit.objects.select_for_update().get(pk=issued_permit.pk)
+        application = permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
+
+        if issued_permit.is_paid:
+            raise ValidationError("This permit has already been paid.")
+        if application.status != permits.PermitApplication.Status.PAYMENT_PENDING:
+            raise ValidationError(
+                f"Application is not awaiting payment. Current status: {application.status}"
+            )
+        if payment_history is not None and payment_history.status == models.PaymentHistory.Status.SUCCESS:
+            raise ValidationError("This permit has already been paid.")
+
         # Simulate the payment gateway creating a record + immediately succeeding
         fake_session_id = f"cs_sim_{uuid_hex()}"
         fake_payment_id = f"pay_sim_{uuid_hex()}"
@@ -414,9 +407,8 @@ def farmer_simulate_payment(application_pk: int, user, payment_method: str):
         issued_permit.is_paid = True
         issued_permit.payment_method = permits.IssuedPermit.PaymentMethodChoices.ONLINE
 
-        # Atomically generate AIC number
-        if not issued_permit.aic_number:
-            issued_permit.aic_number = get_aic_number(issued_permit)
+        # Assign AIC number atomically (if not already set)
+        ensure_aic_number(issued_permit)
 
         issued_permit.save()
 
@@ -479,6 +471,23 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
         raise ValidationError("This permit has already been paid.")
 
     with transaction.atomic():
+        # Lock rows in verify-path order (PaymentHistory -> IssuedPermit -> PermitApplication)
+        # and re-check guards so concurrent release attempts serialize at the DB level.
+        payment_history = models.PaymentHistory.objects.select_for_update().filter(
+            issued_permit=issued_permit
+        ).first()
+        issued_permit = permits.IssuedPermit.objects.select_for_update().get(pk=issued_permit.pk)
+        application = permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
+
+        if issued_permit.is_paid:
+            raise ValidationError("This permit has already been paid.")
+        if application.status != permits.PermitApplication.Status.PAYMENT_PENDING:
+            raise ValidationError(
+                f"Application is not awaiting payment. Current status: {application.status}"
+            )
+        if payment_history is not None and payment_history.status == models.PaymentHistory.Status.SUCCESS:
+            raise ValidationError("This permit has already been paid.")
+
         # Create or update a PaymentHistory record for the offline payment
         payment_history, _ = models.PaymentHistory.objects.update_or_create(
             issued_permit=issued_permit,
@@ -496,9 +505,8 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
         issued_permit.is_paid = True
         issued_permit.payment_method = permits.IssuedPermit.PaymentMethodChoices.OFFLINE
 
-        # Generate AIC number atomically
-        if not issued_permit.aic_number:
-            issued_permit.aic_number = get_aic_number(issued_permit)
+        # Assign AIC number atomically (if not already set)
+        ensure_aic_number(issued_permit)
 
         issued_permit.save()
 

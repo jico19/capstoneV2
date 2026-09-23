@@ -41,6 +41,8 @@ class HogSurvey(models.Model):
         default=0,
     )
     
+    PIG_FIELDS = ("inahin", "barako", "fattener", "grower", "bulaw", "starter")
+    
     total_pigs = models.PositiveIntegerField(
         default=0,
     )

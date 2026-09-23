@@ -172,7 +172,7 @@ def get_opv_dashboard_data():
             cat = "Quarantine / Route Restrictions"
         else:
             cat = "Other Technical Flaws"
-            category_counts[cat] = category_counts.get(cat, 0) + 1
+        category_counts[cat] = category_counts.get(cat, 0) + 1
     
     rejection_reasons_data = [{"reason": k, "count": v} for k, v in category_counts.items()]
     rejection_reasons_data = sorted(rejection_reasons_data, key=lambda x: x['count'], reverse=True)[:5]

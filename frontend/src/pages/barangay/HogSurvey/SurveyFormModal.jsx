@@ -6,6 +6,7 @@ import { Activity, User, Phone, X, Check } from 'lucide-react';
  * Reusable Survey Form Modal for Manual Submissions & Edits
  */
 const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
+    const isEdit = !!survey;
     const { register, handleSubmit, formState: { errors } } = useForm({
         defaultValues: {
             farmer_name: survey?.farmer_name || '',
@@ -58,7 +59,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                     <div className="flex items-center gap-3">
                         <Activity size={18} className="text-stone-700" />
                         <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest">
-                            Edit Hog Survey Record
+                            {isEdit ? 'Edit Hog Survey Record' : 'Add Hog Survey Record'}
                         </h3>
                     </div>
                     <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 transition-colors">
@@ -215,7 +216,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 </>
                             ) : (
                                 <>
-                                    <Check size={14} /> Save Changes
+                                    <Check size={14} /> {isEdit ? 'Save Changes' : 'Save Survey'}
                                 </>
                             )}
                         </button>

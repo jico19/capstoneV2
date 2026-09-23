@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { toast } from 'sonner';
-import { Plus, X, UploadCloud } from 'lucide-react';
+import { Plus, UploadCloud, Users, ChevronDown, Table2 } from 'lucide-react';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 import useAuthStore from '../../../store/authStore';
 import { parseValidationError, downloadBlob } from '../../../lib/utils';
@@ -10,39 +10,40 @@ import BatchSurveyEncoder from './BatchSurveyEncoder';
 import SurveyListTable from './SurveyListTable';
 import SurveyFormModal from './SurveyFormModal';
 import CsvUploadModal from './CsvUploadModal';
+import { useBatchSurvey, invalidateSurveyQueries, PIG_CATEGORIES } from './useBatchSurvey';
 
-
-const createEmptyRow = (id) => ({
-    id: id || Math.random().toString(36).substring(2, 9),
-    farmer_name: '',
-    contact_number: '',
-    inahin: '',
-    barako: '',
-    fattener: '',
-    grower: '',
-    starter: '',
-    bulaw: ''
-});
 
 const HogSurveyPage = () => {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [limit] = useState(10);
     const [offset, setOffset] = useState(0);
+
+    // Filter state for the survey list
+    const [filterFarmer, setFilterFarmer]     = useState('');
+    const [filterDateFrom, setFilterDateFrom] = useState('');
+    const [filterDateTo, setFilterDateTo]     = useState('');
+
+    // Farmer roster panel state
+    const [rosterOpen, setRosterOpen] = useState(false);
     
     // Modal & Form state
     const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingSurvey, setEditingSurvey] = useState(null);
     const [confirmDeleteSurvey, setConfirmDeleteSurvey] = useState(null);
 
     // Rapid Multi-Row Batch Encoder state
-    const [showEncoder, setShowEncoder] = useState(true);
-    const [batchDate, setBatchDate] = useState(() => new Date().toISOString().split('T')[0]);
-    const [batchRows, setBatchRows] = useState(() => [
-        createEmptyRow('row-1'),
-        createEmptyRow('row-2'),
-        createEmptyRow('row-3')
-    ]);
+    const [showEncoder, setShowEncoder] = useState(false);
+    const {
+        batchDate,
+        setBatchDate,
+        batchRows,
+        handleRowChange,
+        handleAddRow,
+        handleRemoveRow,
+        handleClearRows,
+    } = useBatchSurvey();
 
     // CSV upload state
     const [csvFile, setCsvFile] = useState(null);
@@ -50,27 +51,29 @@ const HogSurveyPage = () => {
 
     // Query for all hog surveys in their assigned barangay
     const { data, isLoading, isError } = useQuery({
-        queryKey: ['barangay-hog-surveys', limit, offset],
+        queryKey: ['barangay-hog-surveys', limit, offset, filterFarmer, filterDateFrom, filterDateTo],
         queryFn: async () => {
             const res = await api.get('/hog-survey/', {
-                params: { limit, offset }
+                params: {
+                    limit, offset,
+                    ...(filterFarmer   && { farmer_name: filterFarmer }),
+                    ...(filterDateFrom && { date_from: filterDateFrom }),
+                    ...(filterDateTo   && { date_to: filterDateTo }),
+                }
             });
             return res.data;
         }
     });
 
-    const pigCategories = ['inahin', 'barako', 'fattener', 'grower', 'bulaw', 'starter'];
+    // Query for the distinct farmer roster
+    const { data: roster = [] } = useQuery({
+        queryKey: ['farmer-roster'],
+        queryFn: async () => (await api.get('/hog-survey/farmer_roster/')).data,
+        staleTime: 60_000,
+    });
 
-    const getRowTotal = (row) => {
-        return (
-            (parseInt(row.inahin, 10) || 0) +
-            (parseInt(row.barako, 10) || 0) +
-            (parseInt(row.fattener, 10) || 0) +
-            (parseInt(row.grower, 10) || 0) +
-            (parseInt(row.starter, 10) || 0) +
-            (parseInt(row.bulaw, 10) || 0)
-        );
-    };
+    const activeCount   = roster.filter(f => f.is_active).length;
+    const inactiveCount = roster.filter(f => !f.is_active).length;
 
     // Mutation: Batch Create rapid multi-row surveys
     const batchMutation = useMutation({
@@ -80,11 +83,9 @@ const HogSurveyPage = () => {
         },
         onSuccess: (data) => {
             toast.success(data?.message || "Batch surveys saved successfully!");
-            queryClient.invalidateQueries({ queryKey: ['barangay-hog-surveys'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-density-data'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-surveys-recent'] });
+            invalidateSurveyQueries(queryClient);
             // Reset grid with fresh rows
-            setBatchRows([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
+            handleClearRows();
         },
         onError: (err) => {
             console.error(err);
@@ -92,130 +93,27 @@ const HogSurveyPage = () => {
         }
     });
 
-    const handleRowChange = (index, field, value) => {
-        setBatchRows(prev => {
-            const updated = [...prev];
-            updated[index] = { ...updated[index], [field]: value };
-            return updated;
-        });
-    };
-
-    const handleAddRow = () => {
-        setBatchRows(prev => [...prev, createEmptyRow()]);
-    };
-
-    const handleRemoveRow = (index) => {
-        if (batchRows.length <= 1) {
-            setBatchRows([createEmptyRow()]);
-            return;
+    // Mutation: Create a single survey record
+    const createMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await api.post('/hog-survey/', { ...data, barangay: user.barangay });
+            return res.data;
+        },
+        onSuccess: () => {
+            toast.success("Hog survey record added.");
+            invalidateSurveyQueries(queryClient);
+            setIsCreateModalOpen(false);
+        },
+        onError: (err) => {
+            console.error(err);
+            toast.error(parseValidationError(err, "Could not add survey record."));
         }
-        setBatchRows(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const handleClearRows = () => {
-        setBatchRows([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
-    };
-
-    const validBatchRows = batchRows.filter((row) => {
-        const hasFarmer = (row.farmer_name || "").trim().length > 0;
-        const totalPigs = getRowTotal(row);
-        return hasFarmer && totalPigs > 0;
     });
-
-    const batchTotalPigs = validBatchRows.reduce((acc, row) => acc + getRowTotal(row), 0);
-
-    const handleBatchSubmit = (e) => {
-        if (e) e.preventDefault();
-        if (!batchDate) {
-            toast.error("Please select a survey collection date for this batch.");
-            return;
-        }
-
-        // Find rows that have partial or complete data entered
-        const touchedRows = batchRows.map((row, idx) => {
-            const hasName = (row.farmer_name || "").trim().length > 0;
-            const hasContact = (row.contact_number || "").trim().length > 0;
-            const total = getRowTotal(row);
-            const isTouched = hasName || hasContact || total > 0;
-            return { row, idx, hasName, hasContact, total, isTouched };
-        }).filter(r => r.isTouched);
-
-        if (touchedRows.length === 0) {
-            toast.error("Cannot save empty survey data. Please enter at least one farmer record.");
-            const el = document.getElementById("farmer_name_0");
-            if (el) el.focus();
-            return;
-        }
-
-        // Validate each touched row
-        for (const item of touchedRows) {
-            const rowNumber = item.idx + 1;
-            if (!item.hasName) {
-                toast.error(`Row ${rowNumber}: Farmer / Owner name is required.`);
-                const el = document.getElementById(`farmer_name_${item.idx}`);
-                if (el) el.focus();
-                return;
-            }
-
-            if (item.total <= 0) {
-                toast.error(`Row ${rowNumber} (${item.row.farmer_name.trim()}): Please enter at least 1 pig count.`);
-                const el = document.getElementById(`inahin_${item.idx}`);
-                if (el) el.focus();
-                return;
-            }
-        }
-
-        const surveys = touchedRows.map(({ row }) => ({
-            barangay: user.barangay,
-            survey_date: batchDate,
-            farmer_name: row.farmer_name.trim(),
-            contact_number: (row.contact_number || "").trim(),
-            inahin: parseInt(row.inahin, 10) || 0,
-            barako: parseInt(row.barako, 10) || 0,
-            fattener: parseInt(row.fattener, 10) || 0,
-            grower: parseInt(row.grower, 10) || 0,
-            starter: parseInt(row.starter, 10) || 0,
-            bulaw: parseInt(row.bulaw, 10) || 0,
-        }));
-
-        batchMutation.mutate({ surveys });
-    };
-
-    const handleLastCellKeyDown = (e, index) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            handleBatchSubmit();
-            return;
-        }
-
-        if (e.key === 'Tab' && !e.shiftKey) {
-            if (index === batchRows.length - 1) {
-                e.preventDefault();
-                handleAddRow();
-                setTimeout(() => {
-                    const nextInput = document.getElementById(`farmer_name_${index + 1}`);
-                    if (nextInput) nextInput.focus();
-                }, 50);
-            }
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (index === batchRows.length - 1) {
-                handleAddRow();
-                setTimeout(() => {
-                    const nextInput = document.getElementById(`farmer_name_${index + 1}`);
-                    if (nextInput) nextInput.focus();
-                }, 50);
-            } else {
-                const nextInput = document.getElementById(`farmer_name_${index + 1}`);
-                if (nextInput) nextInput.focus();
-            }
-        }
-    };
 
     // Mutation: Update survey
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }) => {
-            const total_pigs = pigCategories.reduce(
+            const total_pigs = PIG_CATEGORIES.reduce(
                 (acc, cat) => acc + parseInt(data[cat] || 0, 10),
                 0
             );
@@ -239,9 +137,7 @@ const HogSurveyPage = () => {
         },
         onSuccess: () => {
             toast.success("Hog survey entry updated.");
-            queryClient.invalidateQueries({ queryKey: ['barangay-hog-surveys'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-density-data'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-surveys-recent'] });
+            invalidateSurveyQueries(queryClient);
             setEditingSurvey(null);
         },
         onError: (err) => {
@@ -258,9 +154,7 @@ const HogSurveyPage = () => {
         },
         onSuccess: () => {
             toast.success("Survey entry successfully deleted.");
-            queryClient.invalidateQueries({ queryKey: ['barangay-hog-surveys'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-density-data'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-surveys-recent'] });
+            invalidateSurveyQueries(queryClient);
             setConfirmDeleteSurvey(null);
         },
         onError: (err) => {
@@ -288,9 +182,7 @@ const HogSurveyPage = () => {
                 setCsvErrors([]);
                 setIsCsvModalOpen(false);
             }
-            queryClient.invalidateQueries({ queryKey: ['barangay-hog-surveys'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-density-data'] });
-            queryClient.invalidateQueries({ queryKey: ['barangay-surveys-recent'] });
+            invalidateSurveyQueries(queryClient);
         },
         onError: (err) => {
             console.error(err);
@@ -370,18 +262,17 @@ const HogSurveyPage = () => {
                         className={`flex-1 sm:flex-initial px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 ${
                             showEncoder 
                                 ? 'bg-white border border-stone-300 hover:bg-stone-50 text-stone-700' 
-                                : 'bg-green-700 hover:bg-green-600 text-white'
+                                : 'bg-white border border-stone-300 hover:bg-stone-50 text-stone-700'
                         }`}
                     >
-                        {showEncoder ? (
-                            <>
-                                <X size={14} /> Close Form
-                            </>
-                        ) : (
-                            <>
-                                <Plus size={14} /> Add Survey
-                            </>
-                        )}
+                        <Table2 size={14} /> {showEncoder ? 'Close Batch Form' : 'Batch Entry'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex-1 sm:flex-initial bg-green-700 hover:bg-green-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Plus size={14} /> Add Survey
                     </button>
                 </div>
             </div>
@@ -391,20 +282,77 @@ const HogSurveyPage = () => {
                 <BatchSurveyEncoder
                     batchRows={batchRows}
                     batchDate={batchDate}
+                    barangayId={user.barangay}
                     onBatchDateChange={setBatchDate}
                     onRowChange={handleRowChange}
                     onAddRow={handleAddRow}
                     onRemoveRow={handleRemoveRow}
                     onClearRows={handleClearRows}
-                    onSubmit={handleBatchSubmit}
-                    onLastCellKeyDown={handleLastCellKeyDown}
-                    getRowTotal={getRowTotal}
-                    validBatchRows={validBatchRows}
-                    batchTotalPigs={batchTotalPigs}
+                    onSubmit={(surveys) => batchMutation.mutate({ surveys })}
                     isPending={batchMutation.isPending}
                     onClose={() => setShowEncoder(false)}
                 />
             )}
+
+            {/* Farmer Roster Panel */}
+            <div className="border border-stone-200 bg-white">
+                {/* Summary bar — always visible */}
+                <button
+                    onClick={() => setRosterOpen(p => !p)}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-stone-50 transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        <Users size={16} className="text-stone-400" />
+                        <span className="text-xs font-black uppercase tracking-widest text-stone-700">Farmer Roster</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest bg-green-100 text-green-700 px-2 py-0.5">
+                            {activeCount} Active
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-widest bg-stone-100 text-stone-400 px-2 py-0.5">
+                            {inactiveCount} Inactive
+                        </span>
+                    </div>
+                    <ChevronDown size={16} className={`text-stone-400 transition-transform ${rosterOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Expanded roster table */}
+                {rosterOpen && (
+                    <div className="border-t border-stone-100 overflow-x-auto">
+                        <table className="w-full text-left text-xs font-semibold text-stone-700 min-w-[700px]">
+                            <thead className="bg-stone-50 border-b border-stone-100 text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                <tr>
+                                    <th className="px-6 py-3">Farmer Name</th>
+                                    <th className="px-6 py-3">Contact</th>
+                                    <th className="px-6 py-3">Last Survey</th>
+                                    <th className="px-6 py-3 text-center">Records</th>
+                                    <th className="px-6 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {roster.map((f, i) => (
+                                    <tr
+                                        key={i}
+                                        className="hover:bg-stone-50 cursor-pointer"
+                                        title="Click to view this farmer's survey history"
+                                        onClick={() => { setFilterFarmer(f.farmer_name); setOffset(0); }}
+                                    >
+                                        <td className="px-6 py-3 font-bold text-stone-800">{f.farmer_name}</td>
+                                        <td className="px-6 py-3 font-mono text-stone-500">{f.contact_number || '—'}</td>
+                                        <td className="px-6 py-3 font-mono">{f.last_survey_date || '—'}</td>
+                                        <td className="px-6 py-3 text-center">{f.survey_count}</td>
+                                        <td className="px-6 py-3">
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${
+                                                f.is_active ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
+                                            }`}>
+                                                {f.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
 
             {/* Surveys Table */}
             <SurveyListTable
@@ -415,7 +363,36 @@ const HogSurveyPage = () => {
                 onOffsetChange={setOffset}
                 onEdit={setEditingSurvey}
                 onDelete={setConfirmDeleteSurvey}
+                filterFarmer={filterFarmer}
+                filterDateFrom={filterDateFrom}
+                filterDateTo={filterDateTo}
+                onFilterChange={(field, value) => {
+                    if (field === 'farmer_name') setFilterFarmer(value);
+                    if (field === 'date_from')   setFilterDateFrom(value);
+                    if (field === 'date_to')     setFilterDateTo(value);
+                    setOffset(0);
+                }}
+                onClearFilters={() => {
+                    setFilterFarmer('');
+                    setFilterDateFrom('');
+                    setFilterDateTo('');
+                    setOffset(0);
+                }}
+                onFilterByFarmer={(name) => {
+                    setFilterFarmer(name);
+                    setOffset(0);
+                }}
             />
+
+            {/* Add Survey Modal */}
+            {isCreateModalOpen && (
+                <SurveyFormModal
+                    survey={null}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSubmit={(data) => createMutation.mutate(data)}
+                    isSubmitting={createMutation.isPending}
+                />
+            )}
 
             {/* Edit Survey Modal */}
             {editingSurvey && (

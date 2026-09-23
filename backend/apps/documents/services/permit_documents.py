@@ -22,11 +22,12 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from apps.documents.pdf_builder import OfficialMemorandumPDF
 from apps.documents.pdf_builder import (
     GREEN as PDF_GREEN,
-    PURPLE as PDF_PURPLE,
     TEXT_MAIN as PDF_TEXT_MAIN,
     TEXT_MUTED as PDF_TEXT_MUTED,
     BORDER_COLOR as PDF_BORDER_COLOR,
     ACCENT_BG as PDF_ACCENT_BG,
+    OFFICIAL_LOGO,
+    AGRI_LOGO,
 )
 
 from apps.inspector.models import InspectorLogs
@@ -41,6 +42,23 @@ from apps.permits.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _retry_pdf_task(task_fn, task_name, permit_application_id, current_attempt, error, extra_kwargs=None):
+    if current_attempt < 3:
+        wait_time = 10 * current_attempt
+        logger.warning(
+            f"Failed to generate {task_name} PDF for {permit_application_id}. "
+            f"Retrying in {wait_time}s... (Attempt {current_attempt})"
+        )
+        task_fn.using(run_after=timedelta(seconds=wait_time)).enqueue(
+            permit_application_id, current_attempt=current_attempt + 1, **(extra_kwargs or {})
+        )
+    else:
+        logger.error(
+            f"Max attempts reached for {task_name} PDF generation on application {permit_application_id}: {str(error)}"
+        )
+        raise error
 
 @task()
 def generate_permit_pdf(permit_application_id, current_attempt=1):
@@ -68,16 +86,9 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             width, height = A4
 
             # --- Branding & Design Constants ---
-            PRIMARY_GREEN = colors.HexColor("#166534")  # Professional Green
-            TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
-            TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
-            BORDER_COLOR = colors.HexColor("#e7e5e4")  # Stone-200
-            ACCENT_BG = colors.HexColor("#f5f5f4")  # Stone-100
-
-            # Resolve the assets path relative to the backend project root (one level up from BASE_DIR)
-            ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-            OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-            AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+            PRIMARY_GREEN, TEXT_MAIN, TEXT_MUTED, BORDER_COLOR, ACCENT_BG = (
+                PDF_GREEN, PDF_TEXT_MAIN, PDF_TEXT_MUTED, PDF_BORDER_COLOR, PDF_ACCENT_BG
+            )
 
             p.setFillColor(colors.white)
             p.rect(0, 0, width, height, fill=True, stroke=False)
@@ -303,20 +314,7 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
     except PermitApplication.DoesNotExist:
         logger.error(f"PermitApplication {permit_application_id} not found.")
     except Exception as e:
-        if current_attempt < 3:
-            wait_time = 10 * current_attempt
-            logger.warning(
-                f"Failed to generate PDF for {permit_application_id}. "
-                f"Retrying in {wait_time}s... (Attempt {current_attempt})"
-            )
-            generate_permit_pdf.using(run_after=timedelta(seconds=wait_time)).enqueue(
-                permit_application_id, current_attempt=current_attempt + 1
-            )
-        else:
-            logger.error(
-                f"Max attempts reached for PDF generation on application {permit_application_id}: {str(e)}"
-            )
-            raise e
+        _retry_pdf_task(generate_permit_pdf, "permit", permit_application_id, current_attempt, e)
 
 @task()
 def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id=None):
@@ -446,15 +444,9 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
             width, height = A4
 
             # --- Layout & Styling ---
-            PRIMARY_GREEN = colors.HexColor("#166534")  # Professional Green
-            TEXT_MAIN = colors.HexColor("#1c1917")  # Stone-900
-            TEXT_MUTED = colors.HexColor("#57534e")  # Stone-600
-            BORDER_COLOR = colors.HexColor("#a8a29e")  # Stone-400
-            ACCENT_BG = colors.HexColor("#fafaf9")  # Stone-50
-
-            ASSET_DIR = os.path.join(settings.BASE_DIR.parent, "asset")
-            OFFICIAL_LOGO = os.path.join(ASSET_DIR, "sariaya-official-logo.jpg")
-            AGRI_LOGO = os.path.join(ASSET_DIR, "sariaya-agri-logo.jpg")
+            PRIMARY_GREEN, TEXT_MAIN, TEXT_MUTED, BORDER_COLOR, ACCENT_BG = (
+                PDF_GREEN, PDF_TEXT_MAIN, PDF_TEXT_MUTED, PDF_BORDER_COLOR, PDF_ACCENT_BG
+            )
 
             # 1. Outer Border
             p.setFillColor(colors.white)
@@ -678,17 +670,7 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
     except PermitApplication.DoesNotExist:
         logger.error(f"PermitApplication {permit_application_id} not found.")
     except Exception as e:
-        if current_attempt < 3:
-            wait_time = 10 * current_attempt
-            logger.warning(
-                f"Failed to generate AIC PDF for {permit_application_id}. "
-                f"Retrying in {wait_time}s... (Attempt {current_attempt})"
-            )
-            generate_aic_pdf.using(run_after=timedelta(seconds=wait_time)).enqueue(
-                permit_application_id, current_attempt=current_attempt + 1, issued_by_user_id=issued_by_user_id
-            )
-        else:
-            logger.error(
-                f"Max attempts reached for AIC PDF generation on application {permit_application_id}: {str(e)}"
-            )
-            raise e
+        _retry_pdf_task(
+            generate_aic_pdf, "AIC", permit_application_id, current_attempt, e,
+            extra_kwargs={"issued_by_user_id": issued_by_user_id},
+        )

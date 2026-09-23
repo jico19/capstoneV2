@@ -173,3 +173,96 @@ class TestPaymentWorkflowCharacterization:
         with pytest.raises(ValidationError) as exc_info:
             services.create_checkout_session(application.pk)
         assert str(exc_info.value.detail[0]) == "Already paid."
+
+
+@pytest.mark.django_db(transaction=True)
+class TestReleasePdfQueuingTiming:
+    def test_offline_release_queues_pdfs_only_after_commit(self, farmer_user, agri_user):
+        application, issued_permit = make_releasable_application(agri_user, farmer_user)
+
+        with mock.patch("apps.payment.services.generate_permit_pdf") as permit_task, \
+                mock.patch("apps.payment.services.generate_aic_pdf") as aic_task:
+            services.confirm_offline_payment(application.pk, agri_user, "OR-TIMING1")
+
+            permit_task.enqueue.assert_called_once_with(permit_application_id=application.pk)
+            aic_task.enqueue.assert_called_once_with(permit_application_id=application.pk)
+
+    def test_release_pdfs_never_queued_when_transaction_rolls_back(self, farmer_user, agri_user):
+        application, issued_permit = make_releasable_application(agri_user, farmer_user)
+
+        with mock.patch("apps.payment.services.generate_permit_pdf") as permit_task, \
+                mock.patch("apps.payment.services.generate_aic_pdf") as aic_task, \
+                mock.patch(
+                    "apps.permits.services.permit.deduct_hog_survey_for_application",
+                    side_effect=RuntimeError("survey crash"),
+                ):
+            with pytest.raises(RuntimeError):
+                services.confirm_offline_payment(application.pk, agri_user, "OR-TIMING2")
+
+        application.refresh_from_db()
+        assert application.status != PermitApplication.Status.RELEASED
+        issued_permit.refresh_from_db()
+        assert issued_permit.is_paid is False
+        permit_task.enqueue.assert_not_called()
+        aic_task.enqueue.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestReleaseIdempotency:
+    def test_confirm_offline_payment_double_call_releases_once(self, farmer_user, agri_user):
+        from apps.maps.models import Barangay, HogSurvey
+        from apps.permits.models import TransportOrigin
+
+        barangay = Barangay.objects.create(name="Lock Survey")
+        survey = HogSurvey.objects.create(
+            barangay=barangay,
+            farmer_name="Lock Farmer",
+            contact_number="09555555555",
+            survey_date=timezone.now().date(),
+            inahin=10,
+            barako=0,
+            fattener=10,
+            grower=0,
+            bulaw=0,
+            starter=0,
+            total_pigs=20,
+        )
+        application, issued_permit = make_releasable_application(agri_user, farmer_user)
+        TransportOrigin.objects.create(
+            application=application,
+            barangay=barangay,
+            source_farmer_name="Lock Farmer",
+            source_phone_no="09555555555",
+            fattener=2,
+        )
+
+        services.confirm_offline_payment(application.pk, agri_user, "OR-LOCK1")
+
+        survey.refresh_from_db()
+        assert survey.fattener == 8
+
+        with pytest.raises(ValidationError):
+            services.confirm_offline_payment(application.pk, agri_user, "OR-LOCK1")
+
+        survey.refresh_from_db()
+        assert survey.fattener == 8
+        assert AuditTrail.objects.filter(what_performed__contains="OR-LOCK1").count() == 1
+        application.refresh_from_db()
+        assert application.status == PermitApplication.Status.RELEASED
+        issued_permit.refresh_from_db()
+        assert issued_permit.is_paid is True
+
+    def test_farmer_simulate_payment_double_call_releases_once(self, farmer_user, agri_user):
+        application, issued_permit = make_releasable_application(agri_user, farmer_user)
+
+        with override_settings(DEBUG=True):
+            services.farmer_simulate_payment(application.pk, farmer_user, "gcash")
+
+            with pytest.raises(ValidationError):
+                services.farmer_simulate_payment(application.pk, farmer_user, "gcash")
+
+        assert AuditTrail.objects.filter(what_performed__contains="SANDBOX PAYMENT").count() == 1
+        application.refresh_from_db()
+        assert application.status == PermitApplication.Status.RELEASED
+        issued_permit.refresh_from_db()
+        assert issued_permit.is_paid is True

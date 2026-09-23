@@ -2,6 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from django.db.models import Max, Count
+from datetime import timedelta
 from . import serializers
 from . import models
 from .services import HogSurveyService
@@ -11,6 +13,9 @@ from django.http import HttpResponse
 from django.utils import timezone
 from apps.api.models import AuditTrail
 from apps.api.base import BaseModelViewSet
+
+
+ACTIVE_THRESHOLD_DAYS = 180
 
 
 class BarangayViewSet(BaseModelViewSet):
@@ -44,8 +49,22 @@ class HogSurveyViewSet(BaseModelViewSet):
         if not user.is_authenticated:
             return models.HogSurvey.objects.none()
         if user.role == "Barangay":
-            return models.HogSurvey.objects.filter(barangay=user.barangay)
-        return models.HogSurvey.objects.all()
+            queryset = models.HogSurvey.objects.filter(barangay=user.barangay)
+        else:
+            queryset = models.HogSurvey.objects.all()
+
+        farmer_name = self.request.query_params.get("farmer_name")
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+
+        if farmer_name:
+            queryset = queryset.filter(farmer_name__icontains=farmer_name)
+        if date_from:
+            queryset = queryset.filter(survey_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(survey_date__lte=date_to)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -139,13 +158,8 @@ class HogSurveyViewSet(BaseModelViewSet):
                 except (ValueError, TypeError):
                     return 0
 
-            inahin = safe_num(item.get("inahin"))
-            barako = safe_num(item.get("barako"))
-            fattener = safe_num(item.get("fattener"))
-            grower = safe_num(item.get("grower"))
-            starter = safe_num(item.get("starter"))
-            bulaw = safe_num(item.get("bulaw"))
-            total_pigs = inahin + barako + fattener + grower + starter + bulaw
+            values = {f: safe_num(item.get(f)) for f in models.HogSurvey.PIG_FIELDS}
+            total_pigs = sum(values.values())
 
             farmer_name = str(item.get("farmer_name") or "").strip()
             contact_number = str(item.get("contact_number") or "").strip()
@@ -161,12 +175,7 @@ class HogSurveyViewSet(BaseModelViewSet):
                 farmer_name=farmer_name,
                 contact_number=contact_number,
                 survey_date=s_date,
-                inahin=inahin,
-                barako=barako,
-                fattener=fattener,
-                grower=grower,
-                starter=starter,
-                bulaw=bulaw,
+                **values,
                 total_pigs=total_pigs,
             ))
 
@@ -252,6 +261,75 @@ class HogSurveyViewSet(BaseModelViewSet):
             .order_by("-survey_date__year")
         )
         return Response(list(years))
+
+    def _farmer_distinct_queryset(self, request):
+        user = request.user
+        qs = models.HogSurvey.objects.filter(barangay=user.barangay) \
+            if user.role == "Barangay" \
+            else models.HogSurvey.objects.all()
+
+        barangay_id = request.query_params.get("barangay")
+        if user.role != "Barangay" and barangay_id:
+            qs = qs.filter(barangay_id=barangay_id)
+
+        return qs
+
+    @action(detail=False, methods=["get"])
+    def farmer_lookup(self, request):
+        """
+        API Endpoint: GET /api/hog-survey/farmer_lookup/?q=carlos
+        Returns distinct farmers matching the query for autocomplete.
+        """
+        q = request.query_params.get("q", "").strip()
+        if len(q) < 2:
+            return Response([])
+
+        cutoff = timezone.now().date() - timedelta(days=ACTIVE_THRESHOLD_DAYS)
+
+        results = (
+            self._farmer_distinct_queryset(request)
+            .filter(farmer_name__icontains=q)
+            .values("farmer_name", "contact_number")
+            .annotate(last_survey_date=Max("survey_date"), survey_count=Count("id"))
+            .order_by("-last_survey_date")[:10]
+        )
+
+        return Response([
+            {
+                "farmer_name":      r["farmer_name"],
+                "contact_number":   r["contact_number"],
+                "last_survey_date": str(r["last_survey_date"]) if r["last_survey_date"] else None,
+                "survey_count":     r["survey_count"],
+                "is_active":        r["last_survey_date"] is not None and r["last_survey_date"] >= cutoff,
+            }
+            for r in results
+        ])
+
+    @action(detail=False, methods=["get"])
+    def farmer_roster(self, request):
+        """
+        API Endpoint: GET /api/hog-survey/farmer_roster/
+        Returns all distinct farmers for the barangay with active/inactive status.
+        """
+        cutoff = timezone.now().date() - timedelta(days=ACTIVE_THRESHOLD_DAYS)
+
+        results = (
+            self._farmer_distinct_queryset(request)
+            .values("farmer_name", "contact_number")
+            .annotate(last_survey_date=Max("survey_date"), survey_count=Count("id"))
+            .order_by("farmer_name")
+        )
+
+        return Response([
+            {
+                "farmer_name":      r["farmer_name"],
+                "contact_number":   r["contact_number"],
+                "last_survey_date": str(r["last_survey_date"]) if r["last_survey_date"] else None,
+                "survey_count":     r["survey_count"],
+                "is_active":        r["last_survey_date"] is not None and r["last_survey_date"] >= cutoff,
+            }
+            for r in results
+        ])
 
     @action(detail=False, methods=["get"])
     def survey_data(self, request):

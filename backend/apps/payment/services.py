@@ -256,18 +256,10 @@ def verify_paymongo_session(application_pk: int, user):
     # 6. Real PayMongo paid statuses:
     # - Checkout Session: 'paid'
     # - Payment Intent: 'succeeded'
-    # PROTOTYPE SIMULATION (DEBUG builds only): a checkout session still
-    # 'active', or an intent 'awaiting_next_action', is treated as 'paid' to
-    # mimic the gateway settling instantly. Production NEVER simulates.
-    is_paid = False
     if payment_history.paymongo_payment_intent_id:
         is_paid = (payment_status == 'succeeded')
-        if settings.DEBUG:
-            is_paid = is_paid or (payment_status == 'awaiting_next_action')
     else:
         is_paid = (payment_status == 'paid')
-        if settings.DEBUG:
-            is_paid = is_paid or (payment_status == 'active')
     
     # Reconcile the amount the gateway actually collected (cents) with the fee.
     gateway_amount_cents = attributes.get('amount')

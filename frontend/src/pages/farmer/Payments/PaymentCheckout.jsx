@@ -53,8 +53,14 @@ const PaymentCheckout = () => {
 
     // Sandbox (demo) checkout modal states
     const [showSandbox, setShowSandbox] = useState(false);
+    const [sandboxStep, setSandboxStep] = useState(1); // 1: details, 2: otp/auth, 3: processing
     const [sandboxMethod, setSandboxMethod] = useState('gcash');
-    const [isSandboxPaying, setIsSandboxPaying] = useState(false);
+    const [sandboxPhone, setSandboxPhone] = useState('0917-555-0192');
+    const [sandboxOtp, setSandboxOtp] = useState(['1', '2', '3', '4', '5', '6']);
+    const [sandboxCardNum, setSandboxCardNum] = useState('4242 •••• •••• 4242');
+    const [sandboxCardExpiry, setSandboxCardExpiry] = useState('12/28');
+    const [sandboxCardCvv, setSandboxCardCvv] = useState('888');
+    const [processingStepText, setProcessingStepText] = useState('');
 
     const { data: application, isLoading: isApplicationLoading, isError } = useApplicationDetail(id);
 
@@ -64,10 +70,16 @@ const PaymentCheckout = () => {
 
         try {
             if (paymentMode === 'online') {
-                // In demo/dev: show sandbox checkout modal instead of redirecting
-                // In production this would go straight to PayMongo
-                setIsLoading(false);
-                setShowSandbox(true);
+                // Call backend endpoint to create real PayMongo checkout session
+                const response = await api.post(`/payment/${id}/checkout_session/`);
+                if (response.data && response.data.checkout_url) {
+                    toast.success("Redirecting to PayMongo...", {
+                        description: "Taking you to the secure payment gateway."
+                    });
+                    window.location.href = response.data.checkout_url;
+                } else {
+                    throw new Error("No checkout URL returned.");
+                }
             } else {
                 // Call backend endpoint to generate QR Ph payment
                 const response = await api.post(`/payment/${id}/create_qrph_payment/`, { total_price: totalPrice });
@@ -80,33 +92,57 @@ const PaymentCheckout = () => {
                 });
             }
         } catch (err) {
-            console.error(err);
-            setError("Failed to initialize payment. Please try again.");
-            toast.error("Payment Error", {
-                description: "Could not initialize the payment session. Please try again later."
+            console.error("Payment initialization error:", err);
+            const errorMsg = err?.response?.data?.error || "Could not initialize the payment gateway.";
+            setError(errorMsg);
+            toast.error("Payment Gateway Error", {
+                description: `${errorMsg} You can use the Interactive Demo Simulator below.`
             });
             setIsLoading(false);
         }
     };
 
-    const handleSandboxPayment = async () => {
-        setIsSandboxPaying(true);
+    const handleStartSandbox = (method = 'gcash') => {
+        setSandboxMethod(method);
+        setSandboxStep(1);
+        setSandboxOtp(['1', '2', '3', '4', '5', '6']);
+        setShowSandbox(true);
+    };
+
+    const handleSandboxSubmitStep1 = () => {
+        setSandboxStep(2);
+    };
+
+    const handleSandboxExecutePayment = async () => {
+        setSandboxStep(3);
+        setProcessingStepText('1. Contacting payment gateway...');
+        
+        // Stage 1 realistic delay
+        await new Promise((r) => setTimeout(r, 600));
+        setProcessingStepText('2. Authorizing transaction & verifying credentials...');
+        
+        // Stage 2 realistic delay
+        await new Promise((r) => setTimeout(r, 700));
+        setProcessingStepText('3. Confirming settlement with Municipal Agriculture Office...');
+        
         try {
             const res = await api.post(`/payment/${id}/farmer_simulate_payment/`, {
                 payment_method: sandboxMethod,
             });
+            
+            await new Promise((r) => setTimeout(r, 500));
+            
             if (res.data.verified) {
                 setShowSandbox(false);
-                toast.success("Payment Successful!", {
-                    description: `${sandboxMethod.toUpperCase()} payment confirmed. Redirecting to your receipt...`
+                toast.success("Payment Confirmed!", {
+                    description: `${sandboxMethod.toUpperCase()} payment verified. Loading official receipt...`
                 });
                 navigate(`/farmer/payment/success/${id}`);
             }
         } catch (err) {
+            setSandboxStep(2);
             const msg = err?.response?.data?.error || "Payment simulation failed. Please try again.";
             toast.error("Payment Failed", { description: msg });
-        } finally {
-            setIsSandboxPaying(false);
         }
     };
 
@@ -144,7 +180,7 @@ const PaymentCheckout = () => {
 
     // Handle back-forward cache (bfcache) restore when navigating back from a redirect
     useEffect(() => {
-        const handlePageShow = (event) => {
+        const handlePageShow = () => {
             setIsLoading(false);
         };
 
@@ -221,94 +257,276 @@ const PaymentCheckout = () => {
                 />
             )}
 
-            {/* ── Sandbox Payment Modal ─────────────────────────────────────────── */}
+            {/* ── Realistic Interactive Sandbox Gateway Simulator Modal ───────────── */}
             {showSandbox && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-sm rounded-none shadow-2xl overflow-hidden">
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-none shadow-2xl overflow-hidden border border-stone-300 animate-in fade-in zoom-in duration-200">
 
-                        {/* Modal Header — mimics a payment gateway */}
-                        <div className="bg-green-700 px-6 py-5 text-white flex items-center gap-3">
-                            <ShieldCheck size={20} />
-                            <div>
-                                <p className="text-xs font-black uppercase tracking-widest">Secure Payment</p>
-                                <p className="text-[9px] font-medium text-green-200 uppercase tracking-wider">FarmPass × PayMongo Sandbox</p>
-                            </div>
-                        </div>
-
-                        {/* Amount display */}
-                        <div className="px-6 pt-6 pb-4 border-b border-stone-100 text-center space-y-1">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Amount Due</p>
-                            <p className="text-4xl font-black text-stone-800 font-mono">₱{totalPrice}</p>
-                            <p className="text-[9px] text-stone-400 uppercase font-semibold">
-                                Permit #{application?.application_id}
-                            </p>
-                        </div>
-
-                        {/* Payment method picker */}
-                        <div className="px-6 pt-5 pb-4 space-y-3">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Choose Payment Method</p>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                {[
-                                    { id: 'gcash',   label: 'GCash',       icon: <Smartphone size={16} /> },
-                                    { id: 'paymaya', label: 'Maya',        icon: <Wallet size={16} /> },
-                                    { id: 'card',    label: 'Credit/Debit Card', icon: <CreditCard size={16} /> },
-                                    { id: 'qrph',    label: 'QR Ph',       icon: <QrCode size={16} /> },
-                                ].map(m => (
-                                    <button
-                                        key={m.id}
-                                        onClick={() => setSandboxMethod(m.id)}
-                                        className={`flex items-center gap-2 px-3 py-3 border text-left text-[10px] font-black uppercase tracking-widest transition-all rounded-none ${
-                                            sandboxMethod === m.id
-                                                ? 'border-green-700 bg-green-50 text-green-800'
-                                                : 'border-stone-200 text-stone-500 hover:bg-stone-50'
-                                        }`}
-                                    >
-                                        <span className={sandboxMethod === m.id ? 'text-green-700' : 'text-stone-400'}>
-                                            {m.icon}
+                        {/* Modal Header — mimics authentic gateway header */}
+                        <div className="bg-stone-900 px-6 py-4 text-white flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 bg-green-500/20 text-green-400 rounded-none border border-green-500/30">
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                        Demo Gateway Simulator
+                                        <span className="text-[8px] bg-green-700 text-white px-1.5 py-0.5 font-bold uppercase tracking-wider">
+                                            Step {sandboxStep} of 3
                                         </span>
-                                        {m.label}
-                                    </button>
-                                ))}
+                                    </p>
+                                    <p className="text-[9px] font-medium text-stone-400 uppercase tracking-wider">
+                                        Bangko Sentral Compliant Simulation
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Sandbox notice */}
-                        <div className="mx-6 mb-4 bg-amber-50 border border-amber-200 px-3 py-2 flex gap-2 items-start">
-                            <Info size={12} className="text-amber-600 shrink-0 mt-0.5" />
-                            <p className="text-[9px] font-semibold text-amber-700 uppercase leading-relaxed">
-                                Demo mode — no real transaction. Simulates a successful {sandboxMethod.toUpperCase()} payment.
-                            </p>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="px-6 pb-6 flex flex-col gap-2">
-                            <button
-                                onClick={handleSandboxPayment}
-                                disabled={isSandboxPaying}
-                                className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors rounded-none"
-                            >
-                                {isSandboxPaying ? (
-                                    <>
-                                        <span className="loading loading-spinner loading-xs"></span>
-                                        Processing {sandboxMethod.toUpperCase()}...
-                                    </>
-                                ) : (
-                                    <>Pay ₱{totalPrice} with {sandboxMethod.toUpperCase()} <ChevronRight size={14} /></>
-                                )}
-                            </button>
                             <button
                                 onClick={() => setShowSandbox(false)}
-                                disabled={isSandboxPaying}
-                                className="w-full text-stone-400 hover:text-stone-700 text-[10px] font-black uppercase tracking-widest py-2 transition-colors"
+                                disabled={sandboxStep === 3}
+                                className="text-stone-400 hover:text-white text-xs font-mono font-bold uppercase px-2 py-1"
                             >
-                                Cancel
+                                ✕
                             </button>
                         </div>
+
+                        {/* Step 1: Method Selection & Credentials */}
+                        {sandboxStep === 1 && (
+                            <div className="divide-y divide-stone-100">
+                                {/* Amount Due Header */}
+                                <div className="px-6 py-5 bg-stone-50/50 flex justify-between items-center">
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Total Payable</p>
+                                        <p className="text-2xl font-black text-stone-800 font-mono">₱{totalPrice}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Permit Ref</p>
+                                        <p className="text-xs font-mono font-bold text-stone-700">#{application?.application_id}</p>
+                                    </div>
+                                </div>
+
+                                {/* Method Tabs */}
+                                <div className="p-6 space-y-4">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">1. Select Payment Channel</p>
+                                    <div className="grid grid-cols-4 gap-1.5">
+                                        {[
+                                            { id: 'gcash', label: 'GCash', icon: <Smartphone size={14} /> },
+                                            { id: 'paymaya', label: 'Maya', icon: <Wallet size={14} /> },
+                                            { id: 'card', label: 'Card', icon: <CreditCard size={14} /> },
+                                            { id: 'qrph', label: 'QR Ph', icon: <QrCode size={14} /> },
+                                        ].map((m) => (
+                                            <button
+                                                key={m.id}
+                                                type="button"
+                                                onClick={() => setSandboxMethod(m.id)}
+                                                className={`flex flex-col items-center justify-center p-2.5 border text-center transition-all rounded-none gap-1 ${
+                                                    sandboxMethod === m.id
+                                                        ? 'border-green-700 bg-green-50 text-green-800 font-black'
+                                                        : 'border-stone-200 text-stone-500 hover:bg-stone-50 font-bold'
+                                                }`}
+                                            >
+                                                <span className={sandboxMethod === m.id ? 'text-green-700' : 'text-stone-400'}>
+                                                    {m.icon}
+                                                </span>
+                                                <span className="text-[9px] uppercase tracking-wider">{m.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Method-specific credential fields */}
+                                    <div className="space-y-3 pt-2">
+                                        {(sandboxMethod === 'gcash' || sandboxMethod === 'paymaya') && (
+                                            <div className="space-y-2">
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-stone-500">
+                                                    {sandboxMethod.toUpperCase()} Mobile Number
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2.5 text-xs font-mono font-bold text-stone-400">+63</span>
+                                                    <input
+                                                        type="text"
+                                                        value={sandboxPhone}
+                                                        onChange={(e) => setSandboxPhone(e.target.value)}
+                                                        placeholder="0917-000-0000"
+                                                        className="w-full pl-12 pr-3 py-2 border border-stone-300 font-mono text-xs font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                                    />
+                                                </div>
+                                                <p className="text-[9px] text-stone-400 font-medium">
+                                                    Demo account: You can leave the mock phone number as is.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {sandboxMethod === 'card' && (
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-stone-500">
+                                                        Card Number
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={sandboxCardNum}
+                                                        onChange={(e) => setSandboxCardNum(e.target.value)}
+                                                        className="w-full px-3 py-2 border border-stone-300 font-mono text-xs font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label className="block text-[9px] font-black uppercase tracking-widest text-stone-500">
+                                                            Expiry Date
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={sandboxCardExpiry}
+                                                            onChange={(e) => setSandboxCardExpiry(e.target.value)}
+                                                            className="w-full px-3 py-2 border border-stone-300 font-mono text-xs font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[9px] font-black uppercase tracking-widest text-stone-500">
+                                                            CVV / CVC
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={sandboxCardCvv}
+                                                            onChange={(e) => setSandboxCardCvv(e.target.value)}
+                                                            className="w-full px-3 py-2 border border-stone-300 font-mono text-xs font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {sandboxMethod === 'qrph' && (
+                                            <div className="p-3 bg-stone-50 border border-stone-200 space-y-2">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-stone-700">
+                                                    Local Cash Merchant Mode
+                                                </p>
+                                                <p className="text-[9px] text-stone-500 font-medium leading-relaxed">
+                                                    Simulates the local store merchant receiving ₱{totalPrice} in cash and scanning your QR Ph payment code.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Step 1 Actions */}
+                                <div className="p-6 bg-stone-50/30 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSandbox(false)}
+                                        className="w-1/3 border border-stone-300 hover:bg-stone-100 text-stone-600 py-3 font-black text-[10px] uppercase tracking-widest transition-colors rounded-none"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSandboxSubmitStep1}
+                                        className="w-2/3 bg-green-700 hover:bg-green-600 text-white py-3 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-colors rounded-none"
+                                    >
+                                        Proceed to OTP Challenge <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 2: 6-Digit OTP / Security Challenge */}
+                        {sandboxStep === 2 && (
+                            <div className="p-6 space-y-6">
+                                <div className="text-center space-y-2">
+                                    <div className="inline-flex p-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-none mb-1">
+                                        <Smartphone size={24} />
+                                    </div>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-800">
+                                        {sandboxMethod === 'card' ? '3D Secure Bank Verification' : 'Security OTP Verification'}
+                                    </h3>
+                                    <p className="text-[10px] text-stone-500 font-medium leading-relaxed">
+                                        A 6-digit authentication passcode was sent to{' '}
+                                        <span className="font-mono font-bold text-stone-800">{sandboxPhone}</span>.
+                                    </p>
+                                </div>
+
+                                {/* 6-Digit OTP Boxes */}
+                                <div className="space-y-3">
+                                    <div className="flex justify-center gap-2">
+                                        {sandboxOtp.map((digit, idx) => (
+                                            <input
+                                                key={idx}
+                                                type="text"
+                                                maxLength={1}
+                                                value={digit}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.slice(-1);
+                                                    const next = [...sandboxOtp];
+                                                    next[idx] = val;
+                                                    setSandboxOtp(next);
+                                                }}
+                                                className="w-10 h-12 text-center text-lg font-black font-mono border-2 border-stone-300 focus:border-green-700 focus:outline-none bg-stone-50/50 rounded-none"
+                                            />
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between text-[9px] text-stone-400 font-bold uppercase tracking-wider">
+                                        <span>Code expires in: <strong className="text-amber-700">00:54</strong></span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSandboxOtp(['1', '2', '3', '4', '5', '6'])}
+                                            className="text-green-700 hover:underline"
+                                        >
+                                            Auto-Fill 123456
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Security Badge */}
+                                <div className="bg-amber-50 border border-amber-200 p-3 flex gap-2 items-start">
+                                    <Info size={14} className="text-amber-700 shrink-0 mt-0.5" />
+                                    <p className="text-[9px] text-amber-800 font-medium leading-relaxed uppercase">
+                                        Simulated transaction for <strong>₱{totalPrice}</strong>. Clicking Authorize will confirm payment with the Municipal Agri Office.
+                                    </p>
+                                </div>
+
+                                {/* Step 2 Actions */}
+                                <div className="space-y-2 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleSandboxExecutePayment}
+                                        className="w-full bg-green-700 hover:bg-green-600 text-white py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors rounded-none"
+                                    >
+                                        Authorize & Pay ₱{totalPrice} with {sandboxMethod.toUpperCase()}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSandboxStep(1)}
+                                        className="w-full text-stone-400 hover:text-stone-700 text-[10px] font-black uppercase tracking-widest py-2 transition-colors"
+                                    >
+                                        ← Change Channel / Mobile Number
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 3: Gateway Processing Spinner */}
+                        {sandboxStep === 3 && (
+                            <div className="p-8 text-center space-y-6">
+                                <div className="relative flex justify-center">
+                                    <div className="w-16 h-16 border-4 border-stone-200 border-t-green-700 rounded-full animate-spin" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-800">
+                                        Processing Payment
+                                    </h3>
+                                    <p className="text-[10px] font-mono font-bold text-green-700 transition-all">
+                                        {processingStepText}
+                                    </p>
+                                </div>
+                                <div className="p-3 bg-stone-50 border border-stone-100 text-[9px] text-stone-400 font-medium uppercase tracking-wider">
+                                    Do not refresh or close this window while the transaction is being verified.
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             )}
-            {/* ── End Sandbox Modal ─────────────────────────────────────────────── */}
+            {/* ── End Realistic Sandbox Gateway Modal ─────────────────────────────── */}
             <div className="min-h-screen bg-stone-50/50 p-6 lg:p-12">
                 <div className="max-w-4xl mx-auto space-y-10">
 
@@ -409,7 +627,7 @@ const PaymentCheckout = () => {
                                         >
                                             <QrCode size={20} className={paymentMode === 'qrph' ? 'text-green-700' : 'text-stone-400'} />
                                             <div className="space-y-1">
-                                                <p className="text-xs font-black uppercase tracking-widest">Sari-Sari Store Cash Payment</p>
+                                                <p className="text-xs font-black uppercase tracking-widest">Local Cash Merchant Payment</p>
                                                 <p className="text-[9px] font-semibold text-stone-400 leading-normal uppercase">Save QR code & pay cash at any store</p>
                                             </div>
                                         </button>
@@ -432,7 +650,7 @@ const PaymentCheckout = () => {
                         <div className="lg:col-span-2 space-y-6">
                             
                             {!qrData ? (
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     <button
                                         onClick={() => setShowConfirm(true)}
                                         disabled={isLoading}
@@ -445,12 +663,24 @@ const PaymentCheckout = () => {
                                             </>
                                         ) : (
                                             <>
-                                                {paymentMode === 'online' ? "Pay Online" : "Get QR Code"} <ChevronRight size={18} />
+                                                {paymentMode === 'online' ? "Pay Online (PayMongo Gateway)" : "Get QR Code"} <ChevronRight size={18} />
                                             </>
                                         )}
                                     </button>
 
-                                    <div className="flex items-center justify-center gap-2 py-4 grayscale opacity-50">
+                                    {paymentMode === 'online' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleStartSandbox('gcash')}
+                                            disabled={isLoading}
+                                            className="border border-stone-300 hover:bg-stone-100 text-stone-700 w-full py-3.5 rounded-none font-black text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <ShieldCheck size={14} className="text-green-700" />
+                                            Open Interactive Demo Simulator
+                                        </button>
+                                    )}
+
+                                    <div className="flex items-center justify-center gap-2 py-2 grayscale opacity-50">
                                         <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.25em]">Powered by PayMongo</span>
                                     </div>
                                 </div>
@@ -513,7 +743,7 @@ const PaymentCheckout = () => {
                                         </h3>
                                         <ol className="text-[10px] text-stone-600 space-y-3 list-decimal pl-4 leading-relaxed uppercase tracking-wider font-semibold">
                                             <li>Save the QR code picture to your phone using the button above.</li>
-                                            <li>Go to your nearest local Sari-Sari store that accepts GCash, Maya, or QR Ph.</li>
+                                            <li>Go to your nearest local cash merchant that accepts GCash, Maya, or QR Ph.</li>
                                             <li>Show the saved QR code picture to the store keeper.</li>
                                             <li>Pay the store keeper <strong>₱{totalPrice}</strong> in cash.</li>
                                             <li>Ask the store keeper to scan the QR code using their GCash/Maya app to send the payment.</li>
@@ -534,30 +764,12 @@ const PaymentCheckout = () => {
                                         
                                         {!isExpired && (
                                             <button
-                                                onClick={async () => {
-                                                    try {
-                                                        setIsLoading(true);
-                                                        const res = await api.post(`/payment/${id}/farmer_simulate_payment/`, {
-                                                            payment_method: 'qrph'
-                                                        });
-                                                        if (res.data.verified) {
-                                                            toast.success("Payment Successful!", {
-                                                                description: "Store keeper scanned and paid. Redirecting..."
-                                                            });
-                                                            navigate(`/farmer/payment/success/${id}`);
-                                                        }
-                                                    } catch (err) {
-                                                        toast.error("Simulation failed", {
-                                                            description: err?.response?.data?.error || "An error occurred."
-                                                        });
-                                                    } finally {
-                                                        setIsLoading(false);
-                                                    }
-                                                }}
+                                                type="button"
+                                                onClick={() => handleStartSandbox('qrph')}
                                                 disabled={isLoading}
                                                 className="bg-amber-600 hover:bg-amber-500 text-white w-full py-3 rounded-none font-black text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
                                             >
-                                                Simulate Store Payment (Demo)
+                                                Simulate Store Cash Payment (Demo)
                                             </button>
                                         )}
                                         

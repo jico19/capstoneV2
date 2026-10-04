@@ -13,7 +13,13 @@ FarmPass: farm/hog livestock transport permit system for Sariaya Municipal Agric
 Backend (venv: `backend\venv`, activate via `backend\venv\Scripts\Activate.ps1`; always run from `backend/`):
 
 - run: `python manage.py runserver 8000` — settings default to `config.settings.base` (set in `manage.py`); `config.settings.prod` is for Render + Cloudinary.
-- tests: `python -m pytest` — `pytest.ini` sets `DJANGO_SETTINGS_MODULE=config.settings.base`, `testpaths=apps`. The DB is **PostgreSQL** (`backend/apps/../config/settings/base.py`), so tests need a running Postgres matching `backend/.env` — sqlite is not usable. Focused: `python -m pytest apps/permits/tests/test_workflow.py::TestPermitWorkflow::test_full_workflow`.
+- tests: **DO NOT run the full test suite by default.** On every feature change or debugging, run ONLY targeted tests relevant to the changed code or failure:
+  - Specific file: `python -m pytest apps/<app_name>/tests/<test_file>.py`
+  - Specific method: `python -m pytest apps/permits/tests/test_workflow.py::TestPermitWorkflow::test_full_workflow`
+  - Keyword filter: `python -m pytest -k "<keyword>"`
+  - Failed tests only: `python -m pytest --lf`
+  - The DB is **PostgreSQL** (`backend/apps/../config/settings/base.py`), so tests need a running Postgres matching `backend/.env` — sqlite is not usable.
+  - Run full suite (`python -m pytest`) ONLY when explicitly requested.
 - seed demo data: `python manage.py runscript seed_realistic_operations` (django_extensions `runscript`; scripts live in `backend/scripts/`). Seeded accounts: `TEST_CREDENTIALS.txt`, all passwords `password123`.
 - migrations: standard `makemigrations` / `migrate` per app.
 
@@ -34,13 +40,13 @@ Frontend:
 - Workflow actions (approve/reject/validate) follow a fixed pattern — see `backend/apps/permits/services/opv.py`: check `staff.role`, guard current status, wrap in `transaction.atomic()`, then create a formal `AuditTrail` entry.
 - DRF defaults: `LimitOffsetPagination` with `PAGE_SIZE=10`; throttling `anon 10/min`, `user 100/min` — heavy bulk seeding or load testing can trip the limits.
 
-<!-- antislop:start -->
-## antislop
-For UI, copy, people, mobile layout, or code comments work, read `antislop.md` (core) and then the skill for the task:
-- UI / visual: `skills/antislop-ui/SKILL.md`
-- Copy & text: `skills/antislop-copywriting/SKILL.md`
-- People: `skills/antislop-human/SKILL.md`
-- Mobile / responsive: `skills/antislop-layoutmobile/SKILL.md`
-- Code comments: `skills/antislop-code/SKILL.md`
-Before starting, ask the user when antislop applies: during the work, or after it is done.
-<!-- antislop:end -->
+## Skills & Workflows
+
+- Always check and invoke appropriate installed skills before performing tasks:
+  - **Debugging & investigations**: `diagnosing-bugs`, `investigate-first`
+  - **Code modifications & refactoring**: `surgical-patch`, `safe-refactor`, `lean-build`, `tdd`
+  - **Database & schema work**: `supabase-postgres-best-practices`, `migration`
+  - **UI / Frontend design & polish**: `antislop-ui`, `ui-taste`, `emil-design-eng`, `web-design-guidelines`, `antislop-layoutmobile`
+  - **Browser automation & testing**: `agent-browser`
+- Always read the matching `SKILL.md` before applying changes.
+

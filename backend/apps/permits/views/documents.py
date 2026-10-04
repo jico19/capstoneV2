@@ -48,3 +48,28 @@ class SubmittedDocumentViewSet(BaseModelViewSet):
             except models.PermitApplication.DoesNotExist:
                 return Response({"error": "Document not found"}, status=status.HTTP_404_NOT_FOUND)
         return super().retrieve(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        doc = self.get_object()
+        app = doc.origin.application if doc.origin else None
+        if app and app.status in [
+            models.PermitApplication.Status.OPV_VALIDATED,
+            models.PermitApplication.Status.PAYMENT_PENDING,
+            models.PermitApplication.Status.PERMIT_ISSUED,
+            models.PermitApplication.Status.COMPLETED
+        ]:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Documents are locked after OPV approval.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        app = instance.origin.application if instance.origin else None
+        if app and app.status in [
+            models.PermitApplication.Status.OPV_VALIDATED,
+            models.PermitApplication.Status.PAYMENT_PENDING,
+            models.PermitApplication.Status.PERMIT_ISSUED,
+            models.PermitApplication.Status.COMPLETED
+        ]:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Documents are locked after OPV approval.")
+        instance.delete()

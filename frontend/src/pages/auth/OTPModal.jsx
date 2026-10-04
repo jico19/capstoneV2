@@ -13,11 +13,13 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
 
     // Reset OTP and errors when modal opens
     useEffect(() => {
-        if (isOpen) {
+        if (!isOpen) return;
+        const timer = setTimeout(() => {
             setOtp(['', '', '', '', '', '']);
             setModalError(null);
-            setTimeout(() => inputRefs.current[0]?.focus(), 100);
-        }
+            inputRefs.current[0]?.focus();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [isOpen]);
 
     const handleChange = (element, index) => {
@@ -56,7 +58,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
         if (fullOtp.length === 6) {
             try {
                 await onVerify(fullOtp);
-            } catch (err) {
+            } catch {
                 setModalError("Invalid code. Please try again.");
             }
         } else {

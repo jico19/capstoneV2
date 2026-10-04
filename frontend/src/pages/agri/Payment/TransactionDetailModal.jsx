@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import {
   X,
   CheckCircle2,
@@ -26,7 +26,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
     if (m === "qrph") {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
-          <QrCode size={13} /> QR Ph (Sari-Sari Store)
+          <QrCode size={13} /> QR Ph (Local Cash Merchant)
         </span>
       );
     }

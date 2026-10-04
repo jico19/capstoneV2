@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileText, Printer, RotateCcw } from 'lucide-react';
 import useAuthStore from '../../../store/authStore';
+import { numberToWords } from '../../../lib/numberToWords';
 
 const PRINT_STYLES = `
 @media print {
@@ -65,7 +66,15 @@ const CISGeneratorPage = () => {
     const [form, setForm] = useState(initialForm);
 
     const setField = (key) => (e) => {
-        setForm((prev) => ({ ...prev, [key]: e.target.value }));
+        const val = e.target.value;
+        setForm((prev) => {
+            const next = { ...prev, [key]: val };
+            if (key === 'numberDigit' && val !== '') {
+                const words = numberToWords(val);
+                if (words) next.numberText = words;
+            }
+            return next;
+        });
     };
 
     const handleReset = () => setForm(initialForm);

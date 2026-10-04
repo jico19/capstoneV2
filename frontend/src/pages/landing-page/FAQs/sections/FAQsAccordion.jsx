@@ -23,7 +23,7 @@ const CATEGORIES = [
     items: [
       {
         q: "What documents do I need?",
-        a: "You need 5 documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Immediate Slaughter (if applicable), and Barangay Endorsement (Pagpapatunay). All must be in PDF, JPG, or PNG format (max 5MB each)."
+        a: "Required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Inspection (CIS), and Barangay Endorsement (Pagpapatunay — required only for transport outside Sariaya). All must be in PDF, JPG, or PNG format (max 5MB each)."
       },
       {
         q: "How long are documents valid?",

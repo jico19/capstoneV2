@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { UploadCloud, CheckCircle2, Camera, ChevronDown, ChevronUp, FileCheck } from "lucide-react";
+import { UploadCloud, CheckCircle2, Camera, ChevronDown, ChevronUp, FileCheck, Trash2 } from "lucide-react";
 
-const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }) => {
+const UploadDocument = ({ register, errors, watch, setValue = () => {}, prevStep, nextStep, origins, isEndorsementRequired = true }) => {
     const [showOverride, setShowOverride] = useState(false);
 
     const commonDocs = [
@@ -26,12 +26,16 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
         { 
             id: 'cis', 
             label: "Certificate of Inspection (CIS)", 
-            desc: "Barangay-issued swine health document." 
+            desc: "Barangay-issued swine health document.",
+            isRequired: true
         },
         { 
             id: 'endorsement_cert', 
-            label: "Barangay Endorsement", 
-            desc: "Barangay clearance to move livestock." 
+            label: isEndorsementRequired ? "Barangay Endorsement" : "Barangay Endorsement (Optional)", 
+            desc: isEndorsementRequired 
+                ? "Barangay clearance to move livestock." 
+                : "Required only for transport outside Sariaya.",
+            isRequired: isEndorsementRequired
         }
     ];
 
@@ -98,6 +102,8 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
                                 register={register} 
                                 errors={errors} 
                                 watch={watch} 
+                                setValue={setValue}
+                                isRequired={false}
                             />
                         ))}
                     </div>
@@ -125,6 +131,8 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
                                         register={register} 
                                         errors={errors} 
                                         watch={watch} 
+                                        setValue={setValue}
+                                        isRequired={doc.isRequired}
                                     />
                                 );
                             })}
@@ -172,7 +180,7 @@ const UploadDocument = ({ register, errors, watch, prevStep, nextStep, origins }
     );
 };
 
-const FileUpload = ({ id, label, desc, register, errors, watch }) => {
+const FileUpload = ({ id, label, desc, register, errors, watch, setValue, isRequired = true }) => {
     const fileVal = watch(id);
     
     const isExisting = fileVal && fileVal.isExisting;
@@ -183,7 +191,6 @@ const FileUpload = ({ id, label, desc, register, errors, watch }) => {
     
     const file = isNewUpload ? fileVal[0] : null;
     const fileName = isNewUpload ? file.name : (isExisting ? fileVal.name : null);
-    const fileSize = isNewUpload ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : (isExisting ? "Previously Uploaded" : null);
 
     const hasAnyFile = isExisting || isNewUpload;
 
@@ -203,6 +210,7 @@ const FileUpload = ({ id, label, desc, register, errors, watch }) => {
                     {...register(id, { 
                         validate: {
                             required: (val) => {
+                                if (!isRequired) return true;
                                 if (val && (val.isExisting || (val.length && val.length > 0))) {
                                     return true;
                                 }
@@ -235,9 +243,24 @@ const FileUpload = ({ id, label, desc, register, errors, watch }) => {
                             {isExisting && !isNewUpload ? "Saved" : "Selected"}
                         </span>
                         <p className="text-[10px] font-bold text-stone-800 mt-1 max-w-[120px] sm:max-w-[180px] truncate leading-tight">{fileName}</p>
-                        <span className="text-[8px] text-green-700 font-bold uppercase tracking-wider mt-2 bg-white border border-green-200 px-2 py-0.5">
-                            Change
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-2">
+                            <span className="text-[8px] text-green-700 font-bold uppercase tracking-wider bg-white border border-green-200 px-2 py-0.5">
+                                Change
+                            </span>
+                            {setValue && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setValue(id, null, { shouldValidate: true, shouldDirty: true });
+                                    }}
+                                    className="text-[8px] text-red-700 font-bold uppercase tracking-wider bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-0.5 flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Trash2 size={10} /> Discard
+                                </button>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center text-center">
@@ -247,8 +270,9 @@ const FileUpload = ({ id, label, desc, register, errors, watch }) => {
                         <span className={`text-[10px] sm:text-xs font-black uppercase tracking-tight text-center leading-tight ${errors[id] ? "text-red-700" : "text-stone-800"}`}>
                             {label}
                         </span>
+                        {desc && <span className="text-[9px] text-stone-400 font-medium text-center mt-1 leading-tight">{desc}</span>}
                         <span className="text-[8px] text-stone-600 font-black uppercase tracking-widest mt-2 bg-stone-100 px-2 py-1 border border-stone-200 hidden sm:inline-block">
-                            Take Photo
+                            {isRequired ? "Take Photo" : "Upload (Optional)"}
                         </span>
                     </div>
                 )}

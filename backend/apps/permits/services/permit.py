@@ -27,10 +27,14 @@ def create_permit(files, application, user):
             else:
                 raise ValidationError(f"Missing required document: {req.replace('_', ' ').title()}")
 
+    # Endorsement Certificate is only required for transport OUTSIDE Sariaya municipality
+    destination_upper = (application.destination or '').upper()
+    endorsement_required = 'SARIAYA' not in destination_upper
+
     for i in range(len(origins)):
         if f'origin_{i}_cis' not in files:
             raise ValidationError(f"Missing Certificate of Inspection and Stewardship (CIS) for origin #{i+1}")
-        if f'origin_{i}_endorsement_cert' not in files:
+        if endorsement_required and f'origin_{i}_endorsement_cert' not in files:
             raise ValidationError(f"Missing Barangay Endorsement Certificate for origin #{i+1}")
 
     document_ids = []
@@ -86,6 +90,16 @@ def create_permit(files, application, user):
         title="Application Submitted",
         message=f"Your application #{application.application_id} has been submitted successfully."
     )
+
+    # Notify MAO staff of new permit request
+    agri_users = User.objects.filter(role="Agri")
+    for admin in agri_users:
+        Notification.objects.create(
+            type=Notification.Type.INFO,
+            recipient=admin,
+            title="New Permit Request",
+            message=f"New permit request #{application.application_id} submitted by {user.get_full_name() or user.username}."
+        )
 
     for d_id in document_ids:
         transaction.on_commit(lambda d_id=d_id: extract_document_info.enqueue(d_id))

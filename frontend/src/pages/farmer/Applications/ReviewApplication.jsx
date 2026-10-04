@@ -6,7 +6,97 @@ import { api } from '../../../lib/api';
 import useAuthStore from '../../../store/authStore';
 import FileViewerModal from '../../../components/ui/FileViewerModal';
 
-const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
+const DetailRow = ({ label, value }) => (
+    <div className="flex flex-col sm:flex-row justify-between py-3 border-b border-stone-200 last:border-0 gap-1 sm:gap-4">
+        <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">{label}</span>
+        <span className="text-sm font-bold text-stone-800 sm:text-right">{value || "—"}</span>
+    </div>
+);
+
+const DocRow = ({ label, field, watch, docData, user, setViewerDoc, optional = false }) => {
+    const fileVal = watch(field);
+    
+    const isExisting = fileVal && fileVal.isExisting;
+    const isNewUpload = fileVal && (
+        (typeof FileList !== "undefined" && fileVal instanceof FileList && fileVal.length > 0) ||
+        (Array.isArray(fileVal) && fileVal.length > 0)
+    );
+
+    const isStandingDoc = ['traders_pass', 'handlers_license', 'transport_carrier_reg'].includes(field);
+    const onFileDoc = docData?.documents?.find((d) => d.document_type === field);
+    const isAutoAttached = isStandingDoc && !isNewUpload && !isExisting && (
+        user?.verification_status === 'VERIFIED' || !!onFileDoc?.file
+    );
+
+    let fileName = "MISSING";
+    let isMissing = false;
+    let previewUrl = null;
+
+    if (isNewUpload) {
+        fileName = fileVal[0].name;
+        try {
+            previewUrl = URL.createObjectURL(fileVal[0]);
+        } catch {
+            // ignore preview URL creation error
+        }
+    } else if (isExisting) {
+        fileName = fileVal.name;
+        previewUrl = fileVal.url || null;
+    } else if (isAutoAttached) {
+        const rawFile = onFileDoc?.file ? onFileDoc.file.split('/').pop() : null;
+        fileName = rawFile ? `Auto-Attached (${rawFile})` : "Auto-Attached (On File)";
+        previewUrl = onFileDoc?.file || null;
+    } else if (optional) {
+        fileName = "Not Required (Within Sariaya)";
+        isMissing = false;
+    } else {
+        fileName = "MISSING";
+        isMissing = true;
+    }
+
+    return (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 border-b border-stone-200 last:border-0 gap-2">
+            <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">{label}</span>
+                {isAutoAttached && (
+                    <span className="text-[8px] font-black uppercase px-1.5 py-0.5 bg-green-100 text-green-800 border border-green-200 tracking-wider">
+                        Auto-Attached
+                    </span>
+                )}
+                {isNewUpload && isStandingDoc && (
+                    <span className="text-[8px] font-black uppercase px-1.5 py-0.5 bg-blue-100 text-blue-800 border border-blue-200 tracking-wider">
+                        Replaced
+                    </span>
+                )}
+                {optional && !isNewUpload && !isExisting && (
+                    <span className="text-[8px] font-black uppercase px-1.5 py-0.5 bg-stone-100 text-stone-600 border border-stone-200 tracking-wider">
+                        Optional
+                    </span>
+                )}
+            </div>
+            <div className="flex items-center gap-2 max-w-full">
+                <span className={`text-[10px] font-bold uppercase tracking-wider truncate max-w-[180px] sm:max-w-[280px] ${
+                    isMissing ? 'text-red-500 font-black' : (optional && !isNewUpload && !isExisting) ? 'text-stone-400 font-medium' : isAutoAttached ? 'text-green-800' : 'text-stone-800'
+                }`}>
+                    {fileName}
+                </span>
+                {previewUrl && (
+                    <button
+                        type="button"
+                        onClick={() => setViewerDoc({ url: previewUrl, title: label, subtitle: fileName })}
+                        className="text-stone-400 hover:text-stone-800 p-1 transition-colors"
+                        title={`Preview ${label}`}
+                    >
+                        <Eye size={14} />
+                    </button>
+                )}
+                <CheckCircle size={14} className={!isMissing ? (optional && !isNewUpload && !isExisting ? "text-stone-300" : "text-green-700") : "text-stone-200"} strokeWidth={2.5} />
+            </div>
+        </div>
+    );
+};
+
+const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorsementRequired = true }) => {
     const { data: map } = useGetMaps();
     const { user } = useAuthStore();
     const formData = watch();
@@ -21,86 +111,6 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
         },
         enabled: !!user,
     });
-
-    const DetailRow = ({ label, value }) => (
-        <div className="flex flex-col sm:flex-row justify-between py-3 border-b border-stone-200 last:border-0 gap-1 sm:gap-4">
-            <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">{label}</span>
-            <span className="text-sm font-bold text-stone-800 sm:text-right">{value || "—"}</span>
-        </div>
-    );
-
-    const DocRow = ({ label, field }) => {
-        const fileVal = watch(field);
-        
-        const isExisting = fileVal && fileVal.isExisting;
-        const isNewUpload = fileVal && (
-            (typeof FileList !== "undefined" && fileVal instanceof FileList && fileVal.length > 0) ||
-            (Array.isArray(fileVal) && fileVal.length > 0)
-        );
-
-        const isStandingDoc = ['traders_pass', 'handlers_license', 'transport_carrier_reg'].includes(field);
-        const onFileDoc = docData?.documents?.find((d) => d.document_type === field);
-        const isAutoAttached = isStandingDoc && !isNewUpload && !isExisting && (
-            user?.verification_status === 'VERIFIED' || !!onFileDoc?.file
-        );
-
-        let fileName = "MISSING";
-        let isMissing = false;
-        let previewUrl = null;
-
-        if (isNewUpload) {
-            fileName = fileVal[0].name;
-            try {
-                previewUrl = URL.createObjectURL(fileVal[0]);
-            } catch (e) {}
-        } else if (isExisting) {
-            fileName = fileVal.name;
-            previewUrl = fileVal.url || null;
-        } else if (isAutoAttached) {
-            const rawFile = onFileDoc?.file ? onFileDoc.file.split('/').pop() : null;
-            fileName = rawFile ? `Auto-Attached (${rawFile})` : "Auto-Attached (On File)";
-            previewUrl = onFileDoc?.file || null;
-        } else {
-            fileName = "MISSING";
-            isMissing = true;
-        }
-
-        return (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 border-b border-stone-200 last:border-0 gap-2">
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">{label}</span>
-                    {isAutoAttached && (
-                        <span className="text-[8px] font-black uppercase px-1.5 py-0.5 bg-green-100 text-green-800 border border-green-200 tracking-wider">
-                            Auto-Attached
-                        </span>
-                    )}
-                    {isNewUpload && isStandingDoc && (
-                        <span className="text-[8px] font-black uppercase px-1.5 py-0.5 bg-blue-100 text-blue-800 border border-blue-200 tracking-wider">
-                            Replaced
-                        </span>
-                    )}
-                </div>
-                <div className="flex items-center gap-2 max-w-full">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider truncate max-w-[180px] sm:max-w-[280px] ${
-                        isMissing ? 'text-red-500 font-black' : isAutoAttached ? 'text-green-800' : 'text-stone-800'
-                    }`}>
-                        {fileName}
-                    </span>
-                    {previewUrl && (
-                        <button
-                            type="button"
-                            onClick={() => setViewerDoc({ url: previewUrl, title: label, subtitle: fileName })}
-                            className="text-stone-400 hover:text-stone-800 p-1 transition-colors"
-                            title={`Preview ${label}`}
-                        >
-                            <Eye size={14} />
-                        </button>
-                    )}
-                    <CheckCircle size={14} className={!isMissing ? "text-green-700" : "text-stone-200"} strokeWidth={2.5} />
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div className="space-y-8">
@@ -170,13 +180,13 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins }) => {
             {/* Attached Photos Card */}
             <div className="bg-white p-5 border border-stone-200 rounded-none space-y-4">
                 <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2.5">Attached Documents (Photos)</h3>
-                <DocRow label="Trader's Pass" field="traders_pass" />
-                <DocRow label="Handler's License" field="handlers_license" />
-                <DocRow label="Carrier Registration" field="transport_carrier_reg" />
+                <DocRow label="Trader's Pass" field="traders_pass" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
+                <DocRow label="Handler's License" field="handlers_license" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
+                <DocRow label="Carrier Registration" field="transport_carrier_reg" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
                 {origins.map((o, index) => (
                     <div key={o.id} className="space-y-1">
-                        <DocRow label={`CIS (Location #${index + 1})`} field={`origin_${o.id}_cis`} />
-                        <DocRow label={`Endorsement (Location #${index + 1})`} field={`origin_${o.id}_endorsement_cert`} />
+                        <DocRow label={`CIS (Location #${index + 1})`} field={`origin_${o.id}_cis`} watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
+                        <DocRow label={`Endorsement (Location #${index + 1})`} field={`origin_${o.id}_endorsement_cert`} watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} optional={!isEndorsementRequired} />
                     </div>
                 ))}
             </div>

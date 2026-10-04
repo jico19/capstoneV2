@@ -34,6 +34,11 @@ const StatusBadge = ({ status }) => {
             case 'MANUAL':
                 return "bg-orange-50 text-orange-700 border-orange-500";
             
+            // CANCELLED / REJECTED (Red)
+            case 'CANCELLED':
+            case 'REJECTED':
+                return "bg-red-50 text-red-700 border-red-500";
+            
             // NEUTRAL / INITIAL (Stone)
             case 'DRAFT':
             default:
@@ -57,7 +62,8 @@ const StatusBadge = ({ status }) => {
             'OPV_REJECTED': 'Rejected by Vet',
             'PERMIT_ISSUED': 'Awaiting Payment',
             'PAYMENT_PENDING': 'Awaiting Payment',
-            'RELEASED': 'Active (Ready)'
+            'RELEASED': 'Active (Ready)',
+            'CANCELLED': 'Cancelled Request'
         };
 
         return labels[text] || text.replace(/_/g, " ");

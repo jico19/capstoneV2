@@ -54,7 +54,7 @@ const ResubmitApplication = () => {
                 bulaw: o.bulaw,
                 starter: o.starter
             }));
-            setOrigins(mappedOrigins);
+            const timer = setTimeout(() => setOrigins(mappedOrigins), 0);
 
             // Pre-fill basic fields
             const resetData = {
@@ -109,6 +109,7 @@ const ResubmitApplication = () => {
             });
 
             reset(resetData);
+            return () => clearTimeout(timer);
         }
     }, [application, reset]);
 
@@ -197,7 +198,7 @@ const ResubmitApplication = () => {
                 toast.success("Application resubmitted successfully.");
                 navigate('/farmer/');
             },
-            onError: (err) => {
+            onError: () => {
                 toast.error("Failed to resubmit application. Please check your details.");
             }
         });
@@ -304,18 +305,9 @@ const ResubmitApplication = () => {
                                     'transport_date', 
                                     'purpose',
                                     ...origins.map(o => `barangay_${o.id}`),
-                                    ...origins.flatMap(o => [
-                                        `source_farmer_name_${o.id}`,
-                                        `source_phone_no_${o.id}`,
-                                        `inahin_${o.id}`,
-                                        `barako_${o.id}`,
-                                        `fattener_${o.id}`,
-                                        `grower_${o.id}`,
-                                        `bulaw_${o.id}`,
-                                        `starter_${o.id}`
-                                    ])
+                                    ...origins.map(o => `pigs_total_${o.id}`)
                                 ];
-                                nextStep(step1Fields, "Please fill in all required travel details.");
+                                nextStep(step1Fields, "Please check your answers before continuing.");
                             }}
                             origins={origins}
                             addOrigin={addOrigin}
@@ -323,36 +315,55 @@ const ResubmitApplication = () => {
                         />
                     )}
 
-                    {step === 2 && (
-                        <UploadDocument
-                            register={register}
-                            errors={errors}
-                            watch={watch}
-                            prevStep={prevStep}
-                            nextStep={() => {
-                                const step2Fields = [
-                                    'traders_pass', 
-                                    'handlers_license', 
-                                    'transport_carrier_reg',
-                                    ...origins.flatMap(o => [
-                                        `origin_${o.id}_cis`, 
-                                        `origin_${o.id}_endorsement_cert`
-                                    ])
-                                ];
-                                nextStep(step2Fields, "Please verify all required documents are attached.");
-                            }}
-                            origins={origins}
-                        />
-                    )}
+                    {(() => {
+                        const destinationMuniKey = watch('destination_municipality');
+                        const destinationStr = watch('destination') || application?.destination || '';
+                        const isSariaya = destinationMuniKey 
+                            ? destinationMuniKey.toUpperCase().includes('SARIAYA') 
+                            : destinationStr.toUpperCase().includes('SARIAYA');
+                        const isEndorsementRequired = !isSariaya;
 
-                    {step === 3 && (
-                        <ReviewApplication
-                            watch={watch}
-                            prevStep={prevStep}
-                            isSubmitting={isSubmitting}
-                            origins={origins}
-                        />
-                    )}
+                        return (
+                            <>
+                                {step === 2 && (
+                                    <UploadDocument
+                                        register={register}
+                                        errors={errors}
+                                        watch={watch}
+                                        setValue={setValue}
+                                        prevStep={prevStep}
+                                        nextStep={() => {
+                                            const step2Fields = [
+                                                'traders_pass', 
+                                                'handlers_license', 
+                                                'transport_carrier_reg',
+                                                ...origins.flatMap(o => {
+                                                    const fields = [`origin_${o.id}_cis`];
+                                                    if (isEndorsementRequired) {
+                                                        fields.push(`origin_${o.id}_endorsement_cert`);
+                                                    }
+                                                    return fields;
+                                                })
+                                            ];
+                                            nextStep(step2Fields, "Please verify all required documents are attached.");
+                                        }}
+                                        origins={origins}
+                                        isEndorsementRequired={isEndorsementRequired}
+                                    />
+                                )}
+
+                                {step === 3 && (
+                                    <ReviewApplication
+                                        watch={watch}
+                                        prevStep={prevStep}
+                                        isSubmitting={isSubmitting}
+                                        origins={origins}
+                                        isEndorsementRequired={isEndorsementRequired}
+                                    />
+                                )}
+                            </>
+                        );
+                    })()}
                 </form>
             </div>
         </div>

@@ -1,10 +1,15 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
-import { ArrowLeft, FileText, HandCoins, Download, FileCheck2, ExternalLink } from "lucide-react"
+import ApplicationTracker from "../../../components/ui/ApplicationTracker"
+import { ArrowLeft, FileText, HandCoins, Download, FileCheck2, ExternalLink, XCircle } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
+import ConfirmationModal from "../../../components/ui/ConfirmationModal"
+import { useQueryClient } from "@tanstack/react-query"
+import { api } from "../../../lib/api"
+import { toast } from "sonner"
 
 
 /**
@@ -14,8 +19,25 @@ import DocumentViewModal from "../../../components/ui/DocumentViewModal"
 const ApplicationDetail = () => {
     const { id } = useParams()
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const [selectedDocId, setSelectedDocId] = useState(null)
+    const [isCancelling, setIsCancelling] = useState(false)
+    const [confirmCancel, setConfirmCancel] = useState(false)
     const { data: application, isLoading, isError } = useApplicationDetail(id)
+
+    const handleCancelRequest = async () => {
+        setIsCancelling(true);
+        try {
+            await api.post(`/application/${id}/cancel/`);
+            queryClient.invalidateQueries({ queryKey: ['application', id] });
+            toast.success("Request Cancelled", { description: "Your permit request has been cancelled." });
+        } catch (err) {
+            toast.error("Action Failed", { description: err.response?.data?.detail || err.response?.data?.error || "Could not cancel request." });
+        } finally {
+            setIsCancelling(false);
+            setConfirmCancel(false);
+        }
+    };
 
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
@@ -59,6 +81,8 @@ const ApplicationDetail = () => {
 
                 <div className="space-y-6 md:space-y-10">
                     <ApplicationHeader data={application} />
+
+                    <ApplicationTracker status={application.status} />
 
                     {application.aic_pdf && (
                         <div className="bg-emerald-50 border border-emerald-300 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -200,7 +224,36 @@ const ApplicationDetail = () => {
                     </section>
                 </div>
 
+                {['SUBMITTED', 'DRAFT', 'MANUAL', 'OCR_VALIDATED', 'RESUBMISSION'].includes(application.status) && !application.is_checked && (
+                    <div className="bg-amber-50 border border-amber-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-xs font-black uppercase tracking-widest text-amber-900">Need to Cancel this Request?</h3>
+                            <p className="text-[11px] font-medium text-amber-800 mt-0.5">
+                                You can cancel your permit request before MAO staff inspects or processes it.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setConfirmCancel(true)}
+                            className="px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors shrink-0 flex items-center gap-1.5"
+                        >
+                            <XCircle size={14} /> Cancel Request
+                        </button>
+                    </div>
+                )}
             </div>
+
+            <ConfirmationModal
+                isOpen={confirmCancel}
+                onClose={() => setConfirmCancel(false)}
+                onYes={handleCancelRequest}
+                title="Cancel Permit Request?"
+                message="Are you sure you want to cancel this transport permit request? This action cannot be undone."
+                yesText="Yes, Cancel Request"
+                yesVariant="danger"
+                type="danger"
+                isSubmitting={isCancelling}
+            />
         </>
     )
 }

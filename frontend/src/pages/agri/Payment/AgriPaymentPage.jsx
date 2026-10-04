@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { usePayment, usePaymentStats } from "../../../hooks/usePayment";
 import {
   DollarSign,
@@ -265,7 +265,7 @@ const AgriPaymentPage = () => {
               className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 text-xs font-bold uppercase tracking-wider text-stone-800 focus:outline-none focus:bg-white focus:border-green-700 transition-colors"
             >
               <option value="ALL">All Gateways</option>
-              <option value="qrph">QR Ph (Sari-Sari Store)</option>
+              <option value="qrph">QR Ph (Local Cash Merchant)</option>
               <option value="gcash">GCash E-Wallet</option>
               <option value="card">Credit / Debit Card</option>
               <option value="paymaya">PayMaya</option>

@@ -189,11 +189,16 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         return obj.aic_pdf.url
 
     def get_all_documents(self, obj):
-        # Flatten all documents from all transport origins
+        # Flatten all documents from all transport origins, deduplicating by type & file
+        seen = set()
         all_docs = []
         request = self.context.get("request")
         for origin in obj.origins.all():
-            all_docs.extend(origin.documents.all())
+            for doc in origin.documents.all():
+                key = (doc.document_type, doc.file.name if doc.file else None)
+                if key not in seen:
+                    seen.add(key)
+                    all_docs.append(doc)
         data = SubmittedDocumentListSerializer(
             all_docs, many=True, context={"request": request}
         ).data

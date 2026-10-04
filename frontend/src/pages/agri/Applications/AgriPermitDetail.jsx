@@ -8,6 +8,7 @@ import ApprovalControls from "./AGRIApprovalControls";
 import { api } from "../../../lib/api";
 import DocumentViewModal from "../../../components/ui/DocumentViewModal";
 import ApplicationHeader from "../../../components/ui/ApplicationHeader";
+import ApplicationTracker from "../../../components/ui/ApplicationTracker";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
@@ -20,6 +21,7 @@ const AgriPermitDetail = () => {
     const [activeModal, setActiveModal] = useState(null)
     const [ocrID, setOcrID] = useState(0)
     const [docID, setDocID] = useState(0)
+    const [viewedDocIds, setViewedDocIds] = useState([])
     const [isIssuingPermit, setIsIssuingPermit] = useState(false)
     const [confirmModal, setConfirmModal] = useState(null)
     const [permitFeeInput, setPermitFeeInput] = useState(150.00)
@@ -61,11 +63,17 @@ const AgriPermitDetail = () => {
     const fixDataHandler = ({ ocr_id, doc_id }) => {
         setOcrID(ocr_id)
         setDocID(doc_id)
+        if (doc_id && !viewedDocIds.includes(doc_id)) {
+            setViewedDocIds((prev) => [...prev, doc_id]);
+        }
         setActiveModal('ocr')
     }
 
     const viewDocument = (doc_id) => {
         setDocID(doc_id)
+        if (doc_id && !viewedDocIds.includes(doc_id)) {
+            setViewedDocIds((prev) => [...prev, doc_id]);
+        }
         setActiveModal('view')
     }
 
@@ -82,6 +90,16 @@ const AgriPermitDetail = () => {
     }
 
     const approveHandler = (data) => {
+        const allDocs = application?.all_documents || [];
+        const unviewedDocs = allDocs.filter(d => d.file && !viewedDocIds.includes(d.id));
+
+        if (unviewedDocs.length > 0) {
+            toast.error("Document Review Required", {
+                description: `Please view and verify all ${allDocs.length} attached documents before approving. (${unviewedDocs.length} unreviewed document remaining)`
+            });
+            return Promise.reject(new Error("Unreviewed documents remaining"));
+        }
+
         return new Promise((resolve, reject) => {
             setConfirmModal({
                 title: "Approve Permit Request?",
@@ -226,6 +244,8 @@ const AgriPermitDetail = () => {
                 <div className="space-y-12">
                     <ApplicationHeader data={application} />
 
+                    <ApplicationTracker status={application.status} />
+
                     {application.origins && application.origins.length > 0 && (
                         <div className="border border-stone-200 bg-white p-6 space-y-4">
                             <div className="space-y-1">
@@ -259,7 +279,7 @@ const AgriPermitDetail = () => {
                         </div>
                     )}
 
-                    <section className="space-y-8">
+                    <section className="space-y-6">
                         <div className="flex items-center gap-6">
                             <div className="space-y-1">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
@@ -267,6 +287,26 @@ const AgriPermitDetail = () => {
                             </div>
                             <div className="h-[2px] flex-1 bg-gray-100"></div>
                         </div>
+
+                        {/* Document Verification Checklist Banner */}
+                        <div className="bg-stone-50 border border-stone-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 block">MAO Document Review Checklist</span>
+                                <span className="text-xs font-bold text-stone-800">
+                                    {viewedDocIds.length} of {application?.all_documents?.length || 0} attached documents reviewed
+                                </span>
+                            </div>
+                            {viewedDocIds.length >= (application?.all_documents?.length || 1) ? (
+                                <span className="px-3 py-1 bg-green-100 border border-green-300 text-green-800 text-[10px] font-black uppercase tracking-widest w-fit">
+                                    ✓ All Documents Verified
+                                </span>
+                            ) : (
+                                <span className="px-3 py-1 bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black uppercase tracking-widest w-fit">
+                                    👁 Preview All Docs to Unlock Approval
+                                </span>
+                            )}
+                        </div>
+
                         <DocumentList documents={application?.all_documents} fixData={fixDataHandler} documentView={viewDocument} />
                     </section>
 

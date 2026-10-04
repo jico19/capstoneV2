@@ -36,7 +36,8 @@ class PermitApplication(models.Model):
         OPV_REJECTED        = 'OPV_REJECTED',       'OPV Rejected'
         PERMIT_ISSUED       = 'PERMIT_ISSUED',       'Permit issued'
         PAYMENT_PENDING     = 'PAYMENT_PENDING',     'Payment pending'
-        RELEASED            = 'RELEASED',            'Released' 
+        RELEASED            = 'RELEASED',            'Released'
+        CANCELLED           = 'CANCELLED',           'Cancelled'
 
     application_id  = models.CharField(max_length=32, unique=True, editable=False, default=document_id)
     farmer = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -198,9 +199,12 @@ class OCRValidationResult(models.Model):
     overridden_at = models.DateTimeField(null=True, blank=True)
     overridden_fields = models.JSONField(default=dict)
 
-    
+    # Tracks which OCR provider produced this result (e.g. 'paddleocr', 'ocrspace', 'none')
+    provider = models.CharField(max_length=30, default='ocrspace', blank=True)
+
     def __str__(self):
         return f"OCR → {self.document.id} - {self.status}"
+
 
 
 class IssuedPermit(models.Model):

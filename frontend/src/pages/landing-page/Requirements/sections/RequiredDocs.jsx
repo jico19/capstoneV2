@@ -17,8 +17,8 @@ const DOCUMENTS = [
     desc: "Certificate confirming the livestock will be slaughtered immediately upon arrival at destination. Required for livestock intended for slaughter.",
     format: "PDF or JPG/PNG", size: "5MB", extra: { label: "Required", value: "For slaughter purposes", accent: true } },
   { number: "5", title: "Barangay Endorsement (Pagpapatunay)",
-    desc: "Official clearance or Pagpapatunay along with endorsement form from the source barangay agriculture officer, endorsing the transport and confirming livestock details.",
-    format: "PDF or JPG/PNG", size: "5MB", extra: { label: "Required", value: "Yes", accent: false } },
+    desc: "Official clearance or Pagpapatunay along with endorsement form from the source barangay agriculture officer. Required only when transporting pigs to destinations outside Sariaya municipality.",
+    format: "PDF or JPG/PNG", size: "5MB", extra: { label: "Required", value: "Outside Sariaya", accent: true } },
 ];
 
 const REMINDERS = [

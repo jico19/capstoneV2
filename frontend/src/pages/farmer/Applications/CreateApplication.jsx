@@ -18,7 +18,7 @@ import useAuthStore from '../../../store/authStore';
 const CreateApplication = () => {
     const { user, fetchUserProfile } = useAuthStore();
     const [step, setStep] = useState(1);
-    const [origins, setOrigins] = useState([{ id: Date.now(), barangay: '', number_of_pigs: '' }]);
+    const [origins, setOrigins] = useState(() => [{ id: Date.now(), barangay: '', number_of_pigs: '' }]);
     const [confirmModal, setConfirmModal] = useState(null);
     const { mutate } = useCreateApplication();
     const navigate = useNavigate();
@@ -250,18 +250,9 @@ const CreateApplication = () => {
                                         'transport_date', 
                                         'purpose',
                                         ...origins.map(o => `barangay_${o.id}`),
-                                        ...origins.flatMap(o => [
-                                            `source_farmer_name_${o.id}`,
-                                            `source_phone_no_${o.id}`,
-                                            `inahin_${o.id}`,
-                                            `barako_${o.id}`,
-                                            `fattener_${o.id}`,
-                                            `grower_${o.id}`,
-                                            `bulaw_${o.id}`,
-                                            `starter_${o.id}`
-                                        ])
+                                        ...origins.map(o => `pigs_total_${o.id}`)
                                     ];
-                                    nextStep(step1Fields, "Please fill in all required travel details.");
+                                    nextStep(step1Fields, "Please check your answers before continuing.");
                                 }}
                                 origins={origins}
                                 addOrigin={addOrigin}
@@ -269,31 +260,46 @@ const CreateApplication = () => {
                             />
                         )}
 
-                        {step === 2 && (
-                            <UploadDocument
-                                register={register}
-                                errors={errors}
-                                watch={watch}
-                                prevStep={prevStep}
-                                nextStep={() => {
-                                    const step2Fields = origins.flatMap(o => [
-                                        `origin_${o.id}_cis`, 
-                                        `origin_${o.id}_endorsement_cert`
-                                    ]);
-                                    nextStep(step2Fields, "Please upload the required barangay certificates for each starting location.");
-                                }}
-                                origins={origins}
-                            />
-                        )}
+                        {(() => {
+                            const destinationMuniKey = watch('destination_municipality');
+                            const isEndorsementRequired = !destinationMuniKey?.toUpperCase().includes('SARIAYA');
 
-                        {step === 3 && (
-                            <ReviewApplication
-                                watch={watch}
-                                prevStep={prevStep}
-                                isSubmitting={isSubmitting}
-                                origins={origins}
-                            />
-                        )}
+                            return (
+                                <>
+                                     {step === 2 && (
+                                        <UploadDocument
+                                            register={register}
+                                            errors={errors}
+                                            watch={watch}
+                                            setValue={setValue}
+                                            prevStep={prevStep}
+                                            nextStep={() => {
+                                                const step2Fields = origins.flatMap(o => {
+                                                    const fields = [`origin_${o.id}_cis`];
+                                                    if (isEndorsementRequired) {
+                                                        fields.push(`origin_${o.id}_endorsement_cert`);
+                                                    }
+                                                    return fields;
+                                                });
+                                                nextStep(step2Fields, "Please upload the required barangay certificates for each starting location.");
+                                            }}
+                                            origins={origins}
+                                            isEndorsementRequired={isEndorsementRequired}
+                                        />
+                                    )}
+
+                                    {step === 3 && (
+                                        <ReviewApplication
+                                            watch={watch}
+                                            prevStep={prevStep}
+                                            isSubmitting={isSubmitting}
+                                            origins={origins}
+                                            isEndorsementRequired={isEndorsementRequired}
+                                        />
+                                    )}
+                                </>
+                            );
+                        })()}
 
                     </form>
                 </div>

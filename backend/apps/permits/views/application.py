@@ -190,6 +190,21 @@ class PermitApplicationViewSet(BaseModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """
+        Farmer cancellation of their application.
+        """
+        application_instance = self.get_object()
+        services.cancel_application(
+            application=application_instance,
+            user=request.user
+        )
+        return Response(
+            {"msg": "Application cancelled successfully"},
+            status=status.HTTP_200_OK,
+        )
+
     @action(detail=True, methods=["get"])
     def verify(self, request, pk=None):
         """

@@ -6,7 +6,7 @@ const STEPS = [
   { n: "1", title: "Create Account & Login",
     desc: "Register on FarmPass with your mobile number for SMS notifications. Verify your account through the code sent to your phone. Login to access the application dashboard." },
   { n: "2", title: "Prepare Documents",
-    desc: "Gather all 5 required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Immediate Slaughter (if applicable), and Endorsement Form. Scan or take clear photos ensuring files are under size limits." },
+    desc: "Gather required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Inspection (CIS), and Endorsement Form (if transporting outside Sariaya). Scan or take clear photos ensuring files are under size limits." },
   { n: "3", title: "Fill Application Form",
     desc: "Complete the online form with source details (owner name, barangay, address), livestock information (type, quantity), destination details, and transport information. Provide accurate data for all required fields." },
   { n: "4", title: "Upload Documents",

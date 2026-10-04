@@ -26,19 +26,27 @@ const ConfirmationModal = ({
     isOpen,
     onClose,
     onYes,
+    onConfirm,
     onNo,
     title,
     message,
-    yesText = "Yes",
+    yesText,
+    confirmText,
     noText = "No",
     cancelText = "Cancel",
-    yesVariant = "primary",
-    noVariant = "danger",
+    yesVariant,
+    confirmVariant,
     isSubmitting = false,
+    isLoading = false,
     submittingAction = null,
     type = "help"
 }) => {
     if (!isOpen) return null;
+
+    const handleYes = onYes || onConfirm;
+    const resolvedYesText = yesText || confirmText || "Yes";
+    const resolvedYesVariant = yesVariant || confirmVariant || "primary";
+    const activeIsSubmitting = isSubmitting || isLoading;
 
     // Get icon based on modal type
     const getIcon = () => {
@@ -58,7 +66,7 @@ const ConfirmationModal = ({
 
     // Get color classes for Yes/No buttons based on variant
     const getYesButtonClass = () => {
-        switch (yesVariant) {
+        switch (resolvedYesVariant) {
             case 'danger':
                 return 'bg-red-600 hover:bg-red-700 text-white';
             case 'success':
@@ -121,7 +129,7 @@ const ConfirmationModal = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            disabled={isSubmitting}
+                            disabled={activeIsSubmitting}
                             className="px-5 py-2.5 border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none disabled:opacity-50"
                         >
                             {cancelText}
@@ -132,10 +140,10 @@ const ConfirmationModal = ({
                             <button
                                 type="button"
                                 onClick={onNo}
-                                disabled={isSubmitting}
+                                disabled={activeIsSubmitting}
                                 className={`px-5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${getNoButtonClass()}`}
                             >
-                                {isSubmitting && submittingAction === 'no' ? (
+                                {activeIsSubmitting && submittingAction === 'no' ? (
                                     <>
                                         <RefreshCw size={12} className="animate-spin" />
                                         Processing...
@@ -149,17 +157,17 @@ const ConfirmationModal = ({
                         {/* Yes / Confirm Button */}
                         <button
                             type="button"
-                            onClick={onYes}
-                            disabled={isSubmitting}
+                            onClick={handleYes}
+                            disabled={activeIsSubmitting}
                             className={`px-7 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${getYesButtonClass()}`}
                         >
-                            {isSubmitting && (submittingAction === 'yes' || !submittingAction) ? (
+                            {activeIsSubmitting && (submittingAction === 'yes' || !submittingAction) ? (
                                 <>
                                     <RefreshCw size={12} className="animate-spin" />
                                     Processing...
                                 </>
                             ) : (
-                                yesText
+                                resolvedYesText
                             )}
                         </button>
                     </div>

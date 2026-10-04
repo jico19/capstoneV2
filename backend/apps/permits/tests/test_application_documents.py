@@ -141,3 +141,54 @@ class TestPermitApplicationDocument:
             application=application, document_type='traders_pass'
         )
         assert str(original.file) != str(updated.file)
+
+    def test_endorsement_cert_optional_within_sariaya(self, farmer_user, barangay):
+        application = PermitApplication.objects.create(
+            farmer=farmer_user,
+            status=PermitApplication.Status.DRAFT,
+            destination='Barangay Janagdong 1, Sariaya, Quezon',
+            transport_date=timezone.now().date(),
+            purpose='Slaughter',
+        )
+        TransportOrigin.objects.create(
+            application=application,
+            barangay=barangay,
+            source_farmer_name='Mang Kanor',
+            source_phone_no='09222222222',
+            fattener=10,
+        )
+        files = {
+            'origin_0_cis': make_image('cis.png'),
+            'traders_pass': make_image('traders_pass.png'),
+            'handlers_license': make_image('handlers_license.png'),
+            'transport_carrier_reg': make_image('transport_carrier_reg.png'),
+        }
+        # Should not raise ValidationError
+        create_permit(files, application, farmer_user)
+        assert SubmittedDocument.objects.filter(origin__application=application).count() == 4
+
+    def test_endorsement_cert_required_outside_sariaya(self, farmer_user, barangay):
+        from rest_framework.exceptions import ValidationError
+        application = PermitApplication.objects.create(
+            farmer=farmer_user,
+            status=PermitApplication.Status.DRAFT,
+            destination='Barangay 1, Lucena City, Quezon',
+            transport_date=timezone.now().date(),
+            purpose='Slaughter',
+        )
+        TransportOrigin.objects.create(
+            application=application,
+            barangay=barangay,
+            source_farmer_name='Mang Kanor',
+            source_phone_no='09222222222',
+            fattener=10,
+        )
+        files = {
+            'origin_0_cis': make_image('cis.png'),
+            'traders_pass': make_image('traders_pass.png'),
+            'handlers_license': make_image('handlers_license.png'),
+            'transport_carrier_reg': make_image('transport_carrier_reg.png'),
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            create_permit(files, application, farmer_user)
+        assert "Missing Barangay Endorsement Certificate" in str(exc_info.value)

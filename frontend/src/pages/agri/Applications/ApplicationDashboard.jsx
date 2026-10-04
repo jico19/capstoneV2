@@ -34,19 +34,45 @@ const ApplicationDashboard = () => {
     const { data: unfilteredData } = useApplication(1000, 0);
     const navigate = useNavigate();
     
-    const applications = data?.results || [];
+    const [activeFilter, setActiveFilter] = useState('ALL');
+    const allFetchedApps = data?.results || [];
+
+    // Filter application list based on active KPI filter
+    const applications = useMemo(() => {
+        if (activeFilter === 'NEEDS_REVIEW') {
+            return allFetchedApps.filter(app => ['SUBMITTED', 'MANUAL', 'OCR_VALIDATED'].includes(app.status));
+        }
+        if (activeFilter === 'OPV_REVIEW') {
+            return allFetchedApps.filter(app => ['FORWARDED_TO_OPV', 'OPV_REJECTED'].includes(app.status));
+        }
+        if (activeFilter === 'OPV_APPROVED') {
+            return allFetchedApps.filter(app => ['OPV_VALIDATED'].includes(app.status));
+        }
+        if (activeFilter === 'READY') {
+            return allFetchedApps.filter(app => ['PAID', 'RELEASED'].includes(app.status));
+        }
+        return allFetchedApps;
+    }, [allFetchedApps, activeFilter]);
   
-    const count = data?.count || 0;
+    const count = applications.length;
 
     // Workflow Summary logic
     const summary = useMemo(() => {
         const allApps = unfilteredData?.results || [];
         return {
-            needsReview: allApps.filter(app => ['MANUAL', 'PENDING_AGRI'].includes(app.status)).length,
-            atHealthOffice: allApps.filter(app => ['PENDING_OPV', 'OPV_VALIDATED'].includes(app.status)).length,
+            needsReview: allApps.filter(app => ['SUBMITTED', 'MANUAL', 'OCR_VALIDATED'].includes(app.status)).length,
+            atHealthOffice: allApps.filter(app => ['FORWARDED_TO_OPV', 'OPV_REJECTED'].includes(app.status)).length,
+            opvApproved: allApps.filter(app => ['OPV_VALIDATED'].includes(app.status)).length,
             readyForPermit: allApps.filter(app => ['PAID', 'RELEASED'].includes(app.status)).length
         };
     }, [unfilteredData]);
+
+    const isOverdue = (createdAt, status) => {
+        if (!['SUBMITTED', 'MANUAL', 'OCR_VALIDATED'].includes(status)) return false;
+        if (!createdAt) return false;
+        const diffHours = (new Date() - new Date(createdAt)) / (1000 * 60 * 60);
+        return diffHours >= 48;
+    };
 
     if (isLoading) {
         return (
@@ -67,7 +93,6 @@ const ApplicationDashboard = () => {
         );
     }
 
-
     return (
         <div className="flex-1 p-4 md:p-8 space-y-8 bg-white min-h-full font-sans">
             
@@ -80,32 +105,47 @@ const ApplicationDashboard = () => {
                 </div>
             </div>
 
-            {/* 2. Workflow Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-                <KPICard
-                    title="Needs Your Check"
-                    value={summary.needsReview}
-                    subtitle="Requires officer review"
-                    icon={AlertCircle}
-                    colorClass="bg-red-50 text-red-600"
-                />
-                <KPICard
-                    title="At Health Office"
-                    value={summary.atHealthOffice}
-                    subtitle="Awaiting OPV validation"
-                    icon={Clock}
-                    colorClass="bg-blue-50 text-blue-600"
-                />
-                <KPICard
-                    title="Permits Ready"
-                    value={summary.readyForPermit}
-                    subtitle="Finalized and released"
-                    icon={CheckCircle}
-                    colorClass="bg-green-50 text-green-600"
-                />
+            {/* 2. Workflow Summary Cards (Clickable Filter Controls) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div onClick={() => setActiveFilter(activeFilter === 'NEEDS_REVIEW' ? 'ALL' : 'NEEDS_REVIEW')} className="cursor-pointer transition-transform active:scale-95">
+                    <KPICard
+                        title="Needs Action"
+                        value={summary.needsReview}
+                        subtitle="Click to view unreviewed requests"
+                        icon={AlertCircle}
+                        colorClass={`bg-red-50 text-red-600 ${activeFilter === 'NEEDS_REVIEW' ? 'ring-2 ring-red-600' : ''}`}
+                    />
+                </div>
+                <div onClick={() => setActiveFilter(activeFilter === 'OPV_REVIEW' ? 'ALL' : 'OPV_REVIEW')} className="cursor-pointer transition-transform active:scale-95">
+                    <KPICard
+                        title="At Health Office"
+                        value={summary.atHealthOffice}
+                        subtitle="Click to view OPV pending"
+                        icon={Clock}
+                        colorClass={`bg-blue-50 text-blue-600 ${activeFilter === 'OPV_REVIEW' ? 'ring-2 ring-blue-600' : ''}`}
+                    />
+                </div>
+                <div onClick={() => setActiveFilter(activeFilter === 'OPV_APPROVED' ? 'ALL' : 'OPV_APPROVED')} className="cursor-pointer transition-transform active:scale-95">
+                    <KPICard
+                        title="OPV Approved"
+                        value={summary.opvApproved}
+                        subtitle="Click to set fee & issue permit"
+                        icon={CheckCircle}
+                        colorClass={`bg-amber-50 text-amber-700 ${activeFilter === 'OPV_APPROVED' ? 'ring-2 ring-amber-600' : ''}`}
+                    />
+                </div>
+                <div onClick={() => setActiveFilter(activeFilter === 'READY' ? 'ALL' : 'READY')} className="cursor-pointer transition-transform active:scale-95">
+                    <KPICard
+                        title="Permits Ready"
+                        value={summary.readyForPermit}
+                        subtitle="Click to view finalized permits"
+                        icon={CheckCircle}
+                        colorClass={`bg-green-50 text-green-600 ${activeFilter === 'READY' ? 'ring-2 ring-green-600' : ''}`}
+                    />
+                </div>
             </div>
 
-            {/* Search Toolbar */}
+            {/* Search & Active Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pb-2">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
@@ -120,6 +160,20 @@ const ApplicationDashboard = () => {
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
                     )}
                 </div>
+                {activeFilter !== 'ALL' && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-stone-600 uppercase">
+                            Filtered by: <span className="text-green-800 font-black">{activeFilter.replace('_', ' ')}</span>
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setActiveFilter('ALL')}
+                            className="text-[10px] font-black uppercase text-red-600 hover:text-red-800 bg-red-50 border border-red-200 px-2 py-1"
+                        >
+                            Reset Filter
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* 3. Table Container */}
@@ -154,9 +208,16 @@ const ApplicationDashboard = () => {
                                 <tr key={data.id} className="hover:bg-gray-50 transition-colors group">
                                     {/* ID Badge */}
                                     <td className="px-6 py-5">
-                                        <span className="text-[11px] font-black text-gray-900 font-mono tracking-tight bg-gray-50 px-2 py-1 border border-gray-200">
-                                            {data.application_id}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] font-black text-gray-900 font-mono tracking-tight bg-gray-50 px-2 py-1 border border-gray-200">
+                                                {data.application_id}
+                                            </span>
+                                            {isOverdue(data.created_at, data.status) && (
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-none animate-pulse">
+                                                    OVERDUE
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
 
                                     {/* Farmer Details */}

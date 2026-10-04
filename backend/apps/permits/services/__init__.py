@@ -10,6 +10,7 @@ from .application import (
     approve_application,
     reject_application,
     resubmit_application,
+    cancel_application,
 )
 from .opv import (
     create_approve_opv_validation,

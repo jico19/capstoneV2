@@ -12,23 +12,28 @@ _VALID_STATUS_TRANSITIONS = {
         _ST.SUBMITTED,           # application.create
         _ST.OCR_VALIDATED,       # OCR task may observe DRAFT (on_commit race)
         _ST.MANUAL,              # same race
+        _ST.CANCELLED,           # farmer cancel
     ],
     _ST.SUBMITTED: [
         _ST.OCR_VALIDATED,       # check_all_documents_complete
         _ST.MANUAL,              # check_all_documents_complete
         _ST.FORWARDED_TO_OPV,    # approve_application
         _ST.RESUBMISSION,        # reject_application (Agri return)
+        _ST.CANCELLED,           # farmer cancel
     ],
     _ST.OCR_VALIDATED: [
         _ST.FORWARDED_TO_OPV,    # approve_application
         _ST.RESUBMISSION,        # reject_application
+        _ST.CANCELLED,           # farmer cancel
     ],
     _ST.MANUAL: [
         _ST.FORWARDED_TO_OPV,    # approve_application
         _ST.RESUBMISSION,        # reject_application
+        _ST.CANCELLED,           # farmer cancel
     ],
     _ST.RESUBMISSION: [
         _ST.SUBMITTED,           # resubmit_application (Agri rejection)
+        _ST.CANCELLED,           # farmer cancel
     ],
     _ST.FORWARDED_TO_OPV: [
         _ST.OPV_VALIDATED,       # approve_opv_validation
@@ -44,6 +49,7 @@ _VALID_STATUS_TRANSITIONS = {
         _ST.RELEASED,            # payment release paths
     ],
     _ST.RELEASED: [],            # terminal
+    _ST.CANCELLED: [],           # terminal
     _ST.PERMIT_ISSUED: [],       # deprecated — never a source or target
 }
 
@@ -251,5 +257,38 @@ def resubmit_application(application, user, serializer_data, files):
         AuditTrail.objects.create(
             who_performed=user,
             what_performed=f"[FARMER RESUBMISSION] - Application #{application.application_id} resubmitted with updated information/documents.",
+            when_performed=timezone.now(),
+        )
+
+def cancel_application(application, user):
+    """
+    Farmer application cancellation.
+    Allowed only if the user is the requesting farmer, application is not checked,
+    and status is prior to OPV forwarding.
+    """
+    if user.role != "Farmer" or application.farmer != user:
+        raise PermissionDenied("Only the requesting farmer can cancel this application.")
+
+    if application.is_checked or application.status not in [
+        _ST.DRAFT, _ST.SUBMITTED, _ST.OCR_VALIDATED, _ST.MANUAL, _ST.RESUBMISSION
+    ]:
+        raise ValidationError("Application cannot be cancelled because it has already been checked or processed by MAO staff.")
+
+    with transaction.atomic():
+        handle_application_status_change(application, _ST.CANCELLED)
+
+        # Notify Agri staff of cancellation
+        agri_users = models.User.objects.filter(role="Agri")
+        for admin in agri_users:
+            Notification.objects.create(
+                recipient=admin,
+                type=Notification.Type.INFO,
+                title="Application Cancelled",
+                message=f"Permit request #{application.application_id} was cancelled by the farmer."
+            )
+
+        AuditTrail.objects.create(
+            who_performed=user,
+            what_performed=f"[APPLICATION CANCELLED] - Application #{application.application_id} was cancelled by farmer.",
             when_performed=timezone.now(),
         )

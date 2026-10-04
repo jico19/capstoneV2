@@ -14,7 +14,7 @@ const ANIMAL_CATEGORIES = [
     {
         name: "Growing",
         items: [
-            { key: "starter", label: "Starter" },
+            { key: "starter", label: "Starter (Biik / Piglet)" },
             { key: "grower", label: "Grower" },
             { key: "fattener", label: "Fattener" }
         ]
@@ -22,7 +22,7 @@ const ANIMAL_CATEGORIES = [
     {
         name: "Other",
         items: [
-            { key: "bulaw", label: "Bulaw" }
+            { key: "bulaw", label: "Bulaw (Dumalaga / Young Gilt)" }
         ]
     }
 ];
@@ -93,20 +93,22 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
     const prevLength = useRef(origins.length);
 
     useEffect(() => {
+        let timer;
         if (prevLength.current === 0 && origins.length > 0) {
             // Initial data load - expand the first location
-            setActiveOriginId(origins[0].id);
+            timer = setTimeout(() => setActiveOriginId(origins[0].id), 0);
         } else if (origins.length > prevLength.current && origins.length > 0) {
             // New starting location added - expand it
-            setActiveOriginId(origins[origins.length - 1].id);
+            timer = setTimeout(() => setActiveOriginId(origins[origins.length - 1].id), 0);
         } else if (origins.length < prevLength.current) {
             // A location was removed
             const exists = origins.some(o => o.id === activeOriginId);
             if (!exists && origins.length > 0) {
-                setActiveOriginId(origins[origins.length - 1].id);
+                timer = setTimeout(() => setActiveOriginId(origins[origins.length - 1].id), 0);
             }
         }
         prevLength.current = origins.length;
+        return () => clearTimeout(timer);
     }, [origins, activeOriginId]);
 
     const getOriginTotal = (originId) => {
@@ -276,8 +278,16 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                     </div>
                                     
                                     <div className="space-y-2 pt-2">
-                                        <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">How many pigs are you transporting?</label>
-                                        <div className="border border-stone-200 bg-white">
+                                        <input
+                                            type="hidden"
+                                            {...register(`pigs_total_${origin.id}`, {
+                                                validate: () => getOriginTotal(origin.id) > 0 || "At least one pig must be specified for transport"
+                                            })}
+                                        />
+                                        <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">
+                                            How many pigs are you transporting? <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className={`border transition-colors bg-white ${errors[`pigs_total_${origin.id}`] ? "border-red-600 bg-red-50/20" : "border-stone-200"}`}>
                                             {/* Compact 2-Column Responsive Animal Grid */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-stone-50/50">
                                                 {ANIMAL_CATEGORIES.flatMap(cat => cat.items.map(item => ({ ...item, category: cat.name }))).map((item) => (
@@ -311,6 +321,11 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                                     {getOriginTotal(origin.id)} <span className="text-[10px] font-normal text-stone-500 font-sans">pigs</span>
                                                 </span>
                                             </div>
+                                            {errors[`pigs_total_${origin.id}`] && (
+                                                <div className="p-3 bg-red-50 border-t border-red-200 text-[10px] font-black text-red-600 uppercase tracking-widest">
+                                                    ⚠ {errors[`pigs_total_${origin.id}`].message}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -450,17 +465,55 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                             <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">Why are the pigs being transported? (Purpose)</label>
                             <p className="text-[11px] text-stone-400 font-medium">Select the main reason for moving the animals.</p>
                         </div>
-                        <select 
-                            className={selectClass(errors.purpose)} 
-                            {...register('purpose', { required: true })} 
-                        >
-                            <option value="">-- SELECT PURPOSE --</option>
-                            <option value="Slaughter">Slaughter / Katayan (For Meat)</option>
-                            <option value="Breeding">Breeding / Pampalahi</option>
-                            <option value="Fattening">Fattening / Pagpapataba</option>
-                            <option value="Sale / Commercial">Sale to Buyer / Pagbebenta</option>
-                            <option value="Transfer / Relocation">Transfer to another Farm / Paglipat ng Bukid</option>
-                        </select>
+                        {(() => {
+                            const nonSlaughterableCount = origins.reduce((sum, o) => 
+                                sum + parseInt(watch(`starter_${o.id}`) || 0, 10) 
+                                    + parseInt(watch(`grower_${o.id}`) || 0, 10) 
+                                    + parseInt(watch(`bulaw_${o.id}`) || 0, 10), 0
+                            );
+                            const slaughterableCount = origins.reduce((sum, o) => 
+                                sum + parseInt(watch(`fattener_${o.id}`) || 0, 10) 
+                                    + parseInt(watch(`inahin_${o.id}`) || 0, 10) 
+                                    + parseInt(watch(`barako_${o.id}`) || 0, 10), 0
+                            );
+
+                            const isSlaughterAllowed = slaughterableCount > 0 || (nonSlaughterableCount === 0 && slaughterableCount === 0);
+                            const currentPurpose = watch('purpose');
+
+                            return (
+                                <>
+                                    <select 
+                                        className={selectClass(errors.purpose)} 
+                                        {...register('purpose', { required: true })} 
+                                    >
+                                        <option value="">-- SELECT PURPOSE --</option>
+                                        {isSlaughterAllowed && <option value="Slaughter">Slaughter / Katayan (For Meat)</option>}
+                                        <option value="Breeding">Breeding / Pampalahi</option>
+                                        <option value="Fattening">Fattening / Pagpapataba</option>
+                                        <option value="Sale / Commercial">Sale to Buyer / Pagbebenta</option>
+                                        <option value="Transfer / Relocation">Transfer to another Farm / Paglipat ng Bukid</option>
+                                        <option value="Other">Other / Iba pa</option>
+                                    </select>
+                                    {!isSlaughterAllowed && (
+                                        <p className="text-[10px] font-bold text-amber-800 bg-amber-50 p-2.5 border border-amber-200 mt-1">
+                                            Note: "Slaughter" option is unavailable because your shipment consists only of young/growing pigs (Starter, Grower, Bulaw) which are intended for raising or breeding, not immediate slaughter.
+                                        </p>
+                                    )}
+                                    {currentPurpose === 'Other' && (
+                                        <div className="mt-2">
+                                            <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">Please Specify Purpose</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Enter specific transport reason..." 
+                                                className={inputClass(errors.other_purpose)} 
+                                                {...register('other_purpose', { required: currentPurpose === 'Other' })} 
+                                            />
+                                            {errors.other_purpose && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Please specify the purpose</p>}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                         {errors.purpose && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Purpose is required</p>}
                     </div>
                 </div>

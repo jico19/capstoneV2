@@ -515,6 +515,9 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
             when_performed=timezone.now(),
         )
 
+    return payment_history
+
+
 def generate_collection_report(user, start_date_str, end_date_str):
     if user.role != 'Agri':
         raise PermissionDenied("Only Agri officers can generate collection reports.")

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Eye, Inbox, FileText, AlertCircle, Clock, CheckCircle, Search } from "lucide-react";
+import { Eye, Inbox, FileText, AlertCircle, Clock, CheckCircle, Search, Filter } from "lucide-react";
 import DateFormatter from "../../../components/ui/DateFormatter";
 import ActionGroup from '../../../components/ui/ActionButton';
 import StatusBadge from "../../../components/ui/StatusBadge";
@@ -7,6 +7,21 @@ import { useApplication } from '../../../hooks/useApplications';
 import { useState, useMemo, useEffect } from "react";
 import Pagination from "../../../components/ui/Pagination";
 import KPICard from "../../../components/ui/KPICard";
+
+const STATUS_FILTER_OPTIONS = [
+    { value: 'ALL', label: 'All Permit Statuses' },
+    { value: 'NEEDS_REVIEW', label: 'Needs Action (MAO)' },
+    { value: 'SUBMITTED', label: 'Submitted (New)' },
+    { value: 'MANUAL', label: 'Needs Manual Review' },
+    { value: 'OPV_REVIEW', label: 'At Health Office (OPV)' },
+    { value: 'FORWARDED_TO_OPV', label: 'Forwarded to OPV' },
+    { value: 'OPV_APPROVED', label: 'OPV Validated' },
+    { value: 'OPV_REJECTED', label: 'OPV Rejected' },
+    { value: 'PAYMENT_PENDING', label: 'Payment Pending' },
+    { value: 'READY', label: 'Permits Ready (Paid/Released)' },
+    { value: 'RELEASED', label: 'Released Permits' },
+    { value: 'CANCELLED', label: 'Cancelled Requests' },
+];
 
 /**
  * Agri Application Dashboard
@@ -35,24 +50,26 @@ const ApplicationDashboard = () => {
     const navigate = useNavigate();
     
     const [activeFilter, setActiveFilter] = useState('ALL');
-    const allFetchedApps = data?.results || [];
-
-    // Filter application list based on active KPI filter
+    // Filter application list based on active KPI or status dropdown filter
     const applications = useMemo(() => {
+        const rawApps = data?.results || [];
         if (activeFilter === 'NEEDS_REVIEW') {
-            return allFetchedApps.filter(app => ['SUBMITTED', 'MANUAL', 'OCR_VALIDATED'].includes(app.status));
+            return rawApps.filter(app => ['SUBMITTED', 'MANUAL', 'OCR_VALIDATED'].includes(app.status));
         }
         if (activeFilter === 'OPV_REVIEW') {
-            return allFetchedApps.filter(app => ['FORWARDED_TO_OPV', 'OPV_REJECTED'].includes(app.status));
+            return rawApps.filter(app => ['FORWARDED_TO_OPV', 'OPV_REJECTED'].includes(app.status));
         }
         if (activeFilter === 'OPV_APPROVED') {
-            return allFetchedApps.filter(app => ['OPV_VALIDATED'].includes(app.status));
+            return rawApps.filter(app => ['OPV_VALIDATED'].includes(app.status));
         }
         if (activeFilter === 'READY') {
-            return allFetchedApps.filter(app => ['PAID', 'RELEASED'].includes(app.status));
+            return rawApps.filter(app => ['PAID', 'RELEASED'].includes(app.status));
         }
-        return allFetchedApps;
-    }, [allFetchedApps, activeFilter]);
+        if (activeFilter !== 'ALL') {
+            return rawApps.filter(app => app.status === activeFilter);
+        }
+        return rawApps;
+    }, [data?.results, activeFilter]);
   
     const count = applications.length;
 
@@ -141,25 +158,48 @@ const ApplicationDashboard = () => {
                 />
             </div>
 
-            {/* Search & Active Filter Bar */}
+            {/* Search & Permit Status Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pb-2">
-                <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Search ID, Farmer name..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
-                    />
-                    {isFetching && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
-                    )}
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    {/* Search Input */}
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search ID, Farmer name..."
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
+                        />
+                        {isFetching && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
+                        )}
+                    </div>
+
+                    {/* Permit Status Filter Dropdown */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Filter size={15} className="text-stone-400 shrink-0 hidden sm:block" />
+                        <select
+                            value={activeFilter}
+                            onChange={(e) => {
+                                setActiveFilter(e.target.value);
+                                setOffset(0);
+                            }}
+                            className="w-full sm:w-auto py-2 px-3 border border-stone-200 text-xs font-bold bg-white text-stone-800 focus:outline-none focus:border-green-700 rounded-none cursor-pointer"
+                        >
+                            {STATUS_FILTER_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
+
                 {activeFilter !== 'ALL' && (
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-stone-600 uppercase">
-                            Filtered by: <span className="text-green-800 font-black">{activeFilter.replace('_', ' ')}</span>
+                            Filtered by: <span className="text-green-800 font-black">{activeFilter.replace(/_/g, ' ')}</span>
                         </span>
                         <button
                             type="button"

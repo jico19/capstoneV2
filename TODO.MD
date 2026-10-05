@@ -149,10 +149,10 @@
 
 ### Payment
 
-* [ ] Add **payment countdown timer**, similar to the concept discussed with Sir Alvin.
-* [ ] Display remaining payment time.
-* [ ] Define behavior when the countdown expires.
-* [ ] Automatically update the payment/request status when the deadline expires.
+* [x] Add **payment countdown timer**, similar to the concept discussed with Sir Alvin.
+* [x] Display remaining payment time.
+* [x] Define behavior when the countdown expires.
+* [x] Automatically update the payment/request status when the deadline expires.
 
 ---
 
@@ -186,6 +186,6 @@
 
 * [x] Test automatic document detection.
 * [x] Test unreadable document handling.
-* [ ] Test payment countdown.
-* [ ] Test payment expiration.
+* [x] Test payment countdown.
+* [x] Test payment expiration.
 * [x] Verify terminology changes across the system.

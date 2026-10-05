@@ -515,9 +515,6 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
             when_performed=timezone.now(),
         )
 
-    return payment_history
-
-
 def generate_collection_report(user, start_date_str, end_date_str):
     if user.role != 'Agri':
         raise PermissionDenied("Only Agri officers can generate collection reports.")
@@ -525,3 +522,49 @@ def generate_collection_report(user, start_date_str, end_date_str):
     start_date, end_date = parse_date_range_strings(start_date_str, end_date_str)
     pdf_buffer = generate_collection_report_pdf(start_date=start_date, end_date=end_date, requesting_user=user)
     return pdf_buffer, start_date, end_date
+
+
+def check_and_handle_payment_expiration(issued_permit):
+    """
+    Checks if payment_deadline or expires_at has passed for an unpaid permit.
+    Updates PaymentHistory status to FAILED if expired, creates AuditTrail,
+    and returns dict with expiration state.
+    """
+    now = timezone.now()
+    if issued_permit.is_paid:
+        return {"is_expired": False, "time_remaining_seconds": 0, "status": "PAID"}
+
+    deadline = issued_permit.payment_deadline
+    payment_history = getattr(issued_permit, 'payment_history', None)
+    if payment_history and payment_history.expires_at:
+        deadline = min(deadline, payment_history.expires_at) if deadline else payment_history.expires_at
+
+    if not deadline:
+        deadline = now + timedelta(hours=24)
+
+    diff_seconds = (deadline - now).total_seconds()
+    is_expired = diff_seconds <= 0
+
+    if is_expired and payment_history and payment_history.status == models.PaymentHistory.Status.PENDING:
+        with transaction.atomic():
+            payment_history.status = models.PaymentHistory.Status.FAILED
+            payment_history.save()
+            AuditTrail.objects.create(
+                who_performed=None,
+                what_performed=f"[PAYMENT EXPIRED] - Payment window expired for Permit #{issued_permit.permit_number} (App #{issued_permit.application.application_id}).",
+                when_performed=now,
+            )
+            from apps.api.models import Notification
+            Notification.objects.create(
+                recipient=issued_permit.application.farmer,
+                type=Notification.Type.WARNING,
+                title="Payment Deadline Expired",
+                message=f"The payment deadline for application #{issued_permit.application.application_id} has expired."
+            )
+
+    return {
+        "is_expired": is_expired,
+        "time_remaining_seconds": max(0, int(diff_seconds)),
+        "deadline": deadline.isoformat() if deadline else None,
+        "status": payment_history.status if payment_history else "PENDING"
+    }

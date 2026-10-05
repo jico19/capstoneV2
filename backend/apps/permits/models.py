@@ -228,6 +228,7 @@ class IssuedPermit(models.Model):
 
     date_issued = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True)
+    payment_deadline = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         # Set expiry date after issuance
@@ -237,6 +238,8 @@ class IssuedPermit(models.Model):
             config = MunicipalConfig.objects.first()
             days = config.validity_days if config else 3
             self.valid_until = base_date + timedelta(days=days)
+        if not self.payment_deadline:
+            self.payment_deadline = timezone.now() + timedelta(hours=24)
         super().save(*args, **kwargs)
 
     def __str__(self):

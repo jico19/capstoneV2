@@ -381,3 +381,21 @@ class PaymentViewSet(BaseModelViewSet):
             )
         except Exception as e:
             return Response({"error": "An internal error occurred during verification"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get', 'post'])
+    def check_expiration(self, request, pk=None):
+        """
+        GET/POST /api/payment/{application_pk}/check_expiration/
+        Checks if the payment deadline for the issued permit has passed.
+        Auto-updates status to FAILED if expired.
+        """
+        application = get_object_or_404(Permits.PermitApplication, pk=pk)
+        if not _can_manage_payment(request.user, application):
+            return Response({"error": "Unauthorized access to this application"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            issued_permit = get_object_or_404(Permits.IssuedPermit, application=application)
+            result = services.check_and_handle_payment_expiration(issued_permit)
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

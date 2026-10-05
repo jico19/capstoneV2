@@ -7,6 +7,7 @@ import DocumentList from "../../../components/ui/DocumentList"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
 import ConfirmationModal from "../../../components/ui/ConfirmationModal"
+import PaymentCountdownTimer from "../../../components/ui/PaymentCountdownTimer"
 import { useQueryClient } from "@tanstack/react-query"
 import { api } from "../../../lib/api"
 import { toast } from "sonner"
@@ -144,7 +145,12 @@ const ApplicationDetail = () => {
                     {application.status === "PAYMENT_PENDING" && (
                         <div className="bg-green-50 border border-green-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1">
-                                <h3 className="text-xs font-black text-green-700 uppercase tracking-widest">Payment Required</h3>
+                                <div className="flex flex-wrap items-center gap-2.5">
+                                    <h3 className="text-xs font-black text-green-700 uppercase tracking-widest">Payment Required</h3>
+                                    {application.issued_permit?.payment_deadline && (
+                                        <PaymentCountdownTimer compact deadline={application.issued_permit.payment_deadline} />
+                                    )}
+                                </div>
                                 <p className="text-xs font-bold text-green-700/80 uppercase tracking-wider leading-normal max-w-xl">
                                     Your application has been approved. Please complete the permit fee payment to release your transport permit.
                                 </p>

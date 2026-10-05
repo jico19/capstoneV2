@@ -37,6 +37,8 @@ class PaymentListSerializer(serializers.ModelSerializer):
     )
     total_heads = serializers.SerializerMethodField()
     raw_status = serializers.CharField(source='status', read_only=True)
+    payment_deadline = serializers.SerializerMethodField()
+    is_expired = serializers.SerializerMethodField()
 
     def get_farmer_name(self, obj):
         try:
@@ -51,6 +53,23 @@ class PaymentListSerializer(serializers.ModelSerializer):
             return sum(o.number_of_pigs for o in origins)
         except Exception:
             return 0
+
+    def get_payment_deadline(self, obj):
+        try:
+            deadline = obj.issued_permit.payment_deadline or obj.expires_at
+            return deadline.isoformat() if deadline else None
+        except Exception:
+            return None
+
+    def get_is_expired(self, obj):
+        try:
+            from django.utils import timezone
+            if obj.issued_permit.is_paid:
+                return False
+            deadline = obj.issued_permit.payment_deadline or obj.expires_at
+            return (timezone.now() > deadline) if deadline else False
+        except Exception:
+            return False
 
     class Meta:
         model = models.PaymentHistory
@@ -70,6 +89,8 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'paymongo_session_id',
             'paymongo_payment_intent_id',
             'expires_at',
+            'payment_deadline',
+            'is_expired',
             'confirmed_by',
             'confirmed_at',
             'created_at',

@@ -5,6 +5,7 @@ import { api } from '../../../lib/api';
 import { useApplicationDetail } from '../../../hooks/useApplications';
 import { toast } from 'sonner';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import PaymentCountdownTimer from '../../../components/ui/PaymentCountdownTimer';
 
 // Timer component for QR Ph code expiration countdown
 const QRCountDown = ({ expiresAt, onExpire }) => {
@@ -539,19 +540,40 @@ const PaymentCheckout = () => {
                     </button>
 
                     {/* Header */}
-                    <div className="flex items-center gap-5 border-b border-stone-200 pb-10">
-                        <div className="p-4 bg-white border border-stone-200 text-stone-800 rounded-none shrink-0">
-                            <Wallet size={24} />
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-stone-200 pb-10">
+                        <div className="flex items-center gap-5">
+                            <div className="p-4 bg-white border border-stone-200 text-stone-800 rounded-none shrink-0">
+                                <Wallet size={24} />
+                            </div>
+                            <div className="space-y-1">
+                                <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">
+                                    Payment Checkout
+                                </h1>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                                    Secure Municipal Fee Collection
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">
-                                Payment Checkout
-                            </h1>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                                Secure Municipal Fee Collection
-                            </p>
-                        </div>
+
+                        {application?.issued_permit?.payment_deadline && (
+                            <PaymentCountdownTimer
+                                deadline={application.issued_permit.payment_deadline}
+                                onExpire={() => setIsExpired(true)}
+                            />
+                        )}
                     </div>
+
+                    {(isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))) && (
+                        <div className="bg-red-50 border-l-4 border-red-600 p-5 flex gap-3.5 rounded-none shadow-sm">
+                            <AlertCircle size={22} className="text-red-600 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="text-xs font-black text-red-800 uppercase tracking-wider">⚠️ Payment Window Expired</p>
+                                <p className="text-xs text-red-700 font-medium">
+                                    The 24-hour payment deadline for this permit has elapsed. Please contact MAO staff or submit a new permit request.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="bg-red-50 border-l-4 border-red-600 p-4 flex gap-3 rounded-none">
@@ -653,14 +675,16 @@ const PaymentCheckout = () => {
                                 <div className="space-y-4">
                                     <button
                                         onClick={() => setShowConfirm(true)}
-                                        disabled={isLoading}
-                                        className="bg-green-700 hover:bg-green-600 text-white w-full py-5 rounded-none font-black text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+                                        disabled={isLoading || isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))}
+                                        className="bg-green-700 hover:bg-green-600 text-white w-full py-5 rounded-none font-black text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoading ? (
                                             <>
                                                 <span className="loading loading-spinner loading-sm"></span>
                                                 Processing...
                                             </>
+                                        ) : isExpired ? (
+                                            <>Payment Expired</>
                                         ) : (
                                             <>
                                                 {paymentMode === 'online' ? "Pay Online (PayMongo Gateway)" : "Get QR Code"} <ChevronRight size={18} />
@@ -672,8 +696,8 @@ const PaymentCheckout = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleStartSandbox('gcash')}
-                                            disabled={isLoading}
-                                            className="border border-stone-300 hover:bg-stone-100 text-stone-700 w-full py-3.5 rounded-none font-black text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                                            disabled={isLoading || isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))}
+                                            className="border border-stone-300 hover:bg-stone-100 text-stone-700 w-full py-3.5 rounded-none font-black text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <ShieldCheck size={14} className="text-green-700" />
                                             Open Interactive Demo Simulator

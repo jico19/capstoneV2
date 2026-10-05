@@ -107,42 +107,38 @@ const ApplicationDashboard = () => {
 
             {/* 2. Workflow Summary Cards (Clickable Filter Controls) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <div onClick={() => setActiveFilter(activeFilter === 'NEEDS_REVIEW' ? 'ALL' : 'NEEDS_REVIEW')} className="cursor-pointer transition-transform active:scale-95">
-                    <KPICard
-                        title="Needs Action"
-                        value={summary.needsReview}
-                        subtitle="Click to view unreviewed requests"
-                        icon={AlertCircle}
-                        colorClass={`bg-red-50 text-red-600 ${activeFilter === 'NEEDS_REVIEW' ? 'ring-2 ring-red-600' : ''}`}
-                    />
-                </div>
-                <div onClick={() => setActiveFilter(activeFilter === 'OPV_REVIEW' ? 'ALL' : 'OPV_REVIEW')} className="cursor-pointer transition-transform active:scale-95">
-                    <KPICard
-                        title="At Health Office"
-                        value={summary.atHealthOffice}
-                        subtitle="Click to view OPV pending"
-                        icon={Clock}
-                        colorClass={`bg-blue-50 text-blue-600 ${activeFilter === 'OPV_REVIEW' ? 'ring-2 ring-blue-600' : ''}`}
-                    />
-                </div>
-                <div onClick={() => setActiveFilter(activeFilter === 'OPV_APPROVED' ? 'ALL' : 'OPV_APPROVED')} className="cursor-pointer transition-transform active:scale-95">
-                    <KPICard
-                        title="OPV Approved"
-                        value={summary.opvApproved}
-                        subtitle="Click to set fee & issue permit"
-                        icon={CheckCircle}
-                        colorClass={`bg-amber-50 text-amber-700 ${activeFilter === 'OPV_APPROVED' ? 'ring-2 ring-amber-600' : ''}`}
-                    />
-                </div>
-                <div onClick={() => setActiveFilter(activeFilter === 'READY' ? 'ALL' : 'READY')} className="cursor-pointer transition-transform active:scale-95">
-                    <KPICard
-                        title="Permits Ready"
-                        value={summary.readyForPermit}
-                        subtitle="Click to view finalized permits"
-                        icon={CheckCircle}
-                        colorClass={`bg-green-50 text-green-600 ${activeFilter === 'READY' ? 'ring-2 ring-green-600' : ''}`}
-                    />
-                </div>
+                <KPICard
+                    title="Needs Action"
+                    value={summary.needsReview}
+                    subtitle="Click to view unreviewed requests"
+                    icon={AlertCircle}
+                    colorClass={`bg-red-50 text-red-600 ${activeFilter === 'NEEDS_REVIEW' ? 'ring-2 ring-red-600' : ''}`}
+                    onClick={() => setActiveFilter(activeFilter === 'NEEDS_REVIEW' ? 'ALL' : 'NEEDS_REVIEW')}
+                />
+                <KPICard
+                    title="At Health Office"
+                    value={summary.atHealthOffice}
+                    subtitle="Click to view OPV pending"
+                    icon={Clock}
+                    colorClass={`bg-blue-50 text-blue-600 ${activeFilter === 'OPV_REVIEW' ? 'ring-2 ring-blue-600' : ''}`}
+                    onClick={() => setActiveFilter(activeFilter === 'OPV_REVIEW' ? 'ALL' : 'OPV_REVIEW')}
+                />
+                <KPICard
+                    title="OPV Approved"
+                    value={summary.opvApproved}
+                    subtitle="Click to set fee & issue permit"
+                    icon={CheckCircle}
+                    colorClass={`bg-amber-50 text-amber-700 ${activeFilter === 'OPV_APPROVED' ? 'ring-2 ring-amber-600' : ''}`}
+                    onClick={() => setActiveFilter(activeFilter === 'OPV_APPROVED' ? 'ALL' : 'OPV_APPROVED')}
+                />
+                <KPICard
+                    title="Permits Ready"
+                    value={summary.readyForPermit}
+                    subtitle="Click to view finalized permits"
+                    icon={CheckCircle}
+                    colorClass={`bg-green-50 text-green-600 ${activeFilter === 'READY' ? 'ring-2 ring-green-600' : ''}`}
+                    onClick={() => setActiveFilter(activeFilter === 'READY' ? 'ALL' : 'READY')}
+                />
             </div>
 
             {/* Search & Active Filter Bar */}

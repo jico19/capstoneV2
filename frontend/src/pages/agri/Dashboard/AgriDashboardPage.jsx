@@ -2,7 +2,7 @@ import {
     CreditCard,
     AlertCircle,
     Clock,
-    Activity
+    CheckCircle2
 } from 'lucide-react';
 import KPICard from '../../../components/ui/KPICard';
 import { useGetAgriDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
@@ -61,20 +61,27 @@ const AgriOfficerKPIDashboard = () => {
             </div>
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
-                    title="Manual Review"
+                    title="Needs Attention"
                     value={kpis.pending_agri_review}
                     subtitle="Requires officer verification"
                     icon={AlertCircle}
                     colorClass="bg-red-50 text-red-600"
                 />
                 <KPICard
-                    title="At OPV Stage"
+                    title="For OPV Review"
                     value={kpis.currently_at_opv}
                     subtitle="Awaiting health certificate"
                     icon={Clock}
                     colorClass="bg-blue-50 text-blue-600"
+                />
+                <KPICard
+                    title="OPV Approved"
+                    value={kpis.opv_validated || kpis.opv_approved || 0}
+                    subtitle="Health cleared / Ready to issue"
+                    icon={CheckCircle2}
+                    colorClass="bg-green-50 text-green-700"
                 />
                 <KPICard
                     title="Awaiting Payment"

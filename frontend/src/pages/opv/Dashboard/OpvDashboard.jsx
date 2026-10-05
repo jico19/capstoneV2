@@ -59,7 +59,7 @@ const OpvDashboard = () => {
             {/* KPI Cards: Primary Operational Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <KPICard
-                    title="Awaiting Review"
+                    title="For Review"
                     value={kpis.waiting_for_opv}
                     subtitle="Validation queue"
                     icon={Clock}

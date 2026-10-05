@@ -42,3 +42,44 @@ export function numberToWords(num) {
 
     return result.trim().toUpperCase();
 }
+
+/**
+ * Converts a currency amount (number or string) to Title Case English words with Pesos/Cents suffix.
+ * Example: 1500.00 -> "One Thousand Five Hundred Pesos Only"
+ * Example: 1500 border / string -> "One Thousand Five Hundred Pesos Only"
+ */
+export function currencyToWords(amount) {
+    if (amount === null || amount === undefined) return '';
+    const cleanStr = String(amount).replace(/[^0-9.]/g, '');
+    const num = parseFloat(cleanStr);
+    if (isNaN(num)) return '';
+
+    const pesos = Math.floor(Math.abs(num));
+    const cents = Math.round((Math.abs(num) - pesos) * 100);
+
+    const rawWords = numberToWords(pesos);
+    if (!rawWords || rawWords === 'ZERO') {
+        if (cents > 0) {
+            const centWords = numberToWords(cents).toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            return `${centWords} Cents Only`;
+        }
+        return 'Zero Pesos Only';
+    }
+
+    const titleCaseWords = rawWords
+        .toLowerCase()
+        .split(' ')
+        .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+        .join(' ');
+
+    if (cents > 0) {
+        const centWords = numberToWords(cents)
+            .toLowerCase()
+            .split(' ')
+            .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+            .join(' ');
+        return `${titleCaseWords} Pesos And ${centWords} Cents Only`;
+    }
+
+    return `${titleCaseWords} Pesos Only`;
+}

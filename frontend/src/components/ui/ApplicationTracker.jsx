@@ -8,13 +8,14 @@ import { CheckCircle2, Clock, XCircle, AlertCircle, Circle } from 'lucide-react'
 const STAGES = [
     { key: 'SUBMITTED', title: 'Submitted', desc: 'Received in system' },
     { key: 'MAO_REVIEW', title: 'MAO Review', desc: 'Doc verification' },
-    { key: 'OPV_REVIEW', title: 'OPV Review', desc: 'Health check' },
+    { key: 'OPV_REVIEW', title: 'OPV Review', desc: 'Shipping Permit review' },
     { key: 'OPV_APPROVED', title: 'OPV Approved', desc: 'Health cleared' },
+    { key: 'PERMIT_CREATION', title: 'Permit Creation', desc: 'Fee assignment' },
     { key: 'PAYMENT', title: 'Payment', desc: 'Fee checkout' },
     { key: 'COMPLETED', title: 'Completed', desc: 'Permit released' }
 ];
 
-export const getStageIndex = (status) => {
+const getStageIndex = (status) => {
     switch (status) {
         case 'DRAFT':
         case 'SUBMITTED':
@@ -28,12 +29,13 @@ export const getStageIndex = (status) => {
             return 2; // OPV Review
         case 'OPV_VALIDATED':
             return 3; // OPV Approved
-        case 'PAYMENT_PENDING':
-            return 4; // Payment
-        case 'PAID':
         case 'PERMIT_ISSUED':
+            return 4; // Permit Creation
+        case 'PAYMENT_PENDING':
+            return 5; // Payment
+        case 'PAID':
         case 'RELEASED':
-            return 5; // Completed
+            return 6; // Completed
         case 'CANCELLED':
             return -1;
         default:
@@ -61,12 +63,12 @@ const ApplicationTracker = ({ status }) => {
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Application Progress</span>
                 <span className="text-xs font-black uppercase tracking-wider text-green-800 bg-green-50 px-2.5 py-1 border border-green-200">
-                    Stage {currentStageIndex + 1} of 6: {STAGES[currentStageIndex]?.title || 'Processing'}
+                    Stage {currentStageIndex + 1} of 7: {STAGES[currentStageIndex]?.title || 'Processing'}
                 </span>
             </div>
 
             {/* Desktop Tracker Stepper */}
-            <div className="hidden md:grid grid-cols-6 gap-2 relative pt-2">
+            <div className="hidden md:grid grid-cols-7 gap-2 relative pt-2">
                 {STAGES.map((stage, idx) => {
                     const isCompleted = idx < currentStageIndex;
                     const isCurrent = idx === currentStageIndex;
@@ -105,7 +107,7 @@ const ApplicationTracker = ({ status }) => {
                 <div className="w-full bg-stone-100 h-2 overflow-hidden">
                     <div 
                         className="bg-green-700 h-full transition-all duration-300"
-                        style={{ width: `${((currentStageIndex + 1) / 6) * 100}%` }}
+                        style={{ width: `${((currentStageIndex + 1) / 7) * 100}%` }}
                     ></div>
                 </div>
                 <div className="flex justify-between text-[9px] font-black uppercase tracking-wider text-stone-500">

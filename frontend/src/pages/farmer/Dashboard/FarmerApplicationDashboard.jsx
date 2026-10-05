@@ -115,14 +115,16 @@ const FarmerApplicationDashboard = () => {
                     value={summary.total}
                     subtitle="Everything you've sent"
                     icon={FileText}
-                    colorClass="bg-white text-stone-400 border-stone-200"
+                    colorClass={`bg-white text-stone-400 border-stone-200 ${statusFilter === '' ? 'ring-2 ring-stone-400' : ''}`}
+                    onClick={() => setStatusFilter('')}
                 />
                 <KPICard
                     title="Ready Permits"
                     value={summary.active}
                     subtitle="Approved & active"
                     icon={CheckCircle}
-                    colorClass="bg-green-50 text-green-700 border-green-200"
+                    colorClass={`bg-green-50 text-green-700 border-green-200 ${statusFilter === 'RELEASED' ? 'ring-2 ring-green-600' : ''}`}
+                    onClick={() => setStatusFilter('RELEASED')}
                 />
                 <div className="col-span-2 md:col-span-1">
                     <KPICard
@@ -130,7 +132,8 @@ const FarmerApplicationDashboard = () => {
                         value={summary.pending}
                         subtitle="Needs action or pay"
                         icon={AlertCircle}
-                        colorClass="bg-amber-50 text-amber-700 border-amber-200"
+                        colorClass={`bg-amber-50 text-amber-700 border-amber-200 ${statusFilter === 'PAYMENT_PENDING' ? 'ring-2 ring-amber-600' : ''}`}
+                        onClick={() => setStatusFilter('PAYMENT_PENDING')}
                     />
                 </div>
             </div>

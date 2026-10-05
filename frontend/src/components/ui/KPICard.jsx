@@ -5,9 +5,16 @@ import React from 'react';
  * Fully responsive for mobile (phones, 2-col grids) and desktop dashboards.
  * Strictly adheres to FarmPass Design System 2.0 (stone neutrals, flat UI, sharp edges).
  */
-const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent }) => {
+const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent, onClick }) => {
     return (
-        <div className="bg-white border border-stone-200 p-3.5 sm:p-5 md:p-6 flex flex-col justify-between min-h-[100px] sm:min-h-[130px] rounded-none transition-all relative overflow-hidden">
+        <div 
+            onClick={onClick}
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            className={`bg-white border border-stone-200 p-3.5 sm:p-5 md:p-6 flex flex-col justify-between min-h-[100px] sm:min-h-[130px] rounded-none transition-all relative overflow-hidden ${
+                onClick ? 'cursor-pointer hover:border-green-700 hover:shadow-sm active:bg-stone-50' : ''
+            }`}
+        >
             {/* Top Section: Title, Value & Icon */}
             <div className="flex justify-between items-start gap-2 relative z-10">
                 <div className="space-y-1 min-w-0 flex-1">

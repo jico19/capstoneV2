@@ -57,7 +57,7 @@ const StatusBadge = ({ status }) => {
             'RESUBMISSION': 'Needs Corrections',
             'OCR_VALIDATED': 'Checking Documents',
             'MANUAL': 'Under Review',
-            'FORWARDED_TO_OPV': 'Under Vet Review',
+            'FORWARDED_TO_OPV': 'For Review',
             'OPV_VALIDATED': 'Approved by Vet',
             'OPV_REJECTED': 'Rejected by Vet',
             'PERMIT_ISSUED': 'Awaiting Payment',

@@ -17,7 +17,7 @@ class PaymentHistory(models.Model):
         PAYMAYA = 'paymaya', 'Paymaya'
         OFFLINE = 'gcash', 'Gcash'
         CARD = 'card', 'Card'
-        QRPH = 'qrph', 'Sari-Sari Store (QR Ph)'
+        QRPH = 'qrph', 'QR Ph (Over-the-Counter / Retail Merchant)'
         ONLINE = 'ONLINE', 'Online'
 
     class Status(models.TextChoices):

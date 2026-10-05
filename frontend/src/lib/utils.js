@@ -118,3 +118,9 @@ export const formatRelativeTime = (dateString) => {
     if (diffDays < 7) return `${diffDays} days ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
+export const formatPeso = (amount) => {
+    if (amount === null || amount === undefined || isNaN(amount)) return '₱0.00';
+    const num = Number(amount);
+    return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};

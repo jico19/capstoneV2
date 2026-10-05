@@ -8,10 +8,10 @@ import { useForm } from 'react-hook-form';
  * OCR Data Correction Modal
  * Redesigned for Farmer-Friendly simplicity and Minimalist Design System.
  */
-const OCRModal = ({ doc_id, title = "Check Document", onClose, onSubmit, isSubmitting }) => {
+const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
 
     const { data: doc, isLoading, isError } = useDocument(doc_id);
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, formState: { errors, isDirty } } = useForm();
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
 
@@ -210,14 +210,17 @@ const OCRModal = ({ doc_id, title = "Check Document", onClose, onSubmit, isSubmi
 
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-end gap-4">
-                    <button onClick={onClose} className="w-full sm:w-auto px-10 py-4 border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-black uppercase tracking-widest rounded-none transition-colors">
-                        Cancel Changes
+                    <button 
+                        onClick={onClose} 
+                        className="w-full sm:w-auto px-10 py-4 border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-black uppercase tracking-widest rounded-none transition-colors"
+                    >
+                        {isDirty ? "Discard Changes" : "Close"}
                     </button>
                     <button 
                         onClick={handleSubmit(onSubmit)}
                         form="ocr-form"
-                        disabled={isSubmitting}
-                        className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-12 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+                        disabled={isSubmitting || !isDirty}
+                        className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white px-12 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-3"
                     >
                         {isSubmitting ? (
                             <>

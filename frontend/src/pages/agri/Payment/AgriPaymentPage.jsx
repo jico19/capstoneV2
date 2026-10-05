@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { usePayment, usePaymentStats } from "../../../hooks/usePayment";
 import {
   DollarSign,
@@ -46,7 +46,7 @@ const AgriPaymentPage = () => {
   const [showReportModal, setShowReportModal] = useState(false);
 
   // Fetch paginated & filtered transactions
-  const { data, isLoading, isError, refetch, isFetching } = usePayment(limit, offset, {
+  const { data, isLoading, refetch, isFetching } = usePayment(limit, offset, {
     search: searchQuery,
     status: statusFilter,
     method: methodFilter,
@@ -55,7 +55,7 @@ const AgriPaymentPage = () => {
   });
 
   // Fetch comprehensive aggregate statistics across the entire ledger
-  const { data: statsData, isLoading: statsLoading } = usePaymentStats();
+  const { data: statsData } = usePaymentStats();
 
   const payments = data?.results || [];
   const count = data?.count || 0;
@@ -136,7 +136,10 @@ const AgriPaymentPage = () => {
       {/* 2. KPI Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Remitted Collections */}
-        <div className="bg-white border border-stone-200 p-5 space-y-3">
+        <div 
+          onClick={() => { setStatusFilter("ALL"); setMethodFilter("ALL"); setOffset(0); }}
+          className={`bg-white border p-5 space-y-3 cursor-pointer transition-all hover:border-green-700 hover:shadow-sm ${statusFilter === 'ALL' && methodFilter === 'ALL' ? 'border-green-700 ring-2 ring-green-600' : 'border-stone-200'}`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
               Total Remitted Collections
@@ -156,7 +159,10 @@ const AgriPaymentPage = () => {
         </div>
 
         {/* Cleared Transactions */}
-        <div className="bg-white border border-stone-200 p-5 space-y-3">
+        <div 
+          onClick={() => { setStatusFilter("SUCCESS"); setOffset(0); }}
+          className={`bg-white border p-5 space-y-3 cursor-pointer transition-all hover:border-emerald-700 hover:shadow-sm ${statusFilter === 'SUCCESS' ? 'border-emerald-700 ring-2 ring-emerald-600' : 'border-stone-200'}`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
               Cleared Transactions
@@ -176,7 +182,10 @@ const AgriPaymentPage = () => {
         </div>
 
         {/* Digital Payment Channels */}
-        <div className="bg-white border border-stone-200 p-5 space-y-3">
+        <div 
+          onClick={() => { setMethodFilter("ALL"); setOffset(0); }}
+          className={`bg-white border p-5 space-y-3 cursor-pointer transition-all hover:border-blue-700 hover:shadow-sm ${methodFilter !== 'ALL' ? 'border-blue-700 ring-2 ring-blue-600' : 'border-stone-200'}`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
               Digital Gateways (PayMongo)
@@ -198,7 +207,10 @@ const AgriPaymentPage = () => {
         </div>
 
         {/* Pending Verification */}
-        <div className="bg-white border border-stone-200 p-5 space-y-3">
+        <div 
+          onClick={() => { setStatusFilter("PENDING"); setOffset(0); }}
+          className={`bg-white border p-5 space-y-3 cursor-pointer transition-all hover:border-amber-700 hover:shadow-sm ${statusFilter === 'PENDING' ? 'border-amber-700 ring-2 ring-amber-600' : 'border-stone-200'}`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
               Pending / In Progress

@@ -7,7 +7,7 @@ import { Activity, User, Phone, X, Check } from 'lucide-react';
  */
 const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
     const isEdit = !!survey;
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors, isDirty } } = useForm({
         defaultValues: {
             farmer_name: survey?.farmer_name || '',
             contact_number: survey?.contact_number || '',
@@ -202,12 +202,12 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                             disabled={isSubmitting}
                             className="px-5 py-2.5 border border-stone-200 hover:bg-stone-50 text-stone-600 text-xs font-semibold rounded-none transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {isEdit ? (isDirty ? 'Cancel Changes' : 'Close') : 'Cancel'}
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2 disabled:opacity-50"
+                            disabled={isSubmitting || (isEdit && !isDirty)}
+                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>

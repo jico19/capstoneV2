@@ -6,32 +6,32 @@
 
 ### Request / Application Form
 
-* [ ] Fix duplicated **required documents**.
-* [ ] Fix **Starter and Bulaw** having the same options/behavior.
-* [ ] If **Bulaw** is selected, remove/disable **For Slaughter** since it is not usually slaughtered.
-* [ ] Fix **Download Permit** functionality.
+* [x] Fix duplicated **required documents**.
+* [x] Fix **Starter and Bulaw** having the same options/behavior.
+* [x] If **Bulaw** is selected, remove/disable **For Slaughter** since it is not usually slaughtered.
+* [x] Fix **Download Permit** functionality.
 
-  * [ ] Permit must not be downloadable if payment has not been completed.
-  * [ ] Disable Download while payment is pending.
-  * [ ] Enable Download only after payment is confirmed.
+  * [x] Permit must not be downloadable if payment has not been completed.
+  * [x] Disable Download while payment is pending.
+  * [x] Enable Download only after payment is confirmed.
 
 ### Edit / Fix Changes
 
-* [ ] Fix **Save Changes** button behavior.
+* [x] Fix **Save Changes** button behavior.
 
-  * [ ] Save Changes should be disabled if there are no changes.
-  * [ ] Enable only when actual changes have been made.
-* [ ] Fix **Cancel Changes** behavior.
+  * [x] Save Changes should be disabled if there are no changes.
+  * [x] Enable only when actual changes have been made.
+* [x] Fix **Cancel Changes** behavior.
 
-  * [ ] Don't show/enable it unnecessarily when nothing was changed.
-  * [ ] Allow users to discard changes when modifications exist.
+  * [x] Don't show/enable it unnecessarily when nothing was changed.
+  * [x] Allow users to discard changes when modifications exist.
 
 ### OPV / Finalized Documents
 
-* [ ] Fix document editing after OPV approval.
+* [x] Fix document editing after OPV approval.
 
-  * [ ] Once OPV approves, MAO should no longer be able to edit the documents.
-  * [ ] Lock approved/finalized documents.
+  * [x] Once OPV approves, MAO should no longer be able to edit the documents.
+  * [x] Lock approved/finalized documents.
 
 ---
 
@@ -39,15 +39,15 @@
 
 ### Terminology
 
-* [ ] Replace/review the current **"Sari-Sari Store"** term.
-* [ ] Check the system for other inconsistent/outdated terminology.
-* [ ] Standardize terminology across forms, dashboard, statuses, documents, and reports.
+* [x] Replace/review the current **"Sari-Sari Store"** term.
+* [x] Check the system for other inconsistent/outdated terminology.
+* [x] Standardize terminology across forms, dashboard, statuses, documents, and reports.
 
 ### Status Information
 
-* [ ] Improve status descriptions so they clearly explain what is happening.
-* [ ] Change OPV terminology to **"For Review"**.
-* [ ] Example:
+* [x] Improve status descriptions so they clearly explain what is happening.
+* [x] Change OPV terminology to **"For Review"**.
+* [x] Example:
 
   **Forwarded to OPV**
 
@@ -59,8 +59,8 @@
 
 ### CIS
 
-* [ ] Fix/improve manual number-to-words input.
-* [ ] Verify Philippine Peso formatting.
+* [x] Fix/improve manual number-to-words input.
+* [x] Verify Philippine Peso formatting.
 
 ---
 
@@ -70,29 +70,29 @@
 
 ### Request / Application
 
-* [ ] Add **"Other"** option under reasons for transporting.
-* [ ] Add option to **remove/delete an uploaded image/document** before submission.
-* [ ] Add **Cancel Request** option.
+* [x] Add **"Other"** option under reasons for transporting.
+* [x] Add option to **remove/delete an uploaded image/document** before submission.
+* [x] Add **Cancel Request** option.
 
-  * [ ] Available until the request has been checked/processed by MAO.
-  * [ ] Hide/disable cancellation after MAO has processed the request.
+  * [x] Available until the request has been checked/processed by MAO.
+  * [x] Hide/disable cancellation after MAO has processed the request.
 
 ### MAO Notifications
 
-* [ ] Add notification when there is a **new request**.
-* [ ] Make new requests clearly visible to MAO.
+* [x] Add notification when there is a **new request**.
+* [x] Make new requests clearly visible to MAO.
 
 ### MAO Document Verification
 
-* [ ] Add a **document verification checklist/validator**.
-* [ ] Require MAO staff to view/review documents before verification.
-* [ ] Disable **Verify Document** until the document has been reviewed.
-* [ ] Prevent verification if documents:
+* [x] Add a **document verification checklist/validator**.
+* [x] Require MAO staff to view/review documents before verification.
+* [x] Disable **Verify Document** until the document has been reviewed.
+* [x] Prevent verification if documents:
 
-  * [ ] Have not been reviewed.
-  * [ ] Need to be fixed.
-  * [ ] Are missing.
-* [ ] Prevent the request from proceeding until required documents are completely verified.
+  * [x] Have not been reviewed.
+  * [x] Need to be fixed.
+  * [x] Are missing.
+* [x] Prevent the request from proceeding until required documents are completely verified.
 
 ---
 
@@ -100,30 +100,30 @@
 
 ### MAO Dashboard
 
-* [ ] Add reminder/indicator for **overdue requests**.
-* [ ] Add reminder/indicator for **unprocessed requests**.
-* [ ] Add reminder/indicator for requests waiting for MAO action.
-* [ ] Make KPI cards clickable.
+* [x] Add reminder/indicator for **overdue requests**.
+* [x] Add reminder/indicator for **unprocessed requests**.
+* [x] Add reminder/indicator for requests waiting for MAO action.
+* [x] Make KPI cards clickable.
 
-  * [ ] Clicking **Needs Attention** should open the relevant requests.
-* [ ] Add KPI card for **OPV Approved** requests.
+  * [x] Clicking **Needs Attention** should open the relevant requests.
+* [x] Add KPI card for **OPV Approved** requests.
 
 ### Application Tracking
 
-* [ ] Add an **application progress tracker**.
+* [x] Add an **application progress tracker**.
 
 ### Suggested Flow
 
 `Submitted → MAO Review → OPV Review → OPV Approved → Permit Creation → Payment → Completed`
 
-* [ ] Show completed stages.
-* [ ] Highlight the current stage.
-* [ ] Show upcoming stages.
-* [ ] Update the tracker automatically as the application progresses.
+* [x] Show completed stages.
+* [x] Highlight the current stage.
+* [x] Show upcoming stages.
+* [x] Update the tracker automatically as the application progresses.
 
 ### CIS
 
-* [ ] Add automatic **number-to-words conversion**.
+* [x] Add automatic **number-to-words conversion**.
 
   Example:
 
@@ -131,9 +131,9 @@
 
 ### OPV
 
-* [ ] Add KPI card showing **OPV Approved** requests.
-* [ ] Clearly indicate when an application has been approved by OPV.
-* [ ] Lock documents once OPV approval is completed.
+* [x] Add KPI card showing **OPV Approved** requests.
+* [x] Clearly indicate when an application has been approved by OPV.
+* [x] Lock documents once OPV approval is completed.
 
 ---
 
@@ -141,11 +141,11 @@
 
 ### Automatic Document Validation
 
-* [ ] Investigate automatic detection of unreadable documents.
-* [ ] Detect whether uploaded documents can be properly read/detected.
-* [ ] Automatically flag documents that cannot be detected.
-* [ ] If technically feasible, automatically reject/return documents that fail validation.
-* [ ] Add a confidence threshold to reduce incorrect automatic rejection.
+* [x] Investigate automatic detection of unreadable documents.
+* [x] Detect whether uploaded documents can be properly read/detected.
+* [x] Automatically flag documents that cannot be detected.
+* [x] If technically feasible, automatically reject/return documents that fail validation.
+* [x] Add a confidence threshold to reduce incorrect automatic rejection.
 
 ### Payment
 
@@ -160,32 +160,32 @@
 
 ## 🔴 High Priority
 
-* [ ] Test duplicate required documents.
-* [ ] Test Starter vs. Bulaw behavior.
-* [ ] Test Bulaw → For Slaughter option.
-* [ ] Test image/document removal.
-* [ ] Test request cancellation before MAO review.
-* [ ] Test cancellation after MAO processing.
-* [ ] Test document verification blocking.
-* [ ] Test OPV approval → document locking.
-* [ ] Test permit download before payment.
-* [ ] Test permit download after payment.
+* [x] Test duplicate required documents.
+* [x] Test Starter vs. Bulaw behavior.
+* [x] Test Bulaw → For Slaughter option.
+* [x] Test image/document removal.
+* [x] Test request cancellation before MAO review.
+* [x] Test cancellation after MAO processing.
+* [x] Test document verification blocking.
+* [x] Test OPV approval → document locking.
+* [x] Test permit download before payment.
+* [x] Test permit download after payment.
 
 ## 🟠 Medium Priority
 
-* [ ] Test MAO new-request notifications.
-* [ ] Test overdue request reminders.
-* [ ] Test clickable KPI cards.
-* [ ] Test application tracker.
-* [ ] Test status descriptions.
-* [ ] Test Save Changes with no modifications.
-* [ ] Test Save Changes after modifications.
-* [ ] Test number-to-words conversion.
+* [x] Test MAO new-request notifications.
+* [x] Test overdue request reminders.
+* [x] Test clickable KPI cards.
+* [x] Test application tracker.
+* [x] Test status descriptions.
+* [x] Test Save Changes with no modifications.
+* [x] Test Save Changes after modifications.
+* [x] Test number-to-words conversion.
 
 ## 🟡 Future Enhancement Testing
 
-* [ ] Test automatic document detection.
-* [ ] Test unreadable document handling.
+* [x] Test automatic document detection.
+* [x] Test unreadable document handling.
 * [ ] Test payment countdown.
 * [ ] Test payment expiration.
-* [ ] Verify terminology changes across the system.
+* [x] Verify terminology changes across the system.

@@ -8,7 +8,14 @@ import FileViewerModal from '../../components/ui/FileViewerModal';
 const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmitting }) => {
     const [remarks, setRemarks] = useState(farmer.verification_remarks || "");
     const [previewDoc, setPreviewDoc] = useState(null);
+    const [viewedTypes, setViewedTypes] = useState([]);
     const docs = farmer.farmer_documents || [];
+
+    const attachedTypes = ['handlers_license', 'transport_carrier_reg', 'traders_pass'].filter(dtype => {
+        const d = docs.find(doc => doc.document_type === dtype);
+        return d && d.file;
+    });
+    const unviewedCount = attachedTypes.filter(dtype => !viewedTypes.includes(dtype)).length;
 
 
     // Local state for editable document details (license_number, expiration_date)
@@ -92,14 +99,23 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                                     {doc?.file ? (
                                         <button
                                             type="button"
-                                            onClick={() => setPreviewDoc({
-                                                url: doc.file,
-                                                title: `${docLabels[dtype]} - ${farmer.first_name} ${farmer.last_name}`,
-                                                subtitle: edit.license_number ? `Extracted License: ${edit.license_number}` : undefined
-                                            })}
-                                            className="px-3 py-1 bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                                            onClick={() => {
+                                                if (!viewedTypes.includes(dtype)) {
+                                                    setViewedTypes(prev => [...prev, dtype]);
+                                                }
+                                                setPreviewDoc({
+                                                    url: doc.file,
+                                                    title: `${docLabels[dtype]} - ${farmer.first_name} ${farmer.last_name}`,
+                                                    subtitle: edit.license_number ? `Extracted License: ${edit.license_number}` : undefined
+                                                });
+                                            }}
+                                            className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                                                viewedTypes.includes(dtype) 
+                                                    ? 'bg-green-50 text-green-800 border-green-300' 
+                                                    : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-100'
+                                            }`}
                                         >
-                                            <Eye size={12} className="text-green-700" /> View Document
+                                            <Eye size={12} className="text-green-700" /> {viewedTypes.includes(dtype) ? "Viewed ✓" : "View Document"}
                                         </button>
                                     ) : (
                                         <span className="text-[10px] text-stone-400 italic font-medium">No file attached</span>
@@ -153,6 +169,13 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                     />
                 </div>
 
+                {unviewedCount > 0 && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                        <span>🔒</span>
+                        <span>Action Required: Please click and view all submitted files above before approving. ({unviewedCount} unreviewed document remaining)</span>
+                    </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-3 border-t border-stone-200">
                     <button
@@ -176,8 +199,9 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                     <button
                         type="button"
                         onClick={() => onApprove(remarks, docEdits)}
-                        disabled={isSubmitting}
-                        className="px-6 py-2.5 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-green-700/20"
+                        disabled={isSubmitting || unviewedCount > 0}
+                        title={unviewedCount > 0 ? "View all attached documents first" : undefined}
+                        className="px-6 py-2.5 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-green-700/20 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         <Check size={14} /> Approve & Save Verification
                     </button>

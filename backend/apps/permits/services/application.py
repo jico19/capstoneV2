@@ -116,6 +116,21 @@ def handle_application_status_change(application, new_status, reason=None):
         ),
     }
 
+    if new_status == Status.FORWARDED_TO_OPV:
+        from apps.api.models import User
+        opv_users = User.objects.filter(role="Opv")
+        opv_notifications = [
+            Notification(
+                recipient=opv_user,
+                type=Notification.Type.INFO,
+                title="Application Forwarded for Review",
+                message=f"Application #{app_id} was approved by MAO and forwarded to OPV for health validation."
+            )
+            for opv_user in opv_users
+        ]
+        if opv_notifications:
+            Notification.objects.bulk_create(opv_notifications)
+
     if new_status in notification_map:
         notif_type, title, message = notification_map[new_status]
         Notification.objects.create(

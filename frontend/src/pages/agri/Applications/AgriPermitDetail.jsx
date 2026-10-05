@@ -293,27 +293,29 @@ const AgriPermitDetail = () => {
                             <div className="space-y-0.5">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 block">MAO Document Review Checklist</span>
                                 <span className="text-xs font-bold text-stone-800">
-                                    {viewedDocIds.length} of {application?.all_documents?.length || 0} attached documents reviewed
+                                    {viewedDocIds.length} of {application?.all_documents?.length || 0} attached documents reviewed/fixed
                                 </span>
                             </div>
                             {viewedDocIds.length >= (application?.all_documents?.length || 1) ? (
                                 <span className="px-3 py-1 bg-green-100 border border-green-300 text-green-800 text-[10px] font-black uppercase tracking-widest w-fit">
-                                    ✓ All Documents Verified
+                                    ✓ All Documents Verified / Fixed
                                 </span>
                             ) : (
                                 <span className="px-3 py-1 bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black uppercase tracking-widest w-fit">
-                                    👁 Preview All Docs to Unlock Approval
+                                    👁 Click "View" or "Fix" on All Docs to Unlock Approval
                                 </span>
                             )}
                         </div>
 
-                        <DocumentList documents={application?.all_documents} fixData={fixDataHandler} documentView={viewDocument} />
+                        <DocumentList documents={application?.all_documents} fixData={fixDataHandler} documentView={viewDocument} viewedDocIds={viewedDocIds} />
                     </section>
 
                     {application.status === 'MANUAL' || application.status === 'OCR_VALIDATED' ? (
                         <ApprovalControls
                             onApprove={approveHandler}
                             onReject={rejectHandler}
+                            isAllDocsViewed={(application?.all_documents || []).filter(d => d.file && !viewedDocIds.includes(d.id)).length === 0}
+                            unviewedCount={(application?.all_documents || []).filter(d => d.file && !viewedDocIds.includes(d.id)).length}
                         />
                     ) : null}
 

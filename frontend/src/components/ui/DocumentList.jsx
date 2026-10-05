@@ -10,7 +10,7 @@ import { FileText, CheckCircle, AlertTriangle, Search, Pencil, FolderOpen } from
  *   fixData — Callback function to handle data correction (usually for OCR issues)
  *   documentView — Callback function to view the full document
  */
-const DocumentList = ({ documents, fixData, documentView }) => {
+const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) => {
 
     // Empty state when no documents are provided or the list is empty
     if (!documents || documents.length === 0) {
@@ -30,6 +30,7 @@ const DocumentList = ({ documents, fixData, documentView }) => {
             {documents.map((doc) => {
                 const hasOcr = doc.ocr != null;
                 const needsReview = hasOcr && (doc.ocr.status === 'MANUAL' || doc.ocr.status === 'FAILED');
+                const isViewed = viewedDocIds.includes(doc.id);
 
                 // Determine border and status styles based on the document state
                 let stateStyles = {
@@ -100,6 +101,11 @@ const DocumentList = ({ documents, fixData, documentView }) => {
                                     <span className={`px-1.5 py-0.5 border rounded-none text-[8px] sm:text-[9px] font-black uppercase tracking-wider inline-block shrink-0 ${stateStyles.badge}`}>
                                         {stateStyles.statusText}
                                     </span>
+                                    {isViewed && (
+                                        <span className="px-1.5 py-0.5 border border-green-300 bg-green-100 text-green-800 rounded-none text-[8px] sm:text-[9px] font-black uppercase tracking-wider inline-block shrink-0">
+                                            Handled ✓
+                                        </span>
+                                    )}
                                     <span className="text-[10px] text-stone-500 font-medium truncate hidden xs:inline">
                                         {stateStyles.helperText}
                                     </span>

@@ -18,7 +18,7 @@ const COMMON_FEEDBACK_OPTIONS = [
     { value: "custom", label: "Other / Custom Feedback (Specify below)" }
 ];
 
-const ApprovalControls = ({ onApprove, onReject }) => {
+const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewedCount = 0 }) => {
     const { register, handleSubmit, setValue, formState: { errors } } = useForm();
     const [activeAction, setActiveAction] = useState(null);
     const isProcessing = activeAction !== null;
@@ -97,6 +97,13 @@ const ApprovalControls = ({ onApprove, onReject }) => {
                 </div>
             </div>
 
+            {!isAllDocsViewed && (
+                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                    <span className="text-base">🔒</span>
+                    <span>Review Checklist: You must click and view all attached documents above before approving. ({unviewedCount} unreviewed document remaining)</span>
+                </div>
+            )}
+
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4 border-t border-gray-50">
                 <button
                     type="button"
@@ -114,9 +121,10 @@ const ApprovalControls = ({ onApprove, onReject }) => {
 
                 <button
                     type="button"
-                    disabled={isProcessing}
+                    disabled={isProcessing || !isAllDocsViewed}
                     onClick={handleSubmit(handleApprove)}
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!isAllDocsViewed ? "Please view all attached documents above first" : undefined}
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     {activeAction === 'approve' ? (
                         <span className="loading loading-spinner loading-xs"></span>

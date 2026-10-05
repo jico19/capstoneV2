@@ -139,6 +139,7 @@ const router = createBrowserRouter([
             { path: 'hog-surveys/', element: withSuspense(HogSurveyPage) },
             { path: 'cis-generator/', element: withSuspense(CISGeneratorPage) },
             { path: 'audit-logs/', element: withSuspense(AuditTrailPage) },
+            { path: 'notification/', element: withSuspense(NotificationPage) },
             { path: 'settings/', element: withSuspense(SettingsPage) },
         ]
     },

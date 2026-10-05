@@ -94,6 +94,7 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={Map} label="Map" to='/agri/map/pig-density/' />
                         <SidebarItem icon={History} label="Audit Trail" to='/agri/audit-trail/' />
                         <SidebarItem icon={BarChart3} label="Reports" to='/agri/reports/' />
+                        <SidebarItem icon={Bell} label="Notifications" to='/agri/notification/' badgeCount={unreadCount} />
                         <SidebarItem icon={SlidersHorizontal} label="System Settings" to='/agri/system-settings/' />
                         <SidebarItem icon={Settings} label="Settings" to='/agri/settings/' />
                     </MenuSection>
@@ -105,6 +106,7 @@ const Sidebar = ({ children }) => {
                         <SidebarItem icon={FileText} label="Hog Surveys" to='/barangay/hog-surveys/' />
                         <SidebarItem icon={FileText} label="CIS Generator" to='/barangay/cis-generator/' />
                         <SidebarItem icon={History} label="Audit Logs" to='/barangay/audit-logs/' />
+                        <SidebarItem icon={Bell} label="Notifications" to='/barangay/notification/' badgeCount={unreadCount} />
                         <SidebarItem icon={Settings} label="Settings" to='/barangay/settings/' />
                     </MenuSection>
                 );
@@ -113,6 +115,7 @@ const Sidebar = ({ children }) => {
                     <MenuSection title="Staff Portal">
                         <SidebarItem icon={LayoutDashboard} label="Overview" to="/opv/" />
                         <SidebarItem icon={FilesIcon} label="Applications" to="/opv/application/" />
+                        <SidebarItem icon={Bell} label="Notifications" to="/opv/notification/" badgeCount={unreadCount} />
                         <SidebarItem icon={Settings} label="Settings" to="/opv/settings/" />
                     </MenuSection>
                 );

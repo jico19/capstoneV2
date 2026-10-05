@@ -123,6 +123,22 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 application, models.PermitApplication.Status.SUBMITTED
             )
 
+            # Notify Agri / MAO officers of new permit application
+            from apps.api.models import Notification, User
+            agri_users = User.objects.filter(role="Agri")
+            farmer_name = request.user.get_full_name() or request.user.username
+            notifications = [
+                Notification(
+                    recipient=admin,
+                    type=Notification.Type.INFO,
+                    title="New Permit Application",
+                    message=f"New permit request #{application.application_id} submitted by {farmer_name}."
+                )
+                for admin in agri_users
+            ]
+            if notifications:
+                Notification.objects.bulk_create(notifications)
+
         return Response(
             {"msg": "Application submitted successfully", "id": application.pk},
             status=status.HTTP_201_CREATED,

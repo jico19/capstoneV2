@@ -12,13 +12,16 @@ def create_approve_opv_validation(application_id: int, files, staff, data):
     else:
         raise ValidationError("Animal Inspection Certificate (AIC) must be verified before approving.")
 
-    if not files or len(files) < 2:
-        raise ValidationError("No documents uploaded. Please upload the required documents.")
-    
-    for key, file in files.items():
+    vhc = files.get('veterinary_health_certificate') if files else None
+    tpass = files.get('transportation_pass') if files else None
+
+    if not vhc or not tpass:
+        raise ValidationError("Both Veterinary Health Certificate and Transportation Pass are required.")
+
+    for file in (vhc, tpass):
         if file.size > 30 * 1024 * 1024:
             raise ValidationError(f"File {file.name} exceeds the 30MB size limit.")
-    
+
     try:
         opv_validation, created = models.OPVValidation.objects.update_or_create(
             application_id=application_id,  # lookup field — find by this
@@ -28,8 +31,8 @@ def create_approve_opv_validation(application_id: int, files, staff, data):
                 "remarks": data.get('remarks', ''),
                 "aic_verified": is_aic_verified,
                 "aic_verified_at": timezone.now(),
-                "veterinary_health_certificate": files['veterinary_health_certificate'],
-                "transportation_pass": files['transportation_pass'],
+                "veterinary_health_certificate": vhc,
+                "transportation_pass": tpass,
             }
         )
     except ValidationError:
@@ -57,8 +60,8 @@ def approve_opv_validation(application, staff, data, files):
     if staff.role != "Opv":
         raise PermissionDenied("Not Authorized")
 
-    if application.status not in ["OPV_REJECTED", "FORWARDED_TO_OPV"]:
-        raise ValidationError("This is already approved.")
+    if application.status != models.PermitApplication.Status.FORWARDED_TO_OPV:
+        raise ValidationError(f"Cannot approve application with status '{application.status}'. It must be FORWARDED_TO_OPV.")
 
     with transaction.atomic():
         create_approve_opv_validation(

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -8,13 +9,15 @@ from apps.ocr.tasks import extract_document_info
 from apps.sms.services import send_sms
 from .. import models, serializers
 
+logger = logging.getLogger(__name__)
+
 def create_permit(files, application, user):
     origins = list(application.origins.all())
     if not origins:
         raise ValidationError("Application has no transport origins.")
 
-    required_common = ['traders_pass', 'handlers_license', 'transport_carrier_reg']
-    COMMON_DOC_TYPES = ('traders_pass', 'handlers_license', 'transport_carrier_reg')
+    required_common = ['handlers_license', 'transport_carrier_reg']
+    COMMON_DOC_TYPES = ('handlers_license', 'transport_carrier_reg')
     user_farmer_docs = {
         doc.document_type: doc for doc in getattr(user, 'farmer_documents', []).all()
     } if hasattr(user, 'farmer_documents') else {}
@@ -205,33 +208,39 @@ def verify_permit(qr_token, user):
 
     # 2. Notify Farmer via SMS
     farmer = application_instance.farmer
-    if farmer.phone_no and getattr(farmer, 'receive_sms', True):
-        from apps.sms.task import send_scan_notification_sms
-        timestamp_str = timezone.now().strftime('%Y-%m-%d %H:%M')
-        transaction.on_commit(lambda: send_scan_notification_sms.enqueue(
-            farmer.phone_no,
-            application_instance.application_id,
-            timestamp_str
-        ))
-
-    # 3. Notify Source Farmers via SMS
-    from apps.sms.task import send_source_farmer_scan_sms
-    timestamp_str = timezone.now().strftime('%Y-%m-%d %H:%M')
-    notified_numbers = set()
-    if farmer.phone_no:
-        notified_numbers.add(farmer.phone_no)
-
-    for origin in application_instance.origins.all():
-        s_phone = (origin.source_phone_no or "").strip()
-        if s_phone and s_phone not in notified_numbers:
-            notified_numbers.add(s_phone)
-            s_name = origin.source_farmer_name or ""
-            transaction.on_commit(lambda p=s_phone, n=s_name: send_source_farmer_scan_sms.enqueue(
-                p,
+    try:
+        if farmer.phone_no and getattr(farmer, 'receive_sms', True):
+            from apps.sms.task import send_scan_notification_sms
+            timestamp_str = timezone.now().strftime('%Y-%m-%d %H:%M')
+            transaction.on_commit(lambda: send_scan_notification_sms.enqueue(
+                farmer.phone_no,
                 application_instance.application_id,
-                n,
                 timestamp_str
             ))
+    except Exception as e:
+        logger.warning("Failed to enqueue scan SMS for farmer: %s", e)
+
+    # 3. Notify Source Farmers via SMS
+    try:
+        from apps.sms.task import send_source_farmer_scan_sms
+        timestamp_str = timezone.now().strftime('%Y-%m-%d %H:%M')
+        notified_numbers = set()
+        if farmer.phone_no:
+            notified_numbers.add(farmer.phone_no)
+
+        for origin in application_instance.origins.all():
+            s_phone = (origin.source_phone_no or "").strip()
+            if s_phone and s_phone not in notified_numbers:
+                notified_numbers.add(s_phone)
+                s_name = origin.source_farmer_name or ""
+                transaction.on_commit(lambda p=s_phone, n=s_name: send_source_farmer_scan_sms.enqueue(
+                    p,
+                    application_instance.application_id,
+                    n,
+                    timestamp_str
+                ))
+    except Exception as e:
+        logger.warning("Failed to enqueue scan SMS for source farmers: %s", e)
 
     return application_instance, issued_permit_instance, False
 
@@ -245,17 +254,23 @@ def issue_permit(application, user, permit_fee=None):
             f"Cannot issue permit for application with status: {application.status}. It must be OPV_VALIDATED."
         )
 
-    # Guard: Prevent duplicate IssuedPermit for the same application (OneToOne constraint)
-    if hasattr(application, "issued_permit"):
-        raise ValidationError("A permit has already been issued for this application.")
-
     if permit_fee is None:
         permit_fee = models.MunicipalConfig.get_fee()
 
     with transaction.atomic():
+        app_locked = (
+            models.PermitApplication.objects.select_for_update().get(pk=application.pk)
+        )
+        if app_locked.status != models.PermitApplication.Status.OPV_VALIDATED:
+            raise ValidationError(
+                f"Cannot issue permit for application with status: {app_locked.status}. It must be OPV_VALIDATED."
+            )
+        if models.IssuedPermit.objects.filter(application=app_locked).exists():
+            raise ValidationError("A permit has already been issued for this application.")
+
         issued_permit = models.IssuedPermit.objects.create(
             permit_number=uuid.uuid4().hex[:13].upper(),
-            application=application,
+            application=app_locked,
             issued_by=user,
             qr_token=uuid.uuid4(),
             permit_fee=permit_fee,
@@ -263,7 +278,7 @@ def issue_permit(application, user, permit_fee=None):
 
         # Advance status to Payment Pending
         from .application import handle_application_status_change
-        handle_application_status_change(application, models.PermitApplication.Status.PAYMENT_PENDING)
+        handle_application_status_change(app_locked, models.PermitApplication.Status.PAYMENT_PENDING)
 
         # --- Formal Audit Entry ---
         AuditTrail.objects.create(

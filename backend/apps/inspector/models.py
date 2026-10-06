@@ -14,5 +14,7 @@ class InspectorLogs(models.Model):
 
 
     def __str__(self):
-        return f"Log #{self.pk} -> {self.inspector.username} | {self.scanned_at.strftime('%d/%m/%Y')}"
+        inspector_name = self.inspector.username if self.inspector else "System"
+        date_str = self.scanned_at.strftime('%d/%m/%Y') if self.scanned_at else "N/A"
+        return f"Log #{self.pk} -> {inspector_name} | {date_str}"
     

@@ -78,7 +78,6 @@ class FarmerDocument(models.Model):
     class DocumentType(models.TextChoices):
         HANDLERS_LICENSE = "handlers_license", "Handler's License"
         TRANSPORT_CARRIER_REG = "transport_carrier_reg", "Transport Carrier Registration"
-        TRADERS_PASS = "traders_pass", "Trader's Pass"
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="farmer_documents"

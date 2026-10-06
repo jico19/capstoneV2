@@ -500,16 +500,36 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
 
             # Section A to G - Details Table
             def format_heads_in_words(n):
-                ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
-                tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
-                if 0 <= n < 20:
-                    return ones[n].upper()
-                elif 20 <= n < 100:
-                    div, mod = divmod(n, 10)
-                    res = tens[div] + (f"-{ones[mod]}" if mod else "")
-                    return res.upper()
-                else:
-                    return str(n).upper()
+                if not n or n <= 0:
+                    return "ZERO"
+                ones = ["", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE",
+                        "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN",
+                        "SEVENTEEN", "EIGHTEEN", "NINETEEN"]
+                tens = ["", "", "TWENTY", "THIRTY", "FORTY", "FIFTY", "SIXTY", "SEVENTY", "EIGHTY", "NINETY"]
+
+                def convert_chunk(num):
+                    res = []
+                    if num >= 100:
+                        res.append(ones[num // 100] + " HUNDRED")
+                        num %= 100
+                    if 0 < num < 20:
+                        res.append(ones[num])
+                    elif num >= 20:
+                        t = tens[num // 10]
+                        o = ones[num % 10]
+                        res.append(f"{t}-{o}" if o else t)
+                    return " ".join(res)
+
+                parts = []
+                if n >= 1000000:
+                    parts.append(f"{convert_chunk(n // 1000000)} MILLION")
+                    n %= 1000000
+                if n >= 1000:
+                    parts.append(f"{convert_chunk(n // 1000)} THOUSAND")
+                    n %= 1000
+                if n > 0:
+                    parts.append(convert_chunk(n))
+                return " ".join(parts).strip()
 
             in_words_str = f"{format_heads_in_words(total_pigs)} HEADS ONLY"
             

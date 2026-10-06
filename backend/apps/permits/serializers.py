@@ -149,6 +149,8 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     """Used in: GET /applications/<id>/"""
 
     farmer_name = serializers.CharField(source='farmer.get_full_name', read_only=True)
+    farmer_phone = serializers.CharField(source='farmer.phone_no', read_only=True, default="")
+    farmer_barangay = serializers.CharField(source='farmer.barangay.name', read_only=True, default="")
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     number_of_pigs = serializers.SerializerMethodField()
     all_documents = serializers.SerializerMethodField()
@@ -156,6 +158,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     permit_fee = serializers.SerializerMethodField()
     aic_pdf = serializers.SerializerMethodField()
     opv_validation = serializers.SerializerMethodField()
+    issued_permit = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
@@ -163,6 +166,8 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "id",
             "application_id",
             "farmer_name",
+            "farmer_phone",
+            "farmer_barangay",
             "status",
             "status_display",
             "number_of_pigs",
@@ -178,6 +183,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "aic_pdf",
             "aic_issued_at",
             "opv_validation",
+            "issued_permit",
         ]
 
     def get_aic_pdf(self, obj):
@@ -206,12 +212,29 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         # Include official AIC if generated
         if obj.aic_pdf:
             aic_url = request.build_absolute_uri(obj.aic_pdf.url) if request else obj.aic_pdf.url
+            total_heads = sum(o.number_of_pigs for o in obj.origins.all()) if obj.origins.exists() else 0
+            origin_brgy = obj.origins.first().barangay.name if (obj.origins.exists() and obj.origins.first().barangay) else (obj.farmer.barangay.name if (obj.farmer and obj.farmer.barangay) else "N/A")
+
             data.append({
                 "id": f"aic-{obj.id}",
                 "document_type": "aic",
                 "document_type_display": "Animal Inspection Certificate (AIC)",
                 "file": aic_url,
-                "ocr": None,
+                "ocr": {
+                    "status": "completed",
+                    "extracted_field": {
+                        "AIC Number": obj.aic_number or f"AIC-{str(obj.id)[:8].upper()}",
+                        "Application ID": str(obj.application_id or obj.id),
+                        "Shipper Name": obj.farmer.get_full_name() if obj.farmer else "N/A",
+                        "Origin Barangay": origin_brgy,
+                        "Destination": obj.destination or "N/A",
+                        "Total Swine Heads": total_heads,
+                        "Purpose": "Slaughter / Transport",
+                        "Issue Date": obj.aic_issued_at.strftime("%Y-%m-%d %H:%M") if obj.aic_issued_at else "N/A",
+                        "Certification Status": obj.get_status_display() if hasattr(obj, "get_status_display") else str(obj.status),
+                    },
+                    "remarks": {}
+                },
                 "uploaded_at": obj.aic_issued_at or obj.updated_at,
                 "is_generated": True,
             })
@@ -228,6 +251,27 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     def get_opv_validation(self, obj):
         if hasattr(obj, "opv_validation") and obj.opv_validation:
             return OPVValidationDetailSerializer(obj.opv_validation, context=self.context).data
+        return None
+
+    def get_issued_permit(self, obj):
+        if hasattr(obj, "issued_permit") and obj.issued_permit:
+            ip = obj.issued_permit
+            request = self.context.get("request")
+            pdf_url = None
+            if ip.permit_pdf:
+                pdf_url = request.build_absolute_uri(ip.permit_pdf.url) if request else ip.permit_pdf.url
+            return {
+                "id": ip.id,
+                "permit_number": ip.permit_number,
+                "issued_by": ip.issued_by.get_full_name() if ip.issued_by else "Agri Officer",
+                "is_paid": ip.is_paid,
+                "payment_method": ip.payment_method,
+                "permit_fee": float(ip.permit_fee),
+                "permit_pdf": pdf_url,
+                "aic_number": ip.aic_number or obj.aic_number,
+                "valid_until": ip.valid_until,
+                "issued_at": ip.date_issued,
+            }
         return None
 
 

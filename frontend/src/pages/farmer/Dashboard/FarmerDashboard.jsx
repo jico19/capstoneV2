@@ -69,7 +69,7 @@ const FarmerDashboard = () => {
                                 Account Status: Pending Document Verification
                             </p>
                             <p className="text-xs text-amber-800 mt-0.5">
-                                You must upload your Handler's License, Transport License, and Trader's Pass to request livestock permits.
+                                You must upload your Handler's License and Transport License to request livestock permits.
                             </p>
                         </div>
                     </div>
@@ -167,7 +167,7 @@ const FarmerDashboard = () => {
                                     Document Verification Required
                                 </h3>
                                 <p className="text-xs text-stone-500 font-medium leading-relaxed">
-                                    Before submitting livestock transport permits, municipal regulations require a verified Handler's License, Transport License, and Trader's Pass on file.
+                                    Before submitting livestock transport permits, municipal regulations require a verified Handler's License and Transport License on file.
                                 </p>
                             </div>
                         </div>
@@ -177,7 +177,6 @@ const FarmerDashboard = () => {
                             <ul className="list-disc list-inside space-y-1 text-xs">
                                 <li>Handler's License (BAI)</li>
                                 <li>Transport License / Vehicle OR-CR</li>
-                                <li>Trader's Pass (Sariaya LGU)</li>
                             </ul>
                         </div>
 

@@ -3,13 +3,16 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
-export const useInspectorLogs = () => {
+export const useInspectorLogs = (page = 1, limit = 5) => {
     const queryClient = useQueryClient();
+    const offset = (page - 1) * limit;
 
     const logsQuery = useQuery({
-        queryKey: ['inspector-logs'],
+        queryKey: ['inspector-logs', page, limit],
         queryFn: async () => {
-            const res = await api.get('/inspector/');
+            const res = await api.get('/inspector/', {
+                params: { limit, offset }
+            });
             return res.data;
         }
     });
@@ -39,7 +42,7 @@ export const useInspectorLogs = () => {
             toast.success("Inspection logged successfully.");
             queryClient.invalidateQueries({ queryKey: ['inspector-logs'] });
         },
-        onError: (error) => {
+        onError: () => {
             toast.error("Failed to log inspection.");
         }
     });

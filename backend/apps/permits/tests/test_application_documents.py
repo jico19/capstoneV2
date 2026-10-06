@@ -12,7 +12,7 @@ from apps.permits.services.permit import create_permit
 
 User = get_user_model()
 
-COMMON_TYPES = ['traders_pass', 'handlers_license', 'transport_carrier_reg']
+COMMON_TYPES = ['handlers_license', 'transport_carrier_reg']
 
 
 def make_image(name):
@@ -61,7 +61,6 @@ class TestPermitApplicationDocument:
         return {
             'origin_0_cis': make_image('cis.png'),
             'origin_0_endorsement_cert': make_image('endorsement.png'),
-            'traders_pass': make_image('traders_pass.png'),
             'handlers_license': make_image('handlers_license.png'),
             'transport_carrier_reg': make_image('transport_carrier_reg.png'),
         }
@@ -113,20 +112,20 @@ class TestPermitApplicationDocument:
             for doc in application.application_documents.all()
         }
         assert set(app_docs) == set(COMMON_TYPES)
-        assert SubmittedDocument.objects.filter(origin=origin).count() == 5
+        assert SubmittedDocument.objects.filter(origin=origin).count() == 4
 
     def test_resubmit_overwrites_application_doc(self, farmer_user, barangay):
         application, origin = self._app_with_origin(farmer_user, barangay)
         create_permit(self._submission_files(), application, farmer_user)
 
         original = PermitApplicationDocument.objects.get(
-            application=application, document_type='traders_pass'
+            application=application, document_type='handlers_license'
         )
 
         origin.documents.all().delete()
 
         files = self._submission_files()
-        files['traders_pass'] = make_image('traders_pass_v2.png')
+        files['handlers_license'] = make_image('handlers_license_v2.png')
         create_permit(files, application, farmer_user)
 
         app_docs = {
@@ -135,10 +134,10 @@ class TestPermitApplicationDocument:
         }
         assert set(app_docs) == set(COMMON_TYPES)
         assert PermitApplicationDocument.objects.filter(
-            application=application, document_type='traders_pass'
+            application=application, document_type='handlers_license'
         ).count() == 1
         updated = PermitApplicationDocument.objects.get(
-            application=application, document_type='traders_pass'
+            application=application, document_type='handlers_license'
         )
         assert str(original.file) != str(updated.file)
 
@@ -159,13 +158,12 @@ class TestPermitApplicationDocument:
         )
         files = {
             'origin_0_cis': make_image('cis.png'),
-            'traders_pass': make_image('traders_pass.png'),
             'handlers_license': make_image('handlers_license.png'),
             'transport_carrier_reg': make_image('transport_carrier_reg.png'),
         }
         # Should not raise ValidationError
         create_permit(files, application, farmer_user)
-        assert SubmittedDocument.objects.filter(origin__application=application).count() == 4
+        assert SubmittedDocument.objects.filter(origin__application=application).count() == 3
 
     def test_endorsement_cert_required_outside_sariaya(self, farmer_user, barangay):
         from rest_framework.exceptions import ValidationError
@@ -185,10 +183,45 @@ class TestPermitApplicationDocument:
         )
         files = {
             'origin_0_cis': make_image('cis.png'),
-            'traders_pass': make_image('traders_pass.png'),
             'handlers_license': make_image('handlers_license.png'),
             'transport_carrier_reg': make_image('transport_carrier_reg.png'),
         }
         with pytest.raises(ValidationError) as exc_info:
             create_permit(files, application, farmer_user)
         assert "Missing Barangay Endorsement Certificate" in str(exc_info.value)
+
+    def test_aic_document_detail_retrieve_returns_ocr_extracted_fields(self, farmer_user, barangay, rf):
+        from apps.permits.views.documents import SubmittedDocumentViewSet
+        application = PermitApplication.objects.create(
+            farmer=farmer_user,
+            status=PermitApplication.Status.OPV_VALIDATED,
+            destination='Lucena',
+            transport_date=timezone.now().date(),
+            purpose='Slaughter',
+            aic_number='AIC-TEST-12345',
+            aic_pdf=make_image('test_aic.pdf'),
+            aic_issued_at=timezone.now(),
+        )
+        TransportOrigin.objects.create(
+            application=application,
+            barangay=barangay,
+            source_farmer_name='Mang Kanor',
+            source_phone_no='09222222222',
+            fattener=10,
+        )
+
+        from rest_framework.test import force_authenticate
+        request = rf.get(f'/documents/aic-{application.id}/')
+        force_authenticate(request, user=farmer_user)
+
+        view = SubmittedDocumentViewSet.as_view({'get': 'retrieve'})
+        response = view(request, pk=f'aic-{application.id}')
+
+        assert response.status_code == 200
+        assert response.data['id'] == f'aic-{application.id}'
+        assert response.data['ocr'] is not None
+        assert response.data['ocr']['status'] == 'completed'
+        extracted = response.data['ocr']['extracted_field']
+        assert extracted['AIC Number'] == 'AIC-TEST-12345'
+        assert extracted['Shipper Name'] == farmer_user.get_full_name()
+        assert extracted['Total Swine Heads'] == 10

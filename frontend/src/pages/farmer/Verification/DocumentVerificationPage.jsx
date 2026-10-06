@@ -31,12 +31,6 @@ const DOC_CONFIG = [
         subtitle: "Transport Carrier Registration or Vehicle OR/CR",
         description: "Valid certificate of registration and official receipt for the transport vehicle.",
     },
-    {
-        type: 'traders_pass',
-        title: "Trader's Pass",
-        subtitle: "LGU / Municipal Livestock Trader Permit",
-        description: "Municipal livestock trading clearance issued by Sariaya Agriculture Office.",
-    },
 ];
 
 const DocumentVerificationPage = () => {
@@ -196,13 +190,13 @@ const DocumentVerificationPage = () => {
                             Documents Submitted — Waiting for Verification
                         </h2>
                         <p className="text-sm text-stone-700 max-w-xl mx-auto font-medium">
-                            Your three required credentials have been uploaded and are now pending
+                            Your two required credentials have been uploaded and are now pending
                             review by the Sariaya Municipal Agriculture Office (MAO). You will
                             receive an SMS notification once approved.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                         {DOC_CONFIG.map((cfg) => {
                             const existing = existingDocsMap[cfg.type];
                             return (
@@ -338,7 +332,7 @@ const DocumentVerificationPage = () => {
                             Verification Required to Apply for Permits
                         </span>
                         <p className="text-xs text-stone-600">
-                            Municipal regulations require farmers to submit three standing regulatory credentials: Handler's License, Transport License, and Trader's Pass. Once verified, you won't need to re-upload these for individual permit requests.
+                            Municipal regulations require farmers to submit two standing regulatory credentials: Handler's License and Transport License. Once verified, you won't need to re-upload these for individual permit requests.
                         </p>
                     </div>
                 </div>
@@ -363,7 +357,7 @@ const DocumentVerificationPage = () => {
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                                            Document {index + 1} of 3
+                                            Document {index + 1} of {DOC_CONFIG.length}
                                         </span>
                                         {existing?.is_verified ? (
                                             <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 bg-green-100 text-green-800">

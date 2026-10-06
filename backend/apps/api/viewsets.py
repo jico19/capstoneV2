@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import viewsets, status, filters
@@ -98,7 +99,6 @@ class UserViewSet(BaseModelViewSet):
         doc_types = [
             models.FarmerDocument.DocumentType.HANDLERS_LICENSE,
             models.FarmerDocument.DocumentType.TRANSPORT_CARRIER_REG,
-            models.FarmerDocument.DocumentType.TRADERS_PASS,
         ]
 
         uploaded_any = False
@@ -142,7 +142,9 @@ class UserViewSet(BaseModelViewSet):
         for doc in newly_uploaded_docs:
             try:
                 from apps.ocr.tasks import extract_farmer_document_info
-                extract_farmer_document_info.enqueue(doc.id)
+                transaction.on_commit(
+                    lambda doc_id=doc.id: extract_farmer_document_info.enqueue(doc_id)
+                )
             except Exception as e:
                 logger.error(f"Failed to enqueue OCR for FarmerDocument {doc.id}: {str(e)}")
 

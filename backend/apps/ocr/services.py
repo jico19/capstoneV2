@@ -243,15 +243,6 @@ def extract_traders_pass(text):
 
     issue_date = find(r'Issue\s*Date\s*:\s*(\d{1,2}/\d{1,2}/\d{4}|\w+\s+\d{1,2},?\s*\d{4})')
 
-    # Trader's Pass carries an Issue Date without an expiration date.
-    # Only extract date_of_expiration if explicitly printed on the document.
-    expiry_match = find(r'(?:Date of Expiration|Expiration Date|Valid Until)\s*:\s*(\d{1,2}/\d{1,2}/\d{4}|\w+\s+\d{1,2},?\s*\d{4})')
-    expiration_date_str = None
-    if expiry_match:
-        parsed_exp = parse_date(expiry_match)
-        if parsed_exp:
-            expiration_date_str = parsed_exp.strftime('%Y-%m-%d')
-
     return {
         'license_number': pass_code,
         'name_of_applicant': hauler,
@@ -260,7 +251,6 @@ def extract_traders_pass(text):
         'plate_no': plate_no,
         'vehicle_type': vehicle_type,
         'date_of_issuance': issue_date,
-        'date_of_expiration': expiration_date_str,
     }
 
 
@@ -439,19 +429,12 @@ def validate_transport_carrier(extracted):
 
 def validate_traders_pass(extracted):
     errors = {}
-    today = datetime.today()
 
     if not extracted.get('license_number'):
         errors['license_number'] = 'TrPASS code could not be extracted.'
 
     if not extracted.get('date_of_issuance'):
         errors['date_of_issuance'] = 'Issue date could not be extracted.'
-
-    expiry_str = extracted.get('date_of_expiration')
-    if expiry_str:
-        expiry = parse_date(expiry_str)
-        if expiry and expiry < today:
-            errors['date_of_expiration'] = f'Trader\'s pass expired as of {expiry.strftime("%B %d, %Y")}.'
 
     return errors
 
@@ -512,10 +495,11 @@ def extract_cis(text):
         number_of_animals_text = count_match.group(1).strip().upper()
         number_of_animals = int(count_match.group(2))
     else:
-        # Word-only form, e.g. 'certify that TEN of swine'
-        number_of_animals_text = find(r'certify that\s+([A-Z\s\-]+?)\s+of swine')
+        number_of_animals_text = find(r'certify that\s+([A-Z0-9\s\-]+?)\s+of swine')
         number_of_animals_text = (number_of_animals_text or '').upper()
         number_of_animals = _words_to_int(number_of_animals_text)
+        if number_of_animals is None and number_of_animals_text.isdigit():
+            number_of_animals = int(number_of_animals_text)
 
     from_date_match = re.search(
         r'from\s+(.+?)\s+shipped on\s+(.+?)(?:\n|$)', text, re.IGNORECASE | re.MULTILINE

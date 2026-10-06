@@ -251,6 +251,17 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                         </div>
 
                         <div className="space-y-6">
+                            {(doc?.is_generated || doc?.document_type === 'aic') && (
+                                <div className="p-4 bg-green-50 border-l-4 border-green-700 mb-4">
+                                    <h5 className="text-xs font-black uppercase tracking-wider text-green-900">
+                                        Official Municipal Certification
+                                    </h5>
+                                    <p className="text-xs text-green-800 mt-1.5 leading-relaxed font-medium">
+                                        This Animal Inspection Certificate (AIC) was auto-generated and officially certified by the Municipal Agriculture Office (MAO) of Sariaya, Quezon.
+                                    </p>
+                                </div>
+                            )}
+
                             {Object.keys(extracted).length > 0 ? (
                                 Object.entries(extracted).map(([key, value]) => (
                                     <div key={key} className="space-y-2">
@@ -286,14 +297,6 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                                 ))
                             ) : doc?.is_generated || doc?.document_type === 'aic' ? (
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-green-50 border-l-4 border-green-700">
-                                        <h5 className="text-xs font-black uppercase tracking-wider text-green-900">
-                                            Official Municipal Certification
-                                        </h5>
-                                        <p className="text-xs text-green-800 mt-1.5 leading-relaxed font-medium">
-                                            This Animal Inspection Certificate (AIC) was auto-generated and officially certified by the Municipal Agriculture Office (MAO) of Sariaya, Quezon.
-                                        </p>
-                                    </div>
                                     <div className="p-4 bg-stone-50 border border-stone-200 space-y-1.5">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Inspection Status</p>
                                         <p className="text-xs font-bold text-stone-700">Verified apparently healthy at time of inspection with zero reported outbreak origin.</p>

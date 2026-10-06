@@ -3,7 +3,7 @@
  * Example: 15 -> "FIFTEEN", 1500 -> "ONE THOUSAND FIVE HUNDRED"
  */
 export function numberToWords(num) {
-    if (num === null || num === undefined || isNaN(num)) return '';
+    if (num === null || num === undefined || String(num).trim() === '' || isNaN(num)) return '';
     const n = Math.floor(Math.abs(Number(num)));
     if (n === 0) return 'ZERO';
 
@@ -41,6 +41,52 @@ export function numberToWords(num) {
     }
 
     return result.trim().toUpperCase();
+}
+
+/**
+ * Converts English word representation (e.g. "TEN", "TWENTY-FIVE") or numeric string back to an integer.
+ * Returns null if phrase cannot be parsed into a number.
+ */
+export function wordsToNumber(wordsStr) {
+    if (!wordsStr || String(wordsStr).trim() === '') return null;
+    const clean = String(wordsStr).trim().toUpperCase();
+    if (!isNaN(Number(clean))) return Math.floor(Math.abs(Number(clean)));
+
+    const unitsMap = {
+        'ZERO': 0, 'ONE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5, 'SIX': 6,
+        'SEVEN': 7, 'EIGHT': 8, 'NINE': 9, 'TEN': 10, 'ELEVEN': 11,
+        'TWELVE': 12, 'THIRTEEN': 13, 'FOURTEEN': 14, 'FIFTEEN': 15,
+        'SIXTEEN': 16, 'SEVENTEEN': 17, 'EIGHTEEN': 18, 'NINETEEN': 19,
+    };
+    const tensMap = {
+        'TWENTY': 20, 'THIRTY': 30, 'FORTY': 40, 'FIFTY': 50,
+        'SIXTY': 60, 'SEVENTY': 70, 'EIGHTY': 80, 'NINETY': 90,
+    };
+
+    let total = 0;
+    let current = 0;
+    const tokens = clean.split(/[\s-]+/);
+
+    for (const token of tokens) {
+        if (!token) continue;
+        if (unitsMap[token] !== undefined) {
+            current += unitsMap[token];
+        } else if (tensMap[token] !== undefined) {
+            current += tensMap[token];
+        } else if (token === 'HUNDRED') {
+            current *= 100;
+        } else if (token === 'THOUSAND') {
+            total += (current || 1) * 1000;
+            current = 0;
+        } else if (token === 'MILLION') {
+            total += (current || 1) * 1000000;
+            current = 0;
+        } else {
+            return null;
+        }
+    }
+
+    return total + current;
 }
 
 /**

@@ -6,11 +6,6 @@ const UploadDocument = ({ register, errors, watch, setValue = () => {}, prevStep
 
     const commonDocs = [
         { 
-            id: 'traders_pass', 
-            label: "Trader's Pass", 
-            desc: "LGU permit to buy/sell livestock." 
-        },
-        { 
             id: 'handlers_license', 
             label: "Handler's License", 
             desc: "Bureau of Animal Industry (BAI) license." 
@@ -61,12 +56,12 @@ const UploadDocument = ({ register, errors, watch, setValue = () => {}, prevStep
                             </span>
                         </div>
                         <p className="text-xs text-green-800 leading-relaxed">
-                            Your Handler's License, Vehicle Registration (OR/CR), and Trader's Pass are verified on your profile. The system will automatically attach them to this permit application.
+                            Your Handler's License and Vehicle Registration (OR/CR) are verified on your profile. The system will automatically attach them to this permit application.
                         </p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-green-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-green-200">
                     {commonDocs.map((doc) => (
                         <div key={doc.id} className="bg-white border border-green-300 p-3 flex flex-col justify-between">
                             <div>

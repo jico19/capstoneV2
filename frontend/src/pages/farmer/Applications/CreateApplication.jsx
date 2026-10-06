@@ -136,7 +136,6 @@ const CreateApplication = () => {
                         <ul className="list-disc list-inside space-y-1">
                             <li>Handler's License (BAI)</li>
                             <li>Transport License / Vehicle Registration (OR/CR)</li>
-                            <li>Trader's Pass (Sariaya LGU)</li>
                         </ul>
                     </div>
 

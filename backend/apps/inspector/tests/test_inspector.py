@@ -22,19 +22,23 @@ def farmer_user(db):
 @pytest.mark.django_db
 class TestInspectorWorkflow:
     def test_verify_and_log(self, api_client, inspector_user, farmer_user):
+        from django.utils import timezone
+        from datetime import timedelta
+        future_date = timezone.now().date() + timedelta(days=2)
         # 1. Setup - issued permit with QR
         app = PermitApplication.objects.create(
             farmer=farmer_user, 
             destination='Lucena', 
-            transport_date='2026-06-01',
-            status=PermitApplication.Status.PERMIT_ISSUED
+            transport_date=future_date,
+            status=PermitApplication.Status.RELEASED
         )
         token = uuid.uuid4()
         IssuedPermit.objects.create(
             application=app, 
             issued_by=inspector_user, 
             qr_token=token,
-            permit_number='TEST-123'
+            permit_number='TEST-123',
+            valid_until=future_date + timedelta(days=3)
         )
 
         api_client.force_authenticate(user=inspector_user)

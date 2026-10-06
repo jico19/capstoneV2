@@ -180,7 +180,6 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
             {/* Attached Photos Card */}
             <div className="bg-white p-5 border border-stone-200 rounded-none space-y-4">
                 <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2.5">Attached Documents (Photos)</h3>
-                <DocRow label="Trader's Pass" field="traders_pass" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
                 <DocRow label="Handler's License" field="handlers_license" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
                 <DocRow label="Carrier Registration" field="transport_carrier_reg" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
                 {origins.map((o, index) => (

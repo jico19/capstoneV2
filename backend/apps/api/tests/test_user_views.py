@@ -155,7 +155,6 @@ class KYCVerificationTests(APITestCase):
 
         dummy_file = SimpleUploadedFile("license.jpg", b"fake image content", content_type="image/jpeg")
         dummy_file2 = SimpleUploadedFile("transport.jpg", b"fake transport content", content_type="image/jpeg")
-        dummy_file3 = SimpleUploadedFile("traders.jpg", b"fake trader content", content_type="image/jpeg")
 
         url = reverse("user-documents")
         data = {
@@ -163,8 +162,6 @@ class KYCVerificationTests(APITestCase):
             "handlers_license_expiry": "2027-01-01",
             "transport_carrier_reg": dummy_file2,
             "transport_carrier_reg_expiry": "2027-02-01",
-            "traders_pass": dummy_file3,
-            "traders_pass_expiry": "2027-03-01",
         }
 
         response = self.client.post(url, data, format="multipart")
@@ -172,7 +169,7 @@ class KYCVerificationTests(APITestCase):
 
         self.farmer.refresh_from_db()
         self.assertEqual(self.farmer.verification_status, User.VerificationStatus.PENDING_REVIEW)
-        self.assertEqual(self.farmer.farmer_documents.count(), 3)
+        self.assertEqual(self.farmer.farmer_documents.count(), 2)
 
     def test_agri_can_verify_and_reject_documents(self):
         FarmerDocument.objects.create(
@@ -184,11 +181,6 @@ class KYCVerificationTests(APITestCase):
             user=self.farmer,
             document_type=FarmerDocument.DocumentType.TRANSPORT_CARRIER_REG,
             file=SimpleUploadedFile("t.jpg", b"t"),
-        )
-        FarmerDocument.objects.create(
-            user=self.farmer,
-            document_type=FarmerDocument.DocumentType.TRADERS_PASS,
-            file=SimpleUploadedFile("p.jpg", b"p"),
         )
         self.farmer.verification_status = User.VerificationStatus.PENDING_REVIEW
         self.farmer.save()

@@ -25,7 +25,7 @@ const PaymentSuccess = () => {
                 const res = await api.post(`/payment/${issued_permit_id}/verify_paymongo_session/`);
 
                 if (res.data.verified) {
-                    clearTimeout(timeoutRef.current); // ✅ explicitly cancel any pending timeout
+                    clearTimeout(timeoutRef.current);
                     setStatus('success');
                     setPaymentData(res.data.data);
                 } else {
@@ -37,8 +37,13 @@ const PaymentSuccess = () => {
                     }
                 }
             } catch (err) {
-                console.error(err.response);
-                setStatus('error');
+                console.error("Verification error:", err);
+                attemptsRef.current++;
+                if (attemptsRef.current < MAX_RETRIES) {
+                    timeoutRef.current = setTimeout(verify, POLL_INTERVAL);
+                } else {
+                    setStatus('error');
+                }
             }
         };
 
@@ -120,12 +125,18 @@ const PaymentSuccess = () => {
                                 </div>
                             </div>
 
-                            <div className="pt-6">
+                            <div className="pt-6 space-y-2">
                                 <button
-                                    onClick={() => navigate('/farmer/')}
-                                    className="w-full bg-green-700 hover:bg-green-600 text-white py-4 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 group"
+                                    onClick={() => navigate(`/farmer/application/download/${issued_permit_id}`)}
+                                    className="w-full bg-green-700 hover:bg-green-600 text-white py-4 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 group cursor-pointer"
                                 >
-                                    Done <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                    Get Permit Documents <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
+                                <button
+                                    onClick={() => navigate('/farmer/application')}
+                                    className="w-full bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 py-3 text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer"
+                                >
+                                    Back to My Applications
                                 </button>
                             </div>
 

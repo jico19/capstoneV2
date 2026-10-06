@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom";
-import { ShieldCheck, UserPlus, ArrowRight, Lock, Phone, CheckCircle2, X, RefreshCw, Smartphone, AlertCircle } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Lock, Phone, CheckCircle2, X, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
 import { toast } from "sonner";
 import AgriLogo from '../../assets/sariaya-agri-logo.jpg';
@@ -18,9 +18,9 @@ const RegisterPage = () => {
         getValues,
         setValue,
         watch,
+        setError,
         formState: { errors, isSubmitting },
     } = useForm();
-    const navigate = useNavigate();
 
     const watchedPhone = watch("phone");
     const watchedFirstName = watch("first_name");
@@ -64,9 +64,25 @@ const RegisterPage = () => {
             });
         } catch (error) {
             console.error(error.response)
-            setGlobalError(error.response?.data?.error || "Could not create your account.");
+            const serverError = error.response?.data?.error || error.response?.data?.message || "";
+            const isDuplicatePhone = serverError.toLowerCase().includes("phone") || 
+                                    serverError.toLowerCase().includes("already registered") || 
+                                    serverError.toLowerCase().includes("already exists");
+
+            const displayError = isDuplicatePhone
+                ? (serverError || "This mobile number is already registered to another account.")
+                : (serverError || "Could not create your account.");
+
+            if (isDuplicatePhone) {
+                setError("phone", {
+                    type: "manual",
+                    message: displayError
+                });
+            }
+
+            setGlobalError(displayError);
             toast.error("Registration Failed", {
-                description: error.response?.data?.error || "Could not create your account."
+                description: displayError
             });
         }
     };
@@ -88,9 +104,25 @@ const RegisterPage = () => {
             setShowOTPModal(true); // Open the modal on success
         } catch (error) {
             console.error(error)
-            setGlobalError("Failed to send verification code. Please check your number.");
-            toast.error("Failed to Send Code", {
-                description: "Please check your phone number and try again."
+            const serverError = error.response?.data?.error || error.response?.data?.message || "";
+            const isDuplicatePhone = serverError.toLowerCase().includes("already registered") || 
+                                    serverError.toLowerCase().includes("already exists") || 
+                                    serverError.toLowerCase().includes("phone");
+
+            const displayError = isDuplicatePhone 
+                ? (serverError || "This mobile number is already registered to another account.")
+                : (serverError || "Failed to send verification code. Please check your number.");
+
+            if (isDuplicatePhone) {
+                setError("phone", {
+                    type: "manual",
+                    message: displayError
+                });
+            }
+
+            setGlobalError(displayError);
+            toast.error(isDuplicatePhone ? "Mobile Number Already Registered" : "Failed to Send Code", {
+                description: displayError
             });
         } finally {
             setIsSendingOTP(false);
@@ -158,7 +190,7 @@ const RegisterPage = () => {
                             <div className="inline-block bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-800">
                                 Status: Pending Document Verification
                             </div>
-                            <p className="text-stone-600 font-medium text-xs leading-relaxed">Your account has been created. After logging in, upload your Handler's License, Transport License, and Trader's Pass to unlock permit applications.</p>
+                            <p className="text-stone-600 font-medium text-xs leading-relaxed">Your account has been created. After logging in, upload your Handler's License and Transport License to unlock permit applications.</p>
                         </div>
                         <div className="pt-4">
                             <Link to="/login" className="w-full bg-green-700 hover:bg-green-800 text-white py-4 px-8 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-green-700/20">
@@ -328,7 +360,7 @@ const RegisterPage = () => {
                                             type="text"
                                             {...register("username", {
                                                 required: "Choose a login name",
-                                                onChange: (e) => {
+                                                onChange: () => {
                                                     setIsUsernameDirty(true);
                                                     clearError();
                                                 }

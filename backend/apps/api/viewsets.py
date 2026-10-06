@@ -10,7 +10,7 @@ from . import models
 from . import services
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import ValidationError
 from .base import BaseModelViewSet
 
@@ -40,7 +40,7 @@ class UserViewSet(BaseModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            return []
+            return [AllowAny()]
         return super().get_permissions()
 
     def get_serializer_class(self):
@@ -281,7 +281,7 @@ class UserViewSet(BaseModelViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @action(detail=False, methods=["post"], permission_classes=[])
+    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
     def verify_otp(self, request):
         phone_no = request.data.get("phone_no")
         otp_input = request.data.get("otp")
@@ -298,7 +298,7 @@ class UserViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    @action(detail=False, methods=["post"], permission_classes=[])
+    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
     def send_otp(self, request):
         phone_no = request.data.get("phone_no")
 
@@ -344,7 +344,7 @@ class NotificationViewSet(BaseModelViewSet):
 
         return queryset
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get", "post"])
     def mark_all_read(self, request):
 
         data = models.Notification.objects.filter(recipient=request.user).update(

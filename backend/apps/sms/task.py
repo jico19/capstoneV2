@@ -91,6 +91,19 @@ def send_via_status(application_id, attempt=1):
                 logger.error(
                     f"Max attempts reached for SMS status update on application {application.application_id}"
                 )
+                from apps.api.models import Notification, User
+                agri_users = User.objects.filter(role="Agri")
+                failed_notifs = [
+                    Notification(
+                        recipient=admin,
+                        type=Notification.Type.WARNING,
+                        title="SMS Notification Failed",
+                        message=f"Status update SMS for Application #{application.application_id} could not be delivered to {masked_phone} after 3 attempts.",
+                    )
+                    for admin in agri_users
+                ]
+                if failed_notifs:
+                    Notification.objects.bulk_create(failed_notifs)
 
 
 @task()

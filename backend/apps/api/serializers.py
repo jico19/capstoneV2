@@ -130,9 +130,17 @@ class NotificationSerializer(serializers.ModelSerializer):
         ]
 
 class AuditTrailSerializer(serializers.ModelSerializer):
+    who_performed_username = serializers.CharField(source='who_performed.username', read_only=True, default='System')
+
     class Meta:
         model = models.AuditTrail
-        fields = '__all__'
+        fields = [
+            'id',
+            'who_performed',
+            'who_performed_username',
+            'what_performed',
+            'when_performed',
+        ]
 
 
 class CustomTokenObtainSerializer(TokenObtainPairSerializer):

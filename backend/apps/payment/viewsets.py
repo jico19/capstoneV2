@@ -48,6 +48,7 @@ class PaymentViewSet(BaseModelViewSet):
         if search_param:
             from django.db.models import Q
             clean_search = search_param.strip().replace('#TRX-', '').replace('TRX-', '')
+            id_filter = Q(id=int(clean_search)) if clean_search.isdigit() else Q()
             qs = qs.filter(
                 Q(or_number__icontains=search_param) |
                 Q(issued_permit__permit_number__icontains=search_param) |
@@ -55,7 +56,7 @@ class PaymentViewSet(BaseModelViewSet):
                 Q(issued_permit__application__farmer__last_name__icontains=search_param) |
                 Q(issued_permit__application__farmer__username__icontains=search_param) |
                 Q(paymongo_session_id__icontains=search_param) |
-                Q(id__icontains=clean_search)
+                id_filter
             )
 
         # Date range filter

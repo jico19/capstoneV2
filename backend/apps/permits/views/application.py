@@ -43,10 +43,18 @@ class PermitApplicationViewSet(BaseModelViewSet):
                 ]
             )
 
-        else:
+        elif user.role == "Admin":
             qs = models.PermitApplication.objects.all()
 
-        return qs.select_related("farmer")
+        else:
+            qs = models.PermitApplication.objects.none()
+
+        return qs.select_related(
+            "farmer", "farmer__barangay", "issued_permit", "opv_validation"
+        ).prefetch_related(
+            "origins__barangay",
+            "origins__documents__ocr",
+        )
 
     def _parse_bracket_data(self, data):
         """

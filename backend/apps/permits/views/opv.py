@@ -22,9 +22,12 @@ class OPVValidationViewSet(BaseModelViewSet):
         if not user.is_authenticated:
             return models.OPVValidation.objects.none()
 
+        base_qs = models.OPVValidation.objects.select_related("opv_staff", "application")
         if user.role == "Farmer":
-            return models.OPVValidation.objects.filter(application__farmer=user)
-        return models.OPVValidation.objects.all()
+            return base_qs.filter(application__farmer=user)
+        elif user.role in ["Opv", "Agri", "Admin"]:
+            return base_qs.all()
+        return models.OPVValidation.objects.none()
 
     # actions
     @action(detail=False, methods=["get"])

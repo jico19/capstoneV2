@@ -36,10 +36,11 @@ class InspectorLogViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        base_qs = models.InspectorLogs.objects.select_related('inspector', 'application__farmer')
         if user.role in ['Admin', 'Agri']:
-            return models.InspectorLogs.objects.all()
+            return base_qs.all()
         # Inspectors can only see their own logs
-        return models.InspectorLogs.objects.filter(inspector=user)
+        return base_qs.filter(inspector=user)
 
     def create(self, request, *args, **kwargs):
         try:

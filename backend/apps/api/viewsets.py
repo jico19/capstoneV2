@@ -371,8 +371,10 @@ class AuditTrailViewSet(BaseModelViewSet):
         user = self.request.user
         if not user.is_authenticated:
             return models.AuditTrail.objects.none()
-            
-        queryset = models.AuditTrail.objects.all().order_by("-when_performed")
-        if user.role == "Barangay":
-            queryset = queryset.filter(who_performed=user)
-        return queryset
+
+        queryset = models.AuditTrail.objects.select_related("who_performed").order_by("-when_performed")
+        if user.role in ["Farmer", "Inspector", "Barangay"]:
+            return queryset.filter(who_performed=user)
+        elif user.role in ["Agri", "Admin", "Opv"]:
+            return queryset
+        return queryset.none()

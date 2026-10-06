@@ -32,9 +32,12 @@ class IssuedPermitViewSet(BaseModelViewSet):
         if not user.is_authenticated:
             return models.IssuedPermit.objects.none()
 
+        base_qs = models.IssuedPermit.objects.select_related("issued_by", "application")
         if user.role == "Farmer":
-            return models.IssuedPermit.objects.filter(application__farmer=user)
-        return models.IssuedPermit.objects.all()
+            return base_qs.filter(application__farmer=user)
+        elif user.role in ["Agri", "Opv", "Admin"]:
+            return base_qs.all()
+        return models.IssuedPermit.objects.none()
 
     def create(self, request, *args, **kwargs):
         """

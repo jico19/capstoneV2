@@ -4,7 +4,6 @@ import {
     LayoutDashboard,
     FilesIcon,
     FilePlus2,
-    Bell,
     Settings,
     QrCode,
     History,

@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+/* eslint-disable react-refresh/only-export-components */
+import { createBrowserRouter } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import ProtectedRoute from "./protectedRoute";
 import RootRedirect from "./RootRedirect";

@@ -3,7 +3,6 @@ import {
     FileSignature, 
     Eye, 
     Search, 
-    Filter,
     LayoutDashboard
 } from "lucide-react";
 import { useApplication } from '../../../hooks/useApplications';

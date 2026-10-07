@@ -3,9 +3,9 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import {
     ArrowLeft, CheckCircle2, User, MapPin,
-    Truck, Calendar, XCircle, FileText, ExternalLink,
+    Truck, XCircle, FileText,
     ShieldCheck, AlertTriangle, Phone, FileCheck2,
-    Eye, CreditCard, Compass, Info, Check, Clock
+    Eye, Compass
 } from "lucide-react"
 import { api } from "../../../lib/api"
 import { toast } from "sonner"

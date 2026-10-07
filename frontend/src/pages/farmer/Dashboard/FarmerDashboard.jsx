@@ -4,18 +4,20 @@ import {
     Clock,
     Inbox,
     ChevronRight,
-    ArrowRight
+    ArrowRight,
+    AlertTriangle,
+    AlertCircle,
+    CheckCircle2,
+    ShieldAlert
 } from 'lucide-react';
 import KPICard from '../../../components/ui/KPICard';
 import { useGetFarmerDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../../store/authStore';
 import BarChartComponent from '../../../components/charts/BarChart';
 import SmartInsights from '../../../components/ui/SmartInsights';
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
-import { ShieldCheck, AlertTriangle, AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const FarmerDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetFarmerDashboard();

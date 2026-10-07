@@ -1,12 +1,8 @@
 import {
     CheckCircle,
     Clock,
-    TrendingUp,
-    FileSignature,
-    ArrowRight,
     Truck,
-    Percent,
-    AlertTriangle
+    Percent
 } from "lucide-react";
 import { useGetOPVDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';
 import KPICard from "../../../components/ui/KPICard";

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetMaps } from '../../../hooks/useMaps';
-import { Navigation, Calendar, Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, User, Phone, MapPin } from "lucide-react";
+import { Navigation, Calendar, Plus, ArrowRight, ChevronRight, ChevronDown, User, Phone, MapPin } from "lucide-react";
 import { getMunicipalities, getBarangays, buildDestinationString } from '../../../lib/region4a';
 
 const ANIMAL_CATEGORIES = [

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UploadCloud, CheckCircle2, Camera, ChevronDown, ChevronUp, FileCheck, Trash2 } from "lucide-react";
+import { UploadCloud, CheckCircle2, Camera, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
 const UploadDocument = ({ register, errors, watch, setValue = () => {}, prevStep, nextStep, origins, isEndorsementRequired = true }) => {
     const [showOverride, setShowOverride] = useState(false);

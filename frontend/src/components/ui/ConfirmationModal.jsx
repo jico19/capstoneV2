@@ -36,6 +36,7 @@ const ConfirmationModal = ({
     cancelText = "Cancel",
     yesVariant,
     confirmVariant,
+    noVariant = "danger",
     isSubmitting = false,
     isLoading = false,
     submittingAction = null,

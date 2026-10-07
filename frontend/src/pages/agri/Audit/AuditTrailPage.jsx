@@ -3,7 +3,6 @@ import { useGetAuditTrail } from '../../../hooks/useAudit';
 import { 
     History, 
     Search, 
-    Filter, 
     Clock, 
     User, 
     CheckCircle2, 
@@ -16,7 +15,6 @@ import {
     RotateCcw, 
     Calendar,
     ChevronRight,
-    Eye,
     Activity,
     Users,
     Layers

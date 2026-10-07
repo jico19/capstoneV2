@@ -2,7 +2,6 @@ import {
     Scan,
     Calendar,
     ShieldCheck,
-    Clock,
     History
 } from "lucide-react";
 import { useGetInspectorDashboard, useGetDashboardInsights } from '../../../hooks/useDashboard';

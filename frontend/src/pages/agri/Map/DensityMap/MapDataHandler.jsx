@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useMap, MapPopup } from '../../../../components/ui/map'
-import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 const MapDataHandler = ({ 
     mapData, 
@@ -38,31 +38,37 @@ const MapDataHandler = ({
                 duration: 800
             });
 
-            // Set selected feature state
-            if (selectedId !== null) {
-                map.setFeatureState({ source: 'agri-fields', id: selectedId }, { selected: false });
-            }
-            setSelectedId(item.id);
-            map.setFeatureState({ source: 'agri-fields', id: item.id }, { selected: true });
+            const rafId = requestAnimationFrame(() => {
+                // Set selected feature state
+                if (selectedId !== null) {
+                    map.setFeatureState({ source: 'agri-fields', id: selectedId }, { selected: false });
+                }
+                setSelectedId(item.id);
+                map.setFeatureState({ source: 'agri-fields', id: item.id }, { selected: true });
 
-            setSelectedField({
-                id: item.id,
-                name: item.name,
-                density: surveyRecord.density_level || 'None',
-                totalPigs: surveyRecord.total_pigs || 0,
-                breakdown: breakdown,
-                trend: surveyRecord.trend || 'stable',
-                isPrediction: surveyRecord.is_prediction || false,
-                compareDensity: compareRecord.density_level || 'None',
-                compareTotalPigs: compareRecord.total_pigs || 0,
-                compareBreakdown: compareBreakdown,
-                lng: lng,
-                lat: lat
+                setSelectedField({
+                    id: item.id,
+                    name: item.name,
+                    density: surveyRecord.density_level || 'None',
+                    totalPigs: surveyRecord.total_pigs || 0,
+                    breakdown: breakdown,
+                    trend: surveyRecord.trend || 'stable',
+                    isPrediction: surveyRecord.is_prediction || false,
+                    compareDensity: compareRecord.density_level || 'None',
+                    compareTotalPigs: compareRecord.total_pigs || 0,
+                    compareBreakdown: compareBreakdown,
+                    lng: lng,
+                    lat: lat
+                });
+
+                setSelectedBarangay(null);
             });
 
-            setSelectedBarangay(null);
+            return () => {
+                cancelAnimationFrame(rafId);
+            };
         }
-    }, [selectedBarangay, isLoaded, mapData, map, setSelectedBarangay, compareSurveyData, selectedId]);
+    }, [selectedBarangay, isLoaded, mapData, map, setSelectedBarangay, surveyData, compareSurveyData, selectedId]);
 
     // --- 1.1 DATA UPDATE LOGIC ---
     useEffect(() => {
@@ -72,18 +78,28 @@ const MapDataHandler = ({
         const compareRecord = compareSurveyData?.find(s => s.barangay === selectedField.name);
 
         if (updatedRecord || compareRecord) {
-            setSelectedField(prev => ({
-                ...prev,
-                density: updatedRecord?.density_level || prev?.density || 'None',
-                totalPigs: updatedRecord?.total_pigs ?? prev?.totalPigs ?? 0,
-                breakdown: updatedRecord?.breakdown || prev?.breakdown || {},
-                trend: updatedRecord?.trend || prev?.trend || 'stable',
-                isPrediction: updatedRecord?.is_prediction ?? prev?.isPrediction ?? false,
-                compareDensity: compareRecord?.density_level || prev?.compareDensity || 'None',
-                compareTotalPigs: compareRecord?.total_pigs ?? prev?.compareTotalPigs ?? 0,
-                compareBreakdown: compareRecord?.breakdown || prev?.compareBreakdown || {},
-            }));
+            const rafId = requestAnimationFrame(() => {
+                setSelectedField(prev => {
+                    if (!prev) return null;
+                    return {
+                        ...prev,
+                        density: updatedRecord?.density_level || prev?.density || 'None',
+                        totalPigs: updatedRecord?.total_pigs ?? prev?.totalPigs ?? 0,
+                        breakdown: updatedRecord?.breakdown || prev?.breakdown || {},
+                        trend: updatedRecord?.trend || prev?.trend || 'stable',
+                        isPrediction: updatedRecord?.is_prediction ?? prev?.isPrediction ?? false,
+                        compareDensity: compareRecord?.density_level || prev?.compareDensity || 'None',
+                        compareTotalPigs: compareRecord?.total_pigs ?? prev?.compareTotalPigs ?? 0,
+                        compareBreakdown: compareRecord?.breakdown || prev?.compareBreakdown || {},
+                    };
+                });
+            });
+
+            return () => {
+                cancelAnimationFrame(rafId);
+            };
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [surveyData, compareSurveyData]);
 
     // --- 2. SETUP SOURCE AND LAYERS ---
@@ -292,15 +308,6 @@ const MapDataHandler = ({
         };
     }, [map, isLoaded, hoveredId, selectedId]);
 
-    const getDensityColor = (density) => {
-        const colors = {
-            'Low': 'text-green-600',
-            'Medium': 'text-yellow-600',
-            'High': 'text-red-600',
-            'Very High': 'text-red-700'
-        };
-        return colors[density] || 'text-gray-400';
-    };
 
     // Calculate plain-English comparison popover when a barangay is clicked
     const renderComparisonPopup = () => {

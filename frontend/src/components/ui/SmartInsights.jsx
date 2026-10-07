@@ -7,10 +7,7 @@ import {
     CheckCircle2, 
     X, 
     Copy, 
-    Check, 
-    ArrowRight,
-    SlidersHorizontal,
-    Layers
+    Check
 } from 'lucide-react';
 import { useGetDashboardInsights, useRefreshDashboardInsights } from '../../hooks/useDashboard';
 

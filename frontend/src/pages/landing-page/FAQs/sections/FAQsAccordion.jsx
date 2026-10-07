@@ -81,8 +81,6 @@ const CATEGORIES = [
 ];
 
 function AccordionItem({ item, isOpen, onToggle }) {
-  const bodyRef = useRef(null);
-
   return (
     <div className={`bg-white border rounded-xl overflow-hidden box-border transition-[border-color,box-shadow] duration-[250ms]
       ${isOpen ? "border-brand-primary-mid shadow-[0_0.25rem_1rem_rgba(10,42,26,0.07)]" : "border-[#e2ece6]"}`}>
@@ -105,12 +103,13 @@ function AccordionItem({ item, isOpen, onToggle }) {
       </button>
 
       {/* Animated answer */}
-      <div style={{ maxHeight: isOpen ? (bodyRef.current?.scrollHeight ?? 400) + "px" : "0px" }}
-        className="overflow-hidden transition-[max-height] duration-[400ms] ease-[ease]">
-        <div ref={bodyRef} className="px-5 pb-5 border-t border-[#e2ece6]">
-          {item.a.split("\n").filter(l => l.trim()).map((line, i) => (
-            <p key={i} className="font-jakarta text-[clamp(0.85rem,1.2vw,1rem)] text-[#555] leading-[1.8] mt-2.5 mb-0">{line}</p>
-          ))}
+      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div className="overflow-hidden">
+          <div className="px-5 pb-5 border-t border-[#e2ece6]">
+            {item.a.split("\n").filter(l => l.trim()).map((line, i) => (
+              <p key={i} className="font-jakarta text-[clamp(0.85rem,1.2vw,1rem)] text-[#555] leading-[1.8] mt-2.5 mb-0">{line}</p>
+            ))}
+          </div>
         </div>
       </div>
     </div>

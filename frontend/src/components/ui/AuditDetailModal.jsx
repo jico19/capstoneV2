@@ -5,10 +5,8 @@ import {
     Check, 
     Clock, 
     User, 
-    ShieldCheck, 
     FileText, 
     Activity, 
-    Calendar,
     Hash
 } from 'lucide-react';
 

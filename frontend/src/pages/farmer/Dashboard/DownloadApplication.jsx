@@ -1,14 +1,12 @@
-import { useParams } from "react-router-dom"
+import { useParams, Link } from "react-router-dom"
 import { useGetPermit } from '../../../hooks/useApplications'
 import {
     FileText,
-    Download,
     AlertCircle,
     ArrowLeft,
     FileBadge,
     FileCheck2
 } from "lucide-react"
-import { Link } from "react-router-dom"
 import DownloadCard from "./DownloadCard"
 
 // Page for downloading issued permits and related health documents.

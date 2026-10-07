@@ -49,7 +49,7 @@ const AgriReportsPage = () => {
             downloadBlob(data, filename);
 
             toast.success("Download Complete", { description: filename });
-        } catch (err) {
+        } catch {
             toast.error("Download Failed", { description: "Please try again later." });
         } finally {
             setLoadingKey(null);

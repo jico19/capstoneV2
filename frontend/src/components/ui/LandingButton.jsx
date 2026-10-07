@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 export default function LandingButton({
   label     = "Login",
   bgColor   = "#ffffff",
@@ -10,11 +8,8 @@ export default function LandingButton({
   disabled = false,
   type = "button",
 }) {
-  const [pressed, setPressed] = useState(false);
-
   const handleClick = (e) => {
     if (disabled) return;
-    setPressed(false);
     onClick?.(e);
   };
 

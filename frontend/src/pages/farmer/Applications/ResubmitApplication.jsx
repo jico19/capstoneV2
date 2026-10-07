@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import FarmerInfo from "./FarmerInfo";
 import UploadDocument from "./UploadDocument";
 import ReviewApplication from "./ReviewApplication";
-import { Check, ArrowRight, AlertCircle } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 import { useApplicationDetail, useResubmitApplication } from '../../../hooks/useApplications';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";

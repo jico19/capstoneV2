@@ -3,7 +3,6 @@ import {
   X,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Receipt,
   User,
   Phone,
@@ -11,7 +10,6 @@ import {
   FileText,
   CreditCard,
   QrCode,
-  Building2,
   Printer,
   ShieldCheck,
 } from "lucide-react";

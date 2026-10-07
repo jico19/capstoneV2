@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, CheckCircle, XCircle, MessageSquare, UploadCloud, FileCheck2 } from 'lucide-react';
+import { CheckCircle, XCircle, MessageSquare, UploadCloud, FileCheck2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 /**

@@ -64,7 +64,7 @@ export const useCreateApplication = () => {
         }, onSuccess: () => {
             toast.success('Successfully submitted your application.')
             query.invalidateQueries({ queryKey: ['application'] })
-        }, onError: (error) => {
+        }, onError: () => {
             toast.error("There is something wrong...")
         }
     })
@@ -77,7 +77,7 @@ export const useResubmitApplication = () => {
             const res = await api.post(`/application/${id}/resubmit/`, formData)
             return res.data
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             toast.success('Your application has been resubmitted.')
             queryClient.invalidateQueries({ queryKey: ['application'] })
         },

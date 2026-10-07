@@ -157,7 +157,7 @@ const QRScannerPage = () => {
                 const url = new URL(scannedResult);
                 const pathParts = url.pathname.split('/').filter(p => p !== '');
                 token = pathParts[pathParts.length - 1];
-            } catch (e) {
+            } catch {
                 const parts = scannedResult.split('/').filter(p => p !== '');
                 token = parts[parts.length - 1];
             }

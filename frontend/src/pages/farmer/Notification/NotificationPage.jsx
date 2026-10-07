@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
-    CheckCircle2, AlertTriangle, Info,
-    CheckCheck, Inbox, ChevronRight
+    CheckCheck, Inbox
 } from 'lucide-react';
 import { useGetNotification } from '../../../hooks/useNotifications';
 import { api } from '../../../lib/api';

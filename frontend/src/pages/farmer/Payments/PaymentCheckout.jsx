@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, CheckCircle2, ChevronRight, AlertCircle, Download, Info, Clock, QrCode, Smartphone, Banknote } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, ChevronRight, AlertCircle, Download, Info, Clock, QrCode, Smartphone } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useApplicationDetail } from '../../../hooks/useApplications';
 import { toast } from 'sonner';

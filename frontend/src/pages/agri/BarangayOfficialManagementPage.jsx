@@ -9,7 +9,6 @@ import {
     Edit, 
     Check, 
     X, 
-    User,
     UserCheck,
     UserX,
     MapPin,
@@ -131,7 +130,7 @@ const BarangayOfficialManagementPage = () => {
         try {
             await deleteMutation.mutateAsync(confirmDeleteUser.id);
             setConfirmDeleteUser(null);
-        } catch (error) {
+        } catch {
             // Handled in mutation
         }
     };
@@ -148,7 +147,7 @@ const BarangayOfficialManagementPage = () => {
                 data: { is_active: !confirmToggleStatusUser.is_active }
             });
             setConfirmToggleStatusUser(null);
-        } catch (error) {
+        } catch {
             // Handled in mutation
         }
     };

@@ -69,7 +69,7 @@ const AgriSystemSettings = () => {
                         setLastSaved(new Date(res.data.updated_at));
                     }
                 }
-            } catch (err) {
+            } catch {
                 toast.error('Failed to load system settings.');
             } finally {
                 setIsLoading(false);

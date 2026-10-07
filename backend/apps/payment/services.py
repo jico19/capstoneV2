@@ -19,12 +19,11 @@ logger = logging.getLogger(__name__)
 
 def _release_permit_and_queue_pdfs(application):
     """Advance application to RELEASED status; queue PDF tasks after commit."""
-    from django.db import transaction as db_tx
     from apps.permits.services import handle_application_status_change
     handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
     p_app_pk = application.pk
-    db_tx.on_commit(lambda f=generate_permit_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
-    db_tx.on_commit(lambda f=generate_aic_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+    transaction.on_commit(lambda f=generate_permit_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+    transaction.on_commit(lambda f=generate_aic_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
 
 
 def ensure_aic_number(issued_permit):

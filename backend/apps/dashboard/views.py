@@ -1,13 +1,5 @@
 from rest_framework import views, status
 from rest_framework.response import Response
-from apps.permits import models as permits
-from apps.maps import models as maps
-from apps.inspector import models as inspector
-from apps.payment.models import PaymentHistory
-from django.db.models import Count, Q, Avg, Sum
-from django.db.models.functions import TruncDate, TruncMonth, ExtractHour
-from django.utils import timezone
-from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from .insights_engine import get_or_generate_insight
 from .serializers import CachedInsightSerializer

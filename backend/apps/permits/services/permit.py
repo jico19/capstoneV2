@@ -6,7 +6,6 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from apps.api.models import Notification, AuditTrail, User
 from apps.ocr.tasks import extract_document_info
-from apps.sms.services import send_sms
 from .. import models, serializers
 
 logger = logging.getLogger(__name__)
@@ -329,12 +328,8 @@ def deduct_hog_survey_for_application(application):
     otherwise falls back to the latest survey for that barangay.
     Clamps counts to 0 and does not invent fake records.
     """
-    import logging
     from apps.maps.models import HogSurvey
-    from django.utils import timezone
-    from django.db import transaction
 
-    logger = logging.getLogger(__name__)
     current_year = timezone.now().year
 
     with transaction.atomic():

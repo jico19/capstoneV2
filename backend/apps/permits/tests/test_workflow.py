@@ -2,7 +2,8 @@ import pytest
 from rest_framework.test import APIClient
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from apps.permits.models import PermitApplication, OPVValidation, IssuedPermit
+from apps.permits.models import PermitApplication, IssuedPermit
+from apps.permits.services import handle_application_status_change
 from apps.maps.models import Barangay
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -215,7 +216,6 @@ class TestPermitWorkflow:
     def test_hog_survey_deduction_and_restoration(self, farmer_user, barangay):
         from apps.maps.models import HogSurvey
         from apps.permits.models import TransportOrigin
-        from apps.permits.services import handle_application_status_change
         from django.utils import timezone
 
         # 1. Setup a baseline survey for the barangay
@@ -330,7 +330,6 @@ class TestStatusTransitionGuard:
         )
 
     def test_happy_path_chain_allows_every_legal_edge(self, farmer_user):
-        from apps.permits.services import handle_application_status_change
         app = self._app(farmer_user)
         chain = [
             PermitApplication.Status.SUBMITTED,
@@ -346,7 +345,6 @@ class TestStatusTransitionGuard:
             assert app.status == status
 
     def test_draft_to_released_is_rejected(self, farmer_user):
-        from apps.permits.services import handle_application_status_change
         app = self._app(farmer_user)
         with pytest.raises(ValidationError):
             handle_application_status_change(app, PermitApplication.Status.RELEASED)
@@ -354,7 +352,6 @@ class TestStatusTransitionGuard:
         assert app.status == PermitApplication.Status.DRAFT
 
     def test_released_is_terminal(self, farmer_user):
-        from apps.permits.services import handle_application_status_change
         app = self._app(farmer_user, PermitApplication.Status.RELEASED)
         with pytest.raises(ValidationError):
             handle_application_status_change(app, PermitApplication.Status.SUBMITTED)
@@ -362,7 +359,6 @@ class TestStatusTransitionGuard:
         assert app.status == PermitApplication.Status.RELEASED
 
     def test_ocr_race_allows_draft_to_validated_and_manual(self, farmer_user):
-        from apps.permits.services import handle_application_status_change
         app = self._app(farmer_user)
         handle_application_status_change(app, PermitApplication.Status.OCR_VALIDATED)
         app.refresh_from_db()
@@ -374,14 +370,12 @@ class TestStatusTransitionGuard:
         assert app2.status == PermitApplication.Status.MANUAL
 
     def test_same_status_transition_is_noop(self, farmer_user):
-        from apps.permits.services import handle_application_status_change
         app = self._app(farmer_user, PermitApplication.Status.SUBMITTED)
         handle_application_status_change(app, PermitApplication.Status.SUBMITTED)
         app.refresh_from_db()
         assert app.status == PermitApplication.Status.SUBMITTED
 
     def test_permit_issued_is_unreachable_from_every_state(self, farmer_user):
-        from apps.permits.services import handle_application_status_change
         for status, _ in PermitApplication.Status.choices:
             app = self._app(farmer_user, status)
             if status == PermitApplication.Status.PERMIT_ISSUED:

@@ -3,8 +3,8 @@ import logging
 import requests
 from datetime import timedelta
 from django.conf import settings
-from django.db.models import Count, Sum, Q, Avg
-from django.db.models.functions import TruncMonth, TruncDate, ExtractHour
+from django.db.models import Count, Sum
+from django.db.models.functions import ExtractHour
 from django.utils import timezone
 
 from apps.permits import models as permits

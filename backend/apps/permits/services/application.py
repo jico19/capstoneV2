@@ -84,9 +84,8 @@ def handle_application_status_change(application, new_status, reason=None):
         Status.RELEASED,
     ]
     if new_status in monitored_statuses:
-        from django.db import transaction as db_transaction
         from apps.sms.task import send_via_status
-        db_transaction.on_commit(lambda: send_via_status.enqueue(application.id))
+        transaction.on_commit(lambda: send_via_status.enqueue(application.id))
 
     # When a permit is officially released (payment confirmed), deduct from HogSurvey.
     if new_status == Status.RELEASED:

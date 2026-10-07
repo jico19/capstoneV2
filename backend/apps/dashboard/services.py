@@ -2,7 +2,7 @@ from apps.permits import models as permits
 from apps.maps import models as maps
 from apps.inspector import models as inspector
 from apps.payment.models import PaymentHistory
-from django.db.models import Count, Q, Avg, Sum
+from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate, TruncMonth, ExtractHour
 from django.utils import timezone
 from datetime import timedelta

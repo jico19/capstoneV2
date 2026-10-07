@@ -3,7 +3,6 @@ import logging
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-from apps.permits import models as permits
 from .models import SMSLog
 
 logger = logging.getLogger(__name__)

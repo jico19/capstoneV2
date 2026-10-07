@@ -3,7 +3,6 @@ import io
 from datetime import datetime
 from django.db import transaction
 from django.db.models import Sum, Q
-from rest_framework.exceptions import ValidationError
 from apps.api.utils import parse_date_range_strings
 from apps.permits.models import PermitApplication, TransportOrigin
 from .models import Barangay, HogSurvey

@@ -1,5 +1,4 @@
 import logging
-import requests
 from django.conf import settings
 from apps.permits import models as permits
 from apps.api import models as api_models

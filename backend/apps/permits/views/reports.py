@@ -7,10 +7,7 @@ from django.http import FileResponse, HttpResponse
 from apps.api.utils import parse_date_range_strings
 from rest_framework.exceptions import ValidationError
 from apps.documents.services import (
-    generate_permit_issuance_report_pdf,
     generate_permit_issuance_csv,
-    generate_barangay_distribution_pdf,
-    generate_inspector_report_pdf,
     generate_formal_government_report_pdf,
 )
 from apps.documents.report_drafter import get_report_draft

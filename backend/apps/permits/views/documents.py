@@ -1,5 +1,6 @@
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from apps.api.base import BaseModelViewSet
 from .. import models, serializers
 
@@ -75,7 +76,6 @@ class SubmittedDocumentViewSet(BaseModelViewSet):
             models.PermitApplication.Status.PERMIT_ISSUED,
             models.PermitApplication.Status.RELEASED
         ]:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError("Documents are locked after OPV approval.")
         serializer.save()
 
@@ -87,6 +87,5 @@ class SubmittedDocumentViewSet(BaseModelViewSet):
             models.PermitApplication.Status.PERMIT_ISSUED,
             models.PermitApplication.Status.RELEASED
         ]:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError("Documents are locked after OPV approval.")
         instance.delete()

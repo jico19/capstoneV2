@@ -1,14 +1,12 @@
-import csv
 import logging
 import os
 from datetime import timedelta
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import qrcode
 from django.conf import settings
 from django.core.files import File
 from django.db import transaction
-from django.db.models import Count, Sum
 from django.tasks import task
 from django.utils import timezone
 from reportlab.lib import colors
@@ -16,10 +14,9 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.styles import ParagraphStyle
 
-from apps.documents.pdf_builder import OfficialMemorandumPDF
 from apps.documents.pdf_builder import (
     GREEN as PDF_GREEN,
     TEXT_MAIN as PDF_TEXT_MAIN,
@@ -30,14 +27,9 @@ from apps.documents.pdf_builder import (
     AGRI_LOGO,
 )
 
-from apps.inspector.models import InspectorLogs
-from apps.payment.models import PaymentHistory
 from apps.permits.models import (
-    IssuedPermit,
     PermitApplication,
-    TransportOrigin,
     SubmittedDocument,
-    OCRValidationResult,
     MunicipalConfig,
 )
 

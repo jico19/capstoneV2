@@ -3,7 +3,7 @@ from datetime import datetime
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
-from rest_framework import viewsets, status, filters
+from rest_framework import status, filters
 from django.db.models import Q
 from . import serializers
 from . import models

@@ -3,10 +3,9 @@ Report Drafting Engine for the Municipal Agriculture Office (MAO)
 Synthesizes database metrics into authentic Philippine LGU Memorandum & Accomplishment Reports.
 """
 
-from datetime import datetime
 from django.db.models import Sum, Count
 from django.utils import timezone
-from apps.permits.models import IssuedPermit, TransportOrigin, PermitApplication
+from apps.permits.models import IssuedPermit, TransportOrigin
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
 

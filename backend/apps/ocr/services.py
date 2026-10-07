@@ -1,12 +1,10 @@
 import logging
 from apps.permits import models as permits
 from apps.api import models as api
-import requests
 import re
 from datetime import datetime
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError, NotFound, APIException
 
 logger = logging.getLogger(__name__)
 

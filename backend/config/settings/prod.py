@@ -1,8 +1,5 @@
 from .base import *
-from pathlib import Path
-from dotenv import load_dotenv
 import os
-from datetime import timedelta
 import dj_database_url
 
 # SECURITY WARNING: keep the secret key used in production secret!

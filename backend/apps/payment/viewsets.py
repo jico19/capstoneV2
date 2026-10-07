@@ -1,10 +1,10 @@
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied, MethodNotAllowed
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse
+from django.utils import timezone
 from . import models, serializers, services
 from apps.permits import models as Permits
 
@@ -93,8 +93,7 @@ class PaymentViewSet(BaseModelViewSet):
         API Endpoint: GET /payment/stats/
         Returns comprehensive aggregate statistics across the entire collections ledger.
         """
-        from django.db.models import Sum, Count
-        from django.utils import timezone
+        from django.db.models import Sum
 
         today = timezone.now().date()
         base_qs = self.get_queryset()
@@ -296,7 +295,6 @@ class PaymentViewSet(BaseModelViewSet):
         """
         from django.conf import settings
         from django.db import transaction
-        from django.utils import timezone
         from datetime import timedelta
 
         # Guard #1: Block in production

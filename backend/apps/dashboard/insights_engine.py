@@ -274,6 +274,19 @@ class RoleMetricExtractor:
 
         top_reasons = sorted([{"reason": k, "count": v} for k, v in cat_counts.items()], key=lambda x: x['count'], reverse=True)[:4]
 
+        top_origins = list(
+            cur_validations.filter(status=permits.OPVValidation.Status.VALIDATED)
+            .values('application__origins__barangay__name')
+            .annotate(pigs=Sum('application__origins__number_of_pigs'))
+            .order_by('-pigs')[:5]
+        )
+        top_destinations = list(
+            cur_validations.filter(status=permits.OPVValidation.Status.VALIDATED)
+            .values('application__destination')
+            .annotate(pigs=Sum('application__origins__number_of_pigs'))
+            .order_by('-pigs')[:5]
+        )
+
         pending_opv = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
 
         return {
@@ -295,7 +308,9 @@ class RoleMetricExtractor:
                 "rejection_rate_pct": pri_rejection_rate,
             },
             "pending_validation_queue": pending_opv,
-            "top_rejection_causes": top_reasons
+            "top_rejection_causes": top_reasons,
+            "top_origin_barangays": [{"barangay": o['application__origins__barangay__name'], "pigs": o['pigs']} for o in top_origins if o['application__origins__barangay__name']],
+            "top_destination_markets": [{"destination": d['application__destination'], "pigs": d['pigs']} for d in top_destinations if d['application__destination']]
         }
 
     @classmethod
@@ -728,13 +743,84 @@ class FallbackInsightsBuilder:
         }
 
 
+ROLE_INSIGHT_CONFIGS = {
+    "Agri": {
+        "perspective": (
+            "You are FarmPass AI, a senior biosecurity and operational advisor for the Municipal Agriculture Office in Sariaya, Quezon. "
+            "Sariaya has 43 barangays (key swine clusters include Lutucan Malabag, Lutucan 1, Manggalang, Guisguis, Sampaloc, Bignay). "
+            "Key concerns: African Swine Fever (ASF) biosecurity corridors along Maharlika Highway, "
+            "clearing manual review queues to prevent commercial hog haulers from missing abattoir receiving hours, "
+            "and promoting GCash/QRPH cashless payments to eliminate municipal cashier queues."
+        ),
+        "charts": {
+            "density_trend": "Swine concentration clusters across Sariaya barangays and disease buffer zone priorities.",
+            "status_distribution": "Permit approval velocity, manual review bottlenecks, and document clearance health.",
+            "submission_trend": "Livestock movement volume over time, transport cadence, and biosecurity exposure.",
+            "revenue_trend": "Regulatory fee collection velocity and digital payment (GCash/QRPH) adoption.",
+        }
+    },
+    "Farmer": {
+        "perspective": (
+            "You are FarmPass AI, an agricultural logistics mentor advising an individual hog raiser in Sariaya, Quezon. "
+            "Give clear, practical, jargon-free advice. "
+            "Key concerns: Ensuring animals are transported safely during cool hours (5:00 AM - 8:30 AM) to prevent heat stress, "
+            "preparing documents (Barangay Endorsement & Veterinary Health Certificate) 24-48 hours before loading hogs so permits are cleared without delay, "
+            "and paying fees online via GCash for instant scannable QR passes."
+        ),
+        "charts": {
+            "transport_volume": "Personal hog shipment volume, transport cadence, and abattoir delivery scheduling.",
+            "status_distribution": "First-pass clearance rate on submitted permit applications and avoiding document holds.",
+        }
+    },
+    "Barangay": {
+        "perspective": (
+            "You are FarmPass AI, an agricultural biosecurity advisor for the Barangay Agriculture Desk in Sariaya, Quezon. "
+            "Key concerns: Maintaining an accurate swine census across backyard and commercial pens, "
+            "protecting the breeding herd (inahin sows vs fatteners) for repopulation stability, "
+            "and ensuring all originating livestock receive proper barangay inspection clearances before entering transport corridors."
+        ),
+        "charts": {
+            "density_trend": "Local swine population breakdown (breeding sows vs commercial fatteners) and repopulation stability.",
+            "survey_velocity": "Barangay swine census coverage, tracking unrecorded backyard raisers for DA indemnity eligibility.",
+        }
+    },
+    "OPV": {
+        "perspective": (
+            "You are FarmPass AI, advising Provincial Veterinary Officers (OPV Quezon) reviewing Sariaya livestock movement permits. "
+            "Key concerns: Veterinary inspection turnaround speed, identifying recurring document errors (unreadable signatures, expired laboratory tests), "
+            "monitoring high-volume originating barangays in Sariaya, and auditing transit corridors to major destination abattoirs in NCR and Region 4A."
+        ),
+        "charts": {
+            "validation_history": "OPV validation turnaround pacing, review workload, and daily processing speed.",
+            "rejection_reasons": "Quality-control root cause analysis of rejected permit applications and common paperwork errors.",
+            "top_barangays": "High-volume origin barangays in Sariaya requiring active biosecurity surveillance.",
+            "top_destinations": "Primary destination markets and slaughterhouse receiving corridors.",
+        }
+    },
+    "Inspector": {
+        "perspective": (
+            "You are FarmPass AI, advising mobile roadside checkpoint officers inspecting livestock haulers in Sariaya, Quezon. "
+            "Key concerns: Intercepting uncertified hog movement, scheduling checkpoint sweeps during peak hauling hours (early morning 4:00-8:30 AM), "
+            "scanning digital QR passes, and verifying physical truck headcounts against permit manifests."
+        ),
+        "charts": {
+            "activity_trend": "Checkpoint scanning consistency and highway biosecurity coverage.",
+            "peak_activity": "Peak livestock hauling hours and optimal roadside surveillance staffing windows.",
+        }
+    }
+}
+
+
 class GeminiInsightsClient:
     """
     Communicates with Google Gemini REST API using settings.GEMINI_API_KEY.
-    Forces strict JSON format output matching the FarmPass insights schema.
+    Forces strict, role-tailored JSON format matching the FarmPass dashboard schema.
     """
 
-    API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    @classmethod
+    def get_api_url(cls) -> str:
+        model = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
+        return f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
     @classmethod
     def generate_insight(cls, role: str, metrics: dict) -> dict:
@@ -743,39 +829,38 @@ class GeminiInsightsClient:
             logger.info("Gemini API key not configured; using deterministic fallback insights.")
             return FallbackInsightsBuilder.build(role, metrics)
 
+        config = ROLE_INSIGHT_CONFIGS.get(role, ROLE_INSIGHT_CONFIGS["Agri"])
+        charts_spec = config["charts"]
+
+        # Build chart schema dynamically for this role's dashboard
+        charts_schema = {}
+        for key, desc in charts_spec.items():
+            charts_schema[key] = {
+                "category": "2-3 WORD UPPERCASE CATEGORY",
+                "title": "4-6 word punchy diagnostic finding",
+                "insight": f"1-2 practical, sensible sentences explaining {desc}",
+                "action": "Single concrete preventive action to take."
+            }
+
         system_instruction = (
-            "You are FarmPass AI, a senior biosecurity and livestock logistics intelligence advisor in Sariaya, Quezon. "
-            "CRITICAL INSTRUCTION: Do NOT merely restate or describe the numbers on the charts (e.g., do NOT say 'You shipped 45 pigs this month' or 'Lutucan has 500 pigs' — the user can already see the numbers). "
-            "Instead, provide DEEP, ACTIONABLE, AND STRATEGIC INSIGHTS: "
-            "- What does this pattern mean for biosecurity risks, transport bottlenecks, or upcoming deadlines? "
-            "- What hidden risks or operational opportunities does the trend reveal? "
-            "- What concrete preventive action or best practice should the user take in the next 14-30 days? "
-            "Write in clear, warm, jargon-free plain English that an everyday farmer or local agricultural officer can immediately grasp and act on. "
-            "Return STRICT JSON only matching this exact schema:\n"
+            f"{config['perspective']}\n\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "1. Focus specifically on generating diagnostic takeaways for each chart.\n"
+            "2. Ground every insight in real operational realities of Sariaya, Quezon. Mention relevant barangays, transport corridors, or timings.\n"
+            "3. Never use generic corporate buzzwords ('synergize', 'utilize', 'paradigm'). Speak like an experienced, plainspoken livestock officer or mentor.\n"
+            "4. Do not merely state numbers the user can already see. Explain WHAT the number implies for risk, timing, or money, and WHAT concrete action to take next.\n"
+            "5. Return strict JSON matching this schema:\n"
             "{\n"
-            '  "summary": "2-3 sentence strategic executive summary of current operational health, risks, and performance.",\n'
-            '  "chart_insights": {\n'
-            '    "transport_volume": {"category": "SHIPPING CADENCE", "title": "Short Diagnostic Title", "insight": "Strategic non-obvious operational advice.", "action": "Concrete preventive action to take."},\n'
-            '    "status_distribution": {"category": "APPROVAL VELOCITY", "title": "Short Diagnostic Title", "insight": "Actionable paperwork and turnaround advice.", "action": "Concrete action to take."},\n'
-            '    "density_trend": {"category": "BIOSECURITY CLUSTER", "title": "Short Diagnostic Title", "insight": "Targeted biosecurity advice on swine concentration clusters.", "action": "Concrete action to take."},\n'
-            '    "revenue_trend": {"category": "FINANCIAL VELOCITY", "title": "Short Diagnostic Title", "insight": "Financial velocity insight on collections and digital payment adoption.", "action": "Concrete action to take."},\n'
-            '    "validation_history": {"category": "VETERINARY PACING", "title": "Short Diagnostic Title", "insight": "Operational advice on veterinary turnaround speed and queue pacing.", "action": "Concrete action to take."},\n'
-            '    "rejection_reasons": {"category": "PREVENTIVE QUALITY", "title": "Short Diagnostic Title", "insight": "Quality-control guidance on common document flaws and preventive pre-checks.", "action": "Concrete action to take."},\n'
-            '    "activity_trend": {"category": "ENFORCEMENT SHIELD", "title": "Short Diagnostic Title", "insight": "Field enforcement insight on inspection coverage and compliance.", "action": "Concrete action to take."},\n'
-            '    "peak_activity": {"category": "TRANSIT WINDOW", "title": "Short Diagnostic Title", "insight": "Staffing and travel window advice based on high-traffic animal movement hours.", "action": "Concrete action to take."}\n'
-            '  },\n'
-            '  "trends": [\n'
-            '    {"text": "Key trend observation explaining the underlying reason and why it matters.", "severity": "positive"|"warning"|"critical"|"neutral"}\n'
-            '  ],\n'
-            '  "actions": ["High-impact practical recommendation 1", "High-impact practical recommendation 2"]\n'
+            '  "summary": "1 concise sentence summarizing operational status.",\n'
+            f'  "chart_insights": {json.dumps(charts_schema, indent=2)}\n'
             "}\n"
-            "Do not include markdown code block formatting in your text, just the raw JSON."
+            "Do not include markdown code fences (```json), return the raw JSON only."
         )
 
         prompt = (
             f"Role: {role}\n"
             f"Metrics Payload:\n{json.dumps(metrics, indent=2)}\n\n"
-            f"Generate a concise, high-signal operational insight for this user."
+            f"Generate concise, high-signal per-chart diagnostic takeaways for this user."
         )
 
         payload = {
@@ -789,31 +874,54 @@ class GeminiInsightsClient:
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 1000,
+                "maxOutputTokens": 2000,
                 "responseMimeType": "application/json"
             }
         }
 
-        try:
-            url = f"{cls.API_URL}?key={api_key}"
-            res = requests.post(url, json=payload, timeout=10)
-            if res.status_code == 200:
-                data = res.json()
-                text_content = data['candidates'][0]['content']['parts'][0]['text']
-                cleaned = text_content.strip()
-                if cleaned.startswith("`json"):
-                    cleaned = cleaned[7:]
-                if cleaned.startswith("`"):
-                    cleaned = cleaned[3:]
-                if cleaned.endswith("`"):
-                    cleaned = cleaned[:-3]
-                parsed = json.loads(cleaned.strip())
-                if "summary" in parsed and "trends" in parsed and "actions" in parsed:
-                    return parsed
-            else:
-                logger.warning(f"Gemini API returned status {res.status_code}: {res.text}")
-        except Exception as e:
-            logger.error("Gemini API error: %s", e)
+        url = f"{cls.get_api_url()}?key={api_key}"
+
+        # Try with single retry for resilience against transient network blips
+        for attempt in range(2):
+            try:
+                res = requests.post(url, json=payload, timeout=15)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get('candidates', [])
+                    if not candidates:
+                        raise ValueError("No candidates returned from Gemini API.")
+
+                    text_content = candidates[0]['content']['parts'][0]['text']
+                    cleaned = text_content.strip()
+                    if cleaned.startswith("```json"):
+                        cleaned = cleaned[7:]
+                    elif cleaned.startswith("```"):
+                        cleaned = cleaned[3:]
+                    if cleaned.endswith("```"):
+                        cleaned = cleaned[:-3]
+
+                    parsed = json.loads(cleaned.strip())
+                    if "chart_insights" in parsed:
+                        return {
+                            "summary": parsed.get("summary", ""),
+                            "chart_insights": parsed.get("chart_insights", {}),
+                            "trends": [],
+                            "actions": []
+                        }
+                elif res.status_code in (429, 503) and attempt == 0:
+                    logger.warning(f"Gemini API returned status {res.status_code}, retrying...")
+                    import time
+                    time.sleep(1)
+                    continue
+                else:
+                    logger.warning(f"Gemini API returned status {res.status_code}: {res.text}")
+                    break
+            except Exception as e:
+                logger.error("Gemini API error (attempt %d): %s", attempt + 1, e)
+                if attempt == 0:
+                    import time
+                    time.sleep(1)
+                    continue
 
         return FallbackInsightsBuilder.build(role, metrics)
 

@@ -9,7 +9,6 @@ import { useGetAgriDashboard, useGetDashboardInsights } from '../../../hooks/use
 import LineChartComponent from '../../../components/charts/LineChart';
 import PieChartComponent from '../../../components/charts/PieChart';
 import BarChartComponent from '../../../components/charts/BarChart';
-import SmartInsights from '../../../components/ui/SmartInsights';
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 
 
@@ -52,7 +51,6 @@ const AgriOfficerKPIDashboard = () => {
                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Operations Summary</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <SmartInsights role="Agri" title="Municipal Operations Insights" />
                     <div className="bg-gray-50 border border-gray-100 px-4 py-2 rounded-none">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">System Date</p>
                         <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>

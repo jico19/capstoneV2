@@ -16,7 +16,6 @@ import {
     History
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SmartInsights from '../../../components/ui/SmartInsights';
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 import { useGetDashboardInsights } from '../../../hooks/useDashboard';
 
@@ -87,7 +86,6 @@ const BarangayDashboard = () => {
                     <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter mt-1">Hello, {user?.first_name || 'Official'}</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <SmartInsights role="Barangay" title={`${user?.barangay_name || 'Barangay'} Swine Census & Movement Insights`} />
                     <div className="flex items-center gap-2 bg-green-50 border border-green-200/50 px-4 py-2 text-green-800">
                         <MapPin size={16} />
                         <span className="text-xs font-black uppercase tracking-wider">{user?.barangay_name || 'Sariaya Barangay'}</span>

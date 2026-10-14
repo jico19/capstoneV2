@@ -15,7 +15,6 @@ import { useGetFarmerDashboard, useGetDashboardInsights } from '../../../hooks/u
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../../store/authStore';
 import BarChartComponent from '../../../components/charts/BarChart';
-import SmartInsights from '../../../components/ui/SmartInsights';
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 import { useState, useEffect } from 'react';
 
@@ -144,7 +143,6 @@ const FarmerDashboard = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <SmartInsights role="Farmer" title="Personal Permit & Transit Insights" />
                     <Link
                         to="/farmer/application/create"
                         onClick={handleRequestPermitClick}

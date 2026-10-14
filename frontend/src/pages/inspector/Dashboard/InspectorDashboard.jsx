@@ -8,7 +8,6 @@ import { useGetInspectorDashboard, useGetDashboardInsights } from '../../../hook
 import KPICard from "../../../components/ui/KPICard";
 import BarChartComponent from '../../../components/charts/BarChart';
 import LineChartComponent from '../../../components/charts/LineChart';
-import SmartInsights from "../../../components/ui/SmartInsights";
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 
 
@@ -48,7 +47,6 @@ const InspectorDashboard = () => {
                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none italic">Inspector View</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <SmartInsights role="Inspector" title="Checkpoint Field Intelligence & Scan Insights" />
                     <div className="bg-white border border-gray-200 p-4 rounded-none">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">Duty Session</p>
                         <p className="text-xs font-black text-gray-900 uppercase tracking-tight mt-1">{new Date().toLocaleDateString()}</p>

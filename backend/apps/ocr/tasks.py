@@ -18,7 +18,6 @@ from .services import (
 )
 from .providers import (
     OCRSpaceProvider,
-    PaddleOCRProvider,
     OCRProviderError,
     RateLimitError,
 )
@@ -32,12 +31,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _PROVIDER_CLASSES = {
-    'paddleocr': PaddleOCRProvider,
     'ocrspace': OCRSpaceProvider,
 }
 
 _PROVIDER_DAILY_LIMITS = {
-    'paddleocr': lambda: getattr(settings, 'PADDLE_OCR_DAILY_LIMIT', 20000),
     'ocrspace': lambda: 25000,  # OCR.space free-tier ceiling
 }
 

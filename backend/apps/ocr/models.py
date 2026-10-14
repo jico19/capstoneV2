@@ -9,7 +9,7 @@ class DailyOCRUsage(models.Model):
     exhausted their daily limit and fall back to the next in the chain.
     """
     date = models.DateField(default=timezone.localdate, db_index=True)
-    provider = models.CharField(max_length=30, db_index=True)  # 'paddleocr' | 'ocrspace'
+    provider = models.CharField(max_length=30, db_index=True)  # 'ocrspace'
     call_count = models.PositiveIntegerField(default=0)
 
     class Meta:

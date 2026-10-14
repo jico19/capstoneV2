@@ -199,7 +199,7 @@ class OCRValidationResult(models.Model):
     overridden_at = models.DateTimeField(null=True, blank=True)
     overridden_fields = models.JSONField(default=dict)
 
-    # Tracks which OCR provider produced this result (e.g. 'paddleocr', 'ocrspace', 'none')
+    # Tracks which OCR provider produced this result (e.g. 'ocrspace', 'none')
     provider = models.CharField(max_length=30, default='ocrspace', blank=True)
 
     def __str__(self):

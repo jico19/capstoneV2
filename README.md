@@ -72,7 +72,7 @@ FarmPass is an end-to-end digital governance and biosecurity platform for livest
 * **Database:** PostgreSQL via `psycopg2-binary`
 * **Async Tasks:** `django-tasks` / `django_tasks_db`
 * **Authentication:** SimpleJWT (custom token claims for role and barangay scoping)
-* **Document Extraction (OCR):** Resilient provider chain (PaddleOCR AI Studio with OCR.space fallback)
+* **Document Extraction (OCR):** OCR.space Engine 2 pipeline and Philippine regulatory parsers
 * **AI & Analytics:** Google Gemini 2.5 Flash REST API (`insights_engine.py`) with deterministic fallback
 * **PDF & Security:** ReportLab PDF generator + signed verification tokens + QR code generation
 * **Integrations:** PayMongo API (e-wallets/cards), Android SMS Gateway
@@ -162,7 +162,7 @@ capstoneV2/
 │   │   ├── documents/    # Generated PDF permits and file storage
 │   │   ├── inspector/    # Checkpoint scans and cryptographic QR verification
 │   │   ├── maps/         # Barangay boundaries, hog census surveys, density aggregations
-│   │   ├── ocr/          # PaddleOCR & OCR.space pipeline and regulatory parsers
+│   │   ├── ocr/          # OCR.space pipeline and regulatory parsers
 │   │   ├── payment/      # PayMongo checkout, payment countdowns, cash logs
 │   │   ├── permits/      # Core application, verification, OPV workflow, document locking
 │   │   └── sms/          # Android SMS Gateway integration

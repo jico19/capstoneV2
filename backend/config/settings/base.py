@@ -182,12 +182,6 @@ SIMPLE_JWT = {
 # SECRETS
 OCR_URL = os.environ.get("OCR_API_URL")
 OCR_API_KEY = os.environ.get("OCR_API_KEY")
-
-# PaddleOCR AI Studio (primary provider)
-PADDLE_OCR_URL = os.environ.get("PADDLE_OCR_URL", "")
-PADDLE_OCR_TOKEN = os.environ.get("PADDLE_OCR_TOKEN", "")
-PADDLE_OCR_DAILY_LIMIT = int(os.environ.get("PADDLE_OCR_DAILY_LIMIT", "20000"))
-# Comma-separated provider priority: tries left-to-right, falls back on failure or quota
 OCR_PROVIDER_CHAIN = os.environ.get("OCR_PROVIDER_CHAIN", "ocrspace").split(",")
 
 PAYMONGO_SECRET_KEY = os.environ.get("PAYMONGO_TEST_SECRET_KEY")

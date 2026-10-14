@@ -1,5 +1,6 @@
 import logging
 import os
+import html
 from datetime import timedelta
 from io import BytesIO
 
@@ -527,32 +528,32 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
             
             details_data = [
                 [
-                    Paragraph(f"<b>Total Number of Heads:</b> {total_pigs}<br/>In words: {in_words_str}", style),
-                    Paragraph(f"<b>Classification:</b><br/>{', '.join(class_str)}", style)
+                    Paragraph(f"<b>Total Number of Heads:</b> {total_pigs}<br/>In words: {html.escape(in_words_str)}", style),
+                    Paragraph(f"<b>Classification:</b><br/>{html.escape(', '.join(class_str))}", style)
                 ],
                 [
-                    Paragraph(f"<b>Name of Shipper:</b> {shipper_name}", style),
-                    Paragraph(f"<b>Address of Shipper:</b> {shipper_address}", style)
+                    Paragraph(f"<b>Name of Shipper:</b> {html.escape(str(shipper_name))}", style),
+                    Paragraph(f"<b>Address of Shipper:</b> {html.escape(str(shipper_address))}", style)
                 ],
                 [
-                    Paragraph(f"<b>Livestock Handlers License:</b> {handlers_lic}", style),
-                    Paragraph(f"<b>Expiration Date:</b> {handlers_expiry}", style)
+                    Paragraph(f"<b>Livestock Handlers License:</b> {html.escape(str(handlers_lic))}", style),
+                    Paragraph(f"<b>Expiration Date:</b> {html.escape(str(handlers_expiry))}", style)
                 ],
                 [
-                    Paragraph(f"<b>Transport Carrier Accreditation:</b> {carrier_acc}", style),
-                    Paragraph(f"<b>Expiration Date:</b> {carrier_expiry}", style)
+                    Paragraph(f"<b>Transport Carrier Accreditation:</b> {html.escape(str(carrier_acc))}", style),
+                    Paragraph(f"<b>Expiration Date:</b> {html.escape(str(carrier_expiry))}", style)
                 ],
                 [
-                    Paragraph(f"<b>Plate Number:</b> {plate_number}", style),
-                    Paragraph(f"<b>CP #:</b> {cp_number}", style)
+                    Paragraph(f"<b>Plate Number:</b> {html.escape(str(plate_number))}", style),
+                    Paragraph(f"<b>CP #:</b> {html.escape(str(cp_number))}", style)
                 ],
                 [
-                    Paragraph(f"<b>Origin:</b> {origin_barangays}", style),
-                    Paragraph(f"<b>Destination:</b> {destination}", style)
+                    Paragraph(f"<b>Origin:</b> {html.escape(str(origin_barangays))}", style),
+                    Paragraph(f"<b>Destination:</b> {html.escape(str(destination))}", style)
                 ],
                 [
                     Paragraph("<b>Source Farm/s:</b> VARIOUS FARMS", style),
-                    Paragraph(f"<b>Company Address:</b> {company_address}", style)
+                    Paragraph(f"<b>Company Address:</b> {html.escape(str(company_address))}", style)
                 ]
             ]
 

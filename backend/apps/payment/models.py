@@ -36,8 +36,17 @@ class PaymentHistory(models.Model):
     expires_at = models.DateTimeField(null=True, blank=True)
     confirmed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="agri_officer")
     confirmed_at = models.DateTimeField(null=True, blank=True)
-    or_number = models.CharField(max_length=20, blank=True, default="")
+    or_number = models.CharField(max_length=20, blank=True, default="", null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['or_number'],
+                name='unique_payment_or_number',
+                condition=models.Q(or_number__isnull=False) & ~models.Q(or_number=""),
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if self.status == self.Status.SUCCESS and not self.or_number:

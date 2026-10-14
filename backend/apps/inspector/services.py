@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 from . import serializers
 from apps.api.models import User, Notification
@@ -16,28 +17,29 @@ def create_inspector_log(user, request_data):
     if user.role != 'Inspector':
         raise PermissionDenied("Only inspectors can log verification activity.")
     
-    serializer = serializers.InspectorLogsSerializer(data=request_data)
-    serializer.is_valid(raise_exception=True)
-    log_instance = serializer.save(inspector=user)
+    with transaction.atomic():
+        serializer = serializers.InspectorLogsSerializer(data=request_data)
+        serializer.is_valid(raise_exception=True)
+        log_instance = serializer.save(inspector=user)
 
-    application = log_instance.application
-    application.is_checked = True
-    application.save()
+        application = log_instance.application
+        application.is_checked = True
+        application.save(update_fields=["is_checked"])
 
-    Notification.objects.create(
-        recipient=log_instance.application.farmer,
-        type=Notification.Type.INFO,
-        title="Checkpoint Verified",
-        message=f"Your transport permit (ID: {log_instance.application.application_id}) has been successfully verified by an inspector at a checkpoint."
-    )
-
-    staff_to_notify = User.objects.filter(role__in=['Agri', 'Opv'])
-    for staff in staff_to_notify:
         Notification.objects.create(
-            recipient=staff,
+            recipient=log_instance.application.farmer,
             type=Notification.Type.INFO,
-            title="Field Inspection Activity",
-            message=f"Inspector {user.get_full_name() or user.username} has just recorded a field verification for Application #{log_instance.application.application_id}."
+            title="Checkpoint Verified",
+            message=f"Your transport permit (ID: {log_instance.application.application_id}) has been successfully verified by an inspector at a checkpoint."
         )
 
-    return serializer.data
+        staff_to_notify = User.objects.filter(role__in=['Agri', 'Opv'])
+        for staff in staff_to_notify:
+            Notification.objects.create(
+                recipient=staff,
+                type=Notification.Type.INFO,
+                title="Field Inspection Activity",
+                message=f"Inspector {user.get_full_name() or user.username} has just recorded a field verification for Application #{log_instance.application.application_id}."
+            )
+
+        return serializer.data

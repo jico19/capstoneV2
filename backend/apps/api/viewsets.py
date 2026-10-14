@@ -3,7 +3,7 @@ from datetime import datetime
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
-from rest_framework import status, filters
+from rest_framework import status, filters, viewsets
 from django.db.models import Q
 from . import serializers
 from . import models
@@ -121,12 +121,13 @@ class UserViewSet(BaseModelViewSet):
                     if license_no:
                         doc.license_number = license_no.strip()
                     doc.is_verified = False
+                    doc.full_clean()
                     doc.save()
                     if file:
                         newly_uploaded_docs.append(doc)
                 else:
                     if file:
-                        doc = models.FarmerDocument.objects.create(
+                        doc = models.FarmerDocument(
                             user=user,
                             document_type=dtype,
                             file=file,
@@ -135,6 +136,8 @@ class UserViewSet(BaseModelViewSet):
                             is_verified=False,
                             ocr_status="PENDING",
                         )
+                        doc.full_clean()
+                        doc.save()
                         newly_uploaded_docs.append(doc)
                 uploaded_any = True
 
@@ -363,9 +366,10 @@ class NotificationViewSet(BaseModelViewSet):
         return Response({"unread_count": unread_count}, status=status.HTTP_200_OK)
 
 
-class AuditTrailViewSet(BaseModelViewSet):
+class AuditTrailViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.AuditTrailSerializer
     queryset = models.AuditTrail.objects.all()
+    http_method_names = ["get", "head", "options"]
 
     def get_queryset(self):
         user = self.request.user

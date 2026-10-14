@@ -14,7 +14,6 @@ DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Default Vite port
     "https://farm-pass-smoky.vercel.app",
     "https://farmpass-ph.me",
 ]
@@ -58,3 +57,16 @@ CACHES = {
         "LOCATION": "farmpass_cache_table",
     }
 }
+
+# Production Transport Security & Cookie Flags
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True").lower() == "true"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Explicit CORS Lockdown in Production
+CORS_ALLOW_ALL_ORIGINS = False

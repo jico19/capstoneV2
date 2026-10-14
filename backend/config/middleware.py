@@ -6,8 +6,6 @@ class AllowFramesMiddleware:
         response = self.get_response(request)
         if (
             request.path.startswith('/media/')
-            or '/document/' in request.path
-            or '/aic' in request.path
             or request.path.endswith('.pdf')
         ):
             response.xframe_options_exempt = True
@@ -15,4 +13,9 @@ class AllowFramesMiddleware:
                 del response.headers['X-Frame-Options']
             if 'x-frame-options' in response.headers:
                 del response.headers['x-frame-options']
+            # Allow framing exclusively from self and authorized frontends
+            response.headers['Content-Security-Policy'] = (
+                "frame-ancestors 'self' http://localhost:5173 http://127.0.0.1:5173 "
+                "https://farmpass-ph.me https://farm-pass-smoky.vercel.app"
+            )
         return response

@@ -97,3 +97,42 @@ def test_mixed_documents_with_unsupported_doc_results_in_manual_application(test
 
     application.refresh_from_db()
     assert application.status == PermitApplication.Status.MANUAL
+
+
+from unittest.mock import patch
+
+def test_smart_hybrid_gemini_rescue_passes_when_ocr_fails(test_setup):
+    """
+    Test Tier 1 (OCR.space) failure triggering Tier 2 (Gemini Vision rescue).
+    When Gemini extracts all required valid fields, status is set to PASSED and provider='gemini'.
+    """
+    origin = test_setup['origin']
+    application = test_setup['application']
+
+    doc_file = SimpleUploadedFile("handlers.png", b"fake_png_data", content_type="image/png")
+    doc = SubmittedDocument.objects.create(
+        origin=origin,
+        document_type=SubmittedDocument.DocumentType.HANDLERS_LICENSE,
+        file=doc_file,
+    )
+
+    with patch('apps.ocr.tasks._call_ocr_chain', side_effect=Exception("OCR.space rate limit")):
+        with patch('apps.ocr.tasks.GeminiDocumentParser.extract_fields') as mock_gemini:
+            mock_gemini.return_value = {
+                'registration_number': '2025-DARFO-IV-A-003971',
+                'license_number': '2025-DARFO-IV-A-003971',
+                'name_of_applicant': 'DARREL C. AÑONUEVO',
+                'business_name': 'DARREL AÑONUEVO TRUCKING SERVICES',
+                'address': 'Poblacion San Antonio Quezon',
+                'area_of_coverage': 'All Regions',
+                'date_of_issuance': 'October 28, 2025',
+                'date_of_expiration': 'October 28, 2026'
+            }
+
+            extract_document_info.func(doc.id)
+
+    ocr_res = OCRValidationResult.objects.get(document=doc)
+    assert ocr_res.status == OCRValidationResult.ValidationStatus.PASSED
+    assert ocr_res.provider == 'gemini'
+    assert ocr_res.extracted_field['registration_number'] == '2025-DARFO-IV-A-003971'
+

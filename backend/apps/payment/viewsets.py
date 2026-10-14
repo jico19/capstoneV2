@@ -150,7 +150,8 @@ class PaymentViewSet(BaseModelViewSet):
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error("Error generating collection report: %s", e, exc_info=True)
+            return Response({"error": "Failed to generate collection report due to an internal error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def checkout_session(self, request, pk=None):
@@ -175,7 +176,8 @@ class PaymentViewSet(BaseModelViewSet):
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error("Error creating checkout session: %s", e, exc_info=True)
+            return Response({"error": "Failed to initialize checkout session."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def create_qrph_payment(self, request, pk=None):
@@ -200,7 +202,8 @@ class PaymentViewSet(BaseModelViewSet):
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error("Error creating QRPH payment: %s", e, exc_info=True)
+            return Response({"error": "Failed to create QR Ph payment."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def farmer_simulate_payment(self, request, pk=None):
@@ -242,8 +245,9 @@ class PaymentViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as e:
+            logger.error("Error simulating farmer payment: %s", e, exc_info=True)
             return Response(
-                {"error": str(e)},
+                {"error": "Failed to simulate payment due to an internal error."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -282,8 +286,9 @@ class PaymentViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as e:
+            logger.error("Error confirming offline payment: %s", e, exc_info=True)
             return Response(
-                {"error": str(e)},
+                {"error": "Failed to confirm offline payment due to an internal error."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -397,4 +402,5 @@ class PaymentViewSet(BaseModelViewSet):
             result = services.check_and_handle_payment_expiration(issued_permit)
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error("Error evaluating payment expiration: %s", e, exc_info=True)
+            return Response({"error": "Failed to evaluate payment expiration status."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

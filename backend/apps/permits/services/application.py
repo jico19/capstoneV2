@@ -158,17 +158,27 @@ def approve_application(application, user, remarks):
         )
 
     with transaction.atomic():
-        # Ensure AIC number and issue timestamp on application
-        if not application.aic_number:
-            from .numbers import get_aic_number
-            application.aic_number = get_aic_number(application)
-            application.aic_issued_at = timezone.now()
-            application.save(update_fields=["aic_number", "aic_issued_at"])
-        elif not application.aic_issued_at:
-            application.aic_issued_at = timezone.now()
-            application.save(update_fields=["aic_issued_at"])
+        # Lock application record against concurrent approval / race conditions
+        app_locked = (
+            models.PermitApplication.objects.select_for_update()
+            .get(pk=application.pk)
+        )
+        if app_locked.status not in approvable_statuses:
+            raise ValidationError(
+                f"Cannot approve application: status already changed to '{app_locked.status}'."
+            )
 
-        handle_application_status_change(application, models.PermitApplication.Status.FORWARDED_TO_OPV)
+        # Ensure AIC number and issue timestamp on application
+        if not app_locked.aic_number:
+            from .numbers import get_aic_number
+            app_locked.aic_number = get_aic_number(app_locked)
+            app_locked.aic_issued_at = timezone.now()
+            app_locked.save(update_fields=["aic_number", "aic_issued_at"])
+        elif not app_locked.aic_issued_at:
+            app_locked.aic_issued_at = timezone.now()
+            app_locked.save(update_fields=["aic_issued_at"])
+
+        handle_application_status_change(app_locked, models.PermitApplication.Status.FORWARDED_TO_OPV)
 
         # Trigger AIC PDF generation
         from apps.documents.services import generate_aic_pdf

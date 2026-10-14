@@ -81,4 +81,61 @@ class TestOCRSpaceProvider:
             provider.extract_text(file_url='https://example.com/doc.jpg')
 
 
+# ---------------------------------------------------------------------------
+# GeminiDocumentParser tests
+# ---------------------------------------------------------------------------
+
+class TestGeminiDocumentParser:
+    @patch('apps.ocr.providers.requests.post')
+    def test_extract_fields_success(self, mock_post, settings):
+        from apps.ocr.providers import GeminiDocumentParser
+        settings.GEMINI_API_KEY = 'mock-gemini-key'
+        mock_post.return_value = _make_response(
+            status_code=200,
+            json_body={
+                'candidates': [
+                    {
+                        'content': {
+                            'parts': [
+                                {
+                                    'text': json.dumps({
+                                        'registration_number': '2025-DARFO-IV-A-003971',
+                                        'license_number': '2025-DARFO-IV-A-003971',
+                                        'name_of_applicant': 'DARREL C. AÑONUEVO',
+                                        'business_name': 'DARREL AÑONUEVO TRUCKING SERVICES',
+                                        'address': 'Poblacion San Antonio Quezon',
+                                        'area_of_coverage': 'All Regions',
+                                        'date_of_issuance': 'October 28, 2025',
+                                        'date_of_expiration': 'October 28, 2026'
+                                    })
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        )
+        parser = GeminiDocumentParser()
+        result = parser.extract_fields(file_bytes=b'testbytes', mime_type='image/jpeg', doc_type='handlers_license')
+        assert result['registration_number'] == '2025-DARFO-IV-A-003971'
+        assert result['name_of_applicant'] == 'DARREL C. AÑONUEVO'
+
+    @patch('apps.ocr.providers.requests.post')
+    def test_extract_fields_rate_limit_429(self, mock_post, settings):
+        from apps.ocr.providers import GeminiDocumentParser
+        settings.GEMINI_API_KEY = 'mock-gemini-key'
+        mock_post.return_value = _make_response(status_code=429)
+        parser = GeminiDocumentParser()
+        with pytest.raises(RateLimitError):
+            parser.extract_fields(file_bytes=b'testbytes', mime_type='image/jpeg', doc_type='handlers_license')
+
+    def test_extract_fields_missing_api_key(self, settings):
+        from apps.ocr.providers import GeminiDocumentParser
+        settings.GEMINI_API_KEY = ''
+        parser = GeminiDocumentParser()
+        with pytest.raises(OCRProviderError, match='GEMINI_API_KEY is not configured'):
+            parser.extract_fields(file_bytes=b'testbytes', mime_type='image/jpeg', doc_type='handlers_license')
+
+
+
 

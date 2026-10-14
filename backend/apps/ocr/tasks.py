@@ -18,10 +18,14 @@ from .services import (
 )
 from .providers import (
     OCRSpaceProvider,
+    GeminiDocumentParser,
     OCRProviderError,
     RateLimitError,
 )
 from .models import DailyOCRUsage
+import requests
+import mimetypes
+
 from django.tasks import task
 
 logger = logging.getLogger(__name__)
@@ -93,6 +97,45 @@ def _call_ocr_chain(doc) -> tuple[str, str]:
     )
 
 
+def _get_document_bytes_and_mime(doc) -> tuple[bytes, str]:
+    """Fetch raw file bytes and mime type whether stored locally or via Cloudinary URL."""
+    file_url = getattr(doc.file, 'url', '')
+    filename = getattr(doc.file, 'name', 'document.jpg')
+    mime_type, _ = mimetypes.guess_type(filename)
+    if not mime_type:
+        mime_type = 'application/pdf' if filename.lower().endswith('.pdf') else 'image/jpeg'
+
+    if file_url.startswith('http'):
+        resp = requests.get(file_url, timeout=20)
+        resp.raise_for_status()
+        return resp.content, mime_type
+    else:
+        with doc.file.open('rb') as f:
+            return f.read(), mime_type
+
+
+def _rescue_with_gemini(doc, doc_type, origin=None):
+    """Attempt Gemini Vision rescue pass for structured field extraction."""
+    logger.info(f"Attempting Gemini Vision rescue for document {doc.id} ({doc_type}).")
+    file_bytes, mime_type = _get_document_bytes_and_mime(doc)
+    parser = GeminiDocumentParser()
+    extracted = parser.extract_fields(file_bytes=file_bytes, mime_type=mime_type, doc_type=doc_type)
+
+    errors = {}
+    if doc_type == 'handlers_license':
+        errors = validate_handlers_license(extracted)
+    elif doc_type == 'transport_carrier_reg':
+        errors = validate_transport_carrier(extracted)
+    elif doc_type == 'traders_pass':
+        errors = validate_traders_pass(extracted)
+    elif doc_type == 'cis':
+        errors = validate_cis(extracted, origin)
+    elif doc_type == 'endorsement_cert':
+        errors = validate_endorsement_cert(extracted, origin)
+
+    return extracted, errors
+
+
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
@@ -101,8 +144,9 @@ def _call_ocr_chain(doc) -> tuple[str, str]:
 def extract_document_info(document_id: int, attempt=3):
     """Background task: run OCR on a SubmittedDocument for a permit application.
 
-    Tries providers in OCR_PROVIDER_CHAIN order, falls back on rate-limit or
-    failure, and marks the document MANUAL if the entire chain is exhausted.
+    1. Tries OCR.space + regex first (0 Gemini tokens consumed).
+    2. If OCR fails, rate limits, or validation errors occur, falls back to Gemini Vision rescue.
+    3. If Gemini fails or errors remain, safely marks document as MANUAL for Agri review.
     """
     try:
         doc = permits.SubmittedDocument.objects.get(id=document_id)
@@ -130,11 +174,13 @@ def extract_document_info(document_id: int, attempt=3):
         check_all_documents_complete(doc.origin.application.id)
         return
 
+    extracted = {}
+    errors = {}
+    provider_used = 'none'
+
+    # Step 1: Try OCR.space + regex
     try:
         text, provider_used = _call_ocr_chain(doc)
-
-        extracted = {}
-        errors = {}
 
         if doc.document_type == 'handlers_license':
             extracted = extract_handlers_license(text)
@@ -152,45 +198,39 @@ def extract_document_info(document_id: int, attempt=3):
             extracted = extract_endorsement_cert(text)
             errors = validate_endorsement_cert(extracted, doc.origin)
 
-        permits.OCRValidationResult.objects.update_or_create(
-            document=doc,
-            defaults={
-                'status': 'PASSED' if not errors else 'MANUAL',
-                'extracted_field': extracted,
-                'remarks': errors if errors else {'general': 'All fields validated successfully.'},
-                'provider': provider_used,
-            }
-        )
-
-    except OCRProviderError as e:
-        logger.error(f"All OCR providers failed for document {document_id}: {e}")
-        permits.OCRValidationResult.objects.update_or_create(
-            document=doc,
-            defaults={
-                'status': 'MANUAL',
-                'extracted_field': {},
-                'remarks': {'error': f'OCR processing failed: {str(e)}. Manual verification required.'},
-                'provider': 'none',
-            }
-        )
-
     except Exception as e:
-        logger.error(f"Unexpected error processing OCR for document {document_id}: {str(e)}")
-        permits.OCRValidationResult.objects.update_or_create(
-            document=doc,
-            defaults={
-                'status': 'MANUAL',
-                'extracted_field': {},
-                'remarks': {'error': f'Unexpected error: {str(e)}. Document requires manual verification.'},
-                'provider': 'none',
-            }
-        )
+        logger.warning(f"Tier 1 OCR.space failed for document {document_id}: {e}")
+        errors = {'ocr_space_failed': str(e)}
 
-    finally:
+    # Step 2: Smart Hybrid Fallback — If OCR.space failed or regex had errors, try Gemini Vision
+    if errors:
         try:
-            check_all_documents_complete(doc.origin.application.id)
+            gemini_extracted, gemini_errors = _rescue_with_gemini(doc, doc.document_type, doc.origin)
+            extracted = gemini_extracted
+            errors = gemini_errors
+            provider_used = 'gemini'
+            logger.info(f"Gemini rescue succeeded for document {doc.id} (errors={len(errors)}).")
         except Exception as e:
-            logger.error(f"Error in final check_all_documents_complete: {str(e)}")
+            logger.warning(f"Tier 2 Gemini rescue also failed for document {document_id}: {e}")
+            if 'ocr_space_failed' not in errors:
+                errors['gemini_rescue_error'] = str(e)
+
+    # Step 3: Record result
+    permits.OCRValidationResult.objects.update_or_create(
+        document=doc,
+        defaults={
+            'status': 'PASSED' if not errors else 'MANUAL',
+            'extracted_field': extracted,
+            'remarks': errors if errors else {'general': 'All fields validated successfully.'},
+            'provider': provider_used,
+        }
+    )
+
+    try:
+        check_all_documents_complete(doc.origin.application.id)
+    except Exception as e:
+        logger.error(f"Error in final check_all_documents_complete: {str(e)}")
+
 
 
 @task()
@@ -205,24 +245,40 @@ def extract_farmer_document_info(farmer_doc_id: int):
         logger.error(f"FarmerDocument {farmer_doc_id} not found.")
         return
 
+    extracted = {}
+    ocr_failed = False
     try:
         text, _provider = _call_ocr_chain(doc)
 
-        extracted = {}
         if doc.document_type == 'handlers_license':
             extracted = extract_handlers_license(text)
         elif doc.document_type == 'transport_carrier_reg':
             extracted = extract_transport_carrier(text)
         elif doc.document_type == 'traders_pass':
             extracted = extract_traders_pass(text)
+    except Exception as e:
+        logger.warning(f"FarmerDocument {farmer_doc_id} OCR.space failed: {e}")
+        ocr_failed = True
 
-        lic_no = extracted.get('license_number') or extracted.get('registration_number')
+    # Smart fallback: if OCR failed or registration/license number could not be extracted
+    lic_no = extracted.get('license_number') or extracted.get('registration_number')
+    if (ocr_failed or not lic_no) and doc.document_type in GeminiDocumentParser.SCHEMAS:
+        try:
+            gemini_extracted, _ = _rescue_with_gemini(doc, doc.document_type)
+            if gemini_extracted:
+                extracted = gemini_extracted
+                lic_no = extracted.get('license_number') or extracted.get('registration_number')
+                logger.info(f"FarmerDocument {farmer_doc_id} rescued by Gemini.")
+        except Exception as e:
+            logger.warning(f"FarmerDocument {farmer_doc_id} Gemini rescue failed: {e}")
+
+    try:
         exp_date_str = extracted.get('date_of_expiration')
         parsed_exp = parse_date(exp_date_str) if exp_date_str else None
 
         update_fields = ['ocr_status', 'extracted_data']
         doc.extracted_data = extracted
-        doc.ocr_status = "PROCESSED"
+        doc.ocr_status = "PROCESSED" if extracted else "FAILED"
 
         if lic_no and not doc.license_number:
             doc.license_number = lic_no
@@ -238,12 +294,8 @@ def extract_farmer_document_info(farmer_doc_id: int):
             f"Lic: {lic_no}, Exp: {doc.expiration_date}"
         )
 
-    except OCRProviderError as e:
-        logger.error(f"All OCR providers failed for FarmerDocument {farmer_doc_id}: {e}")
-        doc.ocr_status = "FAILED"
-        doc.save(update_fields=["ocr_status"])
-
     except Exception as e:
         logger.error(f"Error processing OCR for FarmerDocument {farmer_doc_id}: {str(e)}")
         doc.ocr_status = "FAILED"
         doc.save(update_fields=["ocr_status"])
+

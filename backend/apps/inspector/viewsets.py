@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, MethodNotAllowed
 from django.http import FileResponse
 from apps.api.base import BaseModelViewSet
 from . import models, serializers, services
@@ -9,6 +9,16 @@ from . import models, serializers, services
 class InspectorLogViewSet(BaseModelViewSet):
     queryset = models.InspectorLogs.objects.all()
     serializer_class = serializers.InspectorLogsSerializer
+    http_method_names = ["get", "post", "head", "options"]
+
+    def update(self, request, *args, **kwargs):
+        raise MethodNotAllowed("PUT")
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed("PATCH")
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed("DELETE")
 
     @action(detail=False, methods=['get'])
     def generate_report(self, request):
@@ -32,7 +42,7 @@ class InspectorLogViewSet(BaseModelViewSet):
         except ValidationError as e:
             return Response({"error": e.detail[0] if isinstance(e.detail, list) else e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Failed to generate inspector log report due to an internal error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get_queryset(self):
         user = self.request.user
@@ -61,6 +71,6 @@ class InspectorLogViewSet(BaseModelViewSet):
             )
         except Exception as e:
             return Response(
-                {"error": "Failed to record inspection", "detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Failed to record inspection due to an internal error."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

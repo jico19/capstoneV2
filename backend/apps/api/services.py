@@ -20,10 +20,18 @@ def verify_otp(phone_no, otp_input):
     if not cached_otp:
         raise ValidationError("OTP has expired or hasn't been requested.")
 
+    attempts = cache.get(f"otp_attempts_{phone_no}", 0)
+    if attempts >= 5:
+        cache.delete(f"otp_{phone_no}")
+        cache.delete(f"otp_attempts_{phone_no}")
+        raise ValidationError("Too many failed attempts. This OTP has been invalidated; please request a new one.")
+
     if int(cached_otp) != otp_input:
+        cache.set(f"otp_attempts_{phone_no}", attempts + 1, timeout=300)
         raise ValidationError("Invalid verification code.")
 
     cache.delete(f"otp_{phone_no}")
+    cache.delete(f"otp_attempts_{phone_no}")
     return True
 
 def send_otp(phone_no):

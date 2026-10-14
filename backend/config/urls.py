@@ -7,7 +7,8 @@ import re
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
-from apps.api.views import health_check, CustomTokenObtainPairView
+from apps.api.views import health_check, CustomTokenObtainPairView, secure_serve_media, LogoutView
+from apps.payment.views import paymongo_webhook
 from .router import router
 
 # app viewsets
@@ -16,6 +17,9 @@ urlpatterns = [
     # Auth Endpoints
     path("login/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("logout/", LogoutView.as_view(), name="token_logout"),
+    # Payment Webhooks
+    path("payment/webhook/", paymongo_webhook, name="paymongo_webhook"),
     # App Routes
     path("dashboard/", include("apps.dashboard.urls"), name="agri_dashboard"),
     # util endpoints
@@ -29,8 +33,7 @@ if settings.MEDIA_URL.startswith("/"):
     urlpatterns += [
         re_path(
             media_pattern,
-            xframe_options_exempt(serve),
-            {"document_root": settings.MEDIA_ROOT},
+            xframe_options_exempt(secure_serve_media),
         ),
     ]
 

@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, MethodNotAllowed
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from apps.api.base import BaseModelViewSet
@@ -12,6 +12,22 @@ class PermitApplicationViewSet(BaseModelViewSet):
     queryset = models.PermitApplication.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = PermitApplicationFilter
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed("DELETE", detail="Permit applications cannot be deleted. Use the cancel endpoint instead.")
+
+    def perform_update(self, serializer):
+        app = self.get_object()
+        editable_statuses = [
+            models.PermitApplication.Status.DRAFT,
+            models.PermitApplication.Status.RESUBMISSION,
+        ]
+        if self.request.user.role == "Farmer" and app.status not in editable_statuses:
+            raise ValidationError(
+                f"Application cannot be modified while in status '{app.status}'. Only drafts and resubmissions are editable."
+            )
+        serializer.save()
 
     def get_serializer_class(self):
         if self.action == "list":

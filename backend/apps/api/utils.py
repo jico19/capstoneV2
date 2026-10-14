@@ -1,13 +1,16 @@
+import secrets
 from django.core.cache import cache
-from random import randint
 from datetime import datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 def generate_otp(phone_no):
-    otp = randint(100000, 999999)
+    # Cryptographically secure 6-digit OTP generator
+    otp = secrets.randbelow(900000) + 100000
     # Use phone number as the unique key for the OTP
     cache.set(f"otp_{phone_no}", otp, timeout=300)
+    # Reset attempt tracker
+    cache.set(f"otp_attempts_{phone_no}", 0, timeout=300)
     return otp
 
 def normalize_phone_number(phone_no):

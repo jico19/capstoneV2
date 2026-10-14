@@ -2,20 +2,29 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import MethodNotAllowed
 from apps.api.base import BaseModelViewSet
 from .. import models, serializers, services
 
 class OPVValidationViewSet(BaseModelViewSet):
     queryset = models.OPVValidation.objects.all()
     pagination_class = None
+    http_method_names = ["get", "post", "head", "options"]
+
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed("POST")
+
+    def update(self, request, *args, **kwargs):
+        raise MethodNotAllowed("PUT")
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed("PATCH")
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed("DELETE")
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
-            return serializers.OPVValidationDetailSerializer
-        elif self.action in ["create", "update", "partial_update"]:
-            return serializers.OPVValidationWriteSerializer
-        else:
-            return serializers.OPVValidationDetailSerializer
+        return serializers.OPVValidationDetailSerializer
 
     def get_queryset(self):
         user = self.request.user

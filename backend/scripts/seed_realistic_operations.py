@@ -164,6 +164,9 @@ def ensure_sample_media_file(relative_path: str, file_type: str = "pdf") -> str:
 # ---------------------------------------------------------------------------
 
 def run(total_applications: int = 160, months: int = 12, clean: bool = True):
+    if not settings.DEBUG:
+        raise RuntimeError("Seed script execution is strictly forbidden in production (DEBUG=False).")
+
     print("=" * 80)
     print(" STARTING REALISTIC OPERATIONS SEED SCRIPT FOR SARIAYA LIVESTOCK SYSTEM")
     print(f" Target: {total_applications} applications over past {months} months")

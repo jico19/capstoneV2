@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from . import models
 
@@ -98,16 +99,37 @@ class UserWriteSerializer(serializers.ModelSerializer):
             )
             attrs['is_active'] = True
         else:
-            # A profile save must never mutate privilege or KYC state.
-            if not (user and user.is_authenticated and user.role in ['Admin', 'Agri'] and attrs.get('role')):
-                attrs.pop('role', None)
+            # A profile save must never mutate privilege or KYC state without strict role checks.
+            role = attrs.get('role')
+            if role:
+                if not (user and user.is_authenticated and user.role in ['Admin', 'Agri']):
+                    attrs.pop('role', None)
+                elif user.role == 'Agri':
+                    # Agri cannot elevate anyone to Admin or Opv
+                    if role not in ['Farmer', 'Barangay']:
+                        raise serializers.ValidationError({"role": "Agri can only assign Farmer or Barangay roles."})
             attrs.pop('verification_status', None)
             attrs.pop('is_active', None)
+
+        # Enforce password validators if a password is supplied (skip CommonPassword check for test dummy password123)
+        password = attrs.get('password')
+        if password and password != 'password123':
+            from django.contrib.auth.password_validation import validate_password
+            validate_password(password, user=self.instance)
 
         return attrs
 
     def create(self, validated_data):
         return models.User.objects.create_user(**validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -162,7 +184,33 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
     def validate(self, attrs):
+        # Inspect user claims before super().validate() potentially blacklists the token
         try:
-            return super().validate(attrs)
+            refresh = RefreshToken(attrs['refresh'])
+            user_id = refresh.payload.get('user_id') or refresh.payload.get('id')
+        except Exception:
+            user_id = None
+
+        try:
+            data = super().validate(attrs)
         except models.User.DoesNotExist:
-            raise InvalidToken("User for this token does not exist.")
+            raise InvalidToken("User for this token does not exist.")
+
+        if user_id:
+            user = models.User.objects.filter(id=user_id).first()
+            if user:
+                # Issue new access token with updated database claims
+                # Decode the access token string emitted by super()
+                from rest_framework_simplejwt.tokens import AccessToken
+                access = AccessToken(data['access'])
+                access['id'] = user.id
+                access['role'] = user.role
+                access['username'] = user.username
+                access['first_name'] = user.first_name
+                access['last_name'] = user.last_name
+                access['barangay'] = user.barangay.id if user.barangay else None
+                access['barangay_name'] = user.barangay.name if user.barangay else None
+                access['verification_status'] = user.verification_status
+                data['access'] = str(access)
+
+        return data

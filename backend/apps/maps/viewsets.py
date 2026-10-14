@@ -1,4 +1,4 @@
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
@@ -7,7 +7,7 @@ from datetime import timedelta
 from . import serializers
 from . import models
 from .services import HogSurveyService
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 import csv
 from django.http import HttpResponse
 from django.utils import timezone
@@ -18,17 +18,13 @@ from apps.api.base import BaseModelViewSet
 ACTIVE_THRESHOLD_DAYS = 180
 
 
-class BarangayViewSet(BaseModelViewSet):
+class BarangayViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = models.Barangay.objects.all()
     pagination_class = None
+    http_method_names = ["get", "head", "options"]
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
-            return serializers.BarangayListDetailSerializer
-        elif self.action in ["create", "update", "partial_update"]:
-            return serializers.BarangayWriteSerializer
-        else:
-            return serializers.BarangayListDetailSerializer
+        return serializers.BarangayListDetailSerializer
 
     @action(detail=False, methods=["get"])
     def transport_volume(self, request):
@@ -75,6 +71,8 @@ class HogSurveyViewSet(BaseModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
+        if user.role not in ["Admin", "Agri", "Barangay"]:
+            raise PermissionDenied("Only Admin, Agri, and Barangay officials can submit hog surveys.")
         if user.role == "Barangay":
             barangay = serializer.validated_data.get('barangay')
             if barangay != user.barangay:
@@ -90,6 +88,8 @@ class HogSurveyViewSet(BaseModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
+        if user.role not in ["Admin", "Agri", "Barangay"]:
+            raise PermissionDenied("Only Admin, Agri, and Barangay officials can edit hog surveys.")
         if user.role == "Barangay":
             barangay = serializer.validated_data.get('barangay')
             if barangay and barangay != user.barangay:
@@ -105,8 +105,10 @@ class HogSurveyViewSet(BaseModelViewSet):
 
     def perform_destroy(self, instance):
         user = self.request.user
+        if user.role not in ["Admin", "Agri", "Barangay"]:
+            raise PermissionDenied("Only Admin, Agri, and Barangay officials can delete hog surveys.")
         if user.role == "Barangay" and instance.barangay != user.barangay:
-            raise ValidationError({"error": "You do not have permission to delete this survey."})
+            raise PermissionDenied("You do not have permission to delete this survey.")
             
         barangay_name = instance.barangay.name
         total_pigs = instance.total_pigs

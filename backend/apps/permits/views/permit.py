@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.utils import timezone
+from apps.api.models import AuditTrail
 from apps.api.base import BaseModelViewSet
 from .. import models, serializers, services
 
@@ -55,7 +58,8 @@ class IssuedPermitViewSet(BaseModelViewSet):
             models.PermitApplication, pk=application_id
         )
 
-        permit_fee = request.data.get("permit_fee", 150.00)
+        # Enforce official municipal configuration fee; prevent client fee manipulation
+        permit_fee = models.MunicipalConfig.get_fee()
 
         issued_permit = services.issue_permit(
             application=application_instance,
@@ -187,20 +191,30 @@ class MunicipalConfigViewSet(viewsets.ViewSet):
         if errors:
             raise ValidationError(errors)
 
-        config = models.MunicipalConfig.objects.first()
-        if not config:
-            config = models.MunicipalConfig.objects.create(
-                vet_health_cert_fee=vhc_val,
-                transport_pass_fee=tp_val,
-                local_transport_permit_fee=ltp_val,
-                validity_days=validity_val
+        with transaction.atomic():
+            config = models.MunicipalConfig.objects.select_for_update().first()
+            if not config:
+                config = models.MunicipalConfig.objects.create(
+                    vet_health_cert_fee=vhc_val,
+                    transport_pass_fee=tp_val,
+                    local_transport_permit_fee=ltp_val,
+                    validity_days=validity_val
+                )
+            else:
+                config.vet_health_cert_fee = vhc_val
+                config.transport_pass_fee = tp_val
+                config.local_transport_permit_fee = ltp_val
+                config.validity_days = validity_val
+                config.save()
+
+            AuditTrail.objects.create(
+                who_performed=request.user,
+                what_performed=(
+                    f"[MUNICIPAL CONFIG UPDATED] - VHC Fee: ₱{vhc_val}, TP Fee: ₱{tp_val}, "
+                    f"LTP Fee: ₱{ltp_val}, Validity: {validity_val} days"
+                ),
+                when_performed=timezone.now(),
             )
-        else:
-            config.vet_health_cert_fee = vhc_val
-            config.transport_pass_fee = tp_val
-            config.local_transport_permit_fee = ltp_val
-            config.validity_days = validity_val
-            config.save()
 
         serializer = serializers.MunicipalConfigSerializer(config)
         return Response(serializer.data, status=status.HTTP_200_OK)

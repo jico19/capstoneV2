@@ -36,7 +36,9 @@ const OpvApplicationDashboard = () => {
     // We fetch only applications relevant to OPV. 
     // The backend ViewSet handles the role-based filtering, 
     // but we can pass status filters if needed.
-    const { data: application, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery);
+    const { data: application, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery, {
+        refetchInterval: 15000 // Automatically sync validation queue every 15 seconds
+    });
     const navigate = useNavigate();
 
     if (isLoading) {

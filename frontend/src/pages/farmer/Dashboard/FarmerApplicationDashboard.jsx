@@ -42,8 +42,12 @@ const FarmerApplicationDashboard = () => {
     }, [searchInput]);
 
 
-    const { data, isLoading, isError, isFetching } = useApplication(limit, offset, statusFilter, searchQuery);
-    const { data: unfilteredData } = useApplication(1000, 0);
+    const { data, isLoading, isError, isFetching } = useApplication(limit, offset, statusFilter, searchQuery, {
+        refetchInterval: 15000 // Polling every 15s to update status smoothly
+    });
+    const { data: unfilteredData } = useApplication(1000, 0, undefined, undefined, {
+        refetchInterval: 30000
+    });
     const navigate = useNavigate();
     const applications = data?.results || [];
     const count = data?.count || 0;

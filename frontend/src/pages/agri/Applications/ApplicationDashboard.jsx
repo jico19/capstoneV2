@@ -45,8 +45,12 @@ const ApplicationDashboard = () => {
         };
     }, [searchInput]);
 
-    const { data, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery);
-    const { data: unfilteredData } = useApplication(1000, 0);
+    const { data, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery, {
+        refetchInterval: 15000 // Automatically refresh review queue every 15s
+    });
+    const { data: unfilteredData } = useApplication(1000, 0, undefined, undefined, {
+        refetchInterval: 30000
+    });
     const navigate = useNavigate();
     
     const [activeFilter, setActiveFilter] = useState('ALL');

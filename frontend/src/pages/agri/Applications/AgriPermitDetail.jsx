@@ -111,6 +111,8 @@ const AgriPermitDetail = () => {
                     try {
                         await api.post(`/application/${id}/approve/`, data);
                         query.invalidateQueries({ queryKey: ['application'] });
+                        query.invalidateQueries({ queryKey: ['agri_metrics'] });
+                        query.invalidateQueries({ queryKey: ['opv_metrics'] });
                         toast.success("Application Approved", {
                             description: "Forwarded to health office for final check."
                         });
@@ -144,6 +146,8 @@ const AgriPermitDetail = () => {
                     try {
                         await api.post(`/application/${id}/reject/`, data);
                         query.invalidateQueries({ queryKey: ['application'] });
+                        query.invalidateQueries({ queryKey: ['agri_metrics'] });
+                        query.invalidateQueries({ queryKey: ['farmer_metrics'] });
                         toast.success("Application Returned", {
                             description: "The farmer has been notified to fix the details."
                         });
@@ -183,6 +187,8 @@ const AgriPermitDetail = () => {
                         permit_fee: finalFee
                     });
                     query.invalidateQueries({ queryKey: ['application'] });
+                    query.invalidateQueries({ queryKey: ['agri_metrics'] });
+                    query.invalidateQueries({ queryKey: ['farmer_metrics'] });
                     toast.success("Permit Issued", {
                         description: `Permit fee set to ₱${finalFee.toFixed(2)}.`
                     });

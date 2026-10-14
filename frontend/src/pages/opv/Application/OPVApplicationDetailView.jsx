@@ -61,6 +61,9 @@ const OPVApplicationDetail = () => {
 
                         await api.post(`opv/${id}/approve/`, formData)
                         query.invalidateQueries({ queryKey: ['application'] })
+                        query.invalidateQueries({ queryKey: ['opv_metrics'] })
+                        query.invalidateQueries({ queryKey: ['agri_metrics'] })
+                        query.invalidateQueries({ queryKey: ['farmer_metrics'] })
                         toast.success("Validation Complete", {
                             description: "AIC verified, health documents uploaded, and application validated."
                         })
@@ -95,6 +98,9 @@ const OPVApplicationDetail = () => {
                     try {
                         await api.post(`opv/${id}/reject/`, data)
                         query.invalidateQueries({ queryKey: ['application'] })
+                        query.invalidateQueries({ queryKey: ['opv_metrics'] })
+                        query.invalidateQueries({ queryKey: ['agri_metrics'] })
+                        query.invalidateQueries({ queryKey: ['farmer_metrics'] })
                         toast.success("Application Rejected", {
                             description: "The application has been permanently rejected."
                         })
@@ -126,6 +132,9 @@ const OPVApplicationDetail = () => {
                     try {
                         await api.post(`opv/${id}/resubmit/`, data)
                         query.invalidateQueries({ queryKey: ['application'] })
+                        query.invalidateQueries({ queryKey: ['opv_metrics'] })
+                        query.invalidateQueries({ queryKey: ['agri_metrics'] })
+                        query.invalidateQueries({ queryKey: ['farmer_metrics'] })
                         toast.success("Application Returned", {
                             description: "The farmer has been notified to fix the details."
                         })

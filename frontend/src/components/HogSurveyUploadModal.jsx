@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, X, CheckCircle2, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { Upload, X, CheckCircle2, AlertCircle, FileText, Loader2, Download } from 'lucide-react';
 import { useUploadHogSurvey } from '../hooks/useMaps';
+import { downloadBlob } from '../lib/utils';
 import { toast } from 'sonner';
 
 /**
@@ -36,6 +37,16 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
         onClose();
     };
 
+    const handleDownloadTemplate = () => {
+        const headers = "barangay,survey_date,farmer_name,contact_number,inahin,barako,fattener,grower,starter,bulaw,total_pigs\n";
+        const sampleRow = `Balubal,${new Date().toISOString().split('T')[0]},Juan Dela Cruz,09123456789,10,2,25,15,30,8,90\n`;
+        const blob = new Blob([headers + sampleRow], { type: 'text/csv' });
+        downloadBlob(blob, 'sariaya_hog_survey_template.csv');
+    };
+
+    const errorDetails = error?.response?.data?.errors || [];
+    const mainErrorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Something went wrong. Please check your CSV format.';
+
     return (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md border border-stone-200 shadow-2xl rounded-none overflow-hidden">
@@ -55,9 +66,18 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
                     {!isSuccess ? (
                         <>
                             <div className="space-y-4">
-                                <p className="text-sm font-medium text-stone-600">
-                                    Select a CSV file containing historical hog population data.
-                                </p>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs font-medium text-stone-600">
+                                        Select a CSV file containing hog survey records.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadTemplate}
+                                        className="text-[10px] font-black uppercase text-green-700 hover:underline tracking-widest flex items-center gap-1 cursor-pointer shrink-0"
+                                    >
+                                        <Download size={11} /> Template
+                                    </button>
+                                </div>
                                 
                                 <div className="relative">
                                     <input
@@ -95,14 +115,23 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
                             </div>
 
                             {isError && (
-                                <div className="bg-red-50 border border-red-100 p-4 flex items-start gap-3">
-                                    <AlertCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-red-700 uppercase tracking-widest">Upload Failed</p>
-                                        <p className="text-xs font-medium text-red-600">
-                                            {error?.response?.data?.error || 'Something went wrong. Please check your CSV format.'}
-                                        </p>
+                                <div className="bg-red-50 border border-red-100 p-4 space-y-2">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-red-700 uppercase tracking-widest">Upload Failed</p>
+                                            <p className="text-xs font-medium text-red-600">
+                                                {mainErrorMessage}
+                                            </p>
+                                        </div>
                                     </div>
+                                    {errorDetails.length > 0 && (
+                                        <div className="max-h-32 overflow-y-auto pl-7 pt-1 space-y-1 border-t border-red-200/40">
+                                            {errorDetails.map((err, i) => (
+                                                <p key={i} className="text-[10px] text-red-600 font-mono">• {err}</p>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

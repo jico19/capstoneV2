@@ -14,10 +14,10 @@ class HogSurveyService:
         try:
             # Reset pointer first in case it was already read
             file_obj.seek(0)
-            # Handle Django uploaded file which might be open in binary mode
+            # Handle Django uploaded file which might be open in binary mode; decode utf-8-sig to automatically strip BOM
             content = file_obj.read()
             if isinstance(content, bytes):
-                content = content.decode('utf-8')
+                content = content.decode('utf-8-sig')
             file_obj.seek(0)  # Reset pointer just in case
         except Exception as e:
             raise ValueError(f"Failed to read file: {str(e)}")
@@ -26,8 +26,30 @@ class HogSurveyService:
         if not reader.fieldnames:
             raise ValueError("CSV file is empty or headers are missing")
 
-        # Strip spaces from column names to avoid key mismatch
-        reader.fieldnames = [name.strip() for name in reader.fieldnames]
+        COLUMN_ALIASES = {
+            'date': 'survey_date',
+            'survey date': 'survey_date',
+            'date of survey': 'survey_date',
+            'total': 'total_pigs',
+            'total pigs': 'total_pigs',
+            'total pig': 'total_pigs',
+            'farmer name': 'farmer_name',
+            'owner name': 'farmer_name',
+            'farmer': 'farmer_name',
+            'contact number': 'contact_number',
+            'contact no': 'contact_number',
+            'cellphone number': 'contact_number',
+            'phone number': 'contact_number',
+        }
+
+        # Normalize fieldnames: lowercase, stripped, aliased
+        normalized_fieldnames = []
+        for name in reader.fieldnames:
+            if not name:
+                continue
+            clean = name.strip().lower()
+            normalized_fieldnames.append(COLUMN_ALIASES.get(clean, clean))
+        reader.fieldnames = normalized_fieldnames
 
         required_columns = [
             'barangay', 'survey_date', 'inahin', 'barako', 
@@ -42,7 +64,21 @@ class HogSurveyService:
         records_to_update = []
         errors = []
 
-        barangay_map = {b.name.lower(): b for b in Barangay.objects.all()}
+        BARANGAY_ALIASES = {
+            "mamala 1": "mamala i",
+            "mamala 2": "mamala ii",
+            "santo cristo": "sampaloc santo cristo",
+            "talaan pantoc": "talaanpantoc",
+            "castanas": "castañas",
+        }
+
+        barangay_map = {}
+        for b in Barangay.objects.all():
+            norm_name = b.name.strip().lower()
+            barangay_map[norm_name] = b
+            if "casta" in norm_name:
+                barangay_map["castañas"] = b
+                barangay_map["castanas"] = b
 
         parsed_rows = []
         dates_in_csv = set()
@@ -51,21 +87,25 @@ class HogSurveyService:
         for index, row in enumerate(reader):
             row_num = index + 2
             try:
-                barangay_name = str(row.get('barangay', '')).strip()
-                barangay = barangay_map.get(barangay_name.lower())
+                raw_barangay_name = str(row.get('barangay', '')).strip()
+                lookup_name = raw_barangay_name.lower()
+                lookup_name = BARANGAY_ALIASES.get(lookup_name, lookup_name)
+                barangay = barangay_map.get(lookup_name)
+                if not barangay and "casta" in lookup_name:
+                    barangay = barangay_map.get("castanas") or barangay_map.get("castañas")
                 
                 if not barangay:
-                    errors.append(f"Row {row_num}: Barangay '{barangay_name}' not found.")
+                    errors.append(f"Row {row_num}: Barangay '{raw_barangay_name}' not found.")
                     continue
 
                 if barangay_restriction and barangay != barangay_restriction:
-                    errors.append(f"Row {row_num}: Barangay '{barangay_name}' is not your assigned barangay ({barangay_restriction.name}).")
+                    errors.append(f"Row {row_num}: Barangay '{raw_barangay_name}' is not your assigned barangay ({barangay_restriction.name}).")
                     continue
 
                 date_str = str(row.get('survey_date', '')).strip()
                 try:
-                    # Handle full ISO timestamps (like 2024-01-01 00:00:00) by splitting
-                    clean_date_str = date_str.split(' ')[0]
+                    # Handle full ISO timestamps (like 2024-01-01 00:00:00) by splitting, support both / and -
+                    clean_date_str = date_str.split(' ')[0].replace('/', '-')
                     survey_date = datetime.strptime(clean_date_str, "%Y-%m-%d").date()
                 except (ValueError, TypeError):
                     errors.append(f"Row {row_num}: Invalid date '{date_str}'.")
@@ -144,7 +184,9 @@ class HogSurveyService:
                     existing.bulaw += row['bulaw']
                     existing.total_pigs += row['total_pigs']
                 
-                if existing not in records_to_update:
+                # Only add to records_to_update if it already exists in the database with a PK
+                # Unsaved new_records remain in records_to_create with their updated values
+                if existing.pk is not None and existing not in records_to_update:
                     records_to_update.append(existing)
             else:
                 new_record = HogSurvey(
@@ -161,7 +203,7 @@ class HogSurveyService:
                     total_pigs=row['total_pigs']
                 )
                 records_to_create.append(new_record)
-                existing_map[key] = new_record  # Prevent adding duplicate new records in same file
+                existing_map[key] = new_record  # Subsequent rows in same file will consolidate onto this record
 
         # Save to database
         if records_to_create or records_to_update:

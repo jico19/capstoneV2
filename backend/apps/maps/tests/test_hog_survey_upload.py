@@ -166,3 +166,58 @@ class TestHogSurveyUpload:
         assert res2.status_code == 400
         assert "Total pigs must be at least 1" in res2.data["error"]
 
+    def test_upload_csv_with_utf8_bom(self, api_client, agri_user):
+        Barangay.objects.create(name="Balubal")
+        csv_bytes = (
+            b"\xef\xbb\xbfbarangay,survey_date,farmer_name,contact_number,inahin,barako,fattener,grower,starter,bulaw,total_pigs\n"
+            b"Balubal,2026-10-15,Excel User,09123456789,1,0,2,0,0,0,3\n"
+        )
+        file = SimpleUploadedFile("excel_export.csv", csv_bytes, content_type="text/csv")
+        api_client.force_authenticate(user=agri_user)
+        response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
+        assert response.status_code == 201
+        assert HogSurvey.objects.filter(farmer_name="Excel User").exists()
+
+    def test_upload_csv_with_duplicate_rows_in_file(self, api_client, agri_user):
+        Barangay.objects.create(name="Antipolo")
+        csv_content = (
+            "barangay,survey_date,farmer_name,contact_number,inahin,barako,fattener,grower,starter,bulaw,total_pigs\n"
+            "Antipolo,2026-10-15,Duplicate Farmer,09123456789,2,1,0,0,0,0,3\n"
+            "Antipolo,2026-10-15,Duplicate Farmer,09123456789,5,2,1,0,0,0,8\n"
+        )
+        file = SimpleUploadedFile("duplicates.csv", csv_content.encode('utf-8'), content_type="text/csv")
+        api_client.force_authenticate(user=agri_user)
+        response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
+        assert response.status_code == 201
+        records = HogSurvey.objects.filter(farmer_name="Duplicate Farmer")
+        assert records.count() == 1
+        assert records.first().total_pigs == 8
+
+    def test_upload_csv_from_exported_format(self, api_client, agri_user):
+        Barangay.objects.create(name="Bucal")
+        csv_content = (
+            "Barangay,Date,Farmer Name,Contact Number,Inahin,Barako,Fattener,Grower,Bulaw,Starter,Total\n"
+            "Bucal,2026-10-15,Exported Farmer,09123456789,3,1,4,2,1,5,16\n"
+        )
+        file = SimpleUploadedFile("system_export.csv", csv_content.encode('utf-8'), content_type="text/csv")
+        api_client.force_authenticate(user=agri_user)
+        response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
+        assert response.status_code == 201
+        assert HogSurvey.objects.filter(farmer_name="Exported Farmer").exists()
+
+    def test_upload_csv_with_barangay_aliases_and_castanas(self, api_client, agri_user):
+        Barangay.objects.create(name="Mamala I")
+        Barangay.objects.create(name="Castañas")
+        csv_content = (
+            "barangay,survey_date,farmer_name,contact_number,inahin,barako,fattener,grower,starter,bulaw,total_pigs\n"
+            "Mamala 1,2026-10-15,Farmer One,09123456789,1,0,0,0,0,0,1\n"
+            "Castanas,2026-10-15,Farmer Two,09123456788,2,0,0,0,0,0,2\n"
+        )
+        file = SimpleUploadedFile("aliases.csv", csv_content.encode('utf-8'), content_type="text/csv")
+        api_client.force_authenticate(user=agri_user)
+        response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
+        assert response.status_code == 201
+        assert HogSurvey.objects.filter(farmer_name="Farmer One", barangay__name="Mamala I").exists()
+        assert HogSurvey.objects.filter(farmer_name="Farmer Two", barangay__name="Castañas").exists()
+
+

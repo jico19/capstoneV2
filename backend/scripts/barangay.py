@@ -50,7 +50,7 @@ sariaya_barangays = [
 
 @transaction.atomic
 def run():
-    with open('./datasets/barangays-municity-1323-sariaya.json', 'r') as file:
+    with open('./datasets/barangays-municity-1323-sariaya.json', 'r', encoding='utf-8') as file:
         data = json.load(file)
 
     # Index features by their lowercase trimmed names

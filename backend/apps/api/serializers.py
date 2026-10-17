@@ -145,6 +145,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             'id',
             'recipient_name',
             'type',
+            'section',
             'title',
             'message',
             'is_read',

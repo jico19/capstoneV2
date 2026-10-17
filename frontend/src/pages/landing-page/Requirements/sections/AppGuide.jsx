@@ -44,16 +44,16 @@ function GuideStep({ step, index }) {
 
   return (
     <div ref={ref}
-      style={{ opacity: 0, transform: "translateX(-2rem)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
-      className="guide-step flex gap-4 items-start py-5 border-b border-[#eef2ef] last:border-b-0">
+      style={{ opacity: 0, transform: "translateX(-1rem)", transition: "opacity 0.3s ease, transform 0.3s ease" }}
+      className="guide-step flex gap-4 items-start py-4 border-b border-stone-200 last:border-b-0">
 
-      <div className="w-10 h-10 rounded-full bg-brand-primary text-brand-amber font-archivo text-[1rem] flex items-center justify-center shrink-0 basis-10 shadow-[0_4px_12px_rgba(10,42,26,0.2)]">
+      <div className="w-7 h-7 bg-green-700 text-white font-archivo text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 rounded-md">
         {step.n}
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-archivo text-[clamp(0.92rem,1.3vw,1.2rem)] text-brand-primary mb-[0.35rem] tracking-[-0.01em]">{step.title}</h3>
-        <p className="font-jakarta text-[clamp(0.82rem,1.1vw,0.9rem)] text-[#6c757d] leading-[1.75]">{step.desc}</p>
+        <h3 className="font-archivo text-sm sm:text-base font-semibold text-stone-900 mb-1 tracking-tight">{step.title}</h3>
+        <p className="font-jakarta text-xs sm:text-sm text-stone-600 leading-relaxed">{step.desc}</p>
       </div>
     </div>
   );
@@ -63,18 +63,17 @@ export default function AppGuide() {
   const headerRef = useScrollReveal({ threshold: 0.2 });
 
   return (
-    <section className="bg-brand-bg py-16 relative max-[640px]:py-12
-      after:content-[''] after:absolute after:-bottom-24 after:-right-24 after:w-96 after:h-96
-      after:rounded-full after:border-[5rem] after:border-brand-primary/[0.03] after:pointer-events-none after:overflow-hidden">
-
+    <section className="bg-stone-50 py-16 relative border-b border-stone-200 max-[640px]:py-12">
       <div className="max-w-[54rem] mx-auto px-8 max-[640px]:px-5">
 
         {/* Header */}
-        <div ref={headerRef} className="reveal-block flex items-center gap-3 pb-[0.9rem] border-b-2 border-[#e2ece6] mb-[0.6rem]">
-          <img src={AppGuideIcon} alt="" className="w-7 h-7 object-contain" />
-          <h2 className="font-archivo text-[clamp(1.2rem,2vw,2rem)] text-brand-primary tracking-[-0.01em]">Step-by-Step Application Guide</h2>
+        <div ref={headerRef} className="reveal-block flex items-center gap-3 pb-3 border-b border-stone-200 mb-2">
+          <div className="w-10 h-10 bg-sky-50 border border-sky-200 rounded-md flex items-center justify-center shrink-0">
+            <img src={AppGuideIcon} alt="" className="w-5 h-5 object-contain" />
+          </div>
+          <h2 className="font-archivo text-2xl text-stone-900 font-bold tracking-tight">Step-by-Step Application Guide</h2>
         </div>
-        <p className="font-jakarta text-[clamp(0.88rem,1.2vw,0.97rem)] text-[#6c757d] leading-[1.75] mb-6">
+        <p className="font-jakarta text-sm text-stone-600 leading-relaxed mb-6">
           Follow these steps to successfully apply for your livestock transport permit
         </p>
 

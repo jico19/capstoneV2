@@ -53,8 +53,8 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-2xl rounded-none overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50 shrink-0">
                     <div className="flex items-center gap-3">
                         <Activity size={18} className="text-stone-700" />
@@ -62,7 +62,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                             {isEdit ? 'Edit Hog Survey Record' : 'Add Hog Survey Record'}
                         </h3>
                     </div>
-                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 transition-colors">
+                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -85,7 +85,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                         validate: (val) => (val && val.trim().length > 0) || "Farmer name cannot be blank."
                                     })}
                                     disabled={isSubmitting}
-                                    className="w-full pl-9 pr-3 py-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:font-normal placeholder:text-stone-400"
+                                    className="w-full pl-9 pr-3 py-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:font-normal placeholder:text-stone-400"
                                 />
                             </div>
                             {errors.farmer_name && (
@@ -105,7 +105,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                     placeholder="e.g. 09123456789"
                                     {...register('contact_number')}
                                     disabled={isSubmitting}
-                                    className="w-full pl-9 pr-3 py-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:font-normal placeholder:text-stone-400"
+                                    className="w-full pl-9 pr-3 py-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:font-normal placeholder:text-stone-400"
                                 />
                             </div>
                         </div>
@@ -117,7 +117,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 type="date"
                                 {...register('survey_date', { required: "Survey collection date is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                             {errors.survey_date && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.survey_date.message}</p>}
                         </div>
@@ -130,7 +130,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 min="0"
                                 {...register('inahin', { required: "Inahin is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                         </div>
 
@@ -142,7 +142,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 min="0"
                                 {...register('barako', { required: "Barako is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                         </div>
 
@@ -154,7 +154,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 min="0"
                                 {...register('fattener', { required: "Fattener is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                         </div>
 
@@ -166,7 +166,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 min="0"
                                 {...register('grower', { required: "Grower is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                         </div>
 
@@ -178,7 +178,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 min="0"
                                 {...register('starter', { required: "Starter is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                         </div>
 
@@ -190,7 +190,7 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                                 min="0"
                                 {...register('bulaw', { required: "Bulaw is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold"
                             />
                         </div>
                     </div>
@@ -200,14 +200,14 @@ const SurveyFormModal = ({ survey, onClose, onSubmit, isSubmitting }) => {
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-5 py-2.5 border border-stone-200 hover:bg-stone-50 text-stone-600 text-xs font-semibold rounded-none transition-colors disabled:opacity-50"
+                            className="px-5 py-2.5 border border-stone-200 hover:bg-stone-50 text-stone-600 text-xs font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50"
                         >
                             {isEdit ? (isDirty ? 'Cancel Changes' : 'Close') : 'Cancel'}
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting || (isEdit && !isDirty)}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2"
+                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>

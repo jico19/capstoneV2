@@ -10,7 +10,7 @@ const NarrativeTab = ({ draftData, onSummaryChange, onFindingsChange }) => {
       {/* Summary Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {draftData.key_metrics?.map((km, idx) => (
-          <div key={idx} className="bg-stone-50 border border-stone-200 p-3 space-y-1">
+          <div key={idx} className="bg-stone-50 border border-stone-200 rounded-lg p-3 space-y-1">
             <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">
               {km.label}
             </span>
@@ -31,7 +31,7 @@ const NarrativeTab = ({ draftData, onSummaryChange, onFindingsChange }) => {
           rows={5}
           value={draftData.executive_summary}
           onChange={(e) => onSummaryChange(e.target.value)}
-          className="w-full border border-stone-300 p-3 text-xs leading-relaxed font-medium text-stone-900 bg-white focus:outline-none focus:border-green-700"
+          className="w-full border border-stone-300 p-3 text-xs leading-relaxed font-medium text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
         />
       </div>
 
@@ -47,7 +47,7 @@ const NarrativeTab = ({ draftData, onSummaryChange, onFindingsChange }) => {
           rows={4}
           value={draftData.biosecurity_findings}
           onChange={(e) => onFindingsChange(e.target.value)}
-          className="w-full border border-stone-300 p-3 text-xs leading-relaxed font-medium text-stone-900 bg-white focus:outline-none focus:border-green-700"
+          className="w-full border border-stone-300 p-3 text-xs leading-relaxed font-medium text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
         />
       </div>
     </div>

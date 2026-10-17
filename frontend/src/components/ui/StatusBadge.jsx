@@ -16,28 +16,28 @@ const StatusBadge = ({ status }) => {
             case 'RELEASED':
             case 'PERMIT_ISSUED':
             case 'OPV_VALIDATED':
-                return "bg-green-50 text-green-700 border-green-600";
+                return "bg-green-50 text-green-700 border-green-600/30";
             
             // ACTION REQUIRED / PENDING (Amber)
             case 'PAYMENT_PENDING':
             case 'SUBMITTED':
             case 'OPV_REJECTED':
             case 'RESUBMISSION':
-                return "bg-amber-50 text-amber-700 border-amber-500";
+                return "bg-amber-50 text-amber-700 border-amber-500/30";
             
             // IN PROGRESS / SYSTEM REVIEW (Sky)
             case 'FORWARDED_TO_OPV':
             case 'OCR_VALIDATED':
-                return "bg-sky-50 text-sky-700 border-sky-600";
+                return "bg-sky-50 text-sky-700 border-sky-600/30";
             
             // FLAG / MANUAL ATTENTION (Orange)
             case 'MANUAL':
-                return "bg-orange-50 text-orange-700 border-orange-500";
+                return "bg-orange-50 text-orange-700 border-orange-500/30";
             
             // CANCELLED / REJECTED (Red)
             case 'CANCELLED':
             case 'REJECTED':
-                return "bg-red-50 text-red-700 border-red-500";
+                return "bg-red-50 text-red-700 border-red-500/30";
             
             // NEUTRAL / INITIAL (Stone)
             case 'DRAFT':
@@ -71,7 +71,7 @@ const StatusBadge = ({ status }) => {
 
     return (
         <span className={`
-            px-2 py-0.5 border rounded-none 
+            px-2 py-0.5 border rounded-md 
             text-[10px] font-black uppercase tracking-widest inline-block whitespace-nowrap
             ${getStatusStyle(status)}
         `}>

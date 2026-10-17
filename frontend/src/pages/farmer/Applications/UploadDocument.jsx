@@ -155,18 +155,18 @@ const UploadDocument = ({ register, errors, watch, setValue = () => {}, prevStep
             </div>
 
             {/* Sticky Mobile Navigation Bar */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 flex items-center justify-between z-50">
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-2.5 flex items-center justify-between z-40 shadow-lg">
                 <button
                     type="button"
                     onClick={prevStep}
-                    className="border border-stone-200 bg-white active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-wider px-4 py-3 rounded-none"
+                    className="border border-stone-200 bg-white active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-wider px-3.5 py-2.5 rounded-md"
                 >
                     Back
                 </button>
                 <button
                     type="button"
                     onClick={nextStep}
-                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs px-5 py-3 rounded-none transition-colors"
+                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-[11px] px-4 py-2.5 rounded-md transition-colors"
                 >
                     Review Request →
                 </button>
@@ -191,7 +191,7 @@ const FileUpload = ({ id, label, desc, register, errors, watch, setValue, isRequ
 
     return (
         <div className="relative">
-            <label className={`flex flex-col items-center justify-center p-3 sm:p-5 border-2 border-dashed transition-all cursor-pointer rounded-none min-h-[120px] sm:min-h-[150px]
+            <label className={`flex flex-col items-center justify-center p-3 sm:p-4 border-2 border-dashed transition-all cursor-pointer rounded-md min-h-[95px] sm:min-h-[130px]
                 ${hasAnyFile 
                     ? "border-green-700 bg-green-50/50 hover:bg-green-50" 
                     : errors[id] 

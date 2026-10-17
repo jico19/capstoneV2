@@ -65,7 +65,7 @@ export const PaymentCountdownTimer = ({ deadline, onExpire, compact = false }) =
         <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-sm font-medium shadow-sm transition-all ${colorStyle}`}>
             <Clock className="w-4 h-4" />
             <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500 font-normal">Payment Deadline:</span>
+                <span className="text-xs text-stone-500 font-normal">Payment Deadline:</span>
                 <span className="font-mono font-bold tracking-tight">{timeLeft.formatted}</span>
             </div>
         </div>

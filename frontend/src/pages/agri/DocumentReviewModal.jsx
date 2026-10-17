@@ -47,13 +47,13 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-            <div className="bg-white border-2 border-stone-800 max-w-3xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+            <div className="bg-white border border-stone-200 rounded-xl max-w-3xl w-full p-6 space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-start border-b border-stone-200 pb-4">
                     <div>
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">KYC Document Review</span>
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-stone-100 text-stone-700">
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-stone-100 text-stone-700">
                                 {farmer.verification_status || 'UNVERIFIED'}
                             </span>
                         </div>
@@ -62,7 +62,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                         </h2>
                         <p className="text-xs text-stone-500 font-mono">@{farmer.username} • {farmer.phone_no} • {farmer.barangay_name || 'No Barangay'}</p>
                     </div>
-                    <button onClick={onClose} className="text-stone-400 hover:text-stone-700 p-1">
+                    <button onClick={onClose} className="text-stone-400 hover:text-stone-700 p-1 rounded-lg transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -76,21 +76,21 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                         const edit = docEdits[dtype] || {};
 
                         return (
-                            <div key={dtype} className="p-4 border border-stone-200 bg-stone-50 space-y-3">
+                            <div key={dtype} className="p-4 border border-stone-200 bg-stone-50 rounded-lg space-y-3">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
                                         <h4 className="font-bold text-stone-800 text-xs">{docLabels[dtype]}</h4>
                                         {doc ? (
-                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-green-100 text-green-800">
+                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-green-100 text-green-800">
                                                 On File
                                             </span>
                                         ) : (
-                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-red-100 text-red-700">
+                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">
                                                 Missing
                                             </span>
                                         )}
                                         {doc?.ocr_status === 'PROCESSED' && (
-                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-blue-100 text-blue-800">
+                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800">
                                                 OCR Verified
                                             </span>
                                         )}
@@ -109,7 +109,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                                                     subtitle: edit.license_number ? `Extracted License: ${edit.license_number}` : undefined
                                                 });
                                             }}
-                                            className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                                            className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer border rounded-lg shadow-2xs ${
                                                 viewedTypes.includes(dtype) 
                                                     ? 'bg-green-50 text-green-800 border-green-300' 
                                                     : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-100'
@@ -134,7 +134,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                                             value={edit.license_number || ""}
                                             onChange={(e) => handleEditChange(dtype, "license_number", e.target.value)}
                                             placeholder="License number..."
-                                            className="w-full bg-white border border-stone-300 text-stone-800 text-xs px-2.5 py-1.5 focus:outline-none focus:border-stone-800 font-mono"
+                                            className="w-full bg-white border border-stone-300 text-stone-800 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-stone-800 font-mono shadow-2xs"
                                         />
                                     </div>
 
@@ -146,7 +146,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                                             type="date"
                                             value={edit.expiration_date || ""}
                                             onChange={(e) => handleEditChange(dtype, "expiration_date", e.target.value)}
-                                            className="w-full bg-white border border-stone-300 text-stone-800 text-xs px-2.5 py-1.5 focus:outline-none focus:border-stone-800"
+                                            className="w-full bg-white border border-stone-300 text-stone-800 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-stone-800 shadow-2xs"
                                         />
                                     </div>
                                 </div>
@@ -165,12 +165,12 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                         value={remarks}
                         onChange={(e) => setRemarks(e.target.value)}
                         placeholder="Enter feedback or rejection reason for the farmer (sent via SMS/notification)..."
-                        className="w-full border border-stone-300 text-xs p-3 rounded-none focus:outline-none focus:border-stone-800 bg-white"
+                        className="w-full border border-stone-300 text-xs p-3 rounded-lg focus:outline-none focus:border-stone-800 bg-white shadow-2xs"
                     />
                 </div>
 
                 {unviewedCount > 0 && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold rounded-lg flex items-center gap-2">
                         <span>🔒</span>
                         <span>Action Required: Please click and view all submitted files above before approving. ({unviewedCount} unreviewed document remaining)</span>
                     </div>
@@ -182,7 +182,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                         type="button"
                         onClick={onClose}
                         disabled={isSubmitting}
-                        className="px-5 py-2.5 border border-stone-300 text-stone-700 text-xs font-black uppercase tracking-widest hover:bg-stone-100"
+                        className="px-5 py-2.5 border border-stone-300 text-stone-700 text-xs font-black uppercase tracking-widest hover:bg-stone-100 rounded-lg shadow-xs transition-colors"
                     >
                         Close
                     </button>
@@ -191,7 +191,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                         type="button"
                         onClick={() => onReject(remarks)}
                         disabled={isSubmitting}
-                        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
+                        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5"
                     >
                         <X size={14} /> Reject with Remarks
                     </button>
@@ -201,7 +201,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                         onClick={() => onApprove(remarks, docEdits)}
                         disabled={isSubmitting || unviewedCount > 0}
                         title={unviewedCount > 0 ? "View all attached documents first" : undefined}
-                        className="px-6 py-2.5 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-green-700/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="px-6 py-2.5 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         <Check size={14} /> Approve & Save Verification
                     </button>

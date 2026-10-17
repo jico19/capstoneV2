@@ -20,8 +20,8 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-2xl rounded-none overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50 shrink-0">
                     <div className="flex items-center gap-3">
@@ -30,7 +30,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                             {isEdit ? "Update Farmer Profile" : "Register Swine Owner"}
                         </h3>
                     </div>
-                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 transition-colors">
+                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -45,7 +45,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 type="text"
                                 {...register('username', { required: "Username is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="john_doe"
                             />
                             {errors.username && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.username.message}</p>}
@@ -59,7 +59,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                     type="password"
                                     {...register('password', { required: "Password is required for new accounts." })}
                                     disabled={isSubmitting}
-                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                     placeholder="••••••••"
                                 />
                                 {errors.password && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.password.message}</p>}
@@ -73,7 +73,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 type="text"
                                 {...register('first_name', { required: "First name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="Juan"
                             />
                             {errors.first_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.first_name.message}</p>}
@@ -86,7 +86,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 type="text"
                                 {...register('last_name', { required: "Last name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="Dela Cruz"
                             />
                             {errors.last_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.last_name.message}</p>}
@@ -105,7 +105,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                     }
                                 })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="09171234567"
                             />
                             {errors.phone_no && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.phone_no.message}</p>}
@@ -117,7 +117,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                             <select
                                 {...register('barangay', { required: "Selecting a barangay is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold text-stone-800 cursor-pointer"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold text-stone-800 cursor-pointer"
                             >
                                 <option value="">Select Barangay</option>
                                 {barangays.map((b) => (
@@ -134,7 +134,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                 type="text"
                                 {...register('address', { required: "Complete address is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="Purok 4, Sariaya, Quezon"
                             />
                             {errors.address && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.address.message}</p>}
@@ -147,7 +147,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                     type="checkbox"
                                     {...register('receive_sms')}
                                     disabled={isSubmitting}
-                                    className="checkbox checkbox-success checkbox-sm rounded-none border-stone-300"
+                                    className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
                                 />
                                 <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Send SMS notifications to this farmer</span>
                             </label>
@@ -158,7 +158,7 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                         type="checkbox"
                                         {...register('is_active')}
                                         disabled={isSubmitting}
-                                        className="checkbox checkbox-success checkbox-sm rounded-none border-stone-300"
+                                        className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
                                     />
                                     <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Farmer account is active and authorized</span>
                                 </label>
@@ -172,14 +172,14 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-50"
+                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <>

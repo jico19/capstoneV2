@@ -1,6 +1,48 @@
-import { useEffect, useState } from "react"
-import { useMap, MapPopup } from '../../../../components/ui/map'
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { useEffect, useState, useCallback, useTransition, useRef } from "react";
+import { useMap, MapPopup } from '../../../../components/ui/map';
+import { TrendingUp, TrendingDown, Minus, ArrowRight, Truck } from "lucide-react";
+
+/**
+ * Calculates the exact bounding box and centroid directly from GeoJSON coordinates,
+ * ensuring zooming and centering always accurately frames the polygon regardless of database fields.
+ */
+const getPolygonBoundsAndCenter = (geojson) => {
+    if (!geojson) return null;
+    let coords = [];
+    if (Array.isArray(geojson) && geojson.length > 0) {
+        if (Array.isArray(geojson[0]) && Array.isArray(geojson[0][0])) {
+            coords = geojson[0];
+        } else if (Array.isArray(geojson[0])) {
+            coords = geojson;
+        }
+    }
+    if (!coords.length) return null;
+
+    let minLng = Infinity;
+    let maxLng = -Infinity;
+    let minLat = Infinity;
+    let maxLat = -Infinity;
+
+    for (const pt of coords) {
+        if (Array.isArray(pt) && pt.length >= 2) {
+            const lng = Number(pt[0]);
+            const lat = Number(pt[1]);
+            if (!isNaN(lng) && !isNaN(lat)) {
+                if (lng < minLng) minLng = lng;
+                if (lng > maxLng) maxLng = lng;
+                if (lat < minLat) minLat = lat;
+                if (lat > maxLat) maxLat = lat;
+            }
+        }
+    }
+
+    if (minLng === Infinity || maxLng === -Infinity) return null;
+
+    return {
+        bounds: [[minLng, minLat], [maxLng, maxLat]],
+        center: [(minLng + maxLng) / 2, (minLat + maxLat) / 2]
+    };
+};
 
 const MapDataHandler = ({ 
     mapData, 
@@ -10,88 +52,86 @@ const MapDataHandler = ({
     setSelectedBarangay,
     isCompareMode = false,
     compareSurveyData = [],
-    compareYears = { baseline: '', target: '' }
+    compareYears = { baseline: '', target: '' },
+    activeMapLayer = 'density', // 'density' | 'transport' | 'growth'
+    transportVolumeData = []
 }) => {
     const { map, isLoaded } = useMap();
-    const [hoveredId, setHoveredId] = useState(null);
+    const [, startTransition] = useTransition();
+
+    // Synchronous refs to prevent stale closure race conditions in high-frequency mouse events
+    const hoveredIdRef = useRef(null);
+    const selectedIdRef = useRef(null);
+
     const [hoveredFeature, setHoveredFeature] = useState(null);
-    const [selectedId, setSelectedId] = useState(null);
     const [selectedField, setSelectedField] = useState(null);
 
-    // --- 1. SEARCH TRIGGER LOGIC ---
+    // --- 1. SEARCH OR EXTERNAL FOCUS TRIGGER (ACCURATE BOUNDS ZOOM) ---
     useEffect(() => {
-        if (!selectedBarangay || !isLoaded || !mapData || !map) return;
+        const sourceId = 'agri-fields';
 
-        const item = mapData.find(b => b.name === selectedBarangay);
-        const surveyRecord = surveyData?.find(s => s.barangay === selectedBarangay) || {};
-        const compareRecord = compareSurveyData?.find(s => s.barangay === selectedBarangay) || {};
+        if (!selectedBarangay) {
+            if (selectedIdRef.current !== null && map && isLoaded) {
+                try {
+                    map.setFeatureState({ source: sourceId, id: selectedIdRef.current }, { selected: false });
+                } catch {
+                    // map or source might be tearing down
+                }
+            }
+            selectedIdRef.current = null;
+            return;
+        }
+
+        if (!isLoaded || !mapData || !map) return;
+
+        const item = mapData.find(b => b.name.toLowerCase() === selectedBarangay.toLowerCase());
+        const surveyRecord = surveyData?.find(s => s.barangay.toLowerCase() === selectedBarangay.toLowerCase()) || {};
+        const compareRecord = compareSurveyData?.find(s => s.barangay.toLowerCase() === selectedBarangay.toLowerCase()) || {};
+        const transportRecord = transportVolumeData?.find(t => t.barangay.toLowerCase() === selectedBarangay.toLowerCase()) || {};
         
         if (item) {
             const breakdown = surveyRecord.breakdown || {};
             const compareBreakdown = compareRecord.breakdown || {};
-            const lng = Number(item.longitude);
-            const lat = Number(item.latitude);
             
-            map.easeTo({
-                center: [lng, lat],
-                zoom: 14,
-                duration: 800
-            });
+            // Accurately compute polygon bounds from GeoJSON rather than stored lat/lng
+            const geoInfo = getPolygonBoundsAndCenter(item.geojson);
+            const lng = geoInfo ? geoInfo.center[0] : Number(item.longitude);
+            const lat = geoInfo ? geoInfo.center[1] : Number(item.latitude);
+
+            if (geoInfo) {
+                map.fitBounds(geoInfo.bounds, {
+                    padding: 80,
+                    maxZoom: 14.2,
+                    duration: 850
+                });
+            } else if (!isNaN(lng) && !isNaN(lat)) {
+                map.easeTo({
+                    center: [lng, lat],
+                    zoom: 13.8,
+                    duration: 850
+                });
+            }
 
             const rafId = requestAnimationFrame(() => {
-                // Set selected feature state
-                if (selectedId !== null) {
-                    map.setFeatureState({ source: 'agri-fields', id: selectedId }, { selected: false });
+                if (selectedIdRef.current !== null && selectedIdRef.current !== item.id) {
+                    map.setFeatureState({ source: sourceId, id: selectedIdRef.current }, { selected: false });
                 }
-                setSelectedId(item.id);
-                map.setFeatureState({ source: 'agri-fields', id: item.id }, { selected: true });
+                selectedIdRef.current = item.id;
+                map.setFeatureState({ source: sourceId, id: item.id }, { selected: true });
 
                 setSelectedField({
                     id: item.id,
                     name: item.name,
                     density: surveyRecord.density_level || 'None',
-                    totalPigs: surveyRecord.total_pigs || 0,
-                    breakdown: breakdown,
-                    trend: surveyRecord.trend || 'stable',
-                    isPrediction: surveyRecord.is_prediction || false,
+                    totalPigs: Number(surveyRecord.total_pigs || 0),
+                    breakdown,
                     compareDensity: compareRecord.density_level || 'None',
-                    compareTotalPigs: compareRecord.total_pigs || 0,
-                    compareBreakdown: compareBreakdown,
-                    lng: lng,
-                    lat: lat
-                });
-
-                setSelectedBarangay(null);
-            });
-
-            return () => {
-                cancelAnimationFrame(rafId);
-            };
-        }
-    }, [selectedBarangay, isLoaded, mapData, map, setSelectedBarangay, surveyData, compareSurveyData, selectedId]);
-
-    // --- 1.1 DATA UPDATE LOGIC ---
-    useEffect(() => {
-        if (!selectedField || !surveyData) return;
-
-        const updatedRecord = surveyData.find(s => s.barangay === selectedField.name);
-        const compareRecord = compareSurveyData?.find(s => s.barangay === selectedField.name);
-
-        if (updatedRecord || compareRecord) {
-            const rafId = requestAnimationFrame(() => {
-                setSelectedField(prev => {
-                    if (!prev) return null;
-                    return {
-                        ...prev,
-                        density: updatedRecord?.density_level || prev?.density || 'None',
-                        totalPigs: updatedRecord?.total_pigs ?? prev?.totalPigs ?? 0,
-                        breakdown: updatedRecord?.breakdown || prev?.breakdown || {},
-                        trend: updatedRecord?.trend || prev?.trend || 'stable',
-                        isPrediction: updatedRecord?.is_prediction ?? prev?.isPrediction ?? false,
-                        compareDensity: compareRecord?.density_level || prev?.compareDensity || 'None',
-                        compareTotalPigs: compareRecord?.total_pigs ?? prev?.compareTotalPigs ?? 0,
-                        compareBreakdown: compareRecord?.breakdown || prev?.compareBreakdown || {},
-                    };
+                    compareTotalPigs: Number(compareRecord.total_pigs || 0),
+                    compareBreakdown,
+                    transportedPigs: Number(transportRecord.total_transported || 0),
+                    transportLevel: transportRecord.volume_level || 'Stable',
+                    lng,
+                    lat
                 });
             });
 
@@ -99,10 +139,9 @@ const MapDataHandler = ({
                 cancelAnimationFrame(rafId);
             };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [surveyData, compareSurveyData]);
+    }, [selectedBarangay, isLoaded, mapData, map, surveyData, compareSurveyData, transportVolumeData]);
 
-    // --- 2. SETUP SOURCE AND LAYERS ---
+    // --- 2. SETUP GEOJSON DATA SOURCE ---
     useEffect(() => {
         if (!map || !isLoaded || !mapData) return;
 
@@ -111,37 +150,48 @@ const MapDataHandler = ({
         const geojson = {
             type: 'FeatureCollection',
             features: mapData.map((item) => {
-                const surveyRecord = surveyData?.find(s => s.barangay === item.name) || {};
+                const surveyRecord = surveyData?.find(s => s.barangay.toLowerCase() === item.name.toLowerCase()) || {};
                 const density = surveyRecord.density_level || 'None';
-                const totalPigs = surveyRecord.total_pigs || 0;
+                const totalPigs = Number(surveyRecord.total_pigs || 0);
                 const breakdown = surveyRecord.breakdown || {};
-                const trend = surveyRecord.trend || 'stable';
-                const isPrediction = surveyRecord.is_prediction || false;
 
-                const compareRecord = compareSurveyData?.find(s => s.barangay === item.name) || {};
+                const compareRecord = compareSurveyData?.find(s => s.barangay.toLowerCase() === item.name.toLowerCase()) || {};
                 const compareDensity = compareRecord.density_level || 'None';
-                const compareTotalPigs = compareRecord.total_pigs || 0;
+                const compareTotalPigs = Number(compareRecord.total_pigs || 0);
                 const compareBreakdown = compareRecord.breakdown || {};
+
+                const transportRecord = transportVolumeData?.find(t => t.barangay.toLowerCase() === item.name.toLowerCase()) || {};
+                const transportedPigs = Number(transportRecord.total_transported || 0);
+                const transportLevel = transportRecord.volume_level || 'Stable';
+
+                const diff = totalPigs - compareTotalPigs;
+                let growthTier = 'stable';
+                if (diff > 50) growthTier = 'growth_high';
+                else if (diff > 0) growthTier = 'growth_mod';
+                else if (diff < -50) growthTier = 'drop_high';
+                else if (diff < 0) growthTier = 'drop_mod';
 
                 return {
                     type: 'Feature',
                     id: item.id,
                     properties: {
                         name: item.name,
-                        density: density,
-                        totalPigs: totalPigs,
+                        density,
+                        totalPigs,
                         breakdown: JSON.stringify(breakdown),
-                        trend: trend,
-                        isPrediction: isPrediction,
-                        compareDensity: compareDensity,
-                        compareTotalPigs: compareTotalPigs,
+                        compareDensity,
+                        compareTotalPigs,
                         compareBreakdown: JSON.stringify(compareBreakdown),
+                        transportedPigs,
+                        transportLevel,
+                        growthTier,
+                        diffPigs: diff,
                     },
                     geometry: {
                         type: 'Polygon',
                         coordinates: item.geojson
                     }
-                }
+                };
             })
         };
 
@@ -150,9 +200,10 @@ const MapDataHandler = ({
             map.addSource(sourceId, {
                 type: 'geojson',
                 data: geojson,
-                generateId: true
+                generateId: false
             });
 
+            // Base Fill Layer
             map.addLayer({
                 id: 'fields-fill',
                 type: 'fill',
@@ -161,23 +212,24 @@ const MapDataHandler = ({
                     'fill-opacity': [
                         'case',
                         ['boolean', ['feature-state', 'selected'], false],
-                        0.85,
+                        0.88,
                         ['boolean', ['feature-state', 'hover'], false],
-                        0.7, 
-                        0.4  
+                        0.75, 
+                        0.48  
                     ],
                     'fill-color': [
                         'match',
                         ['get', 'density'],
                         'Low', '#22c55e',       // Green
-                        'Medium', '#eab308',    // Yellow
-                        'High', '#ef4444',      // Red
-                        'Very High', '#ef4444', // Red
-                        '#808080'               // Fallback / None
+                        'Medium', '#eab308',    // Amber
+                        'High', '#f97316',      // Orange
+                        'Very High', '#dc2626', // Crimson Red
+                        '#94a3b8'               // Slate / None
                     ]
                 }
             });
 
+            // Boundary Outline Layer
             map.addLayer({
                 id: 'fields-outline',
                 type: 'line',
@@ -186,48 +238,102 @@ const MapDataHandler = ({
                     'line-color': [
                         'case',
                         ['boolean', ['feature-state', 'selected'], false],
-                        '#065f46',
+                        '#0f172a',
                         ['boolean', ['feature-state', 'hover'], false],
-                        '#111827',
-                        '#9ca3af'  
+                        '#1e293b',
+                        '#cbd5e1'  
                     ],
                     'line-width': [
                         'case',
                         ['boolean', ['feature-state', 'selected'], false],
-                        2.5,
+                        3,
                         ['boolean', ['feature-state', 'hover'], false],
-                        2,
-                        0.5
+                        2.2,
+                        0.8
                     ]
                 }
             });
         } else {
             existingSource.setData(geojson);
         }
-    }, [map, isLoaded, mapData, surveyData, compareSurveyData]);
+    }, [map, isLoaded, mapData, surveyData, compareSurveyData, transportVolumeData]);
 
-    // Update visibility based on filters
+    // --- 3. DYNAMIC COLOR LAYER SWITCHING (Density vs Transport vs Growth Delta) ---
     useEffect(() => {
         if (!map || !isLoaded || !map.getLayer('fields-fill')) return;
 
-        map.setFilter('fields-fill', [
-            'in',
-            ['get', 'density'],
-            ['literal', activeFilters]
-        ]);
-        
-        map.setFilter('fields-outline', [
-            'in',
-            ['get', 'density'],
-            ['literal', activeFilters]
-        ]);
-    }, [map, isLoaded, activeFilters]);
+        if (activeMapLayer === 'growth' && isCompareMode) {
+            map.setPaintProperty('fields-fill', 'fill-color', [
+                'match',
+                ['get', 'growthTier'],
+                'growth_high', '#059669', // Deep Emerald
+                'growth_mod', '#34d399',  // Mint Green
+                'stable', '#94a3b8',      // Slate Grey
+                'drop_mod', '#fb7185',    // Soft Coral
+                'drop_high', '#e11d48',   // Deep Crimson
+                '#94a3b8'
+            ]);
+        } else if (activeMapLayer === 'transport') {
+            map.setPaintProperty('fields-fill', 'fill-color', [
+                'match',
+                ['get', 'transportLevel'],
+                'Congested', '#7c3aed', // Purple
+                'Heavy', '#3b82f6',     // Blue
+                'Moderate', '#06b6d4',  // Cyan
+                'Light', '#10b981',     // Green
+                '#cbd5e1'               // None / Stable
+            ]);
+        } else {
+            map.setPaintProperty('fields-fill', 'fill-color', [
+                'match',
+                ['get', 'density'],
+                'Low', '#22c55e',
+                'Medium', '#eab308',
+                'High', '#f97316',
+                'Very High', '#dc2626',
+                '#94a3b8'
+            ]);
+        }
+    }, [map, isLoaded, activeMapLayer, isCompareMode]);
 
-    // --- 2. HANDLERS ---
+    // Update density visibility based on filter checkboxes
+    useEffect(() => {
+        if (!map || !isLoaded || !map.getLayer('fields-fill')) return;
+
+        if (activeMapLayer === 'density') {
+            map.setFilter('fields-fill', [
+                'in',
+                ['get', 'density'],
+                ['literal', activeFilters]
+            ]);
+            map.setFilter('fields-outline', [
+                'in',
+                ['get', 'density'],
+                ['literal', activeFilters]
+            ]);
+        } else {
+            map.setFilter('fields-fill', null);
+            map.setFilter('fields-outline', null);
+        }
+    }, [map, isLoaded, activeFilters, activeMapLayer]);
+
+    // --- 4. MAP INTERACTION EVENTS (SYNCHRONOUS REF TRACKING) ---
     useEffect(() => {
         if (!map || !isLoaded) return;
 
         const sourceId = 'agri-fields';
+
+        const clearHoverState = () => {
+            if (hoveredIdRef.current !== null) {
+                try {
+                    map.setFeatureState({ source: sourceId, id: hoveredIdRef.current }, { hover: false });
+                } catch {
+                    // Safe guard during layer unmount
+                }
+                hoveredIdRef.current = null;
+            }
+            setHoveredFeature(null);
+        };
 
         const onMouseMove = (e) => {
             if (e.features && e.features.length > 0) {
@@ -235,18 +341,21 @@ const MapDataHandler = ({
                 const feature = e.features[0];
                 const newHoveredId = feature.id;
 
-                if (hoveredId !== null && hoveredId !== newHoveredId) {
-                    map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
+                // Synchronously clear previous hover state
+                if (hoveredIdRef.current !== null && hoveredIdRef.current !== newHoveredId) {
+                    map.setFeatureState({ source: sourceId, id: hoveredIdRef.current }, { hover: false });
                 }
 
-                setHoveredId(newHoveredId);
+                hoveredIdRef.current = newHoveredId;
                 map.setFeatureState({ source: sourceId, id: newHoveredId }, { hover: true });
 
                 setHoveredFeature({
                     id: newHoveredId,
                     name: feature.properties.name,
-                    totalPigs: feature.properties.totalPigs,
+                    totalPigs: Number(feature.properties.totalPigs || 0),
                     density: feature.properties.density,
+                    diffPigs: Number(feature.properties.diffPigs || 0),
+                    transportedPigs: Number(feature.properties.transportedPigs || 0),
                     x: e.point.x,
                     y: e.point.y
                 });
@@ -255,252 +364,249 @@ const MapDataHandler = ({
 
         const onMouseLeave = () => {
             map.getCanvas().style.cursor = '';
-            if (hoveredId !== null) {
-                map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
-            }
-            setHoveredId(null);
-            setHoveredFeature(null);
+            clearHoverState();
+        };
+
+        const onCanvasMouseLeave = () => {
+            map.getCanvas().style.cursor = '';
+            clearHoverState();
         };
 
         const onClick = (e) => {
-            const feature = e.features[0];
+            if (e.originalEvent) {
+                e.originalEvent._polygonClicked = true;
+            }
+            const feature = e.features && e.features[0];
             if (feature) {
-                const sourceId = 'agri-fields';
-                if (selectedId !== null) {
-                    map.setFeatureState({ source: sourceId, id: selectedId }, { selected: false });
+                const bName = feature.properties.name;
+                const item = mapData?.find(b => b.name.toLowerCase() === bName.toLowerCase());
+
+                if (selectedIdRef.current !== null && selectedIdRef.current !== feature.id) {
+                    map.setFeatureState({ source: sourceId, id: selectedIdRef.current }, { selected: false });
                 }
 
-                const newId = feature.id;
-                setSelectedId(newId);
-                map.setFeatureState({ source: sourceId, id: newId }, { selected: true });
+                selectedIdRef.current = feature.id;
+                map.setFeatureState({ source: sourceId, id: feature.id }, { selected: true });
 
-                setSelectedField(null);
                 const breakdown = JSON.parse(feature.properties.breakdown || '{}');
                 const compareBreakdown = JSON.parse(feature.properties.compareBreakdown || '{}');
-                
-                setTimeout(() => {
+
+                // Smoothly frame the clicked polygon using its true GeoJSON bounds
+                const geoInfo = item ? getPolygonBoundsAndCenter(item.geojson) : null;
+                if (geoInfo) {
+                    map.fitBounds(geoInfo.bounds, {
+                        padding: 80,
+                        maxZoom: 14.2,
+                        duration: 850
+                    });
+                }
+
+                if (setSelectedBarangay) {
+                    setSelectedBarangay(bName);
+                }
+
+                startTransition(() => {
                     setSelectedField({
-                        id: newId,
-                        name: feature.properties.name,
+                        id: feature.id,
+                        name: bName,
                         density: feature.properties.density,
-                        totalPigs: feature.properties.totalPigs,
-                        breakdown: breakdown,
-                        trend: feature.properties.trend,
-                        isPrediction: feature.properties.isPrediction,
+                        totalPigs: Number(feature.properties.totalPigs || 0),
+                        breakdown,
                         compareDensity: feature.properties.compareDensity,
-                        compareTotalPigs: feature.properties.compareTotalPigs,
-                        compareBreakdown: compareBreakdown,
+                        compareTotalPigs: Number(feature.properties.compareTotalPigs || 0),
+                        compareBreakdown,
+                        transportedPigs: Number(feature.properties.transportedPigs || 0),
+                        transportLevel: feature.properties.transportLevel,
+                        diffPigs: Number(feature.properties.diffPigs || 0),
                         lng: e.lngLat.lng,
                         lat: e.lngLat.lat
                     });
-                }, 0);
+                });
             }
         };
+
+        const onMapClick = (e) => {
+            // If the click originated from a polygon feature, skip deselecting
+            if (e.originalEvent?._polygonClicked) return;
+
+            // Deselect when clicking outside any polygon on the map canvas
+            if (selectedIdRef.current !== null) {
+                try {
+                    map.setFeatureState({ source: sourceId, id: selectedIdRef.current }, { selected: false });
+                } catch {
+                    // Safe guard
+                }
+            }
+            selectedIdRef.current = null;
+            setSelectedField(null);
+            if (setSelectedBarangay) {
+                setSelectedBarangay(null);
+            }
+        };
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (selectedIdRef.current !== null) {
+                    try {
+                        map.setFeatureState({ source: sourceId, id: selectedIdRef.current }, { selected: false });
+                    } catch {
+                        // Safe guard
+                    }
+                }
+                selectedIdRef.current = null;
+                setSelectedField(null);
+                if (setSelectedBarangay) {
+                    setSelectedBarangay(null);
+                }
+            }
+        };
+
+        const canvas = map.getCanvas();
+        window.addEventListener('keydown', onKeyDown);
+        if (canvas) {
+            canvas.addEventListener('mouseleave', onCanvasMouseLeave);
+        }
 
         map.on('mousemove', 'fields-fill', onMouseMove);
         map.on('mouseleave', 'fields-fill', onMouseLeave);
         map.on('click', 'fields-fill', onClick);
+        map.on('click', onMapClick);
 
         return () => {
+            clearHoverState();
+            window.removeEventListener('keydown', onKeyDown);
+            if (canvas) {
+                canvas.removeEventListener('mouseleave', onCanvasMouseLeave);
+            }
             map.off('mousemove', 'fields-fill', onMouseMove);
             map.off('mouseleave', 'fields-fill', onMouseLeave);
             map.off('click', 'fields-fill', onClick);
+            map.off('click', onMapClick);
         };
-    }, [map, isLoaded, hoveredId, selectedId]);
+    }, [map, isLoaded, setSelectedBarangay, mapData]);
 
-
-    // Calculate plain-English comparison popover when a barangay is clicked
-    const renderComparisonPopup = () => {
-        const targetPigs = Number(selectedField.totalPigs || 0);
-        const basePigs = Number(selectedField.compareTotalPigs || 0);
-        const diff = targetPigs - basePigs;
-        const pct = basePigs > 0 
-            ? Math.abs(((diff / basePigs) * 100)).toFixed(1) 
-            : (diff > 0 ? '100' : '0.0');
-
-        const stageLabels = {
-            fattener: { label: 'Market Fatteners' },
-            grower: { label: 'Growing Pigs' },
-            starter: { label: 'Piglets / Starters' },
-            inahin: { label: 'Breeding Sows' },
-            barako: { label: 'Breeding Boars' },
-            bulaw: { label: 'Bulaw Pigs' }
-        };
-
-        const allKeys = Array.from(new Set([
-            ...Object.keys(selectedField.compareBreakdown || {}),
-            ...Object.keys(selectedField.breakdown || {})
-        ]));
-
-        return (
-            <div className="w-68 bg-white border border-stone-200 rounded-none shadow-2xl overflow-hidden font-sans p-3.5 space-y-2.5">
-                {/* Header */}
-                <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
-                    <div>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Barangay Comparison</p>
-                        <h3 className="text-sm font-black text-stone-900 tracking-tight uppercase truncate">
-                            {selectedField.name}
-                        </h3>
-                    </div>
-                    {/* Status Badge */}
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[9px] font-black uppercase tracking-wider rounded-none shrink-0 ${
-                        diff > 0 
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                            : diff < 0 
-                                ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                : 'bg-stone-100 text-stone-700 border-stone-200'
-                    }`}>
-                        {diff > 0 && <TrendingUp size={11} />}
-                        {diff < 0 && <TrendingDown size={11} />}
-                        {diff === 0 && <Minus size={11} />}
-                        {diff > 0 ? `+${diff} (+${pct}%)` : diff < 0 ? `-${Math.abs(diff)} (-${pct}%)` : 'Steady'}
-                    </span>
-                </div>
-
-                {/* Plain-English Story Line */}
-                <div className="bg-stone-50 p-2 border border-stone-200/80 space-y-1">
-                    <p className="text-[10px] text-stone-700 font-medium leading-relaxed">
-                        {diff > 0 
-                            ? `Grew from ${basePigs.toLocaleString()} pigs (${compareYears.baseline || 'Base'}) to ${targetPigs.toLocaleString()} pigs (${compareYears.target || 'Target'}).`
-                            : diff < 0 
-                                ? `Decreased from ${basePigs.toLocaleString()} pigs (${compareYears.baseline || 'Base'}) down to ${targetPigs.toLocaleString()} pigs (${compareYears.target || 'Target'}).`
-                                : `Maintained steady count at ${targetPigs.toLocaleString()} pigs across both years.`
-                        }
-                    </p>
-                </div>
-
-                {/* Stage Breakdown by Category */}
-                {allKeys.length > 0 && (
-                    <div className="space-y-1.5 pt-1 border-t border-stone-100">
-                        <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest block">
-                            Stage Shifts (Pigs Added / Reduced)
-                        </span>
-                        <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
-                            {allKeys.map(key => {
-                                const bVal = Number(selectedField.compareBreakdown?.[key] || 0);
-                                const tVal = Number(selectedField.breakdown?.[key] || 0);
-                                const stageDiff = tVal - bVal;
-                                const stageInfo = stageLabels[key.toLowerCase()] || { label: key.replace('_', ' ') };
-
-                                return (
-                                    <div key={key} className="bg-white p-1.5 border border-stone-200 text-[9px] flex flex-col justify-between">
-                                        <span className="text-stone-600 truncate font-semibold capitalize text-[9px]">
-                                            {stageInfo.label}
-                                        </span>
-                                        <div className="flex justify-between items-center mt-1 pt-1 border-t border-stone-100">
-                                            <span className="text-stone-400 font-mono text-[8px]">{bVal} ➔ {tVal}</span>
-                                            <span className={`font-bold font-mono text-[9px] ${
-                                                stageDiff > 0 ? 'text-emerald-700' : stageDiff < 0 ? 'text-rose-700' : 'text-stone-400'
-                                            }`}>
-                                                {stageDiff > 0 ? `+${stageDiff}` : stageDiff}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const handleClosePopup = () => {
-        if (selectedId !== null && map) {
-            map.setFeatureState({ source: 'agri-fields', id: selectedId }, { selected: false });
+    const handleClosePopup = useCallback(() => {
+        if (selectedIdRef.current !== null && map) {
+            try {
+                map.setFeatureState({ source: 'agri-fields', id: selectedIdRef.current }, { selected: false });
+            } catch {
+                // Safe guard
+            }
         }
-        setSelectedId(null);
+        selectedIdRef.current = null;
         setSelectedField(null);
-    };
+    }, [map]);
 
     return (
         <>
-            {/* Instant Floating Cursor HUD Tooltip */}
+            {/* Quick Floating Cursor HUD Tooltip */}
             {hoveredFeature && !selectedField && (
                 <div 
-                    className="pointer-events-none absolute z-[1500] bg-stone-900/95 backdrop-blur-sm text-white px-3 py-1.5 border border-stone-700 shadow-2xl rounded-none flex items-center gap-2 transform -translate-x-1/2 -translate-y-full mb-2 animate-in fade-in zoom-in-95 duration-75 font-sans"
+                    className="pointer-events-none absolute z-[1500] bg-stone-900 text-white px-2.5 py-1 rounded-lg border border-stone-800 shadow-xs flex items-center gap-2 transform -translate-x-1/2 -translate-y-full mb-3 font-sans"
                     style={{ left: `${hoveredFeature.x}px`, top: `${hoveredFeature.y - 8}px` }}
                 >
                     <span 
-                        className="w-1.5 h-1.5 rounded-full shrink-0" 
+                        className="w-2 h-2 rounded-full shrink-0" 
                         style={{ 
-                            backgroundColor: hoveredFeature.density === 'Low' 
-                                ? '#22c55e' 
-                                : hoveredFeature.density === 'Medium' 
-                                    ? '#eab308' 
-                                    : hoveredFeature.density === 'None' 
-                                        ? '#9ca3af' 
-                                        : '#ef4444' 
+                            backgroundColor: activeMapLayer === 'growth'
+                                ? (hoveredFeature.diffPigs > 0 ? '#10b981' : hoveredFeature.diffPigs < 0 ? '#f43f5e' : '#94a3b8')
+                                : activeMapLayer === 'transport'
+                                    ? (hoveredFeature.transportedPigs > 0 ? '#3b82f6' : '#94a3b8')
+                                    : (hoveredFeature.density === 'Low' ? '#22c55e' : hoveredFeature.density === 'Medium' ? '#eab308' : hoveredFeature.density === 'High' ? '#f97316' : hoveredFeature.density === 'Very High' ? '#dc2626' : '#94a3b8')
                         }} 
                     />
-                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-100">
+                    <span className="text-xs font-bold text-white tracking-tight">
                         {hoveredFeature.name}
                     </span>
-                    <span className="text-stone-600 text-[10px] font-bold">•</span>
-                    <span className="text-[10px] font-mono font-bold text-emerald-400">
-                        {Number(hoveredFeature.totalPigs || 0).toLocaleString()} Pigs
+                    <span className="text-stone-500 text-xs">•</span>
+                    <span className="text-xs font-mono font-bold text-green-400">
+                        {activeMapLayer === 'growth' && isCompareMode
+                            ? `${hoveredFeature.diffPigs > 0 ? '+' : ''}${hoveredFeature.diffPigs} pigs`
+                            : activeMapLayer === 'transport'
+                                ? `${hoveredFeature.transportedPigs.toLocaleString()} shipped`
+                                : `${hoveredFeature.totalPigs.toLocaleString()} pigs`
+                        }
                     </span>
                 </div>
             )}
 
-            {/* Selected Barangay Popover */}
-            {selectedField && (
-                <MapPopup
-                    key={`${selectedField.lng}-${selectedField.lat}`}
-                    latitude={selectedField.lat}
-                    longitude={selectedField.lng}
-                    onClose={handleClosePopup}
-                    closeOnClick={true}
-                    className="p-0 border-none shadow-none"
-                >
-                    {isCompareMode ? (
-                        renderComparisonPopup()
-                    ) : (
-                        <div className="w-52 bg-white border border-stone-200 rounded-none shadow-2xl overflow-hidden font-sans p-3 space-y-2">
-                            {/* Header */}
-                            <div className="flex items-center justify-between gap-1.5 border-b border-stone-100 pb-1.5">
-                                <h3 className="text-xs font-black text-stone-900 tracking-tight uppercase truncate">
-                                    {selectedField.name}
-                                </h3>
-                                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 border text-[8px] font-black uppercase tracking-wider rounded-none shrink-0 ${
-                                    selectedField.density === 'Low' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                                    selectedField.density === 'Medium' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                                    selectedField.density === 'None' ? 'bg-stone-50 text-stone-600 border-stone-200' :
-                                    'bg-rose-50 text-rose-800 border-rose-200'
-                                }`}>
-                                    {selectedField.density}
+            {/* Interactive Selected Barangay Popover */}
+            {(() => {
+                const activePopupField = (selectedBarangay && selectedField && selectedBarangay.toLowerCase() === selectedField.name.toLowerCase()) 
+                    ? selectedField 
+                    : null;
+                if (!activePopupField) return null;
+
+                return (
+                    <MapPopup
+                        key={`${activePopupField.lng}-${activePopupField.lat}`}
+                        latitude={activePopupField.lat}
+                        longitude={activePopupField.lng}
+                        onClose={handleClosePopup}
+                        closeOnClick={true}
+                        className="p-0 border-none shadow-none"
+                    >
+                        <div className="w-64 bg-white rounded-xl border border-stone-200 overflow-hidden font-sans p-3.5 space-y-2.5 shadow-md">
+                            <div className="flex items-center justify-between gap-2 border-b border-stone-200 pb-2">
+                                <div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 block">
+                                        Barangay
+                                    </span>
+                                    <h3 className="text-sm font-black uppercase tracking-tight text-stone-800 leading-tight">
+                                        {activePopupField.name}
+                                    </h3>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-700 border border-green-600/40 shrink-0">
+                                    {activePopupField.density}
                                 </span>
                             </div>
 
-                            {/* Total Headcount Bar */}
-                            <div className="flex items-baseline justify-between bg-stone-50 p-1.5 border border-stone-100">
-                                <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest">
-                                    Total Swine
-                                </span>
-                                <span className="text-sm font-black text-stone-900 font-mono">
-                                    {Number(selectedField.totalPigs || 0).toLocaleString()} <span className="text-[8px] font-normal text-stone-500 font-sans">pigs</span>
-                                </span>
+                            {/* Headcount Metrics Card */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-stone-50 p-2 rounded-lg border border-stone-200">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 block">Total Swine</span>
+                                    <span className="text-sm font-black text-stone-800 font-mono">
+                                        {activePopupField.totalPigs.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className="bg-stone-50 p-2 rounded-lg border border-stone-200">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 block">Outbound</span>
+                                    <span className="text-sm font-black text-sky-700 font-mono flex items-center gap-1">
+                                        <Truck size={12} />
+                                        {activePopupField.transportedPigs.toLocaleString()}
+                                    </span>
+                                </div>
                             </div>
 
-                            {/* Compact 2-Column Mini Grid for Stages */}
-                            {Object.keys(selectedField.breakdown || {}).length > 0 && (
-                                <div className="grid grid-cols-2 gap-1 pt-1 text-[9px] border-t border-stone-100">
-                                    {Object.entries(selectedField.breakdown || {}).map(([key, value]) => (
-                                        <div key={key} className="flex justify-between items-center bg-stone-50/70 px-1.5 py-0.5 border border-stone-200/50">
-                                            <span className="text-stone-500 truncate capitalize font-medium mr-1 text-[8px]">
-                                                {key.replace('_', ' ')}
-                                            </span>
-                                            <span className="font-bold font-mono text-stone-800 text-[9px]">
-                                                {Number(value).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    ))}
+                            {/* Compare Mode Differential */}
+                            {isCompareMode && (
+                                <div className="p-2 bg-stone-50 rounded-lg border border-stone-200 flex items-center justify-between text-xs">
+                                    <span className="text-[10px] font-medium text-stone-600">
+                                        {compareYears.baseline} ➔ {compareYears.target}:
+                                    </span>
+                                    <span className={`font-mono font-bold inline-flex items-center gap-0.5 ${
+                                        activePopupField.diffPigs > 0 ? 'text-green-700' : activePopupField.diffPigs < 0 ? 'text-red-700' : 'text-stone-500'
+                                    }`}>
+                                        {activePopupField.diffPigs > 0 && <TrendingUp size={12} />}
+                                        {activePopupField.diffPigs < 0 && <TrendingDown size={12} />}
+                                        {activePopupField.diffPigs === 0 && <Minus size={12} />}
+                                        {activePopupField.diffPigs > 0 ? `+${activePopupField.diffPigs}` : activePopupField.diffPigs}
+                                    </span>
                                 </div>
                             )}
+
+                            <div className="pt-1 border-t border-stone-200 flex items-center justify-between">
+                                <p className="text-[10px] text-stone-500 font-medium">
+                                    Selected in inspector dossier
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-green-700 flex items-center gap-0.5">
+                                    Active <ArrowRight size={10} />
+                                </span>
+                            </div>
                         </div>
-                    )}
-                </MapPopup>
-            )}
+                    </MapPopup>
+                );
+            })()}
         </>
     );
 };

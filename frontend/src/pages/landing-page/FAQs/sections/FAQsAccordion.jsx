@@ -82,32 +82,28 @@ const CATEGORIES = [
 
 function AccordionItem({ item, isOpen, onToggle }) {
   return (
-    <div className={`bg-white border rounded-xl overflow-hidden box-border transition-[border-color,box-shadow] duration-[250ms]
-      ${isOpen ? "border-brand-primary-mid shadow-[0_0.25rem_1rem_rgba(10,42,26,0.07)]" : "border-[#e2ece6]"}`}>
+    <div className={`bg-white border rounded-lg transition-colors duration-150 overflow-hidden
+      ${isOpen ? "border-green-700" : "border-stone-200"}`}>
 
       <button onClick={onToggle}
         className={`w-full flex items-center justify-between gap-4 px-5 py-4 bg-transparent border-none cursor-pointer text-left
-          font-jakarta text-[clamp(0.88rem,1.2vw,1.1rem)] font-semibold transition-colors duration-200 box-border
-          ${isOpen ? "text-brand-primary-mid" : "text-brand-primary"}`}>
+          font-jakarta text-sm sm:text-base font-semibold transition-colors duration-150 box-border
+          ${isOpen ? "text-green-800" : "text-stone-900"}`}>
         <span>{item.q}</span>
 
         {/* +/× icon */}
-        <div className={`w-[1.6rem] h-[1.6rem] rounded-full flex items-center justify-center shrink-0 relative
-          transition-[background,transform] duration-300
-          ${isOpen ? "bg-brand-primary rotate-45" : "bg-brand-primary-mid"}`}>
-          {/* horizontal bar */}
-          <span className="absolute w-[0.7rem] h-[0.12rem] bg-white rounded-sm" />
-          {/* vertical bar */}
-          <span className="absolute w-[0.12rem] h-[0.7rem] bg-white rounded-sm" />
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 relative transition-transform duration-200
+          ${isOpen ? "rotate-45 bg-green-50 text-green-800" : "bg-stone-100 text-stone-500"}`}>
+          <span className="text-base leading-none font-medium">+</span>
         </div>
       </button>
 
       {/* Animated answer */}
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+      <div className={`grid transition-[grid-template-rows] duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="overflow-hidden">
-          <div className="px-5 pb-5 border-t border-[#e2ece6]">
+          <div className="px-5 pb-5 pt-1 border-t border-stone-100">
             {item.a.split("\n").filter(l => l.trim()).map((line, i) => (
-              <p key={i} className="font-jakarta text-[clamp(0.85rem,1.2vw,1rem)] text-[#555] leading-[1.8] mt-2.5 mb-0">{line}</p>
+              <p key={i} className="font-jakarta text-xs sm:text-sm text-stone-600 leading-relaxed mt-2 mb-0">{line}</p>
             ))}
           </div>
         </div>
@@ -133,8 +129,9 @@ function Category({ cat }) {
 
   return (
     <div ref={ref} className="reveal-block">
-      <h2 className="font-archivo text-[clamp(1.15rem,2vw,2rem)] text-brand-primary tracking-[-0.01em] mb-3 pb-[0.65rem] border-b-2 border-brand-primary-mid">
-        {cat.title}
+      <h2 className="font-archivo text-xl sm:text-2xl font-bold text-stone-900 tracking-tight mb-3 pb-2 border-b border-stone-200 flex items-center justify-between">
+        <span>{cat.title}</span>
+        <span className="text-xs font-jakarta font-normal text-stone-500">{cat.items.length} questions</span>
       </h2>
       <div className="flex flex-col gap-2">
         {cat.items.map((item, i) => (

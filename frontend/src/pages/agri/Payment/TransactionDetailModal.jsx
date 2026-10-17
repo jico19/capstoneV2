@@ -23,27 +23,27 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
     const m = (method || "").toLowerCase();
     if (m === "qrph") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md">
           <QrCode size={13} /> QR Ph (Local Cash Merchant)
         </span>
       );
     }
     if (m === "gcash") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-blue-100 text-blue-900 border border-blue-300">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-blue-100 text-blue-900 border border-blue-300 rounded-md">
           <CreditCard size={13} /> GCash E-Wallet
         </span>
       );
     }
     if (m === "card") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-300">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-300 rounded-md">
           <CreditCard size={13} /> Debit / Credit Card
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-stone-100 text-stone-900 border border-stone-300">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black uppercase tracking-wider bg-stone-100 text-stone-900 border border-stone-300 rounded-md">
         <CreditCard size={13} /> {method || "Direct / Cash"}
       </span>
     );
@@ -54,12 +54,12 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white border-2 border-stone-800 w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white border border-stone-200 rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
         {/* Header */}
         <div className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between border-b border-stone-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-stone-800 border border-stone-700 text-green-400">
+            <div className="p-2 bg-stone-800 border border-stone-700 rounded-lg text-green-400">
               <Receipt size={20} />
             </div>
             <div>
@@ -67,7 +67,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                   Transaction Audit Slip
                 </span>
-                <span className="text-[10px] font-mono bg-stone-800 text-green-400 px-1.5 py-0.5 border border-stone-700">
+                <span className="text-[10px] font-mono bg-stone-800 text-green-400 px-1.5 py-0.5 rounded-md border border-stone-700">
                   #TRX-{transaction.id}
                 </span>
               </div>
@@ -78,7 +78,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-white p-1 transition-colors"
+            className="text-stone-400 hover:text-white p-1 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
@@ -87,7 +87,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
         {/* Modal Body */}
         <div className="p-6 space-y-6 overflow-y-auto print:p-0">
           {/* LGU Receipt Banner */}
-          <div className="border border-stone-200 bg-stone-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="border border-stone-200 bg-stone-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                 LGU Official Receipt (OR) Number
@@ -102,12 +102,12 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
 
             <div className="flex items-center gap-2">
               {isCleared ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-900 border border-green-300 text-xs font-black uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-900 border border-green-300 rounded-md text-xs font-black uppercase tracking-wider">
                   <CheckCircle2 size={14} className="text-green-700" />
                   Cleared & Remitted
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-xs font-black uppercase tracking-wider">
                   <Clock size={14} className="text-amber-700" />
                   Payment Pending
                 </div>
@@ -118,7 +118,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
           {/* Core Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Payer Info */}
-            <div className="bg-white border border-stone-200 p-4 space-y-3">
+            <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-3">
               <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 flex items-center gap-1">
                 <User size={12} /> Payer Information
               </span>
@@ -135,7 +135,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
             </div>
 
             {/* Associated Permit */}
-            <div className="bg-white border border-stone-200 p-4 space-y-3">
+            <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-3">
               <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 flex items-center gap-1">
                 <FileText size={12} /> Transport Permit Link
               </span>
@@ -159,7 +159,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
           </div>
 
           {/* Financial Breakdown Table */}
-          <div className="border border-stone-200">
+          <div className="border border-stone-200 rounded-lg overflow-hidden">
             <div className="bg-stone-100 px-4 py-2 border-b border-stone-200 flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-stone-700">
                 Regulatory Fee Itemization
@@ -179,7 +179,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
                   ₱{((transaction.amount || 150) - 100 > 0 ? (transaction.amount - 100) : 50).toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between py-2.5 px-2 bg-stone-50 border-t-2 border-stone-300 font-bold">
+              <div className="flex justify-between py-2.5 px-2 bg-stone-50 border-t border-stone-200 font-bold">
                 <span className="text-xs font-black uppercase text-stone-800">Total Remitted Amount</span>
                 <span className="text-base font-mono font-black text-green-800">
                   ₱{(transaction.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -189,7 +189,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
           </div>
 
           {/* Payment Gateway Audit Metadata */}
-          <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
+          <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 space-y-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
               <ShieldCheck size={13} className="text-green-700" /> Payment Gateway Audit Metadata
             </span>
@@ -207,7 +207,7 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
               {transaction.paymongo_session_id && (
                 <div className="sm:col-span-2">
                   <span className="text-[10px] font-bold text-stone-400 uppercase">PayMongo Session ID</span>
-                  <p className="font-mono text-[11px] text-stone-600 break-all bg-white border border-stone-200 p-1.5 mt-0.5">
+                  <p className="font-mono text-[11px] text-stone-600 break-all bg-white border border-stone-200 rounded-md p-1.5 mt-0.5">
                     {transaction.paymongo_session_id}
                   </p>
                 </div>
@@ -221,14 +221,14 @@ const TransactionDetailModal = ({ isOpen, onClose, transaction }) => {
           <button
             type="button"
             onClick={handlePrint}
-            className="px-4 py-2 bg-white border border-stone-300 text-stone-700 text-xs font-bold uppercase tracking-wider hover:bg-stone-50 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2 bg-white border border-stone-300 text-stone-700 text-xs font-bold uppercase tracking-wider hover:bg-stone-50 rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
           >
             <Printer size={14} /> Print Audit Slip
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider transition-colors"
+            className="px-6 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-xs transition-colors"
           >
             Close
           </button>

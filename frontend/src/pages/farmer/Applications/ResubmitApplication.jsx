@@ -220,27 +220,27 @@ const ResubmitApplication = () => {
     };
 
     return (
-        <div className="flex-1 max-w-3xl mx-auto p-4 sm:p-6 md:p-12 space-y-8 bg-white min-h-full">
+        <div className="flex-1 max-w-3xl mx-auto p-3 sm:p-6 md:p-10 space-y-6 sm:space-y-8 bg-white min-h-full">
             <div className="space-y-4">
                 <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700 mb-1">Corrective Action</p>
-                    <h1 className="text-2xl sm:text-3xl font-black text-stone-800 tracking-tight uppercase leading-none">Resubmit Request</h1>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-800 tracking-tight uppercase leading-none">Resubmit Request</h1>
                 </div>
-                <p className="text-stone-500 font-medium text-sm sm:text-base max-w-xl">
+                <p className="text-stone-500 font-medium text-xs sm:text-sm md:text-base max-w-xl">
                     Update the necessary fields or documents to comply with the requirements. Previously uploaded documents are pre-filled so you don't need to upload them again unless you want to replace them.
                 </p>
 
                 {/* Progress Tracker */}
-                <div className="pt-4">
+                <div className="pt-2 sm:pt-4">
                     {/* Mobile-only Progress Indicator */}
-                    <div className="md:hidden space-y-2">
+                    <div className="md:hidden space-y-1.5">
                         <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
                             <span>Step {step} of 3</span>
                             <span className="text-green-700">
                                 {step === 1 ? "Travel Details" : step === 2 ? "Attach Files" : "Review & Send"}
                             </span>
                         </div>
-                        <div className="w-full bg-stone-100 h-2 border border-stone-200">
+                        <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200">
                             <div 
                                 className="bg-green-700 h-full transition-all duration-300 ease-out" 
                                 style={{ width: `${(step / 3) * 100}%` }}

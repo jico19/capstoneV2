@@ -128,7 +128,7 @@ const AgriReportsPage = () => {
             </div>
 
             {/* Date Range Filter */}
-            <div className="bg-white border border-stone-200 p-6 space-y-4">
+            <div className="bg-white border border-stone-200 rounded-xl shadow-xs p-6 space-y-4">
                 <div className="flex items-center gap-3">
                     <Calendar size={16} className="text-stone-400" />
                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-600">Reporting Period</p>
@@ -145,7 +145,7 @@ const AgriReportsPage = () => {
                             value={startDate}
                             max={endDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="w-full border border-stone-200 bg-white px-3 py-2 text-sm font-mono font-bold text-stone-800 focus:outline-none focus:border-green-700"
+                            className="w-full border border-stone-200 bg-white px-3 py-2 text-sm font-mono font-bold text-stone-800 rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
                         />
                     </div>
                     <div className="space-y-1 flex-1">
@@ -158,7 +158,7 @@ const AgriReportsPage = () => {
                             value={endDate}
                             min={startDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="w-full border border-stone-200 bg-white px-3 py-2 text-sm font-mono font-bold text-stone-800 focus:outline-none focus:border-green-700"
+                            className="w-full border border-stone-200 bg-white px-3 py-2 text-sm font-mono font-bold text-stone-800 rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
                         />
                     </div>
 
@@ -180,12 +180,12 @@ const AgriReportsPage = () => {
                     return (
                         <div
                             key={report.id}
-                            className="bg-white border border-stone-200 flex flex-col group"
+                            className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden flex flex-col group"
                         >
                             {/* Card Body */}
                             <div className="p-8 space-y-4 flex-1">
                                 <div className="flex items-start justify-between">
-                                    <div className={`p-4 bg-stone-50 border border-stone-100 text-stone-400 transition-colors duration-200 ${report.bgColor}`}>
+                                    <div className={`p-4 bg-stone-50 border border-stone-100 rounded-lg text-stone-400 transition-colors duration-200 ${report.bgColor}`}>
                                         <report.icon size={24} />
                                     </div>
                                     <span className="text-[9px] font-black text-stone-300 uppercase tracking-[0.2em]">
@@ -216,7 +216,7 @@ const AgriReportsPage = () => {
                                     type="button"
                                     disabled={startDate > endDate}
                                     onClick={() => setSelectedReportForDraft(report)}
-                                    className="w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className="w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     <Sparkles size={14} className="text-green-400" />
                                     Customize & Draft Report

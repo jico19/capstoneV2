@@ -25,7 +25,7 @@ export default function LandingButton({
         borderColor: baseColor,
         ...style,
       }}
-      className="relative w-full h-[42px] cursor-pointer select-none rounded-md border border-stone-200 px-4 py-2 font-jakarta text-[14px] font-semibold transition-colors duration-150 hover:opacity-90 active:opacity-100 flex items-center justify-center shadow-xs"
+      className="relative w-full h-[38px] cursor-pointer select-none rounded-md border px-4 py-1.5 font-jakarta text-[13.5px] font-semibold transition-colors duration-150 hover:opacity-90 active:opacity-100 flex items-center justify-center shadow-none"
       onClick={handleClick}
     >
       <span>{label}</span>

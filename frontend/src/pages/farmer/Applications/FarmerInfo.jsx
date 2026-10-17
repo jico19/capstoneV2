@@ -57,13 +57,13 @@ const Stepper = ({ fieldName, watch, setValue }) => {
     };
 
     return (
-        <div className="flex items-center justify-between border border-stone-200 bg-white select-none h-9 w-[110px] sm:w-[130px] rounded-none shrink-0">
+        <div className="flex items-center justify-between border border-stone-200 bg-white select-none h-8 sm:h-9 w-[100px] sm:w-[130px] rounded-md shrink-0 overflow-hidden">
             <button
                 type="button"
                 onClick={handleDecrement}
                 aria-label="Decrease quantity"
                 disabled={displayVal <= 0}
-                className="w-8 h-full flex items-center justify-center bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 font-bold text-base transition-colors border-r border-stone-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-none shrink-0"
+                className="w-7 sm:w-8 h-full flex items-center justify-center bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 font-bold text-sm sm:text-base transition-colors border-r border-stone-200 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
                 −
             </button>
@@ -79,7 +79,7 @@ const Stepper = ({ fieldName, watch, setValue }) => {
                 type="button"
                 onClick={handleIncrement}
                 aria-label="Increase quantity"
-                className="w-8 h-full flex items-center justify-center bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 font-bold text-base transition-colors border-l border-stone-200 rounded-none shrink-0"
+                className="w-7 sm:w-8 h-full flex items-center justify-center bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 font-bold text-sm sm:text-base transition-colors border-l border-stone-200 shrink-0"
             >
                 +
             </button>
@@ -164,8 +164,8 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
     if (isLoading) return <div className="p-12 text-center font-bold text-stone-400 uppercase tracking-widest text-xs bg-white border border-stone-200">Loading Barangay Data...</div>;
     if (isError) return <div className="p-12 text-center text-red-600 font-bold bg-red-50 border border-red-200 uppercase tracking-widest text-xs">Failed to load barangay data.</div>;
 
-    const inputClass = (error) => `w-full pl-10 pr-4 py-3.5 bg-white border ${error ? 'border-red-600 bg-red-50' : 'border-stone-200'} rounded-none focus:ring-0 focus:border-green-700 outline-none transition-colors text-sm font-medium text-stone-800`;
-    const selectClass = (error) => `w-full px-4 py-3.5 bg-white border ${error ? 'border-red-600 bg-red-50' : 'border-stone-200'} rounded-none focus:ring-0 focus:border-green-700 outline-none transition-colors text-sm font-medium text-stone-800`;
+    const inputClass = (error) => `w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3.5 bg-white border ${error ? 'border-red-600 bg-red-50' : 'border-stone-200'} rounded-md focus:ring-0 focus:border-green-700 outline-none transition-colors text-xs sm:text-sm font-medium text-stone-800`;
+    const selectClass = (error) => `w-full px-3 sm:px-4 py-2.5 sm:py-3.5 bg-white border ${error ? 'border-red-600 bg-red-50' : 'border-stone-200'} rounded-md focus:ring-0 focus:border-green-700 outline-none transition-colors text-xs sm:text-sm font-medium text-stone-800`;
 
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -174,10 +174,10 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
     const minDate = `${yyyy}-${mm}-${dd}`;
 
     return (
-        <div className="space-y-8 pb-20 sm:pb-0">
-            <div className="border-b border-stone-200 pb-4">
+        <div className="space-y-6 sm:space-y-8 pb-20 sm:pb-0">
+            <div className="border-b border-stone-200 pb-3 sm:pb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 1</p>
-                <h2 className="text-lg font-bold text-stone-800 uppercase tracking-tight">Travel & Animal Details</h2>
+                <h2 className="text-base sm:text-lg font-bold text-stone-800 uppercase tracking-tight">Travel & Animal Details</h2>
             </div>
 
             {/* Origins Section */}
@@ -530,19 +530,19 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
             </div>
 
             {/* Sticky Mobile Footer (Step 1 only) */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-5 py-4 flex items-center justify-between z-50">
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-2.5 flex items-center justify-between z-40 shadow-lg">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 leading-none mb-1">Total Pigs</span>
-                    <span className="text-lg font-black text-stone-800 leading-none">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 leading-none mb-0.5">Total Pigs</span>
+                    <span className="text-base font-black text-stone-800 leading-none">
                         {globalTotal} {globalTotal === 1 ? 'pig' : 'pigs'}
                     </span>
                 </div>
                 <button
                     type="button"
                     onClick={nextStep}
-                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs px-5 py-3.5 rounded-none flex items-center gap-2 transition-colors duration-100 ease-out"
+                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-[11px] px-4 py-2.5 rounded-md flex items-center gap-1.5 transition-colors duration-100 ease-out"
                 >
-                    Continue <ArrowRight size={14} />
+                    Continue <ArrowRight size={13} />
                 </button>
             </div>
         </div>

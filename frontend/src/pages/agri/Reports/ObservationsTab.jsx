@@ -39,12 +39,12 @@ const ObservationsTab = ({
                 type="text"
                 value={obs}
                 onChange={(e) => onChangeObservation(idx, e.target.value)}
-                className="flex-1 border border-stone-300 p-2 text-xs text-stone-800 bg-white focus:outline-none focus:border-green-700"
+                className="flex-1 border border-stone-300 p-2 text-xs text-stone-800 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
               />
               <button
                 type="button"
                 onClick={() => onDeleteObservation(idx)}
-                className="text-stone-400 hover:text-red-600 p-1.5 transition-colors"
+                className="text-stone-400 hover:text-red-600 p-1.5 rounded-lg transition-colors"
               >
                 <Trash2 size={14} />
               </button>
@@ -76,12 +76,12 @@ const ObservationsTab = ({
                 type="text"
                 value={rec}
                 onChange={(e) => onChangeRecommendation(idx, e.target.value)}
-                className="flex-1 border border-stone-300 p-2 text-xs text-stone-800 bg-white focus:outline-none focus:border-green-700"
+                className="flex-1 border border-stone-300 p-2 text-xs text-stone-800 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
               />
               <button
                 type="button"
                 onClick={() => onDeleteRecommendation(idx)}
-                className="text-stone-400 hover:text-red-600 p-1.5 transition-colors"
+                className="text-stone-400 hover:text-red-600 p-1.5 rounded-lg transition-colors"
               >
                 <Trash2 size={14} />
               </button>

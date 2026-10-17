@@ -16,7 +16,7 @@ import {
     Trash2,
     Shield
 } from 'lucide-react';
-import Pagination from '../../components/ui/Pagination';
+import DataTable from '../../components/ui/DataTable';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
@@ -174,6 +174,102 @@ const BarangayOfficialManagementPage = () => {
     const officials = data?.results || [];
     const count = data?.count || 0;
 
+    const officialColumns = [
+        {
+            header: "Official Account",
+            render: (official) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 shrink-0">
+                        <Shield size={20} className="text-stone-600" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-stone-800 uppercase tracking-tight">
+                            {official.first_name} {official.last_name}
+                        </p>
+                        <p className="text-[9px] font-mono font-bold text-stone-400 mt-0.5">
+                            @{official.username}
+                        </p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: "Phone & Address",
+            render: (official) => (
+                <div className="space-y-1">
+                    <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                        <Phone size={12} className="text-stone-400" />
+                        {official.phone_no || 'No phone listed'}
+                    </p>
+                    <p className="text-[10px] text-stone-500 font-medium truncate max-w-xs">
+                        {official.address || 'No address listed'}
+                    </p>
+                </div>
+            )
+        },
+        {
+            header: "Assigned Barangay",
+            render: (official) => (
+                <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
+                    <MapPin size={14} className="text-green-600 shrink-0" />
+                    <span className="uppercase tracking-tight text-green-700">{official.barangay_name || 'Unassigned'}</span>
+                </div>
+            )
+        },
+        {
+            header: "Status",
+            align: "center",
+            render: (official) => (
+                <button
+                    onClick={() => toggleActiveStatus(official)}
+                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border transition-colors inline-flex items-center gap-1.5
+                        ${official.is_active 
+                            ? 'bg-green-50 text-green-700 border-green-600/30 hover:bg-red-50 hover:text-red-600 hover:border-red-600/30' 
+                            : 'bg-red-50 text-red-600 border-red-600/30 hover:bg-green-50 hover:text-green-700 hover:border-green-600/30'
+                        }`}
+                >
+                    {official.is_active ? (
+                        <>
+                            <UserCheck size={12} /> Active
+                        </>
+                    ) : (
+                        <>
+                            <UserX size={12} /> Deactivated
+                        </>
+                    )}
+                </button>
+            )
+        },
+        {
+            header: "Actions",
+            align: "right",
+            headerClassName: "pr-8",
+            className: "pr-8",
+            render: (official) => (
+                <div className="flex items-center gap-2 justify-end">
+                    <button
+                        onClick={() => setEditUser(official)}
+                        className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2"
+                    >
+                        <Edit size={12} /> Edit Details
+                    </button>
+                    <button
+                        onClick={() => handleDeleteOfficial(official)}
+                        disabled={deleteMutation.isPending}
+                        className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                        {deleteMutation.isPending ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                        ) : (
+                            <Trash2 size={12} />
+                        )}
+                        Delete
+                    </button>
+                </div>
+            )
+        }
+    ];
+
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-white min-h-screen font-sans">
             {/* Header */}
@@ -212,125 +308,22 @@ const BarangayOfficialManagementPage = () => {
             </div>
 
             {/* Officials Table */}
-            <div className="border border-stone-200 bg-white">
-                <div className="overflow-x-auto w-full">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-500">
-                            <tr>
-                                <th className="px-6 py-5">Official Account</th>
-                                <th className="px-6 py-5">Phone & Address</th>
-                                <th className="px-6 py-5">Assigned Barangay</th>
-                                <th className="px-6 py-5 text-center">Status</th>
-                                <th className="px-6 py-5 text-right pr-8">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100">
-                            {officials.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5">
-                                        <div className="flex flex-col items-center justify-center py-24 bg-stone-50/30">
-                                            <Users size={48} className="text-stone-200 mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">No registered officials found</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                officials.map((official) => (
-                                    <tr key={official.id} className="hover:bg-stone-50 transition-colors">
-                                        {/* Name & Username */}
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 shrink-0">
-                                                    <Shield size={20} className="text-stone-600" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-black text-stone-800 uppercase tracking-tight">
-                                                        {official.first_name} {official.last_name}
-                                                    </p>
-                                                    <p className="text-[9px] font-mono font-bold text-stone-400 mt-0.5">
-                                                        @{official.username}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        {/* Contacts */}
-                                        <td className="px-6 py-5">
-                                            <div className="space-y-1">
-                                                <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                                                    <Phone size={12} className="text-stone-400" />
-                                                    {official.phone_no || 'No phone listed'}
-                                                </p>
-                                                <p className="text-[10px] text-stone-500 font-medium truncate max-w-xs">
-                                                    {official.address || 'No address listed'}
-                                                </p>
-                                            </div>
-                                        </td>
-                                        {/* Barangay */}
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
-                                                <MapPin size={14} className="text-green-600 shrink-0" />
-                                                <span className="uppercase tracking-tight text-green-700">{official.barangay_name || 'Unassigned'}</span>
-                                            </div>
-                                        </td>
-                                        {/* Status */}
-                                        <td className="px-6 py-5 text-center">
-                                            <button
-                                                onClick={() => toggleActiveStatus(official)}
-                                                className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border transition-colors inline-flex items-center gap-1.5
-                                                    ${official.is_active 
-                                                        ? 'bg-green-50 text-green-700 border-green-600/30 hover:bg-red-50 hover:text-red-600 hover:border-red-600/30' 
-                                                        : 'bg-red-50 text-red-600 border-red-600/30 hover:bg-green-50 hover:text-green-700 hover:border-green-600/30'
-                                                    }`}
-                                            >
-                                                {official.is_active ? (
-                                                    <>
-                                                        <UserCheck size={12} /> Active
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <UserX size={12} /> Deactivated
-                                                    </>
-                                                )}
-                                            </button>
-                                        </td>
-                                        {/* Actions */}
-                                        <td className="px-6 py-5 text-right pr-8">
-                                            <div className="flex items-center gap-2 justify-end">
-                                                <button
-                                                    onClick={() => setEditUser(official)}
-                                                    className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2"
-                                                >
-                                                    <Edit size={12} /> Edit Details
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteOfficial(official)}
-                                                    disabled={deleteMutation.isPending}
-                                                    className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50"
-                                                >
-                                                    {deleteMutation.isPending ? (
-                                                        <span className="loading loading-spinner loading-xs"></span>
-                                                    ) : (
-                                                        <Trash2 size={12} />
-                                                    )}
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                {count > limit && (
-                    <Pagination 
-                        count={count} 
-                        limit={limit} 
-                        offset={offset} 
-                        onPageChange={setOffset} 
-                    />
-                )}
-            </div>
+            <DataTable
+                columns={officialColumns}
+                data={officials}
+                minWidth="800px"
+                emptyState={{
+                    icon: Users,
+                    title: "No registered officials found",
+                    description: "Try adjusting search filters or adding a new barangay official."
+                }}
+                pagination={count > limit ? {
+                    count,
+                    limit,
+                    offset,
+                    onPageChange: setOffset
+                } : null}
+            />
 
             {/* Create Official Modal */}
             {isCreateOpen && (
@@ -401,8 +394,8 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-2xl rounded-none overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50 shrink-0">
                     <div className="flex items-center gap-3">
@@ -411,7 +404,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                             {isEdit ? "Update Official Profile" : "Register Barangay Official"}
                         </h3>
                     </div>
-                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 transition-colors">
+                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -426,7 +419,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                 type="text"
                                 {...register('username', { required: "Username is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="barangay_official"
                             />
                             {errors.username && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.username.message}</p>}
@@ -440,7 +433,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                     type="password"
                                     {...register('password', { required: "Password is required for new accounts." })}
                                     disabled={isSubmitting}
-                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                     placeholder="••••••••"
                                 />
                                 {errors.password && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.password.message}</p>}
@@ -454,7 +447,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                 type="text"
                                 {...register('first_name', { required: "First name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="Pedro"
                             />
                             {errors.first_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.first_name.message}</p>}
@@ -467,7 +460,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                 type="text"
                                 {...register('last_name', { required: "Last name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="Sanchez"
                             />
                             {errors.last_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.last_name.message}</p>}
@@ -486,7 +479,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                     }
                                 })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="09171234567"
                             />
                             {errors.phone_no && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.phone_no.message}</p>}
@@ -498,7 +491,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                             <select
                                 {...register('barangay', { required: "Selecting a barangay is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold text-stone-800 cursor-pointer"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold text-stone-800 cursor-pointer"
                             >
                                 <option value="">Select Barangay</option>
                                 {barangays.map((b) => (
@@ -515,7 +508,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                 type="text"
                                 {...register('address', { required: "Complete address is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-none focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
                                 placeholder="Barangay Hall, Sariaya, Quezon"
                             />
                             {errors.address && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.address.message}</p>}
@@ -528,7 +521,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                     type="checkbox"
                                     {...register('receive_sms')}
                                     disabled={isSubmitting}
-                                    className="checkbox checkbox-success checkbox-sm rounded-none border-stone-300"
+                                    className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
                                 />
                                 <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Send SMS notifications to this official</span>
                             </label>
@@ -539,7 +532,7 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                         type="checkbox"
                                         {...register('is_active')}
                                         disabled={isSubmitting}
-                                        className="checkbox checkbox-success checkbox-sm rounded-none border-stone-300"
+                                        className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
                                     />
                                     <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Official account is active and authorized</span>
                                 </label>
@@ -553,14 +546,14 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-50"
+                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <>

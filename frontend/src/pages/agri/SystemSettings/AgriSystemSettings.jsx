@@ -22,10 +22,10 @@ const SettingField = ({ label, description, children }) => (
 );
 
 const SectionCard = ({ icon: Icon, title, subtitle, children }) => (
-    <section className="bg-white border border-stone-200 overflow-hidden">
+    <section className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center gap-3">
-            <div className="p-1.5 bg-green-50 border border-green-100">
-                <Icon size={15} className="text-green-700" />
+            <div className="p-1.5 bg-emerald-50 border border-emerald-100 rounded-lg">
+                <Icon size={15} className="text-emerald-700" />
             </div>
             <div>
                 <h2 className="text-[10px] font-black text-stone-700 uppercase tracking-widest">{title}</h2>
@@ -114,7 +114,7 @@ const AgriSystemSettings = () => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[500px] bg-white">
-                <div className="w-10 h-10 border-4 border-green-700 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-10 h-10 border-4 border-emerald-700 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Loading system settings...</p>
             </div>
         );
@@ -138,7 +138,7 @@ const AgriSystemSettings = () => {
                     </p>
                     {lastSaved && (
                         <p className="text-[10px] text-stone-400 font-medium mt-3 flex items-center gap-1.5">
-                            <CheckCircle2 size={11} className="text-green-600" />
+                            <CheckCircle2 size={11} className="text-emerald-700" />
                             Last saved: {lastSaved.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
                         </p>
                     )}
@@ -164,7 +164,7 @@ const AgriSystemSettings = () => {
                                     type="number" min="0" step="0.01"
                                     value={config.vet_health_cert_fee}
                                     onChange={(e) => handleChange('vet_health_cert_fee', e.target.value)}
-                                    className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                    className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-emerald-700 rounded-lg shadow-2xs"
                                 />
                             </div>
                         </SettingField>
@@ -179,7 +179,7 @@ const AgriSystemSettings = () => {
                                     type="number" min="0" step="0.01"
                                     value={config.transport_pass_fee}
                                     onChange={(e) => handleChange('transport_pass_fee', e.target.value)}
-                                    className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                    className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-emerald-700 rounded-lg shadow-2xs"
                                 />
                             </div>
                         </SettingField>
@@ -194,7 +194,7 @@ const AgriSystemSettings = () => {
                                     type="number" min="0" step="0.01"
                                     value={config.local_transport_permit_fee}
                                     onChange={(e) => handleChange('local_transport_permit_fee', e.target.value)}
-                                    className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none"
+                                    className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-emerald-700 rounded-lg shadow-2xs"
                                 />
                             </div>
                         </SettingField>
@@ -205,7 +205,7 @@ const AgriSystemSettings = () => {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Total Permit Fee</p>
                                 <p className="text-[10px] text-stone-400 font-medium">Auto-computed from the 3 components above</p>
                             </div>
-                            <span className="text-xl font-black text-green-700 font-mono tabular-nums">
+                            <span className="text-xl font-black text-emerald-700 font-mono tabular-nums">
                                 ₱{totalFee.toFixed(2)}
                             </span>
                         </div>
@@ -226,7 +226,7 @@ const AgriSystemSettings = () => {
                                     type="number" min="1" step="1"
                                     value={config.validity_days}
                                     onChange={(e) => handleChange('validity_days', e.target.value)}
-                                    className="w-full h-10 px-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-green-700 rounded-none text-center"
+                                    className="w-full h-10 px-3 bg-white border border-stone-200 text-sm font-bold text-stone-800 focus:outline-none focus:border-emerald-700 rounded-lg shadow-2xs text-center"
                                 />
                                 <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest whitespace-nowrap">days</span>
                             </div>
@@ -234,7 +234,7 @@ const AgriSystemSettings = () => {
                     </SectionCard>
 
                     {/* Note */}
-                    <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 px-5 py-4">
+                    <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 px-5 py-4 rounded-xl">
                         <Info size={13} className="text-stone-400 mt-0.5 flex-shrink-0" />
                         <p className="text-[10px] text-stone-500 font-medium leading-relaxed">
                             These are global defaults. Changes take effect on all newly issued permits. Officers can still override the fee amount on individual applications.
@@ -246,7 +246,7 @@ const AgriSystemSettings = () => {
                         <button
                             type="submit"
                             disabled={isSaving}
-                            className="bg-green-700 hover:bg-green-600 disabled:opacity-60 text-white px-10 py-3.5 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 rounded-none"
+                            className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 rounded-lg shadow-xs cursor-pointer"
                         >
                             {isSaving
                                 ? <><RefreshCw size={13} className="animate-spin" /> Saving...</>

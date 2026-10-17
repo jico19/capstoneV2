@@ -69,20 +69,20 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-sm border border-stone-200 shadow-2xl relative animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white w-full max-w-sm border border-stone-200 rounded-xl shadow-xl overflow-hidden relative animate-in zoom-in-95 duration-150">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute right-4 top-4 text-stone-500 hover:text-stone-900 transition-colors"
+                    className="absolute right-4 top-4 text-stone-500 hover:text-stone-900 p-1 rounded-lg transition-colors"
                 >
                     <X size={20} />
                 </button>
 
                 <div className="p-8 space-y-8 text-center">
                     <div className="flex justify-center">
-                        <div className="bg-green-50 p-4 border border-green-100">
-                            <Smartphone className="text-green-600" size={32} />
+                        <div className="bg-green-50 p-4 border border-green-100 rounded-xl">
+                            <Smartphone className="text-green-700" size={32} />
                         </div>
                     </div>
 
@@ -110,7 +110,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                                     value={data}
                                     onChange={(e) => handleChange(e.target, index)}
                                     onKeyDown={(e) => handleKeyDown(e, index)}
-                                    className={`w-10 h-14 sm:w-12 sm:h-16 text-2xl font-black text-center border-2 bg-stone-50 focus:bg-white focus:border-green-600 outline-none transition-all ${modalError ? 'border-red-600 bg-red-50 text-red-900' : 'border-stone-100'}`}
+                                    className={`w-10 h-14 sm:w-12 sm:h-16 text-2xl font-black text-center border-2 rounded-lg bg-stone-50 focus:bg-white focus:border-green-700 outline-none shadow-2xs transition-all ${modalError ? 'border-red-600 bg-red-50 text-red-900' : 'border-stone-200'}`}
                                 />
                             ))}
                         </div>
@@ -123,7 +123,7 @@ const OTPModal = ({ isOpen, onClose, phone, onVerify, onResend, isVerifying, isR
                         <button
                             onClick={handleSubmit}
                             disabled={isVerifying || otp.join('').length < 6}
-                            className="w-full py-4 bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-wider text-xs disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full py-3.5 bg-green-700 hover:bg-green-800 text-white font-black uppercase tracking-wider text-xs rounded-lg shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isVerifying ? (
                                 <>

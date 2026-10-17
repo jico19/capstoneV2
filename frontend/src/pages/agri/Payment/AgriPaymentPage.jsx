@@ -17,7 +17,7 @@ import {
   Sparkles,
   Receipt,
 } from "lucide-react";
-import Pagination from "../../../components/ui/Pagination";
+import DataTable from "../../../components/ui/DataTable";
 import TransactionDetailModal from "./TransactionDetailModal";
 import ReportDrafterModal from "../Reports/ReportDrafterModal";
 
@@ -94,6 +94,116 @@ const AgriPaymentPage = () => {
       </span>
     );
   };
+
+  const columns = [
+    {
+      header: "Transaction Ref / OR #",
+      render: (p) => (
+        <div className="space-y-0.5">
+          <span className="text-xs font-mono font-black text-stone-900 group-hover:text-green-800 transition-colors">
+            #TRX-{p.id}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {p.or_number ? (
+              <span className="text-[10px] font-mono font-bold text-stone-600 bg-stone-100 px-1 py-0.2 border border-stone-200">
+                OR #{p.or_number}
+              </span>
+            ) : (
+              <span className="text-[9px] font-mono text-stone-400 uppercase">
+                No OR Issued
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-stone-400 font-mono">
+            {p.created_at ? new Date(p.created_at).toLocaleDateString() : ""}
+          </p>
+        </div>
+      ),
+    },
+    {
+      header: "Payer (Farmer)",
+      render: (p) => (
+        <div className="space-y-0.5">
+          <p className="text-xs font-bold text-stone-900 uppercase">
+            {p.farmer_name || "N/A"}
+          </p>
+          {p.farmer_phone && (
+            <p className="text-[10px] font-mono text-stone-500">
+              {p.farmer_phone}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      header: "Associated Permit",
+      render: (p) => (
+        <div className="space-y-0.5">
+          <span className="text-xs font-mono font-black text-stone-800">
+            {p.permit_number || "Permit On File"}
+          </span>
+          {p.destination && (
+            <p className="text-[10px] text-stone-500 truncate max-w-[180px]">
+              Dest: <span className="font-bold text-stone-700">{p.destination}</span>
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      header: "Payment Channel",
+      align: "center",
+      render: (p) => getMethodBadge(p.method),
+    },
+    {
+      header: "Amount",
+      align: "right",
+      render: (p) => (
+        <span className="text-sm font-black font-mono text-stone-900">
+          ₱{(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      align: "center",
+      render: (p) => {
+        const isCleared =
+          p.raw_status === "SUCCESS" ||
+          p.raw_status === "CONFIRMED" ||
+          p.payment_status?.toLowerCase() === "cleared" ||
+          p.payment_status?.toLowerCase() === "success";
+
+        return isCleared ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-green-700 bg-green-50 px-2 py-0.5 border border-green-200">
+            <CheckCircle2 size={12} className="text-green-600" /> Cleared
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-amber-700 bg-amber-50 px-2 py-0.5 border border-amber-200">
+            <Clock size={12} className="text-amber-600" /> Pending
+          </span>
+        );
+      },
+    },
+    {
+      header: "Actions",
+      align: "right",
+      headerClassName: "pr-6",
+      className: "pr-6",
+      render: (p) => (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedTransaction(p);
+          }}
+          className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors inline-flex items-center gap-1"
+        >
+          <Eye size={12} /> Audit Slip
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4 md:p-10 space-y-8 bg-stone-50/40 min-h-full">
@@ -353,151 +463,25 @@ const AgriPaymentPage = () => {
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-stone-200 bg-stone-100/70 text-[10px] font-black uppercase tracking-widest text-stone-500">
-                <th className="py-3.5 px-6">Transaction Ref / OR #</th>
-                <th className="py-3.5 px-6">Payer (Farmer)</th>
-                <th className="py-3.5 px-6">Associated Permit</th>
-                <th className="py-3.5 px-6 text-center">Payment Channel</th>
-                <th className="py-3.5 px-6 text-right">Amount</th>
-                <th className="py-3.5 px-6 text-center">Status</th>
-                <th className="py-3.5 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100 text-xs">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="7" className="py-24 text-center">
-                    <Loader2 size={28} className="animate-spin text-green-700 mx-auto mb-2" />
-                    <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
-                      Syncing Financial Ledger...
-                    </p>
-                  </td>
-                </tr>
-              ) : payments.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="py-20 text-center">
-                    <Inbox className="mx-auto text-stone-300 mb-2" size={40} />
-                    <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                      No transaction records match your filters
-                    </p>
-                    <p className="text-[11px] text-stone-400 mt-1">
-                      Try clearing search parameters or adjusting date bounds.
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                payments.map((p) => {
-                  const isCleared =
-                    p.raw_status === "SUCCESS" ||
-                    p.raw_status === "CONFIRMED" ||
-                    p.payment_status?.toLowerCase() === "cleared" ||
-                    p.payment_status?.toLowerCase() === "success";
-
-                  return (
-                    <tr
-                      key={p.id}
-                      onClick={() => setSelectedTransaction(p)}
-                      className="hover:bg-stone-50/80 transition-colors cursor-pointer group"
-                    >
-                      {/* Reference & OR Number */}
-                      <td className="py-4 px-6">
-                        <div className="space-y-0.5">
-                          <span className="text-xs font-mono font-black text-stone-900 group-hover:text-green-800 transition-colors">
-                            #TRX-{p.id}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            {p.or_number ? (
-                              <span className="text-[10px] font-mono font-bold text-stone-600 bg-stone-100 px-1 py-0.2 border border-stone-200">
-                                OR #{p.or_number}
-                              </span>
-                            ) : (
-                              <span className="text-[9px] font-mono text-stone-400 uppercase">
-                                No OR Issued
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-stone-400 font-mono">
-                            {p.created_at ? new Date(p.created_at).toLocaleDateString() : ""}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* Farmer / Payer */}
-                      <td className="py-4 px-6">
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-bold text-stone-900 uppercase">
-                            {p.farmer_name || "N/A"}
-                          </p>
-                          {p.farmer_phone && (
-                            <p className="text-[10px] font-mono text-stone-500">
-                              {p.farmer_phone}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Associated Permit */}
-                      <td className="py-4 px-6">
-                        <div className="space-y-0.5">
-                          <span className="text-xs font-mono font-black text-stone-800">
-                            {p.permit_number || "Permit On File"}
-                          </span>
-                          {p.destination && (
-                            <p className="text-[10px] text-stone-500 truncate max-w-[180px]">
-                              Dest: <span className="font-bold text-stone-700">{p.destination}</span>
-                            </p>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Channel */}
-                      <td className="py-4 px-6 text-center">
-                        {getMethodBadge(p.method)}
-                      </td>
-
-                      {/* Amount */}
-                      <td className="py-4 px-6 text-right">
-                        <span className="text-sm font-black font-mono text-stone-900">
-                          ₱{(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4 px-6 text-center">
-                        {isCleared ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-green-700 bg-green-50 px-2 py-0.5 border border-green-200">
-                            <CheckCircle2 size={12} className="text-green-600" /> Cleared
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-amber-700 bg-amber-50 px-2 py-0.5 border border-amber-200">
-                            <Clock size={12} className="text-amber-600" /> Pending
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedTransaction(p)}
-                          className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors inline-flex items-center gap-1"
-                        >
-                          <Eye size={12} /> Audit Slip
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Footer */}
-        <Pagination count={count} limit={limit} offset={offset} onPageChange={setOffset} />
+        <DataTable
+          columns={columns}
+          data={payments}
+          isLoading={isLoading}
+          loadingMessage="Syncing Financial Ledger..."
+          onRowClick={(p) => setSelectedTransaction(p)}
+          className="border-t border-b-0 border-x-0"
+          emptyState={{
+            icon: Inbox,
+            title: "No transaction records match your filters",
+            description: "Try clearing search parameters or adjusting date bounds."
+          }}
+          pagination={count > limit ? {
+            count,
+            limit,
+            offset,
+            onPageChange: setOffset
+          } : null}
+        />
       </div>
 
       {/* Transaction Details Modal */}

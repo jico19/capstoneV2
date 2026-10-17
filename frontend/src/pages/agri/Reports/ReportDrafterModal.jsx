@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "../../../lib/api";
 import { downloadBlob } from "../../../lib/utils";
 import { toast } from "sonner";
@@ -164,13 +164,13 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white border-2 border-stone-800 w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white border border-stone-200 rounded-xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
         {/* Modal Header */}
         <div className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between border-b border-stone-700">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-green-400 bg-green-950/80 px-2 py-0.5 border border-green-800">
+              <span className="text-[10px] font-black uppercase tracking-widest text-green-400 bg-green-950/80 px-2 py-0.5 rounded-md border border-green-800">
                 Official LGU Report Drafter
               </span>
               <span className="text-[10px] font-mono text-stone-400">
@@ -183,7 +183,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-white p-1 transition-colors"
+            className="text-stone-400 hover:text-white p-1 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
@@ -306,7 +306,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-initial px-4 py-2.5 border border-stone-300 text-stone-700 text-xs font-bold uppercase tracking-wider hover:bg-stone-200 transition-colors"
+              className="flex-1 sm:flex-initial px-4 py-2.5 border border-stone-300 text-stone-700 text-xs font-bold uppercase tracking-wider hover:bg-stone-200 rounded-lg shadow-xs transition-colors"
             >
               Cancel
             </button>
@@ -314,7 +314,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
               type="button"
               disabled={loading || generating || !draftData}
               onClick={handleExportFormalPdf}
-              className="flex-1 sm:flex-initial px-6 py-2.5 bg-green-700 hover:bg-green-800 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-md"
+              className="flex-1 sm:flex-initial px-6 py-2.5 bg-green-700 hover:bg-green-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
             >
               {generating ? (
                 <>

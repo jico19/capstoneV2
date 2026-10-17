@@ -96,12 +96,12 @@ const VerifyApplication = () => {
 
     if (isError || !application) return (
         <div className="max-w-2xl mx-auto p-4 md:p-8 min-h-screen bg-stone-50">
-            <div className="bg-white border-2 border-red-600 p-8 sm:p-12 text-center space-y-6 shadow-xl">
+            <div className="bg-white border border-red-200 rounded-xl p-8 sm:p-12 text-center space-y-6 shadow-xl">
                 <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
                     <XCircle size={36} />
                 </div>
                 <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-600 bg-red-50 px-3 py-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-600 bg-red-50 px-3 py-1 rounded-md border border-red-200">
                         Verification Failed
                     </span>
                     <h2 className="text-2xl font-black text-stone-900 uppercase tracking-tight mt-2">
@@ -113,7 +113,7 @@ const VerifyApplication = () => {
                 </div>
                 <button
                     onClick={() => navigate('/inspector/scan')}
-                    className="w-full sm:w-auto bg-stone-900 hover:bg-stone-800 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-colors"
+                    className="w-full sm:w-auto bg-stone-900 hover:bg-stone-800 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors"
                 >
                     Scan Another Permit QR
                 </button>
@@ -147,7 +147,7 @@ const VerifyApplication = () => {
             </button>
 
             {/* Security Hero Card */}
-            <div className={`border-2 p-6 sm:p-8 space-y-4 shadow-lg mb-8 ${
+            <div className={`border-2 rounded-xl p-6 sm:p-8 space-y-4 shadow-xs mb-8 overflow-hidden ${
                 isAlreadyChecked
                     ? 'border-amber-500 bg-amber-50/50'
                     : isValid
@@ -156,7 +156,7 @@ const VerifyApplication = () => {
             }`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex items-center gap-3">
-                        <div className={`p-3 text-white ${
+                        <div className={`p-3 text-white rounded-lg ${
                             isAlreadyChecked ? 'bg-amber-600' : isValid ? 'bg-green-700' : 'bg-red-600'
                         }`}>
                             {isAlreadyChecked ? <AlertTriangle size={24} /> : isValid ? <ShieldCheck size={24} /> : <XCircle size={24} />}
@@ -175,7 +175,7 @@ const VerifyApplication = () => {
                         </div>
                     </div>
 
-                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 border ${
+                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 border rounded-md ${
                         isAlreadyChecked
                             ? 'bg-amber-100 text-amber-900 border-amber-300'
                             : isValid
@@ -187,7 +187,7 @@ const VerifyApplication = () => {
                 </div>
 
                 {isAlreadyChecked && (
-                    <p className="text-xs font-bold text-amber-900 bg-amber-100/70 p-3 border border-amber-200 uppercase tracking-wide">
+                    <p className="text-xs font-bold text-amber-900 bg-amber-100/70 p-3 border border-amber-200 rounded-lg uppercase tracking-wide">
                         ⚠️ Note: This permit was previously checked at a municipality checkpoint. Do not duplicate inspection logs unless re-verifying transit cargo.
                     </p>
                 )}
@@ -195,35 +195,35 @@ const VerifyApplication = () => {
 
             <div className="space-y-6">
                 {/* Official Credentials Grid */}
-                <div className="bg-white border border-stone-200 p-6 space-y-4">
+                <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4 shadow-xs">
                     <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                         <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest flex items-center gap-2">
                             <FileCheck2 size={16} className="text-green-700" />
                             Official Permit Credentials
                         </h3>
                         {issuedPermit?.is_paid && (
-                            <span className="text-[9px] font-black uppercase bg-green-100 text-green-800 px-2 py-0.5 border border-green-200">
+                            <span className="text-[9px] font-black uppercase bg-green-100 text-green-800 px-2 py-0.5 rounded-md border border-green-200">
                                 ✓ Paid & Released
                             </span>
                         )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                        <div className="bg-stone-50 p-3 border border-stone-200/80">
+                        <div className="bg-stone-50 p-3 border border-stone-200/80 rounded-lg">
                             <span className="text-[9px] font-black text-stone-400 uppercase tracking-wider block">Permit Reference</span>
                             <span className="font-mono font-black text-stone-900 text-sm block mt-0.5">
                                 {issuedPermit?.permit_number || application.application_id}
                             </span>
                         </div>
 
-                        <div className="bg-stone-50 p-3 border border-stone-200/80">
+                        <div className="bg-stone-50 p-3 border border-stone-200/80 rounded-lg">
                             <span className="text-[9px] font-black text-stone-400 uppercase tracking-wider block">AIC Number</span>
                             <span className="font-mono font-bold text-stone-900 block mt-0.5">
                                 {application.aic_number || issuedPermit?.aic_number || 'AIC Issued'}
                             </span>
                         </div>
 
-                        <div className="bg-stone-50 p-3 border border-stone-200/80">
+                        <div className="bg-stone-50 p-3 border border-stone-200/80 rounded-lg">
                             <span className="text-[9px] font-black text-stone-400 uppercase tracking-wider block">Validity Expiry</span>
                             <span className="font-bold text-stone-900 block mt-0.5">
                                 {application.valid_until ? (
@@ -234,14 +234,14 @@ const VerifyApplication = () => {
                             </span>
                         </div>
 
-                        <div className="bg-stone-50 p-3 border border-stone-200/80">
+                        <div className="bg-stone-50 p-3 border border-stone-200/80 rounded-lg">
                             <span className="text-[9px] font-black text-stone-400 uppercase tracking-wider block">Payment Status</span>
                             <span className="font-bold text-stone-800 block mt-0.5">
                                 ₱{application.permit_fee || 150} • {issuedPermit?.payment_method || 'ONLINE'}
                             </span>
                         </div>
 
-                        <div className="bg-stone-50 p-3 border border-stone-200/80 sm:col-span-2">
+                        <div className="bg-stone-50 p-3 border border-stone-200/80 rounded-lg sm:col-span-2">
                             <span className="text-[9px] font-black text-stone-400 uppercase tracking-wider block">Issued By Officer</span>
                             <span className="font-bold text-stone-900 block mt-0.5">
                                 {issuedPermit?.issued_by || 'MAO Agriculture Officer'}
@@ -251,7 +251,7 @@ const VerifyApplication = () => {
                 </div>
 
                 {/* Farmer & Source Farm Details */}
-                <div className="bg-white border border-stone-200 p-6 space-y-4">
+                <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4 shadow-xs">
                     <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
                         <User size={16} className="text-stone-400" />
                         <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest">
@@ -281,7 +281,7 @@ const VerifyApplication = () => {
                 </div>
 
                 {/* Swine Cargo Classification Grid */}
-                <div className="bg-white border border-stone-200 p-6 space-y-4">
+                <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4 shadow-xs">
                     <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                         <div className="flex items-center gap-2">
                             <Truck size={16} className="text-green-700" />
@@ -289,34 +289,34 @@ const VerifyApplication = () => {
                                 Swine Load Breakdown
                             </h3>
                         </div>
-                        <span className="text-xs font-mono font-black text-stone-900 bg-stone-100 px-2.5 py-1 border border-stone-200">
+                        <span className="text-xs font-mono font-black text-stone-900 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200">
                             Total: {totalSwine} pigs
                         </span>
                     </div>
 
                     {/* Animal Category Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                        <div className="bg-stone-50 border border-stone-200 p-2.5 text-center">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-center">
                             <span className="text-[9px] font-black text-stone-400 uppercase block">Inahin (Sow)</span>
                             <span className="text-base font-black text-stone-900 font-mono">{animalTotals.inahin}</span>
                         </div>
-                        <div className="bg-stone-50 border border-stone-200 p-2.5 text-center">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-center">
                             <span className="text-[9px] font-black text-stone-400 uppercase block">Barako (Boar)</span>
                             <span className="text-base font-black text-stone-900 font-mono">{animalTotals.barako}</span>
                         </div>
-                        <div className="bg-stone-50 border border-stone-200 p-2.5 text-center">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-center">
                             <span className="text-[9px] font-black text-stone-400 uppercase block">Starter (Biik)</span>
                             <span className="text-base font-black text-stone-900 font-mono">{animalTotals.starter}</span>
                         </div>
-                        <div className="bg-stone-50 border border-stone-200 p-2.5 text-center">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-center">
                             <span className="text-[9px] font-black text-stone-400 uppercase block">Grower</span>
                             <span className="text-base font-black text-stone-900 font-mono">{animalTotals.grower}</span>
                         </div>
-                        <div className="bg-stone-50 border border-stone-200 p-2.5 text-center">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-center">
                             <span className="text-[9px] font-black text-stone-400 uppercase block">Fattener</span>
                             <span className="text-base font-black text-stone-900 font-mono">{animalTotals.fattener}</span>
                         </div>
-                        <div className="bg-stone-50 border border-stone-200 p-2.5 text-center">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-center">
                             <span className="text-[9px] font-black text-stone-400 uppercase block">Bulaw</span>
                             <span className="text-base font-black text-stone-900 font-mono">{animalTotals.bulaw}</span>
                         </div>
@@ -324,7 +324,7 @@ const VerifyApplication = () => {
 
                     <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
                         <span className="text-[10px] font-black uppercase text-stone-400">Transport Purpose</span>
-                        <span className="font-bold text-stone-800 uppercase bg-stone-100 px-2 py-0.5">
+                        <span className="font-bold text-stone-800 uppercase bg-stone-100 px-2 py-0.5 rounded-md">
                             {application.purpose || 'Livestock Transport'}
                         </span>
                     </div>
@@ -333,7 +333,7 @@ const VerifyApplication = () => {
                     <div className="space-y-2 pt-2 border-t border-stone-100">
                         <span className="text-[9px] font-black uppercase tracking-wider text-stone-400 block">Starting Farm Locations</span>
                         {application.origins?.map((origin, idx) => (
-                            <div key={origin.id} className="p-3 bg-stone-50 border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                            <div key={origin.id} className="p-3 bg-stone-50 border border-stone-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                                 <div>
                                     <span className="font-bold text-stone-900 uppercase">
                                         Location #{idx + 1}: Barangay {origin.barangay_name}
@@ -354,7 +354,7 @@ const VerifyApplication = () => {
                 </div>
 
                 {/* Certificate & Document Evidence Hub */}
-                <div className="bg-white border border-stone-200 p-6 space-y-4">
+                <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4 shadow-xs">
                     <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                         <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest flex items-center gap-2">
                             <FileText size={16} className="text-stone-400" />
@@ -368,9 +368,9 @@ const VerifyApplication = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {/* Primary Issued Permit PDF if available */}
                         {issuedPermit?.permit_pdf && (
-                            <div className="border-2 border-green-600 bg-green-50/50 p-4 flex items-center justify-between">
+                            <div className="border border-green-300 bg-green-50/50 rounded-lg p-4 flex items-center justify-between">
                                 <div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-green-700 bg-green-200 px-1.5 py-0.5">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-green-700 bg-green-200 px-1.5 py-0.5 rounded-md">
                                         ✓ Official Pass
                                     </span>
                                     <h4 className="font-bold text-stone-900 text-xs mt-1">Official Transport Permit</h4>
@@ -383,7 +383,7 @@ const VerifyApplication = () => {
                                         title: `Official Transport Permit - ${issuedPermit.permit_number}`,
                                         subtitle: `Issued to ${application.farmer_name}`
                                     })}
-                                    className="p-2 bg-green-700 hover:bg-green-600 text-white transition-colors cursor-pointer"
+                                    className="p-2 bg-green-700 hover:bg-green-600 text-white rounded-lg shadow-2xs transition-colors cursor-pointer"
                                     title="View Official Permit PDF"
                                 >
                                     <Eye size={16} />
@@ -393,9 +393,9 @@ const VerifyApplication = () => {
 
                         {/* OPV VHC / Shipping Pass if available */}
                         {opv?.veterinary_health_certificate && (
-                            <div className="border border-stone-200 bg-stone-50 p-4 flex items-center justify-between">
+                            <div className="border border-stone-200 bg-stone-50 rounded-lg p-4 flex items-center justify-between">
                                 <div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-600 bg-stone-200 px-1.5 py-0.5">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-600 bg-stone-200 px-1.5 py-0.5 rounded-md">
                                         OPV Health Cert
                                     </span>
                                     <h4 className="font-bold text-stone-900 text-xs mt-1">Veterinary Health Certificate</h4>
@@ -408,7 +408,7 @@ const VerifyApplication = () => {
                                         title: `Veterinary Health Certificate`,
                                         subtitle: `Application #${application.application_id}`
                                     })}
-                                    className="p-2 border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer"
+                                    className="p-2 border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
                                 >
                                     <Eye size={16} />
                                 </button>
@@ -417,7 +417,7 @@ const VerifyApplication = () => {
 
                         {/* All Uploaded Documents */}
                         {application.all_documents?.map((doc) => (
-                            <div key={doc.id} className="border border-stone-200 p-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
+                            <div key={doc.id} className="border border-stone-200 rounded-lg p-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
                                 <div className="space-y-0.5">
                                     <h4 className="text-xs font-bold text-stone-800 uppercase">{doc.document_type_display}</h4>
                                     <span className="text-[9px] text-stone-400 font-mono block">
@@ -431,7 +431,7 @@ const VerifyApplication = () => {
                                         title: doc.document_type_display,
                                         subtitle: `Application #${application.application_id}`
                                     })}
-                                    className="p-2 border border-stone-200 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer"
+                                    className="p-2 border border-stone-200 hover:bg-stone-100 text-stone-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
                                     title="View Document"
                                 >
                                     <Eye size={16} />
@@ -451,14 +451,14 @@ const VerifyApplication = () => {
                 />
 
                 {/* Inspection Logging Form */}
-                <form onSubmit={handleSubmit(onSubmit)} className="bg-white border-2 border-stone-800 p-6 sm:p-8 space-y-6 shadow-xl">
+                <form onSubmit={handleSubmit(onSubmit)} className="bg-white border border-stone-200 rounded-xl p-6 sm:p-8 space-y-6 shadow-xl overflow-hidden">
                     <div className="flex items-center justify-between border-b border-stone-200 pb-3">
                         <div>
                             <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 block">Checkpoint Audit</span>
                             <h3 className="text-base font-black text-stone-900 uppercase tracking-tight">Record Inspection Log</h3>
                         </div>
                         {location.lat !== 0 && (
-                            <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold bg-stone-100 text-stone-600 px-2 py-1 border border-stone-200">
+                            <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold bg-stone-100 text-stone-600 px-2 py-1 rounded-md border border-stone-200">
                                 <Compass size={12} className="text-green-700" />
                                 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                             </div>
@@ -473,14 +473,14 @@ const VerifyApplication = () => {
                             {...register('notes')}
                             disabled={isSubmitting}
                             placeholder="Specify truck plate number, driver identity, animal physical condition, or checkpoint notes..."
-                            className="w-full p-4 bg-white border border-stone-300 focus:border-stone-900 outline-none text-xs font-medium resize-none h-28 placeholder:text-stone-400"
+                            className="w-full p-4 bg-white border border-stone-300 rounded-lg shadow-2xs focus:border-stone-900 outline-none text-xs font-medium resize-none h-28 placeholder:text-stone-400"
                         />
                     </div>
 
                     <button
                         type="submit"
                         disabled={isSubmitting || !isValid || isAlreadyChecked}
-                        className="w-full bg-green-700 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs h-14 flex items-center justify-center gap-2 transition-colors shadow-md shadow-green-700/20 disabled:opacity-50 disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none cursor-pointer"
+                        className="w-full bg-green-700 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs h-14 rounded-lg shadow-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none cursor-pointer"
                     >
                         {isSubmitting ? (
                             <span className="loading loading-spinner loading-sm"></span>

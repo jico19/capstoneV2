@@ -25,21 +25,21 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
 
 
     if (isLoading) return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-            <span className="loading loading-spinner loading-lg text-green-600"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Opening Document...</p>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-stone-900/50 backdrop-blur-xs">
+            <span className="loading loading-spinner loading-lg text-green-700"></span>
+            <p className="text-[10px] font-black uppercase tracking-widest text-stone-300 mt-4">Opening Document...</p>
         </div>
     );
 
     if (isError) return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white p-8 max-w-md w-full border border-red-100 flex flex-col items-center gap-4 text-center rounded-none">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4">
+            <div className="bg-white p-8 max-w-md w-full border border-stone-200 flex flex-col items-center gap-4 text-center rounded-xl shadow-xl">
                 <AlertCircle size={32} className="text-red-600" />
                 <div>
-                    <h3 className="text-lg font-black text-gray-900 tracking-tight">Could not load document</h3>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Please try again.</p>
+                    <h3 className="text-lg font-black text-stone-900 tracking-tight">Could not load document</h3>
+                    <p className="text-xs text-stone-500 font-bold uppercase tracking-wider mt-1">Please try again.</p>
                 </div>
-                <button onClick={onClose} className="w-full bg-gray-900 text-white py-3 text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-colors">
+                <button onClick={onClose} className="w-full bg-stone-800 text-white py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs hover:bg-stone-700 transition-colors">
                     Close
                 </button>
             </div>
@@ -56,19 +56,19 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
     const remarks = doc?.ocr?.remarks || {};
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 p-4 sm:p-6 overflow-hidden">
-            <div className="bg-white w-full max-w-6xl h-full max-h-[92vh] flex flex-col border border-gray-200 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4 sm:p-6 overflow-hidden">
+            <div className="bg-white w-full max-w-6xl h-full max-h-[92vh] flex flex-col border border-stone-200 rounded-xl shadow-xl overflow-hidden">
                 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white">
+                <div className="flex items-center justify-between p-6 border-b border-stone-200 bg-stone-50/50">
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Document Review</p>
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest leading-none">Document Review</p>
+                        <h3 className="text-2xl font-black text-stone-900 tracking-tight leading-none">
                             {doc.document_type_display}
                         </h3>
                     </div>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
-                        <X size={28} strokeWidth={3} />
+                    <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-900 rounded-lg transition-colors">
+                        <X size={20} strokeWidth={2.5} />
                     </button>
                 </div>
 
@@ -76,26 +76,26 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                 <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
                     
                     {/* Left: Document Preview with Controls */}
-                    <div className="flex-1 bg-gray-50 overflow-auto p-4 sm:p-6 flex flex-col gap-3">
+                    <div className="flex-1 bg-stone-50 overflow-auto p-4 sm:p-6 flex flex-col gap-3">
                         <div className="flex justify-between items-center flex-wrap gap-2">
                             {!isPdf ? (
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                     <button
                                         type="button"
                                         onClick={handleZoomOut}
                                         title="Zoom Out"
-                                        className="p-1.5 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        className="p-1.5 bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg shadow-2xs transition-colors"
                                     >
                                         <ZoomOut size={14} />
                                     </button>
-                                    <span className="text-[10px] font-mono text-gray-500 w-12 text-center bg-white py-1.5 border border-gray-200 select-none">
+                                    <span className="text-[10px] font-mono text-stone-600 w-12 text-center bg-white py-1.5 border border-stone-200 rounded-md select-none">
                                         {Math.round(zoom * 100)}%
                                     </span>
                                     <button
                                         type="button"
                                         onClick={handleZoomIn}
                                         title="Zoom In"
-                                        className="p-1.5 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        className="p-1.5 bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg shadow-2xs transition-colors"
                                     >
                                         <ZoomIn size={14} />
                                     </button>
@@ -103,26 +103,26 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                                         type="button"
                                         onClick={handleRotate}
                                         title="Rotate"
-                                        className="p-1.5 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        className="p-1.5 bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg shadow-2xs transition-colors"
                                     >
                                         <RotateCw size={14} />
                                     </button>
                                     <button
                                         type="button"
                                         onClick={handleReset}
-                                        className="px-2 py-1 text-[9px] font-black uppercase text-gray-600 bg-white border border-gray-200 hover:bg-gray-100"
+                                        className="px-2 py-1 text-[9px] font-black uppercase text-stone-600 bg-white border border-stone-200 hover:bg-stone-100 rounded-lg shadow-2xs transition-colors"
                                     >
                                         Reset
                                     </button>
                                 </div>
                             ) : (
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">PDF Viewer</span>
+                                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">PDF Viewer</span>
                             )}
-                            <a href={doc.file} target="_blank" rel="noreferrer" className="text-green-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">
+                            <a href={doc.file} target="_blank" rel="noreferrer" className="text-green-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">
                                 <ExternalLink size={14} /> Open Tab
                             </a>
                         </div>
-                        <div className="flex-1 border border-gray-200 bg-white p-2 flex items-center justify-center overflow-auto">
+                        <div className="flex-1 border border-stone-200 bg-white p-2 flex items-center justify-center overflow-auto rounded-xl shadow-xs">
                             {isPdf ? (
                                 <div className="flex flex-col items-center justify-center p-6 text-center max-w-sm space-y-3">
                                     <div className="p-3 bg-stone-900 text-white">
@@ -164,10 +164,10 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                     </div>
 
                     {/* Right: Verification Form */}
-                    <div className="lg:w-1/2 overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-100 bg-white p-8">
-                        <div className="mb-8 border-l-4 border-gray-900 pl-6">
-                            <h4 className="text-xl font-black text-gray-900 tracking-tight">Fix Document Details</h4>
-                            <p className="text-sm text-gray-500 font-medium">Correct any mistakes found in the digital copy below.</p>
+                    <div className="lg:w-1/2 overflow-y-auto border-t lg:border-t-0 lg:border-l border-stone-200 bg-white p-8">
+                        <div className="mb-8 border-l-4 border-stone-800 pl-6">
+                            <h4 className="text-xl font-black text-stone-900 tracking-tight">Fix Document Details</h4>
+                            <p className="text-sm text-stone-600 font-medium">Correct any mistakes found in the digital copy below.</p>
                         </div>
 
                         <form id="ocr-form" className="space-y-6">
@@ -176,12 +176,12 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                                 return (
                                     <div key={key} className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
+                                            <label className="text-[10px] font-black text-stone-800 uppercase tracking-widest">
                                                 {key.replace(/_/g, ' ')}
                                             </label>
                                             {remarks[key] && (
                                                 <span className="text-[10px] font-bold text-red-600 uppercase flex items-center gap-1">
-                                                    <AlertCircle size={12} /> Auto-check Failed
+                                                    <AlertCircle size={14} /> Auto-check Failed
                                                 </span>
                                             )}
                                         </div>
@@ -190,13 +190,13 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                                             type="text"
                                             defaultValue={extracted[key] || ""}
                                             {...register(key, { required: "This info is required" })}
-                                            className={`w-full p-4 bg-gray-50 border rounded-none focus:ring-0 outline-none transition-colors text-sm font-medium ${
-                                                hasError ? 'border-red-600 text-red-900 focus:border-red-600' : 'border-gray-200 text-gray-900 focus:border-green-600'
+                                            className={`w-full h-10 px-4 bg-white border rounded-lg focus:outline-none focus:ring-1 transition-all text-sm font-medium ${
+                                                hasError ? 'border-red-600 text-red-900 focus:border-red-600 focus:ring-red-600/20' : 'border-stone-200 text-stone-800 focus:border-green-700 focus:ring-green-700/20'
                                             }`}
                                         />
                                         
                                         {remarks[key] && (
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Help: "{remarks[key]}"</p>
+                                            <p className="text-[10px] text-stone-500 font-bold uppercase tracking-wide">Help: "{remarks[key]}"</p>
                                         )}
                                         {errors[key] && (
                                             <p className="text-red-600 text-[10px] font-black uppercase tracking-widest">{errors[key].message}</p>
@@ -209,10 +209,10 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-end gap-4">
+                <div className="p-6 border-t border-stone-200 bg-stone-50/50 flex flex-col sm:flex-row justify-end gap-3">
                     <button 
                         onClick={onClose} 
-                        className="w-full sm:w-auto px-10 py-4 border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-black uppercase tracking-widest rounded-none transition-colors"
+                        className="w-full sm:w-auto px-6 py-2.5 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs transition-colors"
                     >
                         {isDirty ? "Discard Changes" : "Close"}
                     </button>
@@ -220,7 +220,7 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                         onClick={handleSubmit(onSubmit)}
                         form="ocr-form"
                         disabled={isSubmitting || !isDirty}
-                        className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white px-12 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-3"
+                        className="w-full sm:w-auto bg-green-700 hover:bg-green-600 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-8 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                     >
                         {isSubmitting ? (
                             <>

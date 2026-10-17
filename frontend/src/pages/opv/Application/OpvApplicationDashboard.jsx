@@ -9,11 +9,12 @@ import { useApplication } from '../../../hooks/useApplications';
 import { useNavigate } from "react-router-dom";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import DateFormatter from "../../../components/ui/DateFormatter";
-import Pagination from "../../../components/ui/Pagination";
+import DataTable from "../../../components/ui/DataTable";
 
 /**
  * OPV Application Management Dashboard
  * High-signal minimalist registry for the Veterinary Office validation queue.
+ * Conforms to FarmPass Design 2.0 with universal DataTable.
  */
 const OpvApplicationDashboard = () => {
     const [limit] = useState(10);
@@ -34,8 +35,7 @@ const OpvApplicationDashboard = () => {
     }, [searchInput]);
     
     // We fetch only applications relevant to OPV. 
-    // The backend ViewSet handles the role-based filtering, 
-    // but we can pass status filters if needed.
+    // The backend ViewSet handles the role-based filtering.
     const { data: application, isLoading, isError, isFetching } = useApplication(limit, offset, undefined, searchQuery, {
         refetchInterval: 15000 // Automatically sync validation queue every 15 seconds
     });
@@ -65,6 +65,54 @@ const OpvApplicationDashboard = () => {
     const applications = application?.results || [];
     const count = application?.count || 0;
 
+    const columns = [
+        {
+            header: "Permit ID",
+            render: (app) => (
+                <span className="text-[11px] font-black text-stone-900 font-mono tracking-tight bg-stone-100 px-2 py-1 border border-stone-200">
+                    #{app.application_id}
+                </span>
+            ),
+        },
+        {
+            header: "Applicant",
+            render: (app) => (
+                <div>
+                    <p className="text-sm font-black text-stone-800 uppercase tracking-tight">{app.farmer_name}</p>
+                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Verified Livestock Owner</p>
+                </div>
+            ),
+        },
+        {
+            header: "Current Status",
+            align: "center",
+            render: (app) => <StatusBadge status={app.status} />,
+        },
+        {
+            header: "Transport Date",
+            align: "center",
+            render: (app) => (
+                <div className="text-xs font-bold text-stone-600 uppercase tracking-tighter">
+                    <DateFormatter date={app.transport_date} />
+                </div>
+            ),
+        },
+        {
+            header: "Actions",
+            align: "right",
+            headerClassName: "pr-8",
+            className: "pr-8",
+            render: (app) => (
+                <button 
+                    onClick={() => navigate(`/opv/application/detail/${app.id}`)}
+                    className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 ml-auto"
+                >
+                    <Eye size={14} /> Review
+                </button>
+            ),
+        },
+    ];
+
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 bg-white min-h-screen font-sans">
             {/* Minimalist Header */}
@@ -93,71 +141,24 @@ const OpvApplicationDashboard = () => {
             </div>
 
             {/* Registry Table Section */}
-            <div className="border border-stone-200 bg-white">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-500">
-                            <tr>
-                                <th className="px-6 py-5">Permit ID</th>
-                                <th className="px-6 py-5">Applicant</th>
-                                <th className="px-6 py-5 text-center">Current Status</th>
-                                <th className="px-6 py-5 text-center">Transport Date</th>
-                                <th className="px-6 py-5 text-right pr-8">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100">
-                            {applications.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5">
-                                        <div className="flex flex-col items-center justify-center py-24 bg-stone-50/30">
-                                            <FileSignature size={48} className="text-stone-200 mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">No applications in queue</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                applications.map((app) => (
-                                    <tr key={app.id} className="hover:bg-stone-50 transition-colors">
-                                        <td className="px-6 py-5">
-                                            <span className="text-[11px] font-black text-stone-900 font-mono tracking-tight bg-stone-100 px-2 py-1 border border-stone-200">
-                                                #{app.application_id}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-5">
-                                            <p className="text-sm font-black text-stone-800 uppercase tracking-tight">{app.farmer_name}</p>
-                                            <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Verified Livestock Owner</p>
-                                        </td>
-                                        <td className="px-6 py-5 text-center">
-                                            <StatusBadge status={app.status} />
-                                        </td>
-                                        <td className="px-6 py-5 text-center">
-                                            <div className="text-xs font-bold text-stone-600 uppercase tracking-tighter">
-                                                <DateFormatter date={app.transport_date} />
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-5 text-right pr-8">
-                                            <button 
-                                                onClick={() => navigate(`/opv/application/detail/${app.id}`)}
-                                                className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 ml-auto"
-                                            >
-                                                <Eye size={14} /> Review
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <Pagination 
-                    count={count} 
-                    limit={limit} 
-                    offset={offset} 
-                    onPageChange={setOffset} 
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={applications}
+                minWidth="800px"
+                emptyState={{
+                    icon: FileSignature,
+                    title: "No applications in queue",
+                    description: "All pending permits have been validated or none match your search."
+                }}
+                pagination={count > limit ? {
+                    count,
+                    limit,
+                    offset,
+                    onPageChange: setOffset
+                } : null}
+            />
 
-            {/* Quick Navigation Footer (Optional) */}
+            {/* Quick Navigation Footer */}
             <div className="pt-8 border-t border-stone-100">
                 <button 
                     onClick={() => navigate('/opv/')}

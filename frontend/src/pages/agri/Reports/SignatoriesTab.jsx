@@ -10,7 +10,7 @@ const SignatoriesTab = ({ signatories, onChange }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Prepared By */}
-        <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
+        <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 space-y-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-green-800">
             1. Prepared By (Drafting Officer)
           </p>
@@ -20,7 +20,7 @@ const SignatoriesTab = ({ signatories, onChange }) => {
               type="text"
               value={signatories.prepared_by_name}
               onChange={(e) => onChange("prepared_by_name", e.target.value)}
-              className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+              className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
             />
           </div>
           <div className="space-y-1">
@@ -29,13 +29,13 @@ const SignatoriesTab = ({ signatories, onChange }) => {
               type="text"
               value={signatories.prepared_by_title}
               onChange={(e) => onChange("prepared_by_title", e.target.value)}
-              className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white focus:outline-none focus:border-green-700"
+              className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
             />
           </div>
         </div>
 
         {/* Verified By */}
-        <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
+        <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 space-y-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-stone-700">
             2. Certified Correct By (Veterinarian)
           </p>
@@ -45,7 +45,7 @@ const SignatoriesTab = ({ signatories, onChange }) => {
               type="text"
               value={signatories.verified_by_name}
               onChange={(e) => onChange("verified_by_name", e.target.value)}
-              className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+              className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
             />
           </div>
           <div className="space-y-1">
@@ -54,13 +54,13 @@ const SignatoriesTab = ({ signatories, onChange }) => {
               type="text"
               value={signatories.verified_by_title}
               onChange={(e) => onChange("verified_by_title", e.target.value)}
-              className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white focus:outline-none focus:border-green-700"
+              className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
             />
           </div>
         </div>
 
         {/* Approved By */}
-        <div className="bg-stone-50 border border-stone-200 p-4 space-y-3">
+        <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 space-y-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-stone-700">
             3. Approved By (Municipal Agriculturist)
           </p>
@@ -70,7 +70,7 @@ const SignatoriesTab = ({ signatories, onChange }) => {
               type="text"
               value={signatories.approved_by_name}
               onChange={(e) => onChange("approved_by_name", e.target.value)}
-              className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+              className="w-full border border-stone-300 p-2 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
             />
           </div>
           <div className="space-y-1">
@@ -79,7 +79,7 @@ const SignatoriesTab = ({ signatories, onChange }) => {
               type="text"
               value={signatories.approved_by_title}
               onChange={(e) => onChange("approved_by_title", e.target.value)}
-              className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white focus:outline-none focus:border-green-700"
+              className="w-full border border-stone-300 p-2 text-xs text-stone-700 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
             />
           </div>
         </div>

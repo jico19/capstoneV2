@@ -6,8 +6,8 @@ import { getRelativeTime, getIconInfo } from './notifcationHelper';
 const NotificationItem = ({ notif }) => {
     const { icon: Icon, color } = getIconInfo(notif.type);
     return (
-        <div className={`p-4 flex gap-4 ${notif.is_read ? 'bg-white' : 'bg-green-50/30'}`}>
-            <div className={`shrink-0 w-10 h-10 flex items-center justify-center border border-stone-200 bg-white ${color}`}>
+        <div className={`p-4 flex gap-4 ${notif.is_read ? 'bg-white' : 'bg-emerald-50/40'}`}>
+            <div className={`shrink-0 w-10 h-10 flex items-center justify-center border border-stone-200 bg-white rounded-lg ${color}`}>
                 <Icon size={20} strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">

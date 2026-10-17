@@ -119,10 +119,23 @@ class Notification(models.Model):
         INFO = "INFO", "Info"
         SUCCESS = "SUCCESS", "Success"
 
+    class Section(models.TextChoices):
+        APPLICATIONS = "applications", "Applications"
+        PAYMENTS = "payments", "Payments"
+        FARMERS = "farmers", "Farmers"
+        SURVEYS = "surveys", "Hog Surveys"
+        GENERAL = "general", "General"
+
     recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="notifications"
     )
     type = models.CharField(max_length=20, choices=Type.choices)
+    section = models.CharField(
+        max_length=30,
+        choices=Section.choices,
+        default=Section.APPLICATIONS,
+        db_index=True,
+    )
     title = models.CharField(max_length=200)
     message = models.TextField()
     is_read = models.BooleanField(default=False)

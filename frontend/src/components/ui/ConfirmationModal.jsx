@@ -92,15 +92,15 @@ const ConfirmationModal = ({
 
     return (
         <div 
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs"
             onClick={(e) => {
                 // Close on clicking backdrop
                 if (e.target === e.currentTarget && !isSubmitting) onClose();
             }}
         >
-            <div className="bg-white w-full max-w-md border border-stone-200 shadow-2xl rounded-none overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+            <div className="bg-white w-full max-w-md border border-stone-200 shadow-xl rounded-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50">
+                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/50">
                     <div className="flex items-center gap-3">
                         {getIcon()}
                         <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest leading-none">{title}</h3>
@@ -125,13 +125,13 @@ const ConfirmationModal = ({
                     </div>
 
                     {/* Actions Footer */}
-                    <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-stone-100">
+                    <div className="flex flex-wrap gap-2 justify-end pt-4 border-t border-stone-200 bg-stone-50/50 -mx-6 -mb-6 px-6 py-4">
                         {/* Cancel Button */}
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={activeIsSubmitting}
-                            className="px-5 py-2.5 border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none disabled:opacity-50"
+                            className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg shadow-2xs disabled:opacity-50"
                         >
                             {cancelText}
                         </button>
@@ -142,11 +142,11 @@ const ConfirmationModal = ({
                                 type="button"
                                 onClick={onNo}
                                 disabled={activeIsSubmitting}
-                                className={`px-5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${getNoButtonClass()}`}
+                                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg shadow-2xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${getNoButtonClass()}`}
                             >
                                 {activeIsSubmitting && submittingAction === 'no' ? (
                                     <>
-                                        <RefreshCw size={12} className="animate-spin" />
+                                        <RefreshCw size={14} className="animate-spin" />
                                         Processing...
                                     </>
                                 ) : (
@@ -160,7 +160,7 @@ const ConfirmationModal = ({
                             type="button"
                             onClick={handleYes}
                             disabled={activeIsSubmitting}
-                            className={`px-7 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${getYesButtonClass()}`}
+                            className={`px-5 py-2 text-xs font-black uppercase tracking-widest transition-colors rounded-lg shadow-xs flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${getYesButtonClass()}`}
                         >
                             {activeIsSubmitting && (submittingAction === 'yes' || !submittingAction) ? (
                                 <>

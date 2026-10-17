@@ -6,29 +6,30 @@ export default function NeedHelp() {
   const ref = useScrollReveal({ threshold: 0.2 });
 
   return (
-    <section className="bg-brand-bg py-16 max-[640px]:py-12 px-8 max-[640px]:px-5">
+    <section className="bg-stone-50 py-16 max-[640px]:py-12 px-8 max-[640px]:px-5">
       <div ref={ref}
-        className="reveal-block max-w-[54rem] mx-auto bg-white border border-[#e2ece6] rounded-[1rem] px-9 py-8 max-[640px]:px-6 max-[640px]:py-6
-          shadow-[0_0.25rem_1.5rem_rgba(10,42,26,0.06)]">
+        className="reveal-block max-w-[54rem] mx-auto bg-white border border-stone-200 rounded-lg p-8">
 
         <div className="flex items-center gap-3 mb-3">
-          <img src={HelpIcon} alt="" className="w-7 h-7 object-contain" />
-          <h2 className="font-archivo text-[clamp(1.1rem,1.8vw,1.4rem)] text-brand-primary tracking-[-0.01em]">Need Help?</h2>
+          <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-md flex items-center justify-center shrink-0">
+            <img src={HelpIcon} alt="" className="w-5 h-5 object-contain" />
+          </div>
+          <h2 className="font-archivo text-xl text-stone-900 font-bold tracking-tight">Need Assistance?</h2>
         </div>
 
-        <p className="font-jakarta text-[clamp(0.88rem,1.2vw,0.97rem)] text-[#6c757d] leading-[1.75] mb-4">
-          If you have questions about requirements or need assistance with your application:
+        <p className="font-jakarta text-sm text-stone-600 leading-relaxed mb-5">
+          For technical issues or clarification regarding requirements, contact the Sariaya Municipal Agriculture Office:
         </p>
 
-        <ul className="list-none p-0 m-0 flex flex-col gap-[0.55rem]">
+        <ul className="list-none p-0 m-0 flex flex-col gap-3">
           {[
-            <>Check our <Link to="/faqs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="text-brand-primary-mid font-semibold no-underline hover:underline">Frequently Asked Questions</Link></>,
-            <>Contact us: <strong>(042) XXX-XXXX</strong> or <strong>agri@sariaya.gov.ph</strong></>,
-            <>Visit Sariaya Municipal Agriculture Office during office hours <strong>(Mon–Fri, 8AM–5PM)</strong></>,
+            <>Review frequently asked questions in our <Link to="/faqs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="text-green-700 font-semibold no-underline hover:underline">Help & FAQs Center</Link></>,
+            <>Direct line: <strong className="text-stone-900">(042) 525-8200</strong> or email <strong className="text-stone-900">agri@sariaya.gov.ph</strong></>,
+            <>Visit in-person: <strong className="text-stone-900">Municipal Agriculture Office, New Municipal Hall</strong> (Mon–Fri, 8:00 AM – 5:00 PM)</>,
           ].map((item, i) => (
             <li key={i}
-              className="font-jakarta text-[clamp(0.85rem,1.2vw,0.95rem)] text-[#444] pl-5 relative leading-[1.65]
-                before:content-['›'] before:absolute before:left-[0.2rem] before:text-brand-primary-mid before:font-bold before:text-[1rem]">
+              className="font-jakarta text-xs sm:text-sm text-stone-700 pl-4 relative leading-relaxed
+                before:content-['—'] before:absolute before:left-0 before:text-stone-400 before:font-bold">
               {item}
             </li>
           ))}

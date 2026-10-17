@@ -48,12 +48,12 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
     const mainErrorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Something went wrong. Please check your CSV format.';
 
     return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-md border border-stone-200 shadow-2xl rounded-none overflow-hidden">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-stone-900/50">
+            <div className="bg-white w-full max-w-md border border-stone-200 rounded-xl overflow-hidden shadow-xl">
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50">
+                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/50">
                     <div className="flex items-center gap-3">
-                        <Upload size={18} className="text-green-600" />
+                        <Upload size={18} className="text-green-700" />
                         <h3 className="text-sm font-black text-stone-800 uppercase tracking-widest">Upload Hog Survey</h3>
                     </div>
                     <button onClick={handleClose} className="text-stone-400 hover:text-stone-600 transition-colors">
@@ -139,10 +139,10 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
                                 <button
                                     onClick={handleUpload}
                                     disabled={!file || isPending}
-                                    className={`w-full py-3 text-xs font-black uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-2
+                                    className={`w-full py-3 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2
                                         ${!file || isPending 
                                             ? 'bg-stone-100 text-stone-400 cursor-not-allowed' 
-                                            : 'bg-green-700 hover:bg-green-600 text-white shadow-lg shadow-green-700/10'
+                                            : 'bg-green-700 hover:bg-green-600 text-white'
                                         }
                                     `}
                                 >
@@ -152,7 +152,7 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
                                             Uploading...
                                         </>
                                     ) : (
-                                        'Start Upload'
+                                        'Upload Now'
                                     )}
                                 </button>
                             </div>
@@ -182,7 +182,7 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
 
                             <button
                                 onClick={handleClose}
-                                className="w-full mt-6 py-3 border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest rounded-none"
+                                className="w-full mt-6 py-3 border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-2xs"
                             >
                                 Close
                             </button>
@@ -192,7 +192,7 @@ const HogSurveyUploadModal = ({ isOpen, onClose }) => {
 
                 {/* Footer Tip */}
                 {!isSuccess && (
-                    <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+                    <div className="px-6 py-4 bg-stone-50 border-t border-stone-200">
                         <p className="text-[10px] font-medium text-stone-400 uppercase tracking-wider leading-relaxed">
                             Tip: Your CSV should have columns for barangay, survey_date, and pig counts.
                         </p>

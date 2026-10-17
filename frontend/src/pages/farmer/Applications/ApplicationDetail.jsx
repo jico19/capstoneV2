@@ -41,18 +41,18 @@ const ApplicationDetail = () => {
     };
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
             <span className="loading loading-spinner loading-lg text-green-600"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Retrieving Application...</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Retrieving Application...</p>
         </div>
     );
 
     if (isError) return (
         <div className="max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white">
-            <div className="bg-red-50 border border-red-100 p-10 flex flex-col items-center text-center space-y-4 rounded-none">
+            <div className="bg-red-50 border border-red-200 p-10 flex flex-col items-center text-center space-y-4 rounded-xl shadow-xs">
                 <h2 className="text-xl font-black text-red-700 uppercase tracking-tighter">Sync Failure</h2>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Could not retrieve application details.</p>
-                <button onClick={() => navigate(-1)} className="bg-gray-900 hover:bg-gray-800 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest transition-colors">Back to Dashboard</button>
+                <p className="text-xs font-bold text-stone-500 uppercase tracking-widest leading-relaxed">Could not retrieve application details.</p>
+                <button onClick={() => navigate(-1)} className="bg-stone-800 hover:bg-stone-700 text-white px-8 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors">Back to Dashboard</button>
             </div>
         </div>
     );
@@ -71,30 +71,30 @@ const ApplicationDetail = () => {
                 />
             )}
 
-            <div className="max-w-5xl mx-auto p-4 md:p-8 min-h-screen bg-white font-sans">
+            <div className="max-w-5xl mx-auto p-3 sm:p-6 md:p-8 min-h-screen bg-white font-sans">
                 {/* Minimalist Flat Navigation */}
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-green-600 transition-all mb-8 md:mb-12 border-b-2 border-transparent hover:border-green-600 pb-1 w-fit"
+                    className="flex items-center gap-2 text-stone-500 text-[10px] font-black uppercase tracking-[0.15em] hover:text-green-700 transition-all mb-4 sm:mb-8 border-b border-transparent hover:border-green-700 pb-0.5 w-fit"
                 >
-                    <ArrowLeft size={16} strokeWidth={3} /> Return to Applications
+                    <ArrowLeft size={14} strokeWidth={2.5} /> Return to Applications
                 </button>
 
-                <div className="space-y-6 md:space-y-10">
+                <div className="space-y-4 sm:space-y-8">
                     <ApplicationHeader data={application} />
 
                     <ApplicationTracker status={application.status} />
 
                     {application.aic_pdf && (
-                        <div className="bg-emerald-50 border border-emerald-300 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="bg-emerald-50 border border-emerald-300 p-3.5 sm:p-5 rounded-md flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <FileCheck2 size={16} className="text-emerald-700" />
+                                    <FileCheck2 size={16} className="text-emerald-700 shrink-0" />
                                     <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest">
                                         Animal Inspection Certificate (AIC) Issued
                                     </h3>
                                     {application.aic_number && (
-                                        <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-0.5 border border-emerald-200">
+                                        <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-0.5 border border-emerald-200 rounded">
                                             AIC #{application.aic_number}
                                         </span>
                                     )}

@@ -44,28 +44,28 @@ function DocCard({ doc }) {
 
   return (
     <div ref={ref}
-      className="rdoc-card group flex gap-4 items-start bg-white border border-[#e2ece6] rounded-[14px] px-[1.4rem] py-5 w-full
-        opacity-0 translate-y-5 transition-[opacity,transform,box-shadow,border-color] duration-500 ease-out
-        hover:shadow-[0_0.4rem_1.5rem_rgba(10,42,26,0.08)] hover:border-[#b2d4be]">
+      className="rdoc-card group flex gap-4 items-start bg-white border border-stone-200 p-5 rounded-lg w-full
+        opacity-0 translate-y-5 transition-[opacity,transform,border-color] duration-300 ease-out
+        hover:border-stone-400">
 
       {/* Number badge */}
-      <div className="w-[1.9rem] h-[1.9rem] bg-brand-primary rounded-[0.4rem] flex items-center justify-center text-brand-amber font-archivo text-[0.9rem] shrink-0 mt-[2px] shadow-[0_4px_12px_rgba(10,42,26,0.2)]">
+      <div className="w-7 h-7 bg-green-700 flex items-center justify-center text-white font-archivo text-xs font-bold shrink-0 mt-0.5 rounded-md">
         {doc.number}
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-archivo text-[clamp(0.92rem,1.3vw,1.2rem)] text-brand-primary mb-[0.4rem] tracking-[-0.01em]">{doc.title}</h3>
-        <p className="font-jakarta text-[clamp(0.82rem,1.1vw,0.9rem)] text-[#6c757d] leading-[1.7] mb-[0.65rem]">{doc.desc}</p>
+        <h3 className="font-archivo text-base text-stone-900 font-semibold mb-1 tracking-tight">{doc.title}</h3>
+        <p className="font-jakarta text-xs text-stone-600 leading-relaxed mb-3">{doc.desc}</p>
         <div className="flex flex-wrap gap-2 max-[640px]:flex-col">
-          <span className="font-jakarta text-[0.77rem] text-[#555] bg-[#f1f5f2] rounded-[0.4rem] px-[0.6rem] py-[0.2rem] whitespace-nowrap">
-            <strong className="text-brand-primary">Format:</strong> {doc.format}
+          <span className="font-jakarta text-[11px] text-stone-600 bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-md whitespace-nowrap">
+            <strong className="text-stone-900 font-semibold">Format:</strong> {doc.format}
           </span>
-          <span className="font-jakarta text-[0.77rem] text-[#555] bg-[#f1f5f2] rounded-[0.4rem] px-[0.6rem] py-[0.2rem] whitespace-nowrap">
-            <strong className="text-brand-primary">Max Size:</strong> {doc.size}
+          <span className="font-jakarta text-[11px] text-stone-600 bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-md whitespace-nowrap">
+            <strong className="text-stone-900 font-semibold">Max Size:</strong> {doc.size}
           </span>
-          <span className={`font-jakarta text-[0.77rem] rounded-[0.4rem] px-[0.6rem] py-[0.2rem] whitespace-nowrap
-            ${doc.extra.accent ? "bg-brand-amber/10 text-[#7a4f00]" : "bg-[#f1f5f2] text-[#555]"}`}>
-            <strong className={doc.extra.accent ? "text-[#7a4f00]" : "text-brand-primary"}>{doc.extra.label}:</strong> {doc.extra.value}
+          <span className={`font-jakarta text-[11px] px-2 py-0.5 rounded-md whitespace-nowrap border
+            ${doc.extra.accent ? "bg-amber-50 text-amber-900 border-amber-200" : "bg-stone-100 text-stone-600 border-stone-200"}`}>
+            <strong className={doc.extra.accent ? "text-amber-900 font-semibold" : "text-stone-900 font-semibold"}>{doc.extra.label}:</strong> {doc.extra.value}
           </span>
         </div>
       </div>
@@ -81,11 +81,13 @@ export default function RequiredDocs() {
       <div className="max-w-[54rem] mx-auto px-8 pb-16 max-[640px]:px-5 max-[640px]:pb-12">
 
         {/* Header */}
-        <div ref={headerRef} className="reveal-block flex items-center gap-3 pb-[0.9rem] border-b-2 border-[#e2ece6] mb-[0.6rem]">
-          <img src={RequiredDocsIcon} alt="" className="w-7 h-7 object-contain" />
-          <h2 className="font-archivo text-[clamp(1.2rem,2vw,2rem)] text-brand-primary tracking-[-0.01em]">Required Documents</h2>
+        <div ref={headerRef} className="reveal-block flex items-center gap-3 pb-3 border-b-2 border-stone-200 mb-2">
+          <div className="w-10 h-10 bg-emerald-50 border border-emerald-200 rounded-md flex items-center justify-center shrink-0">
+            <img src={RequiredDocsIcon} alt="" className="w-5 h-5 object-contain" />
+          </div>
+          <h2 className="font-archivo text-2xl text-stone-900 font-bold tracking-tight">Required Documents</h2>
         </div>
-        <p className="font-jakarta text-[clamp(0.88rem,1.2vw,0.97rem)] text-[#6c757d] leading-[1.75] mb-6">
+        <p className="font-jakarta text-sm text-stone-600 leading-relaxed mb-6">
           Prepare these documents before starting your application. All documents must be clear, legible scans or photos.
         </p>
 
@@ -95,16 +97,16 @@ export default function RequiredDocs() {
         </div>
 
         {/* Reminders */}
-        <div className="bg-[#fffbf0] border-[1.5px] border-[#f5d97a] rounded-[14px] px-[1.4rem] py-[1.1rem]">
-          <div className="flex items-center gap-[0.6rem] font-archivo text-[clamp(0.85rem,1.1vw,1.1rem)] text-[#7a4f00] mb-3">
-            <img src={WarningIcon} alt="" className="w-5 h-5 object-contain" />
-            Important Reminders
+        <div className="bg-amber-50/60 border border-amber-200 p-5 rounded-lg">
+          <div className="flex items-center gap-2 font-archivo text-sm font-semibold text-amber-900 mb-3">
+            <img src={WarningIcon} alt="" className="w-4 h-4 object-contain" />
+            Important Guidelines
           </div>
-          <ul className="list-none p-0 m-0 flex flex-col gap-[0.45rem]">
+          <ul className="list-none p-0 m-0 flex flex-col gap-2">
             {REMINDERS.map((r, i) => (
               <li key={i}
-                className="font-jakarta text-[clamp(0.82rem,1.1vw,0.88rem)] text-[#7a4f00] pl-[1.1rem] leading-[1.65] relative
-                  before:content-['•'] before:absolute before:left-[0.2rem] before:text-brand-amber before:font-bold">
+                className="font-jakarta text-xs text-amber-900/90 pl-4 relative leading-relaxed
+                  before:content-['—'] before:absolute before:left-0 before:text-amber-700 before:font-bold">
                 {r}
               </li>
             ))}

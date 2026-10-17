@@ -6,7 +6,7 @@ import React from 'react';
  */
 const ActionGroup = ({ buttons = [] }) => {
     return (
-        <div className="flex items-center justify-end gap-0">
+        <div className="flex items-center justify-end gap-1.5">
             {buttons.map((btn, i) => {
                 const Icon = btn.icon;
 
@@ -33,9 +33,9 @@ const ActionGroup = ({ buttons = [] }) => {
                         key={i}
                         className="group relative"
                     >
-                        {/* Custom Flat Tooltip - Replacing DaisyUI tooltip for full control */}
+                        {/* Custom Flat Tooltip */}
                         {label && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-none whitespace-nowrap z-50 pointer-events-none">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md shadow-xs whitespace-nowrap z-50 pointer-events-none">
                                 {label}
                             </div>
                         )}
@@ -45,21 +45,15 @@ const ActionGroup = ({ buttons = [] }) => {
                             onClick={handleClick}
                             disabled={isDisabled}
                             className={`
-                                /* Fixed Dimensions - Sharp Square */
-                                h-10 w-10 flex items-center justify-center
-                                
-                                /* Border Management: Collapses middle borders to look unified */
-                                border border-gray-200 -ml-[1px] first:ml-0
-                                
-                                /* Flat Styling: No radius, no shadows */
-                                rounded-none bg-white transition-all duration-75
-                                
-                                /* Interaction States - High Contrast Semantic Fills */
+                                h-9 w-9 flex items-center justify-center
+                                border border-stone-200
+                                rounded-lg bg-white shadow-2xs transition-all duration-100
+                                active:scale-[0.98]
                                 ${isDisabled
-                                    ? "bg-gray-50 text-gray-200 border-gray-100 cursor-not-allowed"
+                                    ? "bg-stone-50 text-stone-300 border-stone-100 cursor-not-allowed shadow-none"
                                     : isDestructive
-                                        ? "text-gray-400 hover:bg-red-600 hover:text-white hover:border-red-600"
-                                        : "text-gray-400 hover:bg-green-600 hover:text-white hover:border-green-600"
+                                        ? "text-stone-500 hover:bg-red-600 hover:text-white hover:border-red-600"
+                                        : "text-stone-500 hover:bg-green-700 hover:text-white hover:border-green-700"
                                 }
                             `}
                         >

@@ -117,8 +117,8 @@ const CreateApplication = () => {
     if (user?.verification_status && user?.verification_status !== 'VERIFIED') {
         return (
             <div className="max-w-2xl mx-auto p-4 sm:p-8 md:p-12 space-y-6">
-                <div className="bg-white border-2 border-stone-900 p-6 sm:p-10 space-y-6 text-center shadow-xl">
-                    <div className="w-16 h-16 bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+                <div className="bg-white border border-stone-200 rounded-xl p-6 sm:p-10 space-y-6 text-center shadow-xl">
+                    <div className="w-16 h-16 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center mx-auto">
                         <ShieldAlert size={36} />
                     </div>
                     <div className="space-y-2">
@@ -131,7 +131,7 @@ const CreateApplication = () => {
                         </p>
                     </div>
 
-                    <div className="bg-stone-50 border border-stone-200 p-4 text-left space-y-2 text-xs text-stone-700 max-w-md mx-auto">
+                    <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-left space-y-2 text-xs text-stone-700 max-w-md mx-auto">
                         <p className="font-black text-[10px] uppercase tracking-wider text-stone-500">Required Documents:</p>
                         <ul className="list-disc list-inside space-y-1">
                             <li>Handler's License (BAI)</li>
@@ -142,13 +142,13 @@ const CreateApplication = () => {
                     <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
                         <Link
                             to="/farmer"
-                            className="px-6 py-3 border border-stone-300 text-stone-700 text-xs font-black uppercase tracking-widest hover:bg-stone-100 transition-colors"
+                            className="px-6 py-3 border border-stone-300 text-stone-700 text-xs font-black uppercase tracking-widest hover:bg-stone-100 rounded-lg shadow-xs transition-colors"
                         >
                             Back to Dashboard
                         </Link>
                         <Link
                             to="/farmer/verification"
-                            className="px-6 py-3 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest transition-colors shadow-md shadow-green-700/20"
+                            className="px-6 py-3 bg-green-700 hover:bg-green-600 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors"
                         >
                             Upload Documents Now →
                         </Link>
@@ -173,28 +173,28 @@ const CreateApplication = () => {
                 />
             )}
             
-            <div className="flex-1 max-w-3xl mx-auto p-4 sm:p-6 md:p-12 space-y-8 bg-white min-h-full">
+            <div className="flex-1 max-w-3xl mx-auto p-3 sm:p-6 md:p-10 space-y-5 sm:space-y-8 bg-white min-h-full">
                 {/* Header & Friendly Guidance */}
-                <div className="space-y-4">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-700 mb-1">New Request</p>
-                        <h1 className="text-2xl sm:text-3xl font-black text-stone-800 tracking-tight uppercase leading-none">Apply for a Permit</h1>
+                <div className="space-y-3 sm:space-y-4">
+                    <div className="space-y-0.5 sm:space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-700">New Request</p>
+                        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-800 tracking-tight uppercase leading-tight">Apply for a Permit</h1>
                     </div>
-                    <p className="text-stone-500 font-medium text-sm sm:text-base max-w-xl">
+                    <p className="text-stone-500 font-medium text-xs sm:text-sm max-w-xl">
                         Complete these 3 simple steps to request your livestock transport permit.
                     </p>
 
                     {/* Progress Tracker */}
-                    <div className="pt-4">
+                    <div className="pt-2 sm:pt-4">
                         {/* Mobile-only Progress Indicator */}
                         <div className="md:hidden space-y-2">
                             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
                                 <span>Step {step} of 3</span>
-                                <span className="text-green-700">
+                                <span className="text-green-700 font-bold">
                                     {step === 1 ? "Travel Details" : step === 2 ? "Attach Files" : "Review & Send"}
                                 </span>
                             </div>
-                            <div className="w-full bg-stone-100 h-2 border border-stone-200">
+                            <div className="w-full bg-stone-100 h-1.5 border border-stone-200 rounded-full overflow-hidden">
                                 <div 
                                     className="bg-green-700 h-full transition-all duration-300 ease-out" 
                                     style={{ width: `${(step / 3) * 100}%` }}
@@ -205,27 +205,27 @@ const CreateApplication = () => {
                         {/* Desktop-only Stepper */}
                         <div className="hidden md:flex items-center pt-4">
                             {[1, 2, 3].map((num) => (
-                                <div key={num} className="flex items-center flex-1 last:flex-none">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`w-10 h-10 flex items-center justify-center font-black text-sm border-2
-                                            ${step > num 
-                                                ? "bg-green-700 border-green-700 text-white" 
-                                                : step === num 
-                                                    ? "bg-white border-stone-800 text-stone-800" 
-                                                    : "bg-white border-stone-200 text-stone-300"}`}
-                                        >
-                                            {step > num ? <Check size={18} strokeWidth={3} /> : num}
-                                        </div>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest ${step >= num ? 'text-stone-800' : 'text-stone-300'}`}>
-                                            {num === 1 ? "Travel Details" : num === 2 ? "Attach Files" : "Review & Send"}
-                                        </span>
-                                    </div>
-                                    {num < 3 && (
-                                        <div className="flex-1 px-4 self-start mt-5">
-                                            <div className={`h-[2px] w-full ${step > num ? "bg-green-700" : "bg-stone-200"}`} />
-                                        </div>
-                                    )}
-                                </div>
+                                 <div key={num} className="flex items-center flex-1 last:flex-none">
+                                     <div className="flex flex-col items-center gap-2">
+                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border-2
+                                             ${step > num 
+                                                 ? "bg-green-700 border-green-700 text-white" 
+                                                 : step === num 
+                                                     ? "bg-white border-stone-800 text-stone-800" 
+                                                     : "bg-white border-stone-200 text-stone-300"}`}
+                                         >
+                                             {step > num ? <Check size={18} strokeWidth={3} /> : num}
+                                         </div>
+                                         <span className={`text-[9px] font-black uppercase tracking-widest ${step >= num ? 'text-stone-800' : 'text-stone-300'}`}>
+                                             {num === 1 ? "Travel Details" : num === 2 ? "Attach Files" : "Review & Send"}
+                                         </span>
+                                     </div>
+                                     {num < 3 && (
+                                         <div className="flex-1 px-4 self-start mt-5">
+                                             <div className={`h-[2px] w-full ${step > num ? "bg-green-700" : "bg-stone-200"}`} />
+                                         </div>
+                                     )}
+                                 </div>
                             ))}
                         </div>
                     </div>
@@ -305,8 +305,8 @@ const CreateApplication = () => {
 
                 {/* Help Notice */}
                 {step === 1 && (
-                    <div className="bg-stone-50 border border-stone-200 p-5 flex gap-4 items-start">
-                        <div className="bg-white p-2 border border-stone-200 text-green-700 shrink-0">
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-5 flex gap-4 items-start">
+                        <div className="bg-white p-2 border border-stone-200 rounded-lg text-green-700 shrink-0">
                             <ArrowRight size={16} />
                         </div>
                         <div>

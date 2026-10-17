@@ -6,7 +6,7 @@ import { Sparkles, Building, Scale } from "lucide-react";
 const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
   return (
     <div className="space-y-5">
-      <div className="bg-green-50 border border-green-200 p-3.5 flex items-start gap-3">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3.5 flex items-start gap-3">
         <Sparkles size={18} className="text-green-700 flex-shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="text-xs font-black text-green-950 uppercase tracking-wide">
@@ -27,21 +27,21 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
           <button
             type="button"
             onClick={() => onRecipientPreset("mayor")}
-            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors flex items-center gap-1.5"
+            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-md shadow-2xs transition-colors flex items-center gap-1.5"
           >
             <Building size={12} /> Municipal Mayor (Hon. Marcelo P. Gayeta)
           </button>
           <button
             type="button"
             onClick={() => onRecipientPreset("opv")}
-            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors flex items-center gap-1.5"
+            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-md shadow-2xs transition-colors flex items-center gap-1.5"
           >
             <Building size={12} /> Provincial Veterinarian (OPV Quezon)
           </button>
           <button
             type="button"
             onClick={() => onRecipientPreset("sb")}
-            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition-colors flex items-center gap-1.5"
+            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-md shadow-2xs transition-colors flex items-center gap-1.5"
           >
             <Scale size={12} /> Sangguniang Bayan (Committee on Agriculture)
           </button>
@@ -57,7 +57,7 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
             type="text"
             value={transmittal.memo_for}
             onChange={(e) => onChange("memo_for", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
           />
         </div>
 
@@ -69,7 +69,7 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
             type="text"
             value={transmittal.memo_through}
             onChange={(e) => onChange("memo_through", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
           />
         </div>
 
@@ -81,7 +81,7 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
             type="text"
             value={transmittal.memo_from}
             onChange={(e) => onChange("memo_from", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
           />
         </div>
 
@@ -93,7 +93,7 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
             type="text"
             value={transmittal.date}
             onChange={(e) => onChange("date", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
           />
         </div>
       </div>
@@ -106,7 +106,7 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
           type="text"
           value={transmittal.subject}
           onChange={(e) => onChange("subject", e.target.value)}
-          className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white focus:outline-none focus:border-green-700"
+          className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
         />
       </div>
 
@@ -118,7 +118,7 @@ const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
           rows={3}
           value={transmittal.legal_bases}
           onChange={(e) => onChange("legal_bases", e.target.value)}
-          className="w-full border border-stone-300 p-2.5 text-xs font-medium text-stone-800 bg-white focus:outline-none focus:border-green-700"
+          className="w-full border border-stone-300 p-2.5 text-xs font-medium text-stone-800 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
         />
       </div>
     </div>

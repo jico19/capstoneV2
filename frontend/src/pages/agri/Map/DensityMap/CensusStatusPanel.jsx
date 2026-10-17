@@ -1,256 +1,344 @@
-import { TrendingUp, TrendingDown, ShieldCheck, Minus, Info } from "lucide-react";
+import { useState } from "react";
+import { 
+    TrendingUp, 
+    TrendingDown, 
+    ShieldCheck, 
+    ChevronDown, 
+    ChevronUp, 
+    Truck, 
+    Calculator,
+    ArrowUpRight,
+    ArrowLeft
+} from "lucide-react";
 
 /**
- * Left status column of the Pig Population Map: census status / yearly
- * comparison card, interactive density legend, and staff quick guide.
+ * Context-Aware Status & Intelligence Panel:
+ * Transitions smoothly between Municipal Intelligence Mode and
+ * Single-Barangay Dossier Mode to eliminate card stacking and information overload.
  */
-const CensusStatusPanel = ({ filters, toggleFilter, totalPigs, isMapDataUpdating, operationalTakeaway, comparisonStats }) => {
-    const { isCompareMode, selectedYear, baselineYear, activeFilters } = filters;
+const CensusStatusPanel = ({ 
+    filters, 
+    totalPigs, 
+    operationalTakeaway, 
+    secondaryTakeaway, 
+    comparisonStats, 
+    survey = [], 
+    transportVolume = [] 
+}) => {
+    const { isCompareMode, selectedYear, baselineYear, selectedBarangay, setSelectedBarangay } = filters;
+    const [expandedWhy, setExpandedWhy] = useState(false);
 
-    return (
-        <div className="xl:col-span-1 space-y-6">
-            
-            {/* Status / Comparison Card */}
-            <div className="bg-white border border-stone-200 p-6 space-y-6 rounded-none shadow-sm">
-                <div className="space-y-1">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                        {isCompareMode ? 'Yearly Comparison' : 'Census Status'}
-                    </p>
-                    <h2 className="text-xl font-black text-stone-900 tracking-tight uppercase">
-                        {isCompareMode ? 'What Changed Between Years' : 'At a Glance'}
+    // Selected Barangay Dossier Data
+    const selectedBarangayRecord = selectedBarangay
+        ? survey.find(s => s.barangay.toLowerCase() === selectedBarangay.toLowerCase())
+        : null;
+
+    const selectedTransportRecord = selectedBarangay
+        ? transportVolume.find(t => t.barangay.toLowerCase() === selectedBarangay.toLowerCase())
+        : null;
+
+    const bPigs = Number(selectedBarangayRecord?.total_pigs || 0);
+    const bBreakdown = selectedBarangayRecord?.breakdown || {};
+    const bTransported = Number(selectedTransportRecord?.total_transported || 0);
+    const bShare = totalPigs > 0 ? ((bPigs / totalPigs) * 100).toFixed(1) : '0.0';
+
+    // -------------------------------------------------------------------------
+    // VIEW A: SINGLE-BARANGAY FOCUSED DOSSIER (WHEN A BARANGAY IS SELECTED)
+    // -------------------------------------------------------------------------
+    if (selectedBarangay && selectedBarangayRecord) {
+        return (
+            <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-xs font-sans space-y-4">
+                {/* Back to Municipal Overview Button */}
+                <div className="flex items-center justify-between border-b border-stone-200 pb-2.5">
+                    <button
+                        type="button"
+                        onClick={() => setSelectedBarangay(null)}
+                        className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-stone-600 hover:text-green-700 transition-colors cursor-pointer"
+                    >
+                        <ArrowLeft size={14} />
+                        <span>Back to Sariaya Overview</span>
+                    </button>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-700 border border-green-600/40">
+                        {selectedBarangayRecord.density_level || 'Active'}
+                    </span>
+                </div>
+
+                {/* Barangay Header */}
+                <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 block">
+                        Inspecting Sector
+                    </span>
+                    <h2 className="text-xl font-black uppercase tracking-tight text-stone-800 leading-tight">
+                        {selectedBarangay}
                     </h2>
                 </div>
 
-                {/* Stats Display */}
-                {!isCompareMode ? (
-                    /* Standard Single-Year Total with Meaningful Operational Takeaway */
-                    <div className={`space-y-4 transition-all duration-300 ${isMapDataUpdating ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
-                        <div className="p-4 bg-stone-50 border border-stone-200">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-emerald-100 text-emerald-800">
-                                    <TrendingUp size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">
-                                        Total Swine ({selectedYear})
-                                    </p>
-                                    <p className="text-2xl font-black text-stone-900 leading-none mt-1">
-                                        {isMapDataUpdating ? '...' : totalPigs.toLocaleString()}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Dynamic Non-Generic Purposeful Takeaway */}
-                        <div className="p-3.5 bg-stone-50 border-l-2 border-l-emerald-600 border border-stone-200 space-y-2.5">
-                            <div className="flex items-center justify-between gap-1.5 border-b border-stone-200/60 pb-1.5">
-                                <div className="flex items-center gap-1.5 text-emerald-800">
-                                    <ShieldCheck size={13} className="shrink-0 text-emerald-700" />
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-900">
-                                        {operationalTakeaway.category}
-                                    </span>
-                                </div>
-                                <span className="text-[8px] font-bold uppercase tracking-wider text-stone-400">
-                                    Operational Takeaway
-                                </span>
-                            </div>
-
-                            <div className="space-y-1">
-                                <p className="text-[11px] font-black text-stone-900 uppercase tracking-tight">
-                                    {operationalTakeaway.title}
-                                </p>
-                                <p className="text-xs text-stone-700 leading-relaxed font-medium">
-                                    {operationalTakeaway.insight}
-                                </p>
-                            </div>
-
-                            {operationalTakeaway.action && (
-                                <div className="pt-2 border-t border-stone-200/80 flex items-start gap-1.5 text-[10px] text-stone-600">
-                                    <span className="font-bold text-emerald-800 uppercase tracking-wider shrink-0 text-[9px]">Priority Action:</span>
-                                    <span className="leading-snug">{operationalTakeaway.action}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    /* Plain-English Compare Mode Municipal Summary */
-                    <div className={`space-y-4 ${isMapDataUpdating ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
-                        
-                        {/* 1. Structural Diagnostic Takeaway Card */}
-                        <div className="p-3.5 bg-stone-50 border-l-2 border-l-emerald-600 border border-stone-200 space-y-2.5">
-                            <div className="flex items-center justify-between gap-1.5 border-b border-stone-200/60 pb-1.5">
-                                <div className="flex items-center gap-1.5 text-emerald-800">
-                                    <ShieldCheck size={13} className="shrink-0 text-emerald-700" />
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-900">
-                                        {operationalTakeaway.category}
-                                    </span>
-                                </div>
-                                <span className="text-[8px] font-bold uppercase tracking-wider text-stone-400">
-                                    Operational Takeaway
-                                </span>
-                            </div>
-
-                            <div className="space-y-1">
-                                <p className="text-[11px] font-black text-stone-900 uppercase tracking-tight">
-                                    {operationalTakeaway.title}
-                                </p>
-                                <p className="text-xs text-stone-700 leading-relaxed font-medium">
-                                    {operationalTakeaway.insight}
-                                </p>
-                            </div>
-
-                            {operationalTakeaway.action && (
-                                <div className="pt-2 border-t border-stone-200/80 flex items-start gap-1.5 text-[10px] text-stone-600">
-                                    <span className="font-bold text-emerald-800 uppercase tracking-wider shrink-0 text-[9px]">Priority Action:</span>
-                                    <span className="leading-snug">{operationalTakeaway.action}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 2. Headcount Comparison Box */}
-                        <div className="p-4 bg-stone-50 border border-stone-200 space-y-3">
-                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                <span>Total Swine in Sariaya</span>
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[10px] font-black ${
-                                    comparisonStats?.netDiff > 0 
-                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
-                                        : comparisonStats?.netDiff < 0 
-                                            ? 'bg-rose-100 text-rose-800 border-rose-300'
-                                            : 'bg-stone-100 text-stone-700 border-stone-200'
-                                }`}>
-                                    {comparisonStats?.netDiff > 0 && <TrendingUp size={11} />}
-                                    {comparisonStats?.netDiff < 0 && <TrendingDown size={11} />}
-                                    {comparisonStats?.netDiff > 0 
-                                        ? `+${comparisonStats?.netDiff.toLocaleString()} Pigs (+${comparisonStats?.netPct}%)` 
-                                        : comparisonStats?.netDiff < 0 
-                                            ? `-${Math.abs(comparisonStats?.netDiff).toLocaleString()} Pigs (-${comparisonStats?.netPct}%)` 
-                                            : 'No Net Change'}
-                                </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-stone-200">
-                                <div className="bg-white p-2 border border-stone-200">
-                                    <span className="text-[9px] text-stone-400 font-black uppercase block mb-0.5">
-                                        Earlier ({baselineYear})
-                                    </span>
-                                    <span className="font-bold text-stone-800 text-sm">
-                                        {comparisonStats?.baseTotal.toLocaleString()} <span className="text-[10px] font-normal text-stone-400 font-sans">pigs</span>
-                                    </span>
-                                </div>
-                                <div className="bg-white p-2 border border-emerald-200">
-                                    <span className="text-[9px] text-emerald-700 font-black uppercase block mb-0.5">
-                                        Later ({selectedYear})
-                                    </span>
-                                    <span className="font-bold text-stone-900 text-sm">
-                                        {comparisonStats?.targetTotal.toLocaleString()} <span className="text-[10px] font-normal text-emerald-600 font-sans">pigs</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. Barangay Movement Breakdown */}
-                        <div className="p-4 bg-white border border-stone-200 space-y-2.5 text-xs">
-                            <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest block border-b border-stone-100 pb-1.5">
-                                Barangay Movements
-                            </span>
-                            <div className="space-y-2 text-[11px] font-bold">
-                                <div className="flex justify-between items-center bg-emerald-50/50 p-1.5 border border-emerald-100 text-emerald-800">
-                                    <span className="flex items-center gap-1.5">
-                                        <TrendingUp size={13} className="text-emerald-600" />
-                                        Barangays That Grew (Added Pigs)
-                                    </span>
-                                    <span className="font-mono text-xs">{comparisonStats?.increased}</span>
-                                </div>
-                                <div className="flex justify-between items-center bg-rose-50/50 p-1.5 border border-rose-100 text-rose-800">
-                                    <span className="flex items-center gap-1.5">
-                                        <TrendingDown size={13} className="text-rose-600" />
-                                        Barangays That Dropped (Fewer Pigs)
-                                    </span>
-                                    <span className="font-mono text-xs">{comparisonStats?.decreased}</span>
-                                </div>
-                                <div className="flex justify-between items-center bg-stone-50 p-1.5 border border-stone-200 text-stone-600">
-                                    <span className="flex items-center gap-1.5">
-                                        <Minus size={13} className="text-stone-400" />
-                                        No Significant Change (Steady)
-                                    </span>
-                                    <span className="font-mono text-xs">{comparisonStats?.stable}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Interactive Density Colors Legend */}
-                <div className="pt-4 border-t border-stone-200">
-                    <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-black text-stone-900 uppercase tracking-widest">
-                            Density Legend & Filter
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="p-3 bg-stone-50 rounded-lg border border-stone-200">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 block">
+                            Swine Census
+                        </span>
+                        <p className="text-lg font-black text-stone-800 font-mono mt-0.5 leading-none">
+                            {bPigs.toLocaleString()}
+                        </p>
+                        <span className="text-[10px] text-stone-500 font-medium">
+                            {bShare}% of municipality
                         </span>
                     </div>
-                    <div className="space-y-2.5">
-                        {[
-                            { id: 'Very High', label: 'Very High (1,500+)', color: 'bg-red-600' },
-                            { id: 'High', label: 'High (500 - 1,499)', color: 'bg-red-400' },
-                            { id: 'Medium', label: 'Medium (100 - 499)', color: 'bg-amber-500' },
-                            { id: 'Low', label: 'Low (< 100)', color: 'bg-green-600' },
-                            { id: 'None', label: 'No Data / 0', color: 'bg-gray-300' }
-                        ].map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => toggleFilter(item.id)}
-                                className={`flex items-center gap-3 w-full p-2 bg-stone-50/50 hover:bg-stone-100 border border-stone-200 transition-opacity cursor-pointer ${
-                                    activeFilters.includes(item.id) ? 'opacity-100' : 'opacity-30'
-                                }`}
-                            >
-                                <div className={`w-3.5 h-3.5 rounded-none ${item.color} border border-stone-400/50 shrink-0`} />
-                                <span className={`text-[10px] font-black uppercase tracking-wider text-left flex-1 ${
-                                    activeFilters.includes(item.id) ? 'text-stone-900' : 'text-stone-400'
-                                }`}>
-                                    {item.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                    <p className="text-[9px] text-stone-400 mt-4 font-bold uppercase tracking-wider leading-relaxed">
-                        Click any density level to toggle map visibility
-                    </p>
-                </div>
-            </div>
 
-            {/* Notice & Staff Quick Guide Card */}
-            <div className="bg-stone-900 p-5 text-white border border-stone-800 rounded-none space-y-3">
-                <div className="flex items-center gap-2">
-                    <Info size={15} className="text-emerald-400 shrink-0" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                        {isCompareMode ? 'Staff Quick Guide' : 'Data Integrity'}
-                    </span>
-                </div>
-                
-                {isCompareMode ? (
-                    <div className="space-y-2.5 text-[11px] text-stone-300 leading-relaxed">
-                        <p className="font-medium text-white border-b border-stone-800 pb-1.5">
-                            How to interpret the changes:
+                    <div className="p-3 bg-sky-50 rounded-lg border border-sky-200">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 block">
+                            Outbound Shipments
+                        </span>
+                        <p className="text-lg font-black text-sky-900 font-mono mt-0.5 leading-none flex items-center gap-1">
+                            <Truck size={15} />
+                            {bTransported.toLocaleString()}
                         </p>
-                        <div className="space-y-2 text-[10px]">
-                            <div className="flex items-start gap-2">
-                                <span className="w-2 h-2 rounded-none bg-emerald-400 mt-1 shrink-0"></span>
-                                <p><strong className="text-emerald-400 uppercase tracking-wider">Increases:</strong> Farmers restocked piglets or expanded breeding pens.</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <span className="w-2 h-2 rounded-none bg-rose-400 mt-1 shrink-0"></span>
-                                <p><strong className="text-rose-400 uppercase tracking-wider">Decreases:</strong> Hogs reached market weight and were sold or transported out.</p>
-                            </div>
-                            <p className="text-stone-400 pt-1.5 border-t border-stone-800 text-[10px]">
-                                Click any barangay on the map to see its exact category breakdown.
-                            </p>
-                        </div>
+                        <span className="text-[10px] text-sky-600 font-medium">
+                            Permits released
+                        </span>
                     </div>
-                ) : (
-                    <p className="text-[11px] text-stone-300 leading-relaxed font-medium">
-                        Swine density classifications are grounded in verified municipal and barangay agriculture surveys.
-                    </p>
+                </div>
+
+                {/* Herd Stage Breakdown */}
+                <div className="space-y-2 pt-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 block">
+                        Herd Stage Composition
+                    </span>
+                    <div className="space-y-1.5 text-xs">
+                        {[
+                            { key: 'inahin', label: 'Breeding Sows', color: 'bg-green-600' },
+                            { key: 'fattener', label: 'Market Fatteners', color: 'bg-amber-500' },
+                            { key: 'grower', label: 'Growing Stock', color: 'bg-sky-600' },
+                            { key: 'starter', label: 'Piglets / Starters', color: 'bg-purple-600' },
+                            { key: 'barako', label: 'Breeding Boars', color: 'bg-stone-500' },
+                            { key: 'bulaw', label: 'Bulaw', color: 'bg-stone-400' },
+                        ].map(stage => {
+                            const count = Number(bBreakdown[stage.key] || 0);
+                            if (count <= 0 && bPigs > 0) return null;
+                            const pct = bPigs > 0 ? Math.round((count / bPigs) * 100) : 0;
+                            return (
+                                <div key={stage.key} className="space-y-1">
+                                    <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-stone-600 font-medium">{stage.label}</span>
+                                        <span className="font-mono font-bold text-stone-800">
+                                            {count.toLocaleString()} <span className="text-[9px] text-stone-400 font-sans">({pct}%)</span>
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full ${stage.color} rounded-full transition-all duration-300`}
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Sector Specific Operational Classification */}
+                {operationalTakeaway && (
+                    <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 space-y-1 text-xs">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-green-700 block">
+                            Sector Classification: {operationalTakeaway.category}
+                        </span>
+                        <p className="text-stone-700 leading-relaxed font-normal">
+                            {operationalTakeaway.insight}
+                        </p>
+                        {operationalTakeaway.action && (
+                            <div className="pt-1.5 border-t border-stone-200 text-[11px]">
+                                <span className="font-bold text-stone-800">Action: </span>
+                                <span className="text-stone-600">{operationalTakeaway.action}</span>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // VIEW B: MUNICIPAL OVERVIEW MODE (DEFAULT VIEW WHEN NO BARANGAY IS SELECTED)
+    // -------------------------------------------------------------------------
+    return (
+        <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-xs font-sans space-y-4">
+            
+            {/* Header / Mode Indicator */}
+            <div className="flex items-center justify-between border-b border-stone-200 pb-2.5">
+                <div className="flex items-center gap-1.5 text-green-700">
+                    <ShieldCheck size={16} className="text-green-700 shrink-0" />
+                    <span className="text-xs font-black uppercase tracking-widest">
+                        Municipal Intelligence
+                    </span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                    {isCompareMode ? `${baselineYear} vs ${selectedYear}` : selectedYear}
+                </span>
+            </div>
+
+            {/* Compare Shifts Box (if compare mode is active) */}
+            {isCompareMode && comparisonStats && (
+                <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                            Municipal Census Shift
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${
+                            comparisonStats.netDiff > 0 
+                                ? 'bg-green-50 text-green-700 border border-green-600/40' 
+                                : comparisonStats.netDiff < 0 
+                                    ? 'bg-red-50 text-red-700 border border-red-600/40'
+                                    : 'bg-stone-100 text-stone-700 border border-stone-200'
+                        }`}>
+                            {comparisonStats.netDiff > 0 && <TrendingUp size={12} />}
+                            {comparisonStats.netDiff < 0 && <TrendingDown size={12} />}
+                            {comparisonStats.netDiff > 0 
+                                ? `+${comparisonStats.netDiff.toLocaleString()} (+${comparisonStats.netPct}%)` 
+                                : comparisonStats.netDiff < 0 
+                                    ? `-${Math.abs(comparisonStats.netDiff).toLocaleString()} (-${comparisonStats.netPct}%)` 
+                                    : 'Stable'}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-stone-200">
+                        <div className="bg-white p-2 rounded-md border border-stone-200">
+                            <span className="text-[9px] text-stone-400 font-black uppercase tracking-widest block">{baselineYear} Base</span>
+                            <span className="font-bold text-stone-800 font-mono text-xs">
+                                {comparisonStats.baseTotal.toLocaleString()} pigs
+                            </span>
+                        </div>
+                        <div className="bg-white p-2 rounded-md border border-stone-200">
+                            <span className="text-[9px] text-green-700 font-black uppercase tracking-widest block">{selectedYear} Target</span>
+                            <span className="font-bold text-stone-800 font-mono text-xs">
+                                {comparisonStats.targetTotal.toLocaleString()} pigs
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Grounded Operational Takeaway Card */}
+            {operationalTakeaway && (
+                <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-600/40">
+                            {operationalTakeaway.category}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                            Audit-Grounded
+                        </span>
+                    </div>
+
+                    <h3 className="text-sm font-black text-stone-800 uppercase tracking-tight">
+                        {operationalTakeaway.title}
+                    </h3>
+
+                    <p className="text-xs text-stone-600 leading-relaxed font-normal">
+                        {operationalTakeaway.insight}
+                    </p>
+
+                    {/* Clickable Sector Links */}
+                    {operationalTakeaway.affectedBarangays?.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Focus Sector:</span>
+                            {operationalTakeaway.affectedBarangays.map(bName => (
+                                <button
+                                    key={bName}
+                                    type="button"
+                                    onClick={() => setSelectedBarangay(bName)}
+                                    className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-stone-100 hover:bg-green-50 text-stone-700 hover:text-green-700 rounded-md text-[10px] font-bold border border-stone-200 transition-colors cursor-pointer"
+                                    title={`Inspect ${bName}`}
+                                >
+                                    <span>{bName}</span>
+                                    <ArrowUpRight size={10} />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Priority Action */}
+                    {operationalTakeaway.action && (
+                        <div className="p-2.5 bg-green-50 rounded-lg border border-green-200 text-xs text-stone-800 space-y-0.5">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-green-700 block">
+                                Priority Action:
+                            </span>
+                            <p className="leading-snug text-stone-700">{operationalTakeaway.action}</p>
+                        </div>
+                    )}
+
+                    {/* Collapsible "Why this conclusion?" Audit Drawer */}
+                    {operationalTakeaway.why && (
+                        <div className="pt-2 border-t border-stone-200">
+                            <button
+                                type="button"
+                                onClick={() => setExpandedWhy(prev => !prev)}
+                                className="flex items-center justify-between w-full py-1 text-xs font-bold text-stone-600 hover:text-stone-800 transition-colors cursor-pointer"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <Calculator size={13} className="text-stone-400" />
+                                    Why this conclusion?
+                                </span>
+                                {expandedWhy ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+
+                            {expandedWhy && (
+                                <div className="mt-2 p-2.5 bg-stone-50 rounded-lg border border-stone-200 space-y-2 text-[10px]">
+                                    <div className="space-y-0.5">
+                                        <span className="font-black text-stone-500 uppercase tracking-widest text-[9px] block">
+                                            Reasoning Rule:
+                                        </span>
+                                        <p className="text-stone-700 font-medium">
+                                            {operationalTakeaway.why.summary}
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-0.5">
+                                        <span className="font-black text-stone-500 uppercase tracking-widest text-[9px] block">
+                                            Trigger Formula:
+                                        </span>
+                                        <code className="bg-white p-1 rounded-md border border-stone-200 font-mono text-green-700 block text-[9px] break-all">
+                                            {operationalTakeaway.why.formula}
+                                        </code>
+                                    </div>
+
+                                    {operationalTakeaway.why.evidence?.length > 0 && (
+                                        <div className="space-y-1 pt-1 border-t border-stone-200">
+                                            <span className="font-black text-stone-500 uppercase tracking-widest text-[9px] block">
+                                                Underlying Census Data:
+                                            </span>
+                                            <div className="grid grid-cols-1 gap-1">
+                                                {operationalTakeaway.why.evidence.map((ev, i) => (
+                                                    <div key={i} className="flex justify-between items-center bg-white px-2 py-0.5 rounded-md border border-stone-200">
+                                                        <span className="text-stone-500 font-medium">{ev.label}</span>
+                                                        <span className="font-mono font-bold text-stone-800">{ev.value}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Secondary Operational Note */}
+            {secondaryTakeaway && (
+                <div className="pt-2.5 border-t border-stone-200 space-y-1 text-xs">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
+                        {secondaryTakeaway.category}
+                    </span>
+                    <h4 className="text-xs font-bold text-stone-800 uppercase tracking-tight">
+                        {secondaryTakeaway.title}
+                    </h4>
+                    <p className="text-stone-600 leading-snug font-normal text-[11px]">
+                        {secondaryTakeaway.insight}
+                    </p>
+                </div>
+            )}
         </div>
     );
 };

@@ -22,9 +22,9 @@ const AgriOfficerKPIDashboard = () => {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
                 <span className="loading loading-spinner loading-lg text-green-600"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Syncing Operations...</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Operations...</p>
             </div>
         );
     }
@@ -32,8 +32,8 @@ const AgriOfficerKPIDashboard = () => {
     if (isError || !metrics) {
         return (
             <div className="p-4 md:p-8">
-                <div className="bg-red-50 text-red-700 border border-red-100 p-8 rounded-none flex flex-col items-center text-center">
-                    <AlertCircle size={32} className="mb-4" />
+                <div className="bg-red-50 text-red-700 border border-red-200 p-8 rounded-xl flex flex-col items-center text-center shadow-xs">
+                    <AlertCircle size={32} className="mb-4 text-red-600" />
                     <p className="text-xs font-black uppercase tracking-widest">System Error: Dashboard sync failed</p>
                 </div>
             </div>
@@ -45,15 +45,15 @@ const AgriOfficerKPIDashboard = () => {
     return (
         <div className="flex-1 space-y-8 p-4 md:p-8 bg-white min-h-full">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-gray-100 pb-8 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-200 pb-8 gap-4">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Management Overview</p>
-                    <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Operations Summary</h1>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Management Overview</p>
+                    <h1 className="text-3xl font-black text-stone-900 uppercase tracking-tighter">Operations Summary</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="bg-gray-50 border border-gray-100 px-4 py-2 rounded-none">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">System Date</p>
-                        <p className="text-xs font-black text-gray-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
+                    <div className="bg-stone-50 border border-stone-200 px-4 py-2 rounded-lg shadow-2xs">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">System Date</p>
+                        <p className="text-xs font-black text-stone-900 uppercase mt-1">{new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
             </div>
@@ -93,17 +93,17 @@ const AgriOfficerKPIDashboard = () => {
             {/* Main Visual Data Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* Density Tracking - Spans 2 cols on Large */}
-                <div className="xl:col-span-2 bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
-                    <div className="mb-8 border-l-4 border-green-600 pl-6">
-                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Surveillance Density</p>
-                        <h2 className="text-xl font-black text-gray-900 uppercase">Swine Count by Barangay</h2>
+                <div className="xl:col-span-2 bg-white border border-stone-200 p-6 md:p-8 rounded-xl shadow-xs flex flex-col">
+                    <div className="mb-8 border-l-4 border-green-700 pl-6">
+                        <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Surveillance Density</p>
+                        <h2 className="text-xl font-black text-stone-900 uppercase">Swine Count by Barangay</h2>
                     </div>
                     <BarChartComponent
                         data={charts.density_trend}
                         xKey="name"
                         yKey="count"
                         height={350}
-                        barColor="#16a34a"
+                        barColor="#15803d"
                     />
                     <ChartTakeaway
                         takeaway={insightData?.chart_insights?.density_trend}
@@ -112,10 +112,10 @@ const AgriOfficerKPIDashboard = () => {
                 </div>
 
                 {/* Status Distribution */}
-                <div className="bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
-                    <div className="mb-8 border-l-4 border-gray-900 pl-6">
-                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Application Breakdown</p>
-                        <h2 className="text-xl font-black text-gray-900 uppercase">Status</h2>
+                <div className="bg-white border border-stone-200 p-6 md:p-8 rounded-xl shadow-xs flex flex-col">
+                    <div className="mb-8 border-l-4 border-stone-800 pl-6">
+                        <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Application Breakdown</p>
+                        <h2 className="text-xl font-black text-stone-900 uppercase">Status</h2>
                     </div>
                     <PieChartComponent
                         data={charts.status_distribution}
@@ -130,17 +130,17 @@ const AgriOfficerKPIDashboard = () => {
                 </div>
 
                 {/* Swine Transport Volume (Time series) - Spans 2 cols on XL */}
-                <div className="xl:col-span-2 bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
-                    <div className="mb-8 border-l-4 border-blue-600 pl-6">
-                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Throughput Analysis</p>
-                        <h2 className="text-xl font-black text-gray-900 uppercase">Swine Transport Volume</h2>
+                <div className="xl:col-span-2 bg-white border border-stone-200 p-6 md:p-8 rounded-xl shadow-xs flex flex-col">
+                    <div className="mb-8 border-l-4 border-sky-600 pl-6">
+                        <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Throughput Analysis</p>
+                        <h2 className="text-xl font-black text-stone-900 uppercase">Swine Transport Volume</h2>
                     </div>
                     <LineChartComponent
                         data={charts.submission_trend}
                         xKey="date"
                         yKey="count"
                         height={300}
-                        lineColor="#2563eb"
+                        lineColor="#0284c7"
                     />
                     <ChartTakeaway
                         takeaway={insightData?.chart_insights?.submission_trend}
@@ -149,17 +149,17 @@ const AgriOfficerKPIDashboard = () => {
                 </div>
 
                 {/* Revenue Collection Trend - Spans 1 col on XL */}
-                <div className="bg-white border border-gray-100 p-6 md:p-10 rounded-none flex flex-col">
-                    <div className="mb-8 border-l-4 border-amber-600 pl-6">
-                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Finance Monitor</p>
-                        <h2 className="text-xl font-black text-gray-900 uppercase">Revenue Collected (PHP)</h2>
+                <div className="bg-white border border-stone-200 p-6 md:p-8 rounded-xl shadow-xs flex flex-col">
+                    <div className="mb-8 border-l-4 border-amber-500 pl-6">
+                        <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Finance Monitor</p>
+                        <h2 className="text-xl font-black text-stone-900 uppercase">Revenue Collected (PHP)</h2>
                     </div>
                     <LineChartComponent
                         data={charts.revenue_trend}
                         xKey="date"
                         yKey="amount"
                         height={300}
-                        lineColor="#d97706"
+                        lineColor="#f59e0b"
                     />
                     <ChartTakeaway
                         takeaway={insightData?.chart_insights?.revenue_trend}

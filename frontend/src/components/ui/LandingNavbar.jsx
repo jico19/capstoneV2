@@ -75,50 +75,31 @@ export default function LandingNavbar({ activePage }) {
         </Link>
 
         {/* Nav links — desktop only */}
-        <div
-          className="animate-navbar-drop-links relative mx-auto max-[910px]:hidden"
-          style={{ width: SVG_W, height: SVG_H }}
-        >
-          <div className="absolute inset-0 flex flex-row items-center px-2 gap-1">
+        <div className="mx-auto max-[910px]:hidden">
+          <div className="flex flex-row items-center gap-1">
             {NAV_LINKS.map(({ key, label }) => (
               <button
                 key={key}
                 type="button"
-                className={`nav-link relative px-[18px] py-[6px] text-[15px] cursor-pointer rounded-md whitespace-nowrap bg-transparent border-none font-jakarta transition-colors duration-150
-                  hover:bg-[#0a2a1a] hover:text-[#f5a623]
+                className={`relative px-4 py-1.5 text-sm cursor-pointer border-none font-jakarta transition-colors duration-150
+                  hover:text-green-700
                   ${currentActivePage === key
-                    ? "font-bold underline underline-offset-[3px] text-[#0a2a1a]"
-                    : "font-medium text-[#0a2a1a]"
+                    ? "font-bold text-green-800 border-b-2 border-green-700 -mb-0.5"
+                    : "font-medium text-stone-700 bg-transparent"
                   }`}
                 onClick={() => handleNav(key)}
               >
                 {label}
               </button>
             ))}
-            <svg
-              className="absolute inset-0 pointer-events-none overflow-visible"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-              width={SVG_W}
-              height={SVG_H}
-              overflow="visible"
-            >
-              <rect
-                className="navbar-links-rect"
-                x={0} y={0}
-                width={SVG_W} height={SVG_H}
-                rx={6} ry={6}
-                pathLength={100}
-              />
-            </svg>
           </div>
         </div>
 
         {/* Right actions */}
-        <div className="animate-navbar-drop-actions flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            className="text-[15px] font-medium text-[#0a2a1a] bg-transparent border border-transparent cursor-pointer px-4 py-2 rounded-md font-jakarta transition-colors duration-150 hover:text-[#1b6b3a] max-[910px]:text-sm max-[910px]:px-1"
+            className="text-sm font-medium text-stone-700 bg-transparent border border-transparent cursor-pointer px-3 py-1.5 font-jakarta transition-colors duration-150 hover:text-green-800 max-[910px]:px-1"
             onClick={() => {
               navigate("/login");
               window.scrollTo({ top: 0, behavior: "smooth" });
@@ -126,12 +107,12 @@ export default function LandingNavbar({ activePage }) {
           >
             Sign In
           </button>
-          <div className="w-[110px] h-[38px] max-[910px]:hidden">
+          <div className="w-[100px] max-[910px]:hidden">
             <LandingButton
               label="Sign Up"
-              bgColor="#1b6b3a"
-              textColor="#f5a623"
-              baseColor="#0a2a1a"
+              bgColor="#15803d"
+              textColor="#ffffff"
+              baseColor="#15803d"
               onClick={() => {
                 navigate("/register");
                 window.scrollTo({ top: 0, behavior: "smooth" });

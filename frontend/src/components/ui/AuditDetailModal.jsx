@@ -60,17 +60,17 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
 
     return (
         <div 
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-100"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-100"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-2xl rounded-none overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden animate-in zoom-in-95 duration-150">
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50">
+                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/50">
                     <div className="flex items-center gap-3">
-                        <div className={`p-1.5 border ${categoryInfo?.bg || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
-                            <IconComponent size={18} />
+                        <div className={`p-1.5 border rounded-lg ${categoryInfo?.bg || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
+                            <IconComponent size={16} />
                         </div>
                         <div>
                             <h3 className="text-xs font-black text-stone-900 uppercase tracking-widest leading-none">
@@ -83,9 +83,9 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                     </div>
                     <button 
                         onClick={onClose}
-                        className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors rounded-none"
+                        className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors rounded-lg"
                     >
-                        <X size={18} />
+                        <X size={16} />
                     </button>
                 </div>
 
@@ -94,9 +94,9 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                     {/* Primary Metadata Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Performed By */}
-                        <div className="bg-stone-50/70 border border-stone-200 p-3.5 space-y-1">
+                        <div className="bg-stone-50/70 border border-stone-200 p-3.5 space-y-1 rounded-lg">
                             <div className="flex items-center gap-1.5 text-stone-400">
-                                <User size={12} />
+                                <User size={14} />
                                 <span className="text-[9px] font-black uppercase tracking-widest">
                                     Actor / Origin
                                 </span>
@@ -110,9 +110,9 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                         </div>
 
                         {/* Timestamp */}
-                        <div className="bg-stone-50/70 border border-stone-200 p-3.5 space-y-1">
+                        <div className="bg-stone-50/70 border border-stone-200 p-3.5 space-y-1 rounded-lg">
                             <div className="flex items-center gap-1.5 text-stone-400">
-                                <Clock size={12} />
+                                <Clock size={14} />
                                 <span className="text-[9px] font-black uppercase tracking-widest">
                                     Logged Timestamp
                                 </span>
@@ -127,11 +127,11 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                     </div>
 
                     {/* Category Classification */}
-                    <div className="flex items-center justify-between p-3 bg-stone-50/40 border border-stone-200">
+                    <div className="flex items-center justify-between p-3 bg-stone-50/40 border border-stone-200 rounded-lg">
                         <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
                             Functional Module
                         </span>
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 border text-[10px] font-black uppercase tracking-wider ${categoryInfo?.bg || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-md text-[10px] font-black uppercase tracking-wider ${categoryInfo?.bg || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${categoryInfo?.dot || 'bg-stone-400'}`} />
                             {categoryInfo?.label || 'General Event'}
                         </span>
@@ -140,10 +140,10 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                     {/* Verbatim Action Narrative */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
-                            <FileText size={12} />
+                            <FileText size={14} />
                             Verbatim Action Narrative
                         </label>
-                        <div className="p-4 bg-stone-900 text-stone-100 border border-stone-800 text-xs font-mono leading-relaxed rounded-none select-all break-words">
+                        <div className="p-4 bg-stone-900 text-stone-100 border border-stone-800 text-xs font-mono leading-relaxed rounded-lg select-all break-words">
                             {log.what_performed}
                         </div>
                     </div>
@@ -151,7 +151,7 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                     {/* Raw System ID & Copy */}
                     <div className="flex items-center justify-between text-stone-400 text-[10px] font-mono pt-2 border-t border-stone-100">
                         <div className="flex items-center gap-1.5">
-                            <Hash size={12} />
+                            <Hash size={14} />
                             <span>Unique Ref: AUDIT-TR-{log.id}</span>
                         </div>
                         <button
@@ -160,12 +160,12 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                         >
                             {copied ? (
                                 <>
-                                    <Check size={12} className="text-emerald-600" />
+                                    <Check size={14} className="text-emerald-600" />
                                     <span className="text-emerald-600">Copied Ref</span>
                                 </>
                             ) : (
                                 <>
-                                    <Copy size={12} />
+                                    <Copy size={14} />
                                     <span>Copy Reference ID</span>
                                 </>
                             )}
@@ -174,11 +174,11 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-3.5 bg-stone-50 border-t border-stone-200 flex justify-end">
+                <div className="px-6 py-4 bg-stone-50/50 border-t border-stone-200 flex justify-end">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-6 py-2 bg-stone-900 hover:bg-stone-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none cursor-pointer"
+                        className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs transition-colors cursor-pointer"
                     >
                         Dismiss
                     </button>

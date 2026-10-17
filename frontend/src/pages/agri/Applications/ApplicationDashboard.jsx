@@ -5,7 +5,7 @@ import ActionGroup from '../../../components/ui/ActionButton';
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { useApplication } from '../../../hooks/useApplications';
 import { useState, useMemo, useEffect } from "react";
-import Pagination from "../../../components/ui/Pagination";
+import DataTable from "../../../components/ui/DataTable";
 import KPICard from "../../../components/ui/KPICard";
 
 const STATUS_FILTER_OPTIONS = [
@@ -97,9 +97,9 @@ const ApplicationDashboard = () => {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
                 <span className="loading loading-spinner loading-lg text-green-600"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Opening Registry...</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Opening Registry...</p>
             </div>
         );
     }
@@ -114,15 +114,70 @@ const ApplicationDashboard = () => {
         );
     }
 
+    const columns = [
+        {
+            header: "ID Number",
+            render: (data) => (
+                <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black text-stone-900 font-mono tracking-tight bg-stone-100 px-2 py-1 border border-stone-200">
+                        {data.application_id}
+                    </span>
+                    {isOverdue(data.created_at, data.status) && (
+                        <span className="text-[9px] font-black uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-none animate-pulse">
+                            OVERDUE
+                        </span>
+                    )}
+                </div>
+            )
+        },
+        {
+            header: "Farmer Name",
+            render: (data) => (
+                <span className="text-sm font-black text-stone-800 uppercase leading-none">{data.farmer_name}</span>
+            )
+        },
+        {
+            header: "Permit Status",
+            align: "center",
+            render: (data) => <StatusBadge status={data.status} />
+        },
+        {
+            header: "Travel Date",
+            render: (data) => (
+                <span className="text-xs font-black text-stone-800 uppercase tracking-tight">
+                    <DateFormatter date={data.transport_date} />
+                </span>
+            )
+        },
+        {
+            header: "Actions",
+            align: "right",
+            headerClassName: "pr-8",
+            className: "pr-8",
+            render: (data) => (
+                <ActionGroup
+                    buttons={[
+                        {
+                            icon: Eye,
+                            label: "Check",
+                            onClick: () => navigate(`detail/${data.id}`),
+                            disabled: false
+                        },
+                    ]}
+                />
+            )
+        }
+    ];
+
     return (
         <div className="flex-1 p-4 md:p-8 space-y-8 bg-white min-h-full font-sans">
             
             {/* 1. Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-100 pb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-stone-200 pb-8">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Official Registry</p>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Permit Management</h1>
-                    <p className="text-sm text-gray-500 font-medium">Review and process livestock transport requests</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Official Registry</p>
+                    <h1 className="text-3xl font-black text-stone-900 tracking-tight">Permit Management</h1>
+                    <p className="text-sm text-stone-600 font-medium">Review and process livestock transport requests</p>
                 </div>
             </div>
 
@@ -217,91 +272,22 @@ const ApplicationDashboard = () => {
             </div>
 
             {/* 3. Table Container */}
-            <div className="bg-white border border-gray-100 rounded-none overflow-hidden">
-                <div className="overflow-x-auto w-full">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead className="bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest">
-                            <tr>
-                                <th className="px-6 py-5">ID Number</th>
-                                <th className="px-6 py-5">Farmer Name</th>
-                                <th className="px-6 py-5 text-center">Permit Status</th>
-                                <th className="px-6 py-5">Travel Date</th>
-                                <th className="px-6 py-5 text-right pr-8">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-
-                            {/* Empty State */}
-                            {applications.length === 0 && (
-                                <tr>
-                                    <td colSpan="5">
-                                        <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50">
-                                            <Inbox size={48} className="text-gray-300 mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Registry is empty</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-
-                            {/* Data Mapping */}
-                            {applications.map((data) => (
-                                <tr key={data.id} className="hover:bg-gray-50 transition-colors group">
-                                    {/* ID Badge */}
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[11px] font-black text-gray-900 font-mono tracking-tight bg-gray-50 px-2 py-1 border border-gray-200">
-                                                {data.application_id}
-                                            </span>
-                                            {isOverdue(data.created_at, data.status) && (
-                                                <span className="text-[9px] font-black uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-none animate-pulse">
-                                                    OVERDUE
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-
-                                    {/* Farmer Details */}
-                                    <td className="px-6 py-5">
-                                        <span className="text-sm font-black text-gray-900 uppercase leading-none">{data.farmer_name}</span>
-                                    </td>
-
-                                    {/* Status Badge */}
-                                    <td className="px-6 py-5 text-center">
-                                        <StatusBadge status={data.status} />
-                                    </td>
-
-                                    {/* Date */}
-                                    <td className="px-6 py-5">
-                                        <span className="text-xs font-black text-gray-900 uppercase tracking-tight">
-                                            <DateFormatter date={data.transport_date} />
-                                        </span>
-                                    </td>
-
-                                    {/* Actions */}
-                                    <td className="px-6 py-5 text-right pr-8">
-                                        <ActionGroup
-                                            buttons={[
-                                                {
-                                                    icon: Eye,
-                                                    label: "Check",
-                                                    onClick: () => navigate(`detail/${data.id}`),
-                                                    disabled: false
-                                                },
-                                            ]}
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <Pagination 
-                    count={count} 
-                    limit={limit} 
-                    offset={offset} 
-                    onPageChange={setOffset} 
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={applications}
+                minWidth="800px"
+                emptyState={{
+                    icon: Inbox,
+                    title: "Registry is empty",
+                    description: "No permit applications match your selected status and search filters."
+                }}
+                pagination={count > limit ? {
+                    count,
+                    limit,
+                    offset,
+                    onPageChange: setOffset
+                } : null}
+            />
         </div>
     );
 };

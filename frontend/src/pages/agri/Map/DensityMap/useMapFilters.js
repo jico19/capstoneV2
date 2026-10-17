@@ -3,28 +3,26 @@ import { useState, useMemo } from "react";
 /**
  * Owns all map filter/selection state for the AgriMapPage operations toolbar:
  * season mode, custom month range, year pickers, compare mode, density filters,
- * and barangay search focus.
- *
- * Effective years are derived during render (instead of synced in an effect)
- * so the slot always reflects a valid year once survey years are known.
+ * active visualization layer ('density' | 'transport' | 'growth'), and barangay selection.
  */
 const useMapFilters = (availableYears) => {
-    const [seasonMode, setSeasonMode] = useState('all') // 'all' | 'wet' | 'dry' | 'custom'
-    const [startMonth, setStartMonth] = useState('')
-    const [endMonth, setEndMonth] = useState('')
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString())
-    const [isCompareMode, setIsCompareMode] = useState(false)
-    const [baselineYear, setBaselineYear] = useState('')
-    const [activeFilters, setActiveFilters] = useState(['Low', 'Medium', 'High', 'Very High', 'None'])
-    const [selectedBarangay, setSelectedBarangay] = useState(null)
+    const [seasonMode, setSeasonMode] = useState('all'); // 'all' | 'wet' | 'dry' | 'custom'
+    const [startMonth, setStartMonth] = useState('');
+    const [endMonth, setEndMonth] = useState('');
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+    const [isCompareMode, setIsCompareMode] = useState(false);
+    const [baselineYear, setBaselineYear] = useState('');
+    const [activeFilters, setActiveFilters] = useState(['Low', 'Medium', 'High', 'Very High', 'None']);
+    const [selectedBarangay, setSelectedBarangay] = useState(null);
+    const [activeMapLayer, setActiveMapLayer] = useState('density'); // 'density' | 'transport' | 'growth'
 
     const toggleFilter = (level) => {
         setActiveFilters(prev =>
             prev.includes(level)
                 ? prev.filter(f => f !== level)
                 : [...prev, level]
-        )
-    }
+        );
+    };
 
     const years = useMemo(() => {
         if (availableYears && availableYears.length > 0) {
@@ -62,7 +60,18 @@ const useMapFilters = (availableYears) => {
             if (!startMonth) setStartMonth('1');
             if (!endMonth) setEndMonth('3');
         }
-    }
+    };
+
+    const handleCompareModeToggle = (enable) => {
+        setIsCompareMode(enable);
+        if (enable) {
+            setActiveMapLayer('growth');
+        } else {
+            if (activeMapLayer === 'growth') {
+                setActiveMapLayer('density');
+            }
+        }
+    };
 
     const clearFilters = () => {
         setSeasonMode('all');
@@ -72,8 +81,9 @@ const useMapFilters = (availableYears) => {
         setSelectedYear(defaultYear);
         setSelectedBarangay(null);
         setIsCompareMode(false);
+        setActiveMapLayer('density');
         setActiveFilters(['Low', 'Medium', 'High', 'Very High', 'None']);
-    }
+    };
 
     const months = [
         { id: '1', name: 'January', short: 'Jan' },
@@ -90,7 +100,7 @@ const useMapFilters = (availableYears) => {
         { id: '12', name: 'December', short: 'Dec' },
     ];
 
-    const hasActiveFilters = seasonMode !== 'all' || selectedBarangay !== null || isCompareMode || activeFilters.length < 5;
+    const hasActiveFilters = seasonMode !== 'all' || selectedBarangay !== null || isCompareMode || activeFilters.length < 5 || activeMapLayer !== 'density';
 
     return {
         seasonMode,
@@ -101,9 +111,11 @@ const useMapFilters = (availableYears) => {
         baselineYear: effectiveBaselineYear,
         activeFilters,
         selectedBarangay,
+        activeMapLayer,
+        setActiveMapLayer,
         setSelectedYear,
         setBaselineYear,
-        setIsCompareMode,
+        setIsCompareMode: handleCompareModeToggle,
         setSelectedBarangay,
         setStartMonth,
         setEndMonth,

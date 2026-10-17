@@ -13,19 +13,19 @@ export default function AboutMap() {
       <div className="max-w-[64rem] mx-auto px-8 max-[640px]:px-5">
 
         {/* Header */}
-        <div ref={headerRef} className="reveal-block text-center mb-10">
-          <h2 className="font-archivo text-[clamp(1.6rem,3vw,2.4rem)] text-brand-primary tracking-[-0.02em] mb-2">Find Us</h2>
-          <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-[#6c757d] leading-[1.7]">
-            Visit the Sariaya Municipal Agriculture Office
+        <div ref={headerRef} className="reveal-block text-center mb-8">
+          <h2 className="font-archivo text-[clamp(1.6rem,3vw,2.4rem)] text-brand-primary tracking-[-0.02em] mb-2">Office Location</h2>
+          <p className="font-jakarta text-[clamp(0.88rem,1.2vw,1rem)] text-stone-600 leading-[1.7]">
+            Visit the Sariaya Municipal Agriculture Office for in-person document filing and account support
           </p>
         </div>
 
         {/* Map card */}
         <div ref={contentRef}
-          className="reveal-block bg-white border border-[#e2ece6] rounded-[1.25rem] overflow-hidden shadow-[0_0.5rem_2rem_rgba(10,42,26,0.07)] box-border">
+          className="reveal-block bg-white border border-stone-200 rounded-xl overflow-hidden box-border">
 
           {/* Iframe */}
-          <div className="w-full h-[32rem] relative max-[640px]:h-[20rem]">
+          <div className="w-full h-[28rem] relative max-[640px]:h-[20rem]">
             <iframe
               src={EMBED_SRC}
               className="absolute inset-0 w-full h-full border-0 block"
@@ -37,25 +37,20 @@ export default function AboutMap() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between flex-wrap gap-4 px-6 py-5 border-t border-[#e2ece6] bg-white box-border
+          <div className="flex items-center justify-between flex-wrap gap-4 px-6 py-4 border-t border-stone-200 bg-white box-border
             max-[640px]:flex-col max-[640px]:items-start">
 
             <div className="flex items-center gap-3">
-              <img src={LocationIcon} alt="Location" className="w-[1.4rem] h-[1.4rem] object-contain shrink-0"
-                style={{ filter: "invert(18%) sepia(50%) saturate(600%) hue-rotate(110deg) brightness(60%)" }} />
+              <img src={LocationIcon} alt="" className="w-5 h-5 object-contain shrink-0" />
               <div>
-                <p className="font-archivo text-[0.92rem] text-brand-primary m-0 mb-0.5">New Municipal Hall, Sariaya, Quezon</p>
-                <p className="font-jakarta text-[0.78rem] text-[#6c757d] m-0">Municipal Agriculture Office · Mon–Fri, 8AM–5PM</p>
+                <p className="font-archivo text-[14px] text-stone-900 m-0 mb-0.5">Sariaya Municipal Hall</p>
+                <p className="font-jakarta text-[12px] text-stone-600 m-0">Municipal Agriculture Office · Mon–Fri, 8:00 AM – 5:00 PM</p>
               </div>
             </div>
 
             <a href={GMAPS_URL} target="_blank" rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 px-5 py-[0.65rem] bg-brand-primary text-brand-amber font-jakarta text-[0.88rem] font-bold rounded-[0.65rem] no-underline whitespace-nowrap
-                transition-[background,transform,box-shadow] duration-200
-                hover:bg-brand-primary-light hover:-translate-y-0.5 hover:shadow-[0_0.4rem_1.2rem_rgba(10,42,26,0.2)]
-                max-[640px]:w-full max-[640px]:justify-center max-[640px]:box-border">
-              <span>Open in Google Maps</span>
-              <span className="text-base group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200">↗</span>
+              className="inline-flex items-center px-4 py-2 bg-green-700 text-white font-jakarta text-[13px] font-semibold rounded-md no-underline whitespace-nowrap hover:bg-green-600 transition-colors duration-150 max-[640px]:w-full max-[640px]:justify-center">
+              Open in Google Maps
             </a>
           </div>
         </div>

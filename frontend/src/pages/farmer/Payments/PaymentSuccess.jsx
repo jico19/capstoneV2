@@ -53,13 +53,13 @@ const PaymentSuccess = () => {
     }, [issued_permit_id]);
 
     return (
-        <div className="min-h-screen bg-stone-50/50 flex items-center justify-center p-6">
-            <div className={`max-w-md w-full bg-white border border-stone-200 rounded-none ${status === 'success' ? 'p-0 shadow-2xl' : 'p-8 lg:p-12'} space-y-8 overflow-hidden transition-all duration-500`}>
+        <div className="min-h-screen bg-stone-50/50 flex items-center justify-center p-3 sm:p-6">
+            <div className={`max-w-md w-full bg-white border border-stone-200 rounded-lg ${status === 'success' ? 'p-0 shadow-xl' : 'p-6 sm:p-8 lg:p-12'} space-y-6 sm:space-y-8 overflow-hidden transition-all duration-500`}>
 
                 {status === 'verifying' && (
-                    <div className="flex flex-col items-center text-center space-y-6">
+                    <div className="flex flex-col items-center text-center space-y-5 sm:space-y-6">
                         <div className="relative">
-                            <Clock size={48} className="text-stone-200 animate-pulse" />
+                            <Clock size={40} className="text-stone-200 animate-pulse sm:w-12 sm:h-12" />
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <span className="loading loading-spinner loading-md text-green-700"></span>
                             </div>
@@ -78,12 +78,12 @@ const PaymentSuccess = () => {
                 {status === 'success' && (
                     <div className="flex flex-col animate-in fade-in zoom-in duration-500">
                         {/* Receipt Header */}
-                        <div className="bg-green-700 p-8 text-center space-y-4">
-                            <div className="inline-flex p-3 bg-white/20 backdrop-blur-sm rounded-full text-white ring-4 ring-white/10">
-                                <CheckCircle2 size={32} />
+                        <div className="bg-green-700 p-5 sm:p-8 text-center space-y-3 sm:space-y-4">
+                            <div className="inline-flex p-2.5 sm:p-3 bg-white/20 backdrop-blur-sm rounded-full text-white ring-4 ring-white/10">
+                                <CheckCircle2 size={26} className="sm:w-8 sm:h-8" />
                             </div>
                             <div className="space-y-1">
-                                <h1 className="text-xl font-black text-white uppercase tracking-widest">
+                                <h1 className="text-lg sm:text-xl font-black text-white uppercase tracking-widest">
                                     Payment Successful
                                 </h1>
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-green-100/70">
@@ -93,16 +93,16 @@ const PaymentSuccess = () => {
                         </div>
 
                         {/* Amount Section */}
-                        <div className="p-8 text-center border-b border-stone-100 space-y-1 bg-white">
+                        <div className="p-5 sm:p-8 text-center border-b border-stone-100 space-y-1 bg-white">
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Amount Paid</p>
-                            <div className="text-4xl font-black text-stone-800 tracking-tighter">
-                                <span className="text-2xl mr-1 font-sans">₱</span>{paymentData?.amount?.toLocaleString() || '0.00'}
+                            <div className="text-3xl sm:text-4xl font-black text-stone-800 tracking-tighter">
+                                <span className="text-xl sm:text-2xl mr-1 font-sans">₱</span>{paymentData?.amount?.toLocaleString() || '0.00'}
                             </div>
                         </div>
 
                         {/* Transaction Details */}
-                        <div className="p-8 space-y-6 bg-stone-50/30">
-                            <div className="space-y-4">
+                        <div className="p-5 sm:p-8 space-y-5 sm:space-y-6 bg-stone-50/30">
+                            <div className="space-y-3 sm:space-y-4">
                                 <div className="flex justify-between items-start">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Recipient</span>
                                     <span className="text-[11px] font-black text-stone-800 uppercase text-right">Sariaya Municipal<br />Agriculture Office</span>

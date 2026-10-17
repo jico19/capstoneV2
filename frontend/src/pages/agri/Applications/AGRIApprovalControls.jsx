@@ -55,25 +55,25 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
     };
 
     return (
-        <div className="bg-white border border-gray-100 p-6 md:p-10 rounded-none space-y-8">
+        <div className="bg-white border border-stone-200 p-6 md:p-10 rounded-xl shadow-xs space-y-8">
             <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 2</p>
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                    <MessageSquare size={24} className="text-green-600" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 2</p>
+                <h2 className="text-2xl font-black text-stone-900 tracking-tight flex items-center gap-3">
+                    <MessageSquare size={20} className="text-green-700" />
                     Officer Notes
                 </h2>
-                <p className="text-sm text-gray-500 font-medium">Please provide a reason if you are returning this request, or any internal notes for approval.</p>
+                <p className="text-sm text-stone-600 font-medium">Please provide a reason if you are returning this request, or any internal notes for approval.</p>
             </div>
 
             <div className="space-y-4">
                 <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-600">
                         Quick Feedback Templates
                     </label>
                     <select
                         onChange={handleFeedbackSelect}
                         disabled={isProcessing}
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none text-sm font-medium text-gray-700"
+                        className="w-full h-11 px-4 bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-green-700/20 focus:border-green-700 outline-none text-sm font-medium text-stone-800"
                     >
                         {COMMON_FEEDBACK_OPTIONS.map((opt, i) => (
                             <option key={i} value={opt.value}>
@@ -84,13 +84,13 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-600">
                         Detailed Notes / Remarks
                     </label>
                     <textarea
                         {...register('remarks', { required: "Please enter some notes before taking action." })}
                         disabled={isProcessing}
-                        className="w-full min-h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-none focus:ring-0 focus:border-green-600 outline-none transition-colors text-sm font-medium text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full min-h-[120px] p-4 bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-green-700/20 focus:border-green-700 outline-none transition-colors text-sm font-medium text-stone-800 placeholder:text-stone-400 disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="Write your notes here..."
                     />
                     {errors.remarks && <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{errors.remarks.message}</p>}
@@ -98,23 +98,23 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
             </div>
 
             {!isAllDocsViewed && (
-                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 rounded-lg">
                     <span className="text-base">🔒</span>
                     <span>Review Checklist: You must click and view all attached documents above before approving. ({unviewedCount} unreviewed document remaining)</span>
                 </div>
             )}
 
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4 border-t border-gray-50">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-stone-200">
                 <button
                     type="button"
                     disabled={isProcessing}
                     onClick={handleSubmit(handleReject)}
-                    className="w-full sm:w-auto border border-red-100 bg-red-50 hover:bg-red-100 text-red-700 px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 >
                     {activeAction === 'reject' ? (
                         <span className="loading loading-spinner loading-xs"></span>
                     ) : (
-                        <XCircle size={18} strokeWidth={3} />
+                        <XCircle size={16} strokeWidth={2.5} />
                     )}
                     Send Back for Correction
                 </button>
@@ -124,12 +124,12 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
                     disabled={isProcessing || !isAllDocsViewed}
                     onClick={handleSubmit(handleApprove)}
                     title={!isAllDocsViewed ? "Please view all attached documents above first" : undefined}
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-10 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-green-700 hover:bg-green-600 text-white px-8 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
                 >
                     {activeAction === 'approve' ? (
                         <span className="loading loading-spinner loading-xs"></span>
                     ) : (
-                        <CheckCircle size={18} strokeWidth={3} />
+                        <CheckCircle size={16} strokeWidth={2.5} />
                     )}
                     Approve Request
                 </button>

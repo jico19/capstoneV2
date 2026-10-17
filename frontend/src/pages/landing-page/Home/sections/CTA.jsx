@@ -1,8 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import LandingButton from '../../../../components/ui/LandingButton';
-import CtaBg from '../../../../assets/home-icons/CTA-bg.png'
-
+import CtaBg from '../../../../assets/home-icons/CTA-bg.png';
 
 export default function CTA() {
   const navigate = useNavigate();
@@ -20,47 +19,34 @@ export default function CTA() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden pt-[120px] max-[600px]:pt-20">
+    <section className="relative overflow-hidden pt-24 pb-20">
 
       {/* Background image */}
       <img src={CtaBg} alt="" className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none" />
 
-      {/* gradient overlay */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: "linear-gradient(180deg, rgba(6,26,15,0.80) 0%, rgba(10,42,26,0.62) 45%, rgba(6,26,15,0.90) 100%)" }} />
+      {/* Solid dark overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-[#0a2a1a]/90" />
 
       {/* Content */}
       <div ref={ctaRef}
-        className="reveal-block relative z-[1] max-w-[720px] mx-auto px-10 pb-20 text-center max-[600px]:px-6 max-[600px]:pb-16">
+        className="reveal-block relative z-[1] max-w-[680px] mx-auto px-6 text-center">
 
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-[18px] py-[7px] bg-brand-amber/12 border border-brand-amber/30 rounded-full font-jakarta text-[12px] font-bold text-brand-amber tracking-[0.05em] uppercase mb-8">
-          <span className="w-[7px] h-[7px] bg-brand-amber rounded-full" />
-          Official Municipal Portal
-        </div>
-
-        {/* Title */}
-        <h2 className="font-archivo text-[clamp(36px,6vw,72px)] text-white leading-[1.05] mb-6 tracking-[-0.03em]">
-          Ready to Get<br />
-          <span className="text-brand-amber relative inline-block
-            after:content-[''] after:absolute after:bottom-1 after:left-0 after:w-full after:h-1 after:rounded-sm
-            after:[background:linear-gradient(90deg,#f5a623,rgba(245,166,35,0.2))]">Started?</span>
+        <h2 className="font-archivo text-[clamp(32px,5vw,52px)] text-white leading-[1.1] mb-5 tracking-[-0.02em]">
+          Ready to Apply for Your Transport Permit?
         </h2>
 
-        {/* Subtitle */}
-        <p className="font-jakarta text-[17px] text-white/60 leading-[1.75] mb-12 max-w-[520px] mx-auto">
-          Say goodbye to long queues and paperwork. FarmPass lets you apply
-          for livestock transport permits online. Fast, secure, and free.
+        <p className="font-jakarta text-[16px] text-white/70 leading-[1.7] mb-8 max-w-[500px] mx-auto">
+          Submit your livestock shipping request online today. Free registration for licensed Sariaya farmers and haulers.
         </p>
 
         {/* Actions */}
-        <div className="flex flex-col items-center gap-4 mb-10">
-          <div className="w-[220px] h-[52px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-[200px] h-[48px]">
             <LandingButton
-              label="Create Free Account"
+              label="Create Account"
               bgColor="#f5a623"
               textColor="#0a2a1a"
-              baseColor="#5a3b00"
+              baseColor="#f5a623"
               onClick={() => {
                 navigate("/register");
                 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -69,35 +55,15 @@ export default function CTA() {
           </div>
           <button
             type="button"
-            className="bg-transparent border-none font-jakarta text-[14px] text-white/45 cursor-pointer transition-colors duration-200 hover:text-white/85 p-0"
+            className="bg-transparent border-none font-jakarta text-[13px] text-white/60 cursor-pointer transition-colors duration-150 hover:text-white p-2"
             onClick={() => {
               navigate("/login");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
-            Already have an account? Sign in
+            Already registered? Sign in
           </button>
         </div>
-
-        {/* Trust */}
-        <div className="flex items-center justify-center gap-5 flex-wrap max-[600px]:flex-col max-[600px]:gap-[10px]">
-          {["No credit card required", "100% free for farmers", "Setup in under 5 minutes"].map((item, i, arr) => (
-            <span key={item} className="flex items-center gap-[10px]">
-              <span className="flex items-center gap-[6px] font-jakarta text-[13px] text-white/45 font-medium">
-                <span className="text-brand-mint font-bold text-[14px]">✓</span>
-                {item}
-              </span>
-              {i < arr.length - 1 && <span className="w-1 h-1 bg-white/15 rounded-full max-[600px]:hidden" />}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Wave into footer */}
-      <div className="leading-[0] -mt-[2px]">
-        <svg viewBox="0 0 1440 80" fill="none" preserveAspectRatio="none" className="w-full h-[80px] block">
-          <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#061a0f" />
-        </svg>
       </div>
     </section>
   );

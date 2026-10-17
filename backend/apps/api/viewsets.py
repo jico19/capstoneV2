@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import status, filters, viewsets
-from django.db.models import Q
+from django.db.models import Q, Count
 from . import serializers
 from . import models
 from . import services
@@ -164,6 +164,7 @@ class UserViewSet(BaseModelViewSet):
             models.Notification.objects.create(
                 recipient=user,
                 type=models.Notification.Type.INFO,
+                section=models.Notification.Section.FARMERS,
                 title="Documents Submitted for Verification",
                 message="Your required licenses have been submitted and are now under review by the Municipal Agriculture Office.",
             )
@@ -228,6 +229,7 @@ class UserViewSet(BaseModelViewSet):
             models.Notification.objects.create(
                 recipient=target_user,
                 type=models.Notification.Type.SUCCESS,
+                section=models.Notification.Section.FARMERS,
                 title="Account Fully Verified",
                 message="Your credentials have been verified by MAO. You are now authorized to submit livestock transport permit requests.",
             )
@@ -263,6 +265,7 @@ class UserViewSet(BaseModelViewSet):
             models.Notification.objects.create(
                 recipient=target_user,
                 type=models.Notification.Type.WARNING,
+                section=models.Notification.Section.FARMERS,
                 title="Document Verification Needs Attention",
                 message=f"Your documents were not approved: {target_user.verification_remarks}. Please re-upload updated copies.",
             )
@@ -364,6 +367,28 @@ class NotificationViewSet(BaseModelViewSet):
         ).count()
 
         return Response({"unread_count": unread_count}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def section_counts(self, request):
+        """Returns unread notification counts grouped by section for the authenticated user."""
+        counts = (
+            models.Notification.objects.filter(recipient=request.user, is_read=False)
+            .values("section")
+            .annotate(count=Count("id"))
+        )
+        data = {item["section"]: item["count"] for item in counts}
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"])
+    def mark_section_read(self, request):
+        """Marks unread notifications in a specific section as read."""
+        section = request.data.get("section")
+        if section:
+            models.Notification.objects.filter(
+                recipient=request.user, section=section, is_read=False
+            ).update(is_read=True)
+            return Response({"msg": f"Section {section} notifications marked read."}, status=status.HTTP_200_OK)
+        return Response({"error": "section parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AuditTrailViewSet(viewsets.ReadOnlyModelViewSet):

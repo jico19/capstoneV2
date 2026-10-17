@@ -46,9 +46,9 @@ const AgriPermitDetail = () => {
     const query = useQueryClient()
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
             <span className="loading loading-spinner loading-lg text-green-600"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-4">Opening Application...</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Opening Application...</p>
         </div>
     );
 
@@ -242,7 +242,7 @@ const AgriPermitDetail = () => {
                 {/* Navigation */}
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-green-600 transition-all border-b-2 border-transparent hover:border-green-600 w-fit pb-1"
+                    className="flex items-center gap-3 text-stone-500 text-[10px] font-black uppercase tracking-[0.2em] hover:text-green-700 transition-all border-b-2 border-transparent hover:border-green-700 w-fit pb-1"
                 >
                     <ArrowLeft size={16} strokeWidth={3} /> Return to Application List
                 </button>
@@ -253,7 +253,7 @@ const AgriPermitDetail = () => {
                     <ApplicationTracker status={application.status} />
 
                     {application.origins && application.origins.length > 0 && (
-                        <div className="border border-stone-200 bg-white p-6 space-y-4">
+                        <div className="border border-stone-200 bg-white p-6 space-y-4 rounded-xl shadow-xs">
                             <div className="space-y-1">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Origin Traceability</p>
                                 <h3 className="text-lg font-black text-stone-800 uppercase tracking-tight">
@@ -276,7 +276,7 @@ const AgriPermitDetail = () => {
                                                 <p className="text-xs text-stone-400 italic">Source farmer not specified</p>
                                             )}
                                         </div>
-                                        <span className="text-xs font-black font-mono text-stone-800 bg-stone-50 px-3 py-1.5 border border-stone-200">
+                                        <span className="text-xs font-black font-mono text-stone-800 bg-stone-50 px-3 py-1.5 border border-stone-200 rounded-md">
                                             {orig.number_of_pigs} pigs
                                         </span>
                                     </div>
@@ -288,10 +288,10 @@ const AgriPermitDetail = () => {
                     <section className="space-y-6">
                         <div className="flex items-center gap-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Step 1</p>
-                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Check Documents</h2>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 1</p>
+                                <h2 className="text-2xl font-black text-stone-900 tracking-tight">Check Documents</h2>
                             </div>
-                            <div className="h-[2px] flex-1 bg-gray-100"></div>
+                            <div className="h-[2px] flex-1 bg-stone-200"></div>
                         </div>
 
                         {/* Document Verification Checklist Banner */}

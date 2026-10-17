@@ -103,7 +103,7 @@ const formatActivityText = (text = '') => {
             return (
                 <span 
                     key={index} 
-                    className="font-mono font-bold bg-stone-100 text-stone-900 px-1.5 py-0.5 border border-stone-200 text-[11px] rounded-none inline-block mx-0.5"
+                    className="font-mono font-bold bg-stone-100 text-stone-900 px-1.5 py-0.5 border border-stone-200 text-[11px] rounded-md inline-block mx-0.5"
                 >
                     {part}
                 </span>
@@ -267,7 +267,7 @@ const AuditTrailPage = () => {
                 <button
                     onClick={() => refetch()}
                     disabled={isFetching}
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-[10px] font-black uppercase tracking-wider transition-colors rounded-none disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-[10px] font-black uppercase tracking-wider transition-colors rounded-lg shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                     <RefreshCw size={14} className={isFetching ? 'animate-spin text-emerald-700' : ''} />
                     <span>{isFetching ? 'Syncing...' : 'Sync Activities'}</span>
@@ -276,7 +276,7 @@ const AuditTrailPage = () => {
 
             {/* Audit Statistics KPI Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white border border-stone-200 p-5 rounded-none flex items-center justify-between">
+                <div className="bg-white border border-stone-200 p-5 rounded-xl shadow-xs flex items-center justify-between">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                             Total Records
@@ -286,12 +286,12 @@ const AuditTrailPage = () => {
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Lifetime system traces</p>
                     </div>
-                    <div className="p-3 bg-stone-50 border border-stone-200 text-stone-600">
+                    <div className="p-3 bg-stone-50 border border-stone-200 text-stone-600 rounded-lg">
                         <History size={20} />
                     </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 p-5 rounded-none flex items-center justify-between">
+                <div className="bg-white border border-stone-200 p-5 rounded-xl shadow-xs flex items-center justify-between">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                             Logged Today
@@ -301,12 +301,12 @@ const AuditTrailPage = () => {
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Current 24h activity</p>
                     </div>
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700">
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg">
                         <Activity size={20} />
                     </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 p-5 rounded-none flex items-center justify-between">
+                <div className="bg-white border border-stone-200 p-5 rounded-xl shadow-xs flex items-center justify-between">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                             Active Actors
@@ -316,12 +316,12 @@ const AuditTrailPage = () => {
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Distinct user origins</p>
                     </div>
-                    <div className="p-3 bg-blue-50 border border-blue-200 text-blue-700">
+                    <div className="p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg">
                         <Users size={20} />
                     </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 p-5 rounded-none flex items-center justify-between">
+                <div className="bg-white border border-stone-200 p-5 rounded-xl shadow-xs flex items-center justify-between">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                             Primary Activity
@@ -331,14 +331,14 @@ const AuditTrailPage = () => {
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Most frequent category</p>
                     </div>
-                    <div className="p-3 bg-purple-50 border border-purple-200 text-purple-700">
+                    <div className="p-3 bg-purple-50 border border-purple-200 text-purple-700 rounded-lg">
                         <Layers size={20} />
                     </div>
                 </div>
             </div>
 
             {/* Filter & Search Toolbar */}
-            <div className="bg-white border border-stone-200 p-5 space-y-4 rounded-none">
+            <div className="bg-white border border-stone-200 p-5 space-y-4 rounded-xl shadow-xs">
                 <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
                     {/* Search Input */}
                     <div className="relative flex-1">
@@ -348,7 +348,7 @@ const AuditTrailPage = () => {
                             placeholder="Search by actor name, user ID, or keyword (e.g., LP-2026, approved)..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald-700 focus:bg-white transition-colors rounded-none"
+                            className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald-700 focus:bg-white transition-colors rounded-lg shadow-2xs"
                         />
                         {searchQuery && (
                             <button
@@ -362,7 +362,7 @@ const AuditTrailPage = () => {
 
                     {/* Date Preset Dropdown */}
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 px-3 py-2 bg-stone-50 border border-stone-200 text-stone-600 text-xs font-medium">
+                        <div className="flex items-center gap-1.5 px-3 py-2 bg-stone-50 border border-stone-200 text-stone-600 text-xs font-medium rounded-lg shadow-2xs">
                             <Calendar size={14} className="text-stone-400" />
                             <select
                                 value={selectedDateFilter}
@@ -380,7 +380,7 @@ const AuditTrailPage = () => {
                         {hasActiveFilters && (
                             <button
                                 onClick={handleResetFilters}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 border border-rose-200 text-rose-800 hover:bg-rose-100 text-[10px] font-black uppercase tracking-wider transition-colors rounded-none cursor-pointer"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 border border-rose-200 text-rose-800 hover:bg-rose-100 text-[10px] font-black uppercase tracking-wider transition-colors rounded-lg shadow-xs cursor-pointer"
                             >
                                 <RotateCcw size={12} />
                                 Reset
@@ -397,7 +397,7 @@ const AuditTrailPage = () => {
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.id)}
-                                className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 rounded-none border ${
+                                className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 rounded-md shadow-2xs border ${
                                     isActive
                                         ? 'bg-stone-900 text-white border-stone-900'
                                         : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100 hover:text-stone-900'
@@ -411,7 +411,7 @@ const AuditTrailPage = () => {
             </div>
 
             {/* Timeline Activity Feed */}
-            <div className="bg-white border border-stone-200 rounded-none overflow-hidden">
+            <div className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
                 {filteredLogs.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                         {filteredLogs.map((log) => {
@@ -427,14 +427,14 @@ const AuditTrailPage = () => {
                                     {/* Left: Time and Node */}
                                     <div className="flex items-start gap-4 flex-1 min-w-0">
                                         {/* Node Icon */}
-                                        <div className={`shrink-0 w-10 h-10 flex items-center justify-center border rounded-none group-hover:scale-105 transition-transform ${cat.bg}`}>
+                                        <div className={`shrink-0 w-10 h-10 flex items-center justify-center border rounded-lg group-hover:scale-105 transition-transform ${cat.bg}`}>
                                             <IconComp size={18} />
                                         </div>
 
                                         {/* Content Block */}
                                         <div className="space-y-1.5 flex-1 min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[9px] font-black uppercase tracking-wider rounded-none ${cat.bg}`}>
+                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[9px] font-black uppercase tracking-wider rounded-md ${cat.bg}`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full ${cat.dot}`} />
                                                     {cat.label}
                                                 </span>
@@ -467,7 +467,7 @@ const AuditTrailPage = () => {
 
                                         <button
                                             type="button"
-                                            className="p-1.5 text-stone-400 group-hover:text-stone-800 group-hover:bg-stone-200/60 transition-colors border border-transparent group-hover:border-stone-300 rounded-none"
+                                            className="p-1.5 text-stone-400 group-hover:text-stone-800 group-hover:bg-stone-200/60 transition-colors border border-transparent group-hover:border-stone-300 rounded-lg"
                                             title="Inspect Event"
                                         >
                                             <ChevronRight size={16} />
@@ -479,7 +479,7 @@ const AuditTrailPage = () => {
                     </div>
                 ) : (
                     <div className="py-24 px-4 flex flex-col items-center justify-center text-center space-y-3">
-                        <div className="w-14 h-14 bg-stone-50 border border-stone-200 flex items-center justify-center text-stone-400">
+                        <div className="w-14 h-14 bg-stone-50 border border-stone-200 flex items-center justify-center text-stone-400 rounded-xl">
                             <History size={28} />
                         </div>
                         <p className="text-xs font-black uppercase tracking-widest text-stone-800">
@@ -493,7 +493,7 @@ const AuditTrailPage = () => {
                         {hasActiveFilters && (
                             <button
                                 onClick={handleResetFilters}
-                                className="mt-2 px-4 py-2 bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-stone-800 transition-colors rounded-none cursor-pointer"
+                                className="mt-2 px-4 py-2 bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-stone-800 transition-colors rounded-lg shadow-xs cursor-pointer"
                             >
                                 Reset Search Filters
                             </button>

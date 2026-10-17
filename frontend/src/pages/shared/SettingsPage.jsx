@@ -43,7 +43,7 @@ const SettingsPage = () => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <div className="w-8 h-8 border-4 border-green-700 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-emerald-700 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Loading settings...</p>
             </div>
         );
@@ -71,10 +71,10 @@ const SettingsPage = () => {
                 <div className="px-6 md:px-10 py-8 space-y-5">
 
                     {/* Personal Info */}
-                    <section className="bg-white border border-stone-200 overflow-hidden">
+                    <section className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
                         <div className="px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center gap-3">
-                            <div className="p-1.5 bg-green-50 border border-green-100">
-                                <UserCircle size={15} className="text-green-700" />
+                            <div className="p-1.5 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                <UserCircle size={15} className="text-emerald-700" />
                             </div>
                             <h2 className="text-[10px] font-black text-stone-700 uppercase tracking-widest">Personal Info</h2>
                         </div>
@@ -83,14 +83,14 @@ const SettingsPage = () => {
                                 <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">First Name</label>
                                 <input
                                     {...register("first_name")}
-                                    className="w-full h-10 px-3 bg-white border border-stone-200 rounded-none text-sm focus:outline-none focus:border-green-700"
+                                    className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm focus:outline-none focus:border-emerald-700"
                                 />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Last Name</label>
                                 <input
                                     {...register("last_name")}
-                                    className="w-full h-10 px-3 bg-white border border-stone-200 rounded-none text-sm focus:outline-none focus:border-green-700"
+                                    className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm focus:outline-none focus:border-emerald-700"
                                 />
                             </div>
                             <div className="space-y-1.5 md:col-span-2">
@@ -102,7 +102,7 @@ const SettingsPage = () => {
                                             pattern: { value: /^(?:\+639|639|09)\d{9}$/, message: "Invalid format" }
                                         })}
                                         placeholder="09..."
-                                        className={`w-full h-10 pl-10 pr-3 bg-white border rounded-none text-sm focus:outline-none focus:border-green-700 ${errors.phone_no ? 'border-red-400' : 'border-stone-200'}`}
+                                        className={`w-full h-10 pl-10 pr-3 bg-white border rounded-lg shadow-2xs text-sm focus:outline-none focus:border-emerald-700 ${errors.phone_no ? 'border-red-400' : 'border-stone-200'}`}
                                     />
                                 </div>
                                 {errors.phone_no && <p className="text-[10px] text-red-500 font-medium">{errors.phone_no.message}</p>}
@@ -112,10 +112,10 @@ const SettingsPage = () => {
 
                     {/* Location — Farmers only */}
                     {isFarmer && (
-                        <section className="bg-white border border-stone-200 overflow-hidden">
+                        <section className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
                             <div className="px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center gap-3">
-                                <div className="p-1.5 bg-green-50 border border-green-100">
-                                    <MapPin size={15} className="text-green-700" />
+                                <div className="p-1.5 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                    <MapPin size={15} className="text-emerald-700" />
                                 </div>
                                 <h2 className="text-[10px] font-black text-stone-700 uppercase tracking-widest">Location</h2>
                             </div>
@@ -124,7 +124,7 @@ const SettingsPage = () => {
                                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Barangay</label>
                                     <select
                                         {...register("barangay")}
-                                        className="w-full h-10 px-3 bg-white border border-stone-200 rounded-none text-sm focus:outline-none focus:border-green-700 appearance-none"
+                                        className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm focus:outline-none focus:border-emerald-700 appearance-none"
                                     >
                                         <option value="">Select Barangay</option>
                                         {barangays?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -134,7 +134,7 @@ const SettingsPage = () => {
                                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Address Details</label>
                                     <input
                                         {...register("address")}
-                                        className="w-full h-10 px-3 bg-white border border-stone-200 rounded-none text-sm focus:outline-none focus:border-green-700"
+                                        className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm focus:outline-none focus:border-emerald-700"
                                     />
                                 </div>
                             </div>
@@ -143,10 +143,10 @@ const SettingsPage = () => {
 
                     {/* Notifications — Farmers only */}
                     {isFarmer && (
-                        <section className="bg-white border border-stone-200 overflow-hidden">
+                        <section className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
                             <div className="px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center gap-3">
-                                <div className="p-1.5 bg-green-50 border border-green-100">
-                                    <Bell size={15} className="text-green-700" />
+                                <div className="p-1.5 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                    <Bell size={15} className="text-emerald-700" />
                                 </div>
                                 <h2 className="text-[10px] font-black text-stone-700 uppercase tracking-widest">Notifications</h2>
                             </div>
@@ -158,7 +158,7 @@ const SettingsPage = () => {
                                 <input
                                     type="checkbox"
                                     {...register("receive_sms")}
-                                    className="checkbox checkbox-success rounded-none border-stone-300"
+                                    className="checkbox checkbox-success rounded-md border-stone-300"
                                 />
                             </div>
                         </section>
@@ -168,7 +168,7 @@ const SettingsPage = () => {
                         <button
                             type="submit"
                             disabled={isUpdating}
-                            className="bg-green-700 hover:bg-green-600 text-white px-10 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2 disabled:opacity-60"
+                            className="bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-60 cursor-pointer"
                         >
                             {isUpdating
                                 ? <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>

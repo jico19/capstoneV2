@@ -589,7 +589,7 @@ function ControlGroup({
 }) {
   return (
     <div
-      className="border-gray-100 bg-white [&>button:not(:last-child)]:border-gray-100 flex flex-col overflow-hidden rounded-none border shadow-none [&>button:not(:last-child)]:border-b">
+      className="border-stone-200 bg-white [&>button:not(:last-child)]:border-stone-200 flex flex-col overflow-hidden rounded-lg border shadow-xs [&>button:not(:last-child)]:border-b">
       {children}
     </div>
   );
@@ -607,7 +607,7 @@ function ControlButton({
       aria-label={label}
       type="button"
       className={cn(
-        "hover:bg-gray-50 flex size-10 items-center justify-center transition-colors",
+        "hover:bg-stone-50 text-stone-700 flex size-10 items-center justify-center transition-colors",
         disabled && "pointer-events-none cursor-not-allowed opacity-50"
       )}
       disabled={disabled}>
@@ -834,7 +834,7 @@ function MapPopup({
 
   return createPortal(<div
     className={cn(
-      "bg-white text-gray-900 relative rounded-none border border-gray-100 p-4 shadow-none transition-none",
+      "bg-white text-stone-900 relative rounded-xl border border-stone-200 p-4 shadow-sm transition-none",
       className
     )}>
     {closeButton && (

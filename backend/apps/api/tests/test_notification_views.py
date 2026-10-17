@@ -62,3 +62,30 @@ class NotificationFilterTests(APITestCase):
         self.assertEqual(len(results), 1, "Should only return 1 read notification")
         for notif in results:
             self.assertTrue(notif['is_read'])
+
+    def test_section_counts(self):
+        """Test section unread counts grouped by section"""
+        Notification.objects.create(
+            recipient=self.user,
+            type=Notification.Type.WARNING,
+            section=Notification.Section.PAYMENTS,
+            title='Payment Warning',
+            message='Pay soon',
+            is_read=False
+        )
+        url = reverse('notification-section-counts')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Unread 1 & Unread 2 defaulted to applications (count 2), plus 1 payments
+        self.assertEqual(response.data.get('applications'), 2)
+        self.assertEqual(response.data.get('payments'), 1)
+
+    def test_mark_section_read(self):
+        """Test marking a specific section's unread notifications as read"""
+        url = reverse('notification-mark-section-read')
+        response = self.client.post(url, {'section': 'applications'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Now applications unread count should be 0
+        url_counts = reverse('notification-section-counts')
+        counts_res = self.client.get(url_counts)
+        self.assertNotIn('applications', counts_res.data)

@@ -10,6 +10,7 @@ import BatchSurveyEncoder from './BatchSurveyEncoder';
 import SurveyListTable from './SurveyListTable';
 import SurveyFormModal from './SurveyFormModal';
 import CsvUploadModal from './CsvUploadModal';
+import DataTable from '../../../components/ui/DataTable';
 import { useBatchSurvey, invalidateSurveyQueries, PIG_CATEGORIES } from './useBatchSurvey';
 
 
@@ -239,6 +240,40 @@ const HogSurveyPage = () => {
     const surveys = data?.results || [];
     const count = data?.count || 0;
 
+    const rosterColumns = [
+        {
+            header: 'Farmer Name',
+            accessor: 'farmer_name',
+            className: 'font-bold text-stone-800',
+        },
+        {
+            header: 'Contact',
+            accessor: 'contact_number',
+            render: (f) => <span className="font-mono text-stone-500">{f.contact_number || '—'}</span>,
+        },
+        {
+            header: 'Last Survey',
+            accessor: 'last_survey_date',
+            render: (f) => <span className="font-mono">{f.last_survey_date || '—'}</span>,
+        },
+        {
+            header: 'Records',
+            accessor: 'survey_count',
+            align: 'center',
+        },
+        {
+            header: 'Status',
+            accessor: 'is_active',
+            render: (f) => (
+                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${
+                    f.is_active ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
+                }`}>
+                    {f.is_active ? 'Active' : 'Inactive'}
+                </span>
+            ),
+        },
+    ];
+
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-white min-h-screen font-sans">
             {/* Header */}
@@ -252,14 +287,14 @@ const HogSurveyPage = () => {
                     <button
                         type="button"
                         onClick={() => setIsCsvModalOpen(true)}
-                        className="flex-1 sm:flex-initial bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-initial bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2"
                     >
-                        <UploadCloud size={14} /> Upload CSV
+                        <UploadCloud size={14} /> Upload Survey
                     </button>
                     <button
                         type="button"
                         onClick={() => setShowEncoder(prev => !prev)}
-                        className={`flex-1 sm:flex-initial px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2 ${
+                        className={`flex-1 sm:flex-initial px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 ${
                             showEncoder 
                                 ? 'bg-white border border-stone-300 hover:bg-stone-50 text-stone-700' 
                                 : 'bg-white border border-stone-300 hover:bg-stone-50 text-stone-700'
@@ -270,7 +305,7 @@ const HogSurveyPage = () => {
                     <button
                         type="button"
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex-1 sm:flex-initial bg-green-700 hover:bg-green-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-initial bg-green-700 hover:bg-green-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2"
                     >
                         <Plus size={14} /> Add Survey
                     </button>
@@ -316,41 +351,19 @@ const HogSurveyPage = () => {
 
                 {/* Expanded roster table */}
                 {rosterOpen && (
-                    <div className="border-t border-stone-100 overflow-x-auto">
-                        <table className="w-full text-left text-xs font-semibold text-stone-700 min-w-[700px]">
-                            <thead className="bg-stone-50 border-b border-stone-100 text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                <tr>
-                                    <th className="px-6 py-3">Farmer Name</th>
-                                    <th className="px-6 py-3">Contact</th>
-                                    <th className="px-6 py-3">Last Survey</th>
-                                    <th className="px-6 py-3 text-center">Records</th>
-                                    <th className="px-6 py-3">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                                {roster.map((f, i) => (
-                                    <tr
-                                        key={i}
-                                        className="hover:bg-stone-50 cursor-pointer"
-                                        title="Click to view this farmer's survey history"
-                                        onClick={() => { setFilterFarmer(f.farmer_name); setOffset(0); }}
-                                    >
-                                        <td className="px-6 py-3 font-bold text-stone-800">{f.farmer_name}</td>
-                                        <td className="px-6 py-3 font-mono text-stone-500">{f.contact_number || '—'}</td>
-                                        <td className="px-6 py-3 font-mono">{f.last_survey_date || '—'}</td>
-                                        <td className="px-6 py-3 text-center">{f.survey_count}</td>
-                                        <td className="px-6 py-3">
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${
-                                                f.is_active ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
-                                            }`}>
-                                                {f.is_active ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        columns={rosterColumns}
+                        data={roster}
+                        keyField={(f, i) => f.farmer_name || i}
+                        onRowClick={(f) => { setFilterFarmer(f.farmer_name); setOffset(0); }}
+                        minWidth="700px"
+                        className="border-0 border-t border-stone-100"
+                        emptyState={{
+                            icon: Users,
+                            title: 'No registered farmers',
+                            description: 'No farmer survey records available for this barangay.',
+                        }}
+                    />
                 )}
             </div>
 

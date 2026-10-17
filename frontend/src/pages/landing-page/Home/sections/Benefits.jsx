@@ -9,15 +9,51 @@ import Transparency from '../../../../assets/home-icons/transparency-icon.svg';
 import BenefitsBg   from '../../../../assets/home-icons/benefits-bg.jpg';
 
 const BENEFITS = [
-  { icon: TimeMoney,    title: "Save Time and Money",  desc: "No more trips to the municipal office. Submit your permit application online in minutes and eliminate transportation costs.", accent: "#f5a623" },
-  { icon: Hours24,      title: "24/7 Access",           desc: "Apply for permits anytime, anywhere. The system is always online so farmers are never limited by office hours.",              accent: "#52b788" },
-  { icon: Tracking,     title: "Real-Time Tracking",    desc: "Monitor the exact status of your application at every stage, from submission to approval to permit release.",               accent: "#4db8e8" },
-  { icon: Disease,      title: "Disease Control",       desc: "Geospatial monitoring helps authorities track livestock movement and quickly respond to potential disease outbreaks.",        accent: "#e85d5d" },
-  { icon: ErrorIcon,    title: "Reduced Errors",        desc: "OCR validation and automated checks catch incomplete or incorrect documents before submission, with fewer rejections.",           accent: "#f5a623" },
-  { icon: Transparency, title: "Complete Transparency", desc: "Every action is logged and traceable. Farmers and authorities both have full visibility into the permit process.",            accent: "#52b788" },
+  {
+    icon: TimeMoney,
+    title: "Reduced Transit Delays",
+    desc: "Apply online prior to transport. Skip long checkpoint queues and avoid unnecessary travel to the municipal hall.",
+    bg: "bg-amber-400/15 border-amber-400/30",
+    filter: "invert(70%) sepia(85%) saturate(1200%) hue-rotate(5deg) brightness(98%)", // warm amber
+  },
+  {
+    icon: Hours24,
+    title: "24/7 Portal Access",
+    desc: "Submit permit requests outside regular office hours for early morning livestock dispatches.",
+    bg: "bg-emerald-400/15 border-emerald-400/30",
+    filter: "invert(65%) sepia(60%) saturate(600%) hue-rotate(100deg) brightness(98%)", // emerald
+  },
+  {
+    icon: Tracking,
+    title: "Real-Time Tracking",
+    desc: "Monitor your permit's progress across barangay endorsement and provincial veterinary clearance.",
+    bg: "bg-sky-400/15 border-sky-400/30",
+    filter: "invert(65%) sepia(60%) saturate(700%) hue-rotate(170deg) brightness(100%)", // sky blue
+  },
+  {
+    icon: Disease,
+    title: "Biosecurity Protection",
+    desc: "Supports Sariaya's African Swine Fever surveillance by verifying origin zones and health inspections.",
+    bg: "bg-rose-400/15 border-rose-400/30",
+    filter: "invert(65%) sepia(60%) saturate(900%) hue-rotate(320deg) brightness(98%)", // rose/coral
+  },
+  {
+    icon: ErrorIcon,
+    title: "Document Accuracy",
+    desc: "Instant document checks flag incomplete or unverified credentials before submission.",
+    bg: "bg-indigo-400/15 border-indigo-400/30",
+    filter: "invert(70%) sepia(50%) saturate(700%) hue-rotate(200deg) brightness(100%)", // indigo
+  },
+  {
+    icon: Transparency,
+    title: "Official Audit Trail",
+    desc: "Every permit approval and checkpoint scan is permanently logged in the municipal records.",
+    bg: "bg-teal-400/15 border-teal-400/30",
+    filter: "invert(65%) sepia(60%) saturate(600%) hue-rotate(130deg) brightness(98%)", // teal
+  },
 ];
 
-function BenefitCard({ icon, title, desc, accent }) {
+function BenefitCard({ icon, title, desc, bg, filter }) {
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -33,16 +69,15 @@ function BenefitCard({ icon, title, desc, accent }) {
 
   return (
     <div ref={cardRef}
-      className="benefits-card group relative bg-white/[0.04] border border-white/[0.08] rounded-[16px] px-5 py-6 overflow-hidden cursor-default opacity-0 translate-y-9 transition-[opacity,transform,background,border-color,box-shadow] duration-300 hover:bg-white/[0.07] hover:border-white/[0.14] hover:shadow-[0_24px_60px_rgba(0,0,0,0.3)]">
+      className="benefits-card bg-white/5 border border-white/10 p-5 rounded-lg cursor-default opacity-0 translate-y-6 transition-[opacity,transform,background-color] duration-200 hover:bg-white/10 group">
 
       {/* Icon */}
-      <div className="relative z-[1] w-[46px] h-[46px] rounded-[11px] flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-[4deg]"
-        style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}>
-        <img src={icon} alt={title} className="w-5 h-5 object-contain" style={{ filter: "brightness(0) invert(1) opacity(0.85)" }} />
+      <div className={`w-10 h-10 ${bg} border rounded-md flex items-center justify-center mb-3 transition-transform duration-200 group-hover:scale-105`}>
+        <img src={icon} alt="" className="w-5 h-5 object-contain" style={{ filter }} />
       </div>
 
-      <h3 className="relative z-[1] font-archivo text-[15px] text-white mb-2 tracking-[-0.01em]">{title}</h3>
-      <p className="relative z-[1] font-jakarta text-[13px] text-white/50 leading-[1.7] group-hover:text-white/70 transition-colors duration-300">{desc}</p>
+      <h3 className="font-archivo text-[15px] text-white mb-1.5 tracking-tight">{title}</h3>
+      <p className="font-jakarta text-[13px] text-white/70 leading-[1.6]">{desc}</p>
     </div>
   );
 }
@@ -52,30 +87,23 @@ export default function Benefits() {
   const imgRef    = useScrollReveal({ threshold: 0.15 });
 
   return (
-    <section className="bg-brand-primary relative pb-24 overflow-hidden">
-      {/* Wave */}
-      <div className="leading-[0] -mb-[2px]">
-        <svg viewBox="0 0 1440 80" fill="none" preserveAspectRatio="none" className="w-full h-[80px] block">
-          <path d="M0,40 C360,0 1080,80 1440,40 L1440,0 L0,0 Z" fill="#f8faf8" />
-        </svg>
-      </div>
-
-      <div className="relative z-[1] max-w-[1200px] mx-auto px-10 pt-[72px] max-[560px]:px-5 max-[560px]:pt-[60px]">
+    <section className="bg-brand-primary relative py-20 overflow-hidden">
+      <div className="relative z-[1] max-w-[1200px] mx-auto px-10 max-[560px]:px-5">
 
         {/* Two-column layout */}
         <div className="flex gap-10 items-center max-[960px]:flex-col">
 
           {/* Left — image card, hidden on narrow screens */}
           <div ref={imgRef} className="reveal-block w-[380px] shrink-0 max-[960px]:hidden">
-            <div className="rounded-[20px] overflow-hidden bg-white/[0.06] border border-white/[0.1]">
+            <div className="border border-white/20 bg-white/5 p-2 rounded-xl">
               <img
                 src={BenefitsBg}
-                alt="Supporting Filipino Farmers"
-                className="w-full h-[700px] object-cover object-center block"
+                alt="Supporting Sariaya Livestock Farmers"
+                className="w-full h-[520px] object-cover object-center block rounded-lg"
               />
-              <div className="px-5 py-4">
-                <p className="font-archivo text-[15px] text-white tracking-[-0.01em] mb-1">Supporting Filipino Farmers</p>
-                <p className="font-jakarta text-[13px] text-white/50 leading-[1.6]">Making livestock transport safer, faster, and fully digital.</p>
+              <div className="pt-3 px-1">
+                <p className="font-archivo text-[14px] text-white mb-0.5">Supporting Sariaya Livestock Farmers</p>
+                <p className="font-jakarta text-[12px] text-white/60">Digital permitting for safe, verifiable transport.</p>
               </div>
             </div>
           </div>
@@ -84,18 +112,17 @@ export default function Benefits() {
           <div className="flex-1 min-w-0">
 
             {/* Header */}
-            <div ref={headerRef} className="reveal-block mb-10 max-[960px]:text-center max-[560px]:mb-8">
-              <h2 className="font-archivo text-[clamp(28px,3.5vw,42px)] text-white leading-[1.12] mb-4 tracking-[-0.02em]">
-                Benefits You Can<br />Count On
+            <div ref={headerRef} className="reveal-block mb-8 max-[960px]:text-center">
+              <h2 className="font-archivo text-[clamp(28px,3.5vw,40px)] text-white leading-[1.12] mb-3 tracking-[-0.02em]">
+                Benefits for Farmers & Inspectors
               </h2>
-              <p className="font-jakarta text-[16px] text-white/50 leading-[1.75] max-w-[520px] max-[960px]:mx-auto">
-                Designed for Filipino farmers and agriculture officers,
-                FarmPass brings efficiency, security, and transparency to livestock transport permitting.
+              <p className="font-jakarta text-[15px] text-white/70 leading-[1.7] max-w-[520px] max-[960px]:mx-auto">
+                Built specifically for the Municipality of Sariaya to ensure regulatory compliance without administrative delays.
               </p>
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-2 gap-3 max-[560px]:grid-cols-1 max-[560px]:gap-3">
+            <div className="grid grid-cols-2 gap-3.5 max-[560px]:grid-cols-1">
               {BENEFITS.map((b, i) => <BenefitCard key={i} {...b} />)}
             </div>
           </div>

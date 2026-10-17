@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import NotificationBadge from './NotificationBadge';
-import { useGetUnreadNotificationCount } from '../../hooks/useNotifications';
+import { useGetSectionNotificationCounts } from '../../hooks/useNotifications';
 
 /**
  * Mobile-first navigation bar for Farmer and Inspector roles.
@@ -26,7 +26,7 @@ import { useGetUnreadNotificationCount } from '../../hooks/useNotifications';
 const MobileNavbar = () => {
     const { user, isAuthenticated } = useAuthStore();
     const location = useLocation();
-    const { data: unreadCount = 0 } = useGetUnreadNotificationCount();
+    const { data: sectionCounts = {} } = useGetSectionNotificationCounts();
 
     if (!isAuthenticated || !user) return null;
 
@@ -90,9 +90,15 @@ const MobileNavbar = () => {
                                         className={isActive ? 'text-green-700' : 'text-stone-400'} 
                                         strokeWidth={isActive ? 2.5 : 2} 
                                     />
-                                    {/* Show notification badge only for Home icon in Farmer role */}
-                                    {user.role === 'Farmer' && item.label === 'Home' && (
-                                        <NotificationBadge count={unreadCount} />
+                                    {/* Section-targeted activity dots for mobile navbar */}
+                                    {user.role === 'Farmer' && item.label === 'Apps' && (
+                                        <NotificationBadge count={sectionCounts.applications || 0} dotOnly={true} />
+                                    )}
+                                    {user.role === 'Farmer' && item.label === 'Setup' && (
+                                        <NotificationBadge count={sectionCounts.farmers || 0} dotOnly={true} />
+                                    )}
+                                    {user.role === 'Barangay' && item.label === 'Surveys' && (
+                                        <NotificationBadge count={sectionCounts.surveys || 0} dotOnly={true} />
                                     )}
                                 </div>
                             </div>

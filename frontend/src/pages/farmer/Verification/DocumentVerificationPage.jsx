@@ -156,9 +156,9 @@ const DocumentVerificationPage = () => {
 
     if (waitingForReview) {
         return (
-            <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+            <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6">
                 {/* Navigation & Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200 pb-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-stone-200 pb-4 sm:pb-5">
                     <div>
                         <Link
                             to="/farmer"
@@ -166,9 +166,9 @@ const DocumentVerificationPage = () => {
                         >
                             <ArrowLeft size={14} /> Back to Dashboard
                         </Link>
-                        <h1 className="text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-3">
-                            <ShieldCheck className="text-green-700" size={32} />
-                            Account Document Verification
+                        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-2 sm:gap-3">
+                            <ShieldCheck className="text-green-700 shrink-0" size={26} />
+                            Account Verification
                         </h1>
                         <p className="text-xs text-stone-500 mt-1">
                             Sariaya Municipal Agriculture Office (MAO) Standing Credentials
@@ -177,17 +177,17 @@ const DocumentVerificationPage = () => {
                 </div>
 
                 {/* Waiting for verification */}
-                <div className="bg-amber-50 border-2 border-amber-500 p-8 text-center space-y-5">
+                <div className="bg-amber-50 border-2 border-amber-500 p-4 sm:p-8 text-center space-y-4 sm:space-y-5 rounded-md">
                     <div className="flex justify-center">
-                        <div className="bg-amber-100 p-4 rounded-full">
-                            <Clock className="text-amber-600" size={40} />
+                        <div className="bg-amber-100 p-3 sm:p-4 rounded-full">
+                            <Clock className="text-amber-600" size={32} />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <h2 className="text-xl font-black uppercase tracking-tight text-stone-900">
+                        <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-stone-900">
                             Documents Submitted — Waiting for Verification
                         </h2>
-                        <p className="text-sm text-stone-700 max-w-xl mx-auto font-medium">
+                        <p className="text-xs sm:text-sm text-stone-700 max-w-xl mx-auto font-medium">
                             Your two required credentials have been uploaded and are now pending
                             review by the Sariaya Municipal Agriculture Office (MAO). You will
                             receive an SMS notification once approved.
@@ -200,9 +200,9 @@ const DocumentVerificationPage = () => {
                             return (
                                 <div
                                     key={cfg.type}
-                                    className="bg-white border border-amber-200 p-4 text-left flex items-start gap-3"
+                                    className="bg-white border border-amber-200 p-3.5 sm:p-4 text-left flex items-start gap-3 rounded"
                                 >
-                                    <FileCheck size={20} className="text-green-700 mt-0.5 flex-shrink-0" />
+                                    <FileCheck size={18} className="text-green-700 mt-0.5 flex-shrink-0" />
                                     <div className="min-w-0">
                                         <p className="text-[10px] font-black uppercase tracking-wider text-stone-400">
                                             {cfg.title}
@@ -211,7 +211,7 @@ const DocumentVerificationPage = () => {
                                             On File
                                         </p>
                                         {existing?.is_verified && (
-                                            <span className="inline-block mt-1 text-[9px] font-black uppercase bg-green-100 text-green-800 px-1.5 py-0.5">
+                                            <span className="inline-block mt-1 text-[9px] font-black uppercase bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
                                                 Verified
                                             </span>
                                         )}
@@ -221,7 +221,7 @@ const DocumentVerificationPage = () => {
                         })}
                     </div>
 
-                    <p className="text-xs text-stone-500 font-medium">
+                    <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
                         No further action is needed from you at this time. If you need to
                         update a document, please contact the MAO.
                     </p>
@@ -231,7 +231,7 @@ const DocumentVerificationPage = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/farmer')}
-                        className="px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all bg-green-700 hover:bg-green-600 text-white shadow-md shadow-green-700/20"
+                        className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-black uppercase tracking-widest transition-all bg-green-700 hover:bg-green-600 text-white rounded-md shadow-sm"
                     >
                         Back to Dashboard
                     </button>
@@ -241,9 +241,9 @@ const DocumentVerificationPage = () => {
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+        <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* Navigation & Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200 pb-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-stone-200 pb-4 sm:pb-5">
                 <div>
                     <Link
                         to="/farmer"
@@ -251,9 +251,9 @@ const DocumentVerificationPage = () => {
                     >
                         <ArrowLeft size={14} /> Back to Dashboard
                     </Link>
-                    <h1 className="text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-3">
-                        <ShieldCheck className="text-green-700" size={32} />
-                        Account Document Verification
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-2 sm:gap-3">
+                        <ShieldCheck className="text-green-700 shrink-0" size={26} />
+                        Account Verification
                     </h1>
                     <p className="text-xs text-stone-500 mt-1">
                         Sariaya Municipal Agriculture Office (MAO) Standing Credentials
@@ -263,14 +263,14 @@ const DocumentVerificationPage = () => {
 
             {/* Status Banner (GCash-style KYC tier notification) */}
             {status === 'VERIFIED' && (
-                <div className="bg-green-50 border-2 border-green-600 p-5 flex items-start gap-4">
-                    <CheckCircle2 className="text-green-700 mt-0.5 flex-shrink-0" size={24} />
+                <div className="bg-green-50 border border-green-600 p-3.5 sm:p-5 flex items-start gap-3 sm:gap-4 rounded-md">
+                    <CheckCircle2 className="text-green-700 mt-0.5 flex-shrink-0" size={22} />
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-black uppercase tracking-widest text-green-800">
                                 Fully Verified Account
                             </span>
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase bg-green-200 text-green-900">
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase bg-green-200 text-green-900 rounded">
                                 Active
                             </span>
                         </div>
@@ -282,14 +282,14 @@ const DocumentVerificationPage = () => {
             )}
 
             {status === 'PENDING_REVIEW' && (
-                <div className="bg-amber-50 border-2 border-amber-500 p-5 flex items-start gap-4">
-                    <Clock className="text-amber-600 mt-0.5 flex-shrink-0" size={24} />
+                <div className="bg-amber-50 border border-amber-500 p-3.5 sm:p-5 flex items-start gap-3 sm:gap-4 rounded-md">
+                    <Clock className="text-amber-600 mt-0.5 flex-shrink-0" size={22} />
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-black uppercase tracking-widest text-amber-800">
                                 Documents Under Review
                             </span>
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase bg-amber-200 text-amber-900">
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase bg-amber-200 text-amber-900 rounded">
                                 Pending Approval
                             </span>
                         </div>
@@ -301,14 +301,14 @@ const DocumentVerificationPage = () => {
             )}
 
             {status === 'REJECTED' && (
-                <div className="bg-red-50 border-2 border-red-500 p-5 flex items-start gap-4">
-                    <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={24} />
+                <div className="bg-red-50 border border-red-500 p-3.5 sm:p-5 flex items-start gap-3 sm:gap-4 rounded-md">
+                    <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={22} />
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-black uppercase tracking-widest text-red-800">
                                 Verification Needs Attention
                             </span>
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase bg-red-200 text-red-900">
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase bg-red-200 text-red-900 rounded">
                                 Action Required
                             </span>
                         </div>
@@ -323,8 +323,8 @@ const DocumentVerificationPage = () => {
             )}
 
             {status === 'UNVERIFIED' && (
-                <div className="bg-stone-100 border-2 border-stone-400 p-5 flex items-start gap-4">
-                    <AlertTriangle className="text-stone-700 mt-0.5 flex-shrink-0" size={24} />
+                <div className="bg-stone-100 border border-stone-300 p-3.5 sm:p-5 flex items-start gap-3 sm:gap-4 rounded-md">
+                    <AlertTriangle className="text-stone-700 mt-0.5 flex-shrink-0" size={22} />
                     <div className="space-y-1">
                         <span className="text-xs font-black uppercase tracking-widest text-stone-800">
                             Verification Required to Apply for Permits
@@ -349,7 +349,7 @@ const DocumentVerificationPage = () => {
                     return (
                         <div
                             key={cfg.type}
-                            className="bg-white border border-stone-200 p-5 space-y-4 transition-all hover:border-stone-300"
+                            className="bg-white border border-stone-200 p-3.5 sm:p-5 space-y-3 sm:space-y-4 rounded-md transition-all hover:border-stone-300"
                         >
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                 <div>

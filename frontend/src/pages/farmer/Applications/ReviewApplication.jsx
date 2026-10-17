@@ -121,8 +121,8 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
             </div>
 
             {/* Transport Details Card */}
-            <div className="bg-white p-5 border border-stone-200 rounded-none space-y-4">
-                <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2.5">Transport Information</h3>
+            <div className="bg-white p-3.5 sm:p-5 border border-stone-200 rounded-md space-y-3 sm:space-y-4">
+                <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2">Transport Information</h3>
                 
                 <DetailRow label="Where are the pigs going? (Destination)" value={formData.destination} />
                 <DetailRow label="When will you travel? (Date)" value={formData.transport_date} />
@@ -130,8 +130,8 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
             </div>
 
             {/* Swine Details Card */}
-            <div className="bg-white p-5 border border-stone-200 rounded-none space-y-4">
-                <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2.5">Swine Quantities & Locations</h3>
+            <div className="bg-white p-3.5 sm:p-5 border border-stone-200 rounded-md space-y-3 sm:space-y-4">
+                <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2">Swine Quantities & Locations</h3>
                 
                 {origins.map((o, index) => {
                     const barangayName = map?.find(m => String(m.id) === String(formData[`barangay_${o.id}`]))?.name || formData[`barangay_${o.id}`];
@@ -147,10 +147,10 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
                     const sourcePhone = formData[`source_phone_no_${o.id}`];
 
                     return (
-                        <div key={o.id} className="pb-4 border-b border-stone-200 last:border-0 last:pb-0 space-y-2">
+                        <div key={o.id} className="pb-3 border-b border-stone-200 last:border-0 last:pb-0 space-y-2">
                             <p className="text-[10px] font-black uppercase tracking-widest text-green-700">Origin #{index + 1}: Barangay {barangayName}</p>
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs py-2 px-3 bg-stone-50 border border-stone-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs py-2 px-3 bg-stone-50 border border-stone-100 rounded">
                                 <div>
                                     <span className="text-[9px] font-black uppercase text-stone-400 tracking-wider block">Source Farmer / Farm</span>
                                     <span className="font-bold text-stone-800">{sourceFarmer || "—"}</span>
@@ -163,7 +163,7 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
 
                             <DetailRow label="Total Swine" value={`${total} Pigs`} />
                             {total > 0 && (
-                                <div className="pl-4 py-2 border-l-2 border-green-700 text-[10px] font-bold text-stone-500 uppercase tracking-widest space-y-1 bg-stone-50 p-3">
+                                <div className="pl-3 py-1.5 border-l-2 border-green-700 text-[10px] font-bold text-stone-500 uppercase tracking-widest space-y-1 bg-stone-50 p-2.5 rounded-r">
                                     {inahin > 0 && <div>• Sow (Inahin): {inahin}</div>}
                                     {barako > 0 && <div>• Boar (Barako): {barako}</div>}
                                     {fattener > 0 && <div>• Fattener (Pampataba): {fattener}</div>}
@@ -178,8 +178,8 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
             </div>
 
             {/* Attached Photos Card */}
-            <div className="bg-white p-5 border border-stone-200 rounded-none space-y-4">
-                <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2.5">Attached Documents (Photos)</h3>
+            <div className="bg-white p-3.5 sm:p-5 border border-stone-200 rounded-md space-y-3 sm:space-y-4">
+                <h3 className="text-xs font-black tracking-[0.2em] text-stone-800 uppercase border-b border-stone-200 pb-2">Attached Documents (Photos)</h3>
                 <DocRow label="Handler's License" field="handlers_license" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
                 <DocRow label="Carrier Registration" field="transport_carrier_reg" watch={watch} docData={docData} user={user} setViewerDoc={setViewerDoc} />
                 {origins.map((o, index) => (
@@ -194,7 +194,7 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
             <div className="hidden sm:flex justify-between pt-6 border-t border-stone-200 gap-4 mt-8">
                 <button 
                     type="button" 
-                    className="border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out" 
+                    className="border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-black uppercase tracking-widest rounded-md transition-colors duration-100 ease-out" 
                     onClick={prevStep}
                     disabled={isSubmitting}
                 >
@@ -202,7 +202,7 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
                 </button>
                 <button
                     type="submit"
-                    className="bg-green-700 hover:bg-green-600 text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-none transition-colors duration-100 ease-out disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="bg-green-700 hover:bg-green-600 text-white px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-black uppercase tracking-widest rounded-md transition-colors duration-100 ease-out disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     disabled={isSubmitting}
                 >
                     {isSubmitting && <span className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin"></span>}
@@ -211,19 +211,19 @@ const ReviewApplication = ({ watch, prevStep, isSubmitting, origins, isEndorseme
             </div>
 
             {/* Sticky Mobile Navigation Bar */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 flex items-center justify-between z-50">
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 px-4 py-2.5 flex items-center justify-between z-40 shadow-lg">
                 <button
                     type="button"
                     onClick={prevStep}
                     disabled={isSubmitting}
-                    className="border border-stone-200 bg-white active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-wider px-4 py-3 rounded-none"
+                    className="border border-stone-200 bg-white active:bg-stone-100 text-stone-700 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-md"
                 >
                     Back
                 </button>
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-black uppercase tracking-widest text-xs px-5 py-3 rounded-none transition-colors flex items-center gap-2"
+                    className="bg-green-700 active:bg-green-800 hover:bg-green-600 text-white font-bold uppercase tracking-wider text-xs px-5 py-2.5 rounded-md transition-colors flex items-center gap-2 shadow-sm"
                 >
                     {isSubmitting && <span className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin"></span>}
                     {isSubmitting ? "Sending..." : "Send Request ✓"}

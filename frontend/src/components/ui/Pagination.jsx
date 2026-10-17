@@ -33,20 +33,20 @@ const Pagination = ({ count, limit, offset, onPageChange }) => {
     };
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-white px-4 py-6 sm:px-8 gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-stone-200 bg-white px-4 py-4 sm:px-6 gap-4">
             <div className="text-center sm:text-left">
-                <p className="text-[10px] font-black uppercase text-gray-400">
-                    Showing <span className="text-gray-900 font-mono">{count > 0 ? offset + 1 : 0}</span> to{' '}
-                    <span className="text-gray-900 font-mono">{Math.min(offset + limit, count)}</span> of{' '}
-                    <span className="text-gray-900 font-mono">{count}</span> results
+                <p className="text-[10px] font-black uppercase tracking-wider text-stone-500">
+                    Showing <span className="text-stone-800 font-mono font-bold">{count > 0 ? offset + 1 : 0}</span> to{' '}
+                    <span className="text-stone-800 font-mono font-bold">{Math.min(offset + limit, count)}</span> of{' '}
+                    <span className="text-stone-800 font-mono font-bold">{count}</span> results
                 </p>
             </div>
             
-            <nav className="isolate inline-flex -space-x-px shadow-sm" aria-label="Pagination">
+            <nav className="inline-flex items-center gap-1" aria-label="Pagination">
                 <button
                     disabled={currentPage === 1}
                     onClick={() => onPageChange((currentPage - 2) * limit)}
-                    className="relative inline-flex items-center border border-gray-300 bg-white p-2 text-gray-400 hover:bg-gray-50 focus:z-20 disabled:opacity-30 rounded-none transition-colors"
+                    className="h-8 w-8 flex items-center justify-center border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-stone-800 disabled:opacity-30 disabled:hover:bg-white rounded-lg shadow-2xs transition-colors"
                 >
                     <span className="sr-only">Previous</span>
                     <ChevronLeft size={16} />
@@ -55,16 +55,16 @@ const Pagination = ({ count, limit, offset, onPageChange }) => {
                 {getPageNumbers().map((page, index) => (
                     <React.Fragment key={index}>
                         {page === '...' ? (
-                            <span className="relative inline-flex items-center border border-gray-300 bg-white px-4 py-2 text-xs font-black text-gray-400 rounded-none">
+                            <span className="h-8 px-2 flex items-center justify-center text-xs font-black text-stone-400">
                                 <MoreHorizontal size={14} />
                             </span>
                         ) : (
                             <button
                                 onClick={() => onPageChange((page - 1) * limit)}
-                                className={`relative inline-flex items-center border px-4 py-2 text-xs font-black uppercase focus:z-20 rounded-none transition-all ${
+                                className={`h-8 min-w-[2rem] px-2.5 text-xs font-black uppercase rounded-md transition-all shadow-2xs ${
                                     currentPage === page
-                                        ? 'z-10 bg-gray-900 border-gray-900 text-white'
-                                        : 'bg-white border-gray-300 text-gray-900 hover:bg-gray-50'
+                                        ? 'bg-green-700 border border-green-700 text-white'
+                                        : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
                                 }`}
                             >
                                 {page}
@@ -76,7 +76,7 @@ const Pagination = ({ count, limit, offset, onPageChange }) => {
                 <button
                     disabled={currentPage === totalPages || totalPages === 0}
                     onClick={() => onPageChange(currentPage * limit)}
-                    className="relative inline-flex items-center border border-gray-300 bg-white p-2 text-gray-400 hover:bg-gray-50 focus:z-20 disabled:opacity-30 rounded-none transition-colors"
+                    className="h-8 w-8 flex items-center justify-center border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-stone-800 disabled:opacity-30 disabled:hover:bg-white rounded-lg shadow-2xs transition-colors"
                 >
                     <span className="sr-only">Next</span>
                     <ChevronRight size={16} />

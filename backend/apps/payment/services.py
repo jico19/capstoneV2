@@ -589,6 +589,7 @@ def check_and_handle_payment_expiration(issued_permit):
             Notification.objects.create(
                 recipient=issued_permit.application.farmer,
                 type=Notification.Type.WARNING,
+                section=Notification.Section.PAYMENTS,
                 title="Payment Deadline Expired",
                 message=f"The payment deadline for application #{issued_permit.application.application_id} has expired."
             )

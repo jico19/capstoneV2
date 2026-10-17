@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
 
@@ -33,3 +33,30 @@ export const useGetUnreadNotificationCount = () => {
         refetchInterval: 1000 * 30
     })
 }
+
+// Hook to fetch unread notification counts grouped by section
+export const useGetSectionNotificationCounts = () => {
+    return useQuery({
+        queryKey: ['notification', 'section_counts'],
+        queryFn: async () => {
+            const res = await api.get('/notification/section_counts/');
+            return res.data || {};
+        },
+        staleTime: 1000 * 30,
+        refetchInterval: 1000 * 30,
+    });
+};
+
+// Hook to mark all unread notifications in a specific section as read
+export const useMarkSectionRead = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (section) => {
+            const res = await api.post('/notification/mark_section_read/', { section });
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notification'] });
+        },
+    });
+};

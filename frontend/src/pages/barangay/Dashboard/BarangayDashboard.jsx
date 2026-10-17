@@ -18,6 +18,7 @@ import {
 import { Link } from 'react-router-dom';
 import ChartTakeaway from '../../../components/ui/ChartTakeaway';
 import { useGetDashboardInsights } from '../../../hooks/useDashboard';
+import DataTable from '../../../components/ui/DataTable';
 
 const BarangayDashboard = () => {
     const { user } = useAuthStore();
@@ -203,42 +204,45 @@ const BarangayDashboard = () => {
                         </Link>
                     </div>
                     
-                    <div className="overflow-x-auto w-full">
-                        <table className="w-full text-left border-collapse text-xs font-semibold text-stone-700">
-                            <thead className="bg-stone-50 border-b border-stone-100 text-[9px] font-black uppercase tracking-widest text-stone-500">
-                                <tr>
-                                    <th className="px-6 py-4">Survey Date</th>
-                                    <th className="px-6 py-4 text-center">Inahin (Sow)</th>
-                                    <th className="px-6 py-4 text-center">Barako (Boar)</th>
-                                    <th className="px-6 py-4 text-center">Grow-Out Stage</th>
-                                    <th className="px-6 py-4 text-center font-bold text-stone-800">Total Pigs</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                                {recentSurveys.length > 0 ? (
-                                    recentSurveys.slice(0, 5).map(s => {
-                                        const growOutTotal = s.fattener + s.grower + s.starter + s.bulaw;
-                                        return (
-                                            <tr key={s.id} className="hover:bg-stone-50 transition-colors">
-                                                <td className="px-6 py-4 font-mono font-bold">{s.survey_date}</td>
-                                                <td className="px-6 py-4 text-center">{s.inahin}</td>
-                                                <td className="px-6 py-4 text-center">{s.barako}</td>
-                                                <td className="px-6 py-4 text-center">{growOutTotal}</td>
-                                                <td className="px-6 py-4 text-center font-black text-green-700 bg-green-50/20">{s.total_pigs}</td>
-                                            </tr>
-                                        );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan="5" className="py-12 text-center text-stone-300">
-                                            <FileText size={32} className="mx-auto mb-2" />
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">No recent surveys submitted</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        columns={[
+                            {
+                                header: "Survey Date",
+                                render: (s) => <span className="font-mono font-bold">{s.survey_date}</span>,
+                            },
+                            {
+                                header: "Inahin (Sow)",
+                                align: "center",
+                                accessor: "inahin",
+                            },
+                            {
+                                header: "Barako (Boar)",
+                                align: "center",
+                                accessor: "barako",
+                            },
+                            {
+                                header: "Grow-Out Stage",
+                                align: "center",
+                                render: (s) => (s.fattener + s.grower + s.starter + s.bulaw),
+                            },
+                            {
+                                header: "Total Pigs",
+                                align: "center",
+                                render: (s) => (
+                                    <span className="font-black text-green-700 bg-green-50/50 px-2 py-0.5 border border-green-200">
+                                        {s.total_pigs}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                        data={recentSurveys.slice(0, 5)}
+                        className="border-0"
+                        emptyState={{
+                            icon: FileText,
+                            title: "No recent surveys submitted",
+                            description: "Submit a hog survey to start tracking localized hog inventories."
+                        }}
+                    />
                 </div>
 
                 {/* Quick Management Tasks */}

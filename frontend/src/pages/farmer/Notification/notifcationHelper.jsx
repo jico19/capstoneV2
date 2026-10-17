@@ -15,7 +15,7 @@ export const getRelativeTime = (dateString) => {
 
 export const getIconInfo = (type) => {
     switch (type) {
-        case 'SUCCESS': return { icon: CheckCircle2, color: 'text-green-600' };
+        case 'SUCCESS': return { icon: CheckCircle2, color: 'text-emerald-700' };
         case 'WARNING': return { icon: AlertTriangle, color: 'text-amber-600' };
         case 'INFO':
         default: return { icon: Info, color: 'text-sky-600' };

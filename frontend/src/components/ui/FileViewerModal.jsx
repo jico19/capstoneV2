@@ -46,12 +46,12 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-2 sm:p-6 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-2 sm:p-6 animate-in fade-in duration-150">
             <div 
-                className={`bg-white border-2 border-stone-800 flex flex-col shadow-2xl transition-all ${
+                className={`bg-white border border-stone-200 flex flex-col shadow-xl transition-all ${
                     isFullscreen 
                         ? 'w-screen h-screen max-w-none max-h-none rounded-none' 
-                        : 'w-full max-w-5xl h-[88vh] rounded-none'
+                        : 'w-full max-w-5xl h-[88vh] rounded-xl overflow-hidden'
                 }`}
             >
                 {/* Top Control Bar */}
@@ -77,7 +77,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                                     type="button"
                                     onClick={handleZoomOut}
                                     title="Zoom Out"
-                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors"
+                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors"
                                 >
                                     <ZoomOut size={16} />
                                 </button>
@@ -88,7 +88,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                                     type="button"
                                     onClick={handleZoomIn}
                                     title="Zoom In"
-                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors"
+                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors"
                                 >
                                     <ZoomIn size={16} />
                                 </button>
@@ -96,14 +96,14 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                                     type="button"
                                     onClick={handleRotate}
                                     title="Rotate Clockwise"
-                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors"
+                                    className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors"
                                 >
                                     <RotateCw size={16} />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleReset}
-                                    className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200"
+                                    className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors"
                                 >
                                     Reset
                                 </button>
@@ -114,7 +114,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                             type="button"
                             onClick={() => setIsFullscreen(!isFullscreen)}
                             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors hidden sm:inline-flex"
+                            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors hidden sm:inline-flex"
                         >
                             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                         </button>
@@ -125,7 +125,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                             target="_blank"
                             rel="noreferrer"
                             title="Download Original"
-                            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors"
+                            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors"
                         >
                             <Download size={16} />
                         </a>
@@ -135,7 +135,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                             target="_blank"
                             rel="noreferrer"
                             title="Open in New Tab"
-                            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors"
+                            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg shadow-2xs transition-colors"
                         >
                             <ExternalLink size={16} />
                         </a>
@@ -145,7 +145,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-1.5 text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+                            className="p-1.5 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
                         >
                             <X size={20} />
                         </button>
@@ -155,8 +155,8 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                 {/* Content Canvas */}
                 <div className="flex-1 overflow-auto bg-stone-100 flex items-center justify-center p-4 relative select-none">
                     {isPdf ? (
-                        <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-white border border-stone-200 shadow-sm space-y-4">
-                            <div className="p-4 bg-stone-900 text-white">
+                        <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-white border border-stone-200 rounded-xl shadow-xs space-y-4">
+                            <div className="p-4 bg-stone-900 text-white rounded-lg">
                                 <FileText size={44} />
                             </div>
                             <div className="space-y-1.5">

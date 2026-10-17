@@ -15,7 +15,7 @@ import {
 import DateFormatter from "../../../components/ui/DateFormatter";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import KPICard from "../../../components/ui/KPICard";
-import Pagination from "../../../components/ui/Pagination";
+import DataTable from "../../../components/ui/DataTable";
 
 /**
  * Farmer Application List Dashboard
@@ -93,18 +93,182 @@ const FarmerApplicationDashboard = () => {
         );
     }
 
+    const renderMobileCards = (items) => (
+        <div className="divide-y divide-stone-100">
+            {items.map((app) => (
+                <div 
+                    key={app.id} 
+                    className="p-4 space-y-3 bg-white active:bg-stone-50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                >
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono font-black text-stone-800 bg-stone-100 px-2 py-0.5 border border-stone-200">
+                            {app.application_id || `#${app.id}`}
+                        </span>
+                        <StatusBadge status={app.status} />
+                    </div>
+                    
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                            <MapPin size={13} className="text-stone-400 shrink-0" />
+                            <span className="text-xs font-bold text-stone-800 uppercase truncate">
+                                {app.destination || "Not specified"}
+                            </span>
+                        </div>
+                        {app.transport_date && (
+                            <div className="flex items-center gap-1.5 pl-0.5 text-stone-500">
+                                <Calendar size={12} className="text-stone-300 shrink-0" />
+                                <span className="text-[10px] font-medium">
+                                    <DateFormatter date={app.transport_date} />
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div onClick={(e) => e.stopPropagation()} className="pt-1">
+                        {app.status === 'PAYMENT_PENDING' ? (
+                            <button
+                                onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
+                                className="w-full py-2 bg-green-700 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                            >
+                                <HandCoins size={13} /> Pay Fee Now
+                            </button>
+                        ) : ['PAID', 'RELEASED'].includes(app.status) ? (
+                            <button
+                                onClick={() => navigate(`/farmer/application/download/${app.id}`)}
+                                className="w-full py-2 bg-stone-800 active:bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                            >
+                                <Download size={13} /> Get Permit PDF
+                            </button>
+                        ) : ['RESUBMISSION', 'OPV_REJECTED'].includes(app.status) ? (
+                            <button
+                                onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
+                                className="w-full py-2 bg-amber-600 active:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                            >
+                                Fix / Resubmit
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                className="w-full py-2 bg-stone-50 border border-stone-200 active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
+                            >
+                                <Eye size={13} /> View Details
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+
+    const columns = [
+        {
+            header: "Permit Info",
+            render: (app) => (
+                <div className="flex flex-col gap-2">
+                    <span className="text-[10px] w-fit font-mono font-black text-stone-800 bg-stone-100 px-2 py-0.5 border border-stone-200">
+                        {app.application_id || `#${app.id}`}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <MapPin size={12} className="text-stone-400 group-hover:text-green-700" />
+                        <span className="text-sm font-bold text-stone-800 uppercase tracking-tight">
+                            {app.destination || "Not specified"}
+                        </span>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            header: "Status",
+            align: "center",
+            render: (app) => <StatusBadge status={app.status} />,
+        },
+        {
+            header: "Travel Date",
+            render: (app) => (
+                <div className="flex items-center gap-2">
+                    <Calendar size={14} className="text-stone-300" />
+                    <span className="text-xs font-medium text-stone-800">
+                        <DateFormatter date={app.transport_date} />
+                    </span>
+                </div>
+            ),
+        },
+        {
+            header: "Actions",
+            align: "right",
+            render: (app) => (
+                <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end gap-2">
+                    {app.status === 'PAYMENT_PENDING' ? (
+                        <>
+                            <button
+                                onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
+                                className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                            >
+                                <HandCoins size={12} /> Pay Fee
+                            </button>
+                            <button
+                                onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                            >
+                                <Eye size={12} /> View
+                            </button>
+                        </>
+                    ) : ['PAID', 'RELEASED'].includes(app.status) ? (
+                        <>
+                            <button
+                                onClick={() => navigate(`/farmer/application/download/${app.id}`)}
+                                className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                            >
+                                <Download size={12} /> Get Permit
+                            </button>
+                            <button
+                                onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                            >
+                                <Eye size={12} /> View
+                            </button>
+                        </>
+                    ) : ['RESUBMISSION', 'OPV_REJECTED'].includes(app.status) ? (
+                        <>
+                            <button
+                                onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
+                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                            >
+                                Fix/Resubmit
+                            </button>
+                            <button
+                                onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                                className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                            >
+                                <Eye size={12} /> View
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
+                            className="px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
+                        >
+                            <Eye size={12} /> View Details
+                        </button>
+                    )}
+                </div>
+            ),
+        },
+    ];
+
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-stone-50 min-h-full">
+        <div className="p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 bg-stone-50 min-h-full">
 
             {/* 1. Header Section with Quick Action */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200 pb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-stone-200 pb-4 sm:pb-6">
                 <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-0.5">Your Records</p>
-                    <h1 className="text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tighter">Your Permit Requests</h1>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-800 uppercase tracking-tight">Your Permit Requests</h1>
                 </div>
                 <Link
                     to="/farmer/application/create"
-                    className="w-full sm:w-auto px-5 py-3 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 bg-green-700 hover:bg-green-600 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-md flex items-center justify-center gap-2"
                 >
                     <Plus size={14} />
                     New Request
@@ -112,7 +276,7 @@ const FarmerApplicationDashboard = () => {
             </div>
 
             {/* 2. KPI Metrics (2 columns on mobile) */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
                 <KPICard
                     title="Total Requests"
                     value={summary.total}
@@ -142,7 +306,7 @@ const FarmerApplicationDashboard = () => {
             </div>
 
             {/* 3. Main Content Area */}
-            <div className="bg-white border border-stone-200 rounded-none">
+            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
 
                 {/* 3.1 Unified Toolbar */}
                 <div className="p-3 sm:p-4 bg-stone-50 border-b border-stone-200 flex flex-col sm:flex-row gap-3 justify-between items-center w-full">
@@ -193,209 +357,25 @@ const FarmerApplicationDashboard = () => {
                     </div>
                 </div>
 
-                {/* 3.2 Dedicated Mobile Permit Cards (< sm) */}
-                <div className="sm:hidden divide-y divide-stone-100">
-                    {applications.length === 0 ? (
-                        <div className="py-16 text-center">
-                            <Inbox size={40} className="text-stone-200 mx-auto mb-3" />
-                            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
-                                No requests found
-                            </p>
-                        </div>
-                    ) : (
-                        applications.map((app) => (
-                            <div 
-                                key={app.id} 
-                                className="p-4 space-y-3 bg-white active:bg-stone-50 transition-colors"
-                                onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-mono font-black text-stone-800 bg-stone-100 px-2 py-0.5 border border-stone-200">
-                                        {app.application_id || `#${app.id}`}
-                                    </span>
-                                    <StatusBadge status={app.status} />
-                                </div>
-                                
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <MapPin size={13} className="text-stone-400 shrink-0" />
-                                        <span className="text-xs font-bold text-stone-800 uppercase truncate">
-                                            {app.destination || "Not specified"}
-                                        </span>
-                                    </div>
-                                    {app.transport_date && (
-                                        <div className="flex items-center gap-1.5 pl-0.5 text-stone-500">
-                                            <Calendar size={12} className="text-stone-300 shrink-0" />
-                                            <span className="text-[10px] font-medium">
-                                                <DateFormatter date={app.transport_date} />
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div onClick={(e) => e.stopPropagation()} className="pt-1">
-                                    {app.status === 'PAYMENT_PENDING' ? (
-                                        <button
-                                            onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
-                                            className="w-full py-2 bg-green-700 active:bg-green-800 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
-                                        >
-                                            <HandCoins size={13} /> Pay Fee Now
-                                        </button>
-                                    ) : ['PAID', 'RELEASED'].includes(app.status) ? (
-                                        <button
-                                            onClick={() => navigate(`/farmer/application/download/${app.id}`)}
-                                            className="w-full py-2 bg-stone-800 active:bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
-                                        >
-                                            <Download size={13} /> Get Permit PDF
-                                        </button>
-                                    ) : ['RESUBMISSION', 'OPV_REJECTED'].includes(app.status) ? (
-                                        <button
-                                            onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
-                                            className="w-full py-2 bg-amber-600 active:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
-                                        >
-                                            Fix / Resubmit
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                                            className="w-full py-2 bg-stone-50 border border-stone-200 active:bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 rounded-none"
-                                        >
-                                            <Eye size={13} /> View Details
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* 3.3 Desktop Table (>= sm) */}
-                <div className="hidden sm:block overflow-x-auto overflow-y-visible">
-                    <table className="w-full border-collapse text-left">
-                        <thead>
-                            <tr className="bg-stone-50 border-b border-stone-100">
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Permit Info</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Travel Date</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100">
-                            {applications.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" className="py-24 text-center">
-                                        <div className="flex flex-col items-center">
-                                            <Inbox size={48} className="text-stone-200 mb-4" />
-                                            <p className="text-sm font-bold text-stone-400 uppercase tracking-widest">
-                                                No requests found
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                applications.map((app) => (
-                                    <tr
-                                        key={app.id}
-                                        className="hover:bg-stone-50 transition-all duration-100 group border-l-4 border-transparent hover:border-green-700 cursor-pointer"
-                                        onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                                    >
-                                        <td className="px-6 py-5">
-                                            <div className="flex flex-col gap-2">
-                                                <span className="text-[10px] w-fit font-mono font-black text-stone-800 bg-stone-100 px-2 py-0.5 border border-stone-200">
-                                                    {app.application_id || `#${app.id}`}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin size={12} className="text-stone-400 group-hover:text-green-700" />
-                                                    <span className="text-sm font-bold text-stone-800 uppercase tracking-tight">
-                                                        {app.destination || "Not specified"}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-5 text-center">
-                                            <StatusBadge status={app.status} />
-                                        </td>
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar size={14} className="text-stone-300" />
-                                                <span className="text-xs font-medium text-stone-800">
-                                                    <DateFormatter date={app.transport_date} />
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-5 text-right">
-                                             <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end gap-2">
-                                                 {app.status === 'PAYMENT_PENDING' ? (
-                                                     <>
-                                                         <button
-                                                             onClick={() => navigate(`/farmer/payment/checkout/${app.id}`)}
-                                                             className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                         >
-                                                             <HandCoins size={12} /> Pay Fee
-                                                         </button>
-                                                         <button
-                                                             onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                                                             className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                         >
-                                                             <Eye size={12} /> View
-                                                         </button>
-                                                     </>
-                                                 ) : ['PAID', 'RELEASED'].includes(app.status) ? (
-                                                     <>
-                                                         <button
-                                                             onClick={() => navigate(`/farmer/application/download/${app.id}`)}
-                                                             className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                         >
-                                                             <Download size={12} /> Get Permit
-                                                         </button>
-                                                         <button
-                                                             onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                                                             className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                         >
-                                                             <Eye size={12} /> View
-                                                         </button>
-                                                     </>
-                                                 ) : ['RESUBMISSION', 'OPV_REJECTED'].includes(app.status) ? (
-                                                     <>
-                                                         <button
-                                                             onClick={() => navigate(`/farmer/application/resubmit/${app.id}`)}
-                                                             className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                         >
-                                                             Fix/Resubmit
-                                                         </button>
-                                                         <button
-                                                             onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                                                             className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                         >
-                                                             <Eye size={12} /> View
-                                                         </button>
-                                                     </>
-                                                 ) : (
-                                                     <button
-                                                         onClick={() => navigate(`/farmer/application/detail/${app.id}`)}
-                                                         className="px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 text-[10px] font-black uppercase tracking-widest transition-colors rounded-none inline-flex items-center gap-1.5"
-                                                     >
-                                                         <Eye size={12} /> View Details
-                                                     </button>
-                                                 )}
-                                             </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* 3.3 Pagination */}
-                <div className="border-t border-stone-100">
-                    <Pagination
-                        count={count}
-                        limit={limit}
-                        offset={offset}
-                        onPageChange={setOffset}
-                    />
-                </div>
+                {/* 3.2 Unified Responsive Data Presentation */}
+                <DataTable
+                    columns={columns}
+                    data={applications}
+                    onRowClick={(app) => navigate(`/farmer/application/detail/${app.id}`)}
+                    mobileRenderer={renderMobileCards}
+                    className="border-t border-b-0 border-x-0"
+                    emptyState={{
+                        icon: Inbox,
+                        title: "No requests found",
+                        description: "You have not submitted any permit requests matching this filter."
+                    }}
+                    pagination={count > limit ? {
+                        count,
+                        limit,
+                        offset,
+                        onPageChange: setOffset
+                    } : null}
+                />
             </div>
         </div>
     );

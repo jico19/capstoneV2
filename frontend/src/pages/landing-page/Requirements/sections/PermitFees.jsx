@@ -1,11 +1,10 @@
 import useScrollReveal from '../../../../hooks/useScrollReveal';
-import FeeIcon     from '../../../../assets/requirements-icons/fee-icon.png';
-import PaymentIcon from '../../../../assets/requirements-icons/payment-icon.png';
+import { Receipt, CreditCard } from "lucide-react";
 
 const FEES = [
-  { doc: "Veterinary Health Certificate", fee: "₱50.00" },
-  { doc: "Transportation Pass",           fee: "₱50.00" },
-  { doc: "Sariaya Transportation Permit", fee: "₱50.00" },
+  { doc: "Veterinary Health Certificate",    fee: "₱50.00" },
+  { doc: "Transportation Pass",              fee: "₱50.00" },
+  { doc: "Local Transport Permit (Sariaya)", fee: "₱50.00" },
 ];
 
 export default function PermitFees() {
@@ -18,7 +17,7 @@ export default function PermitFees() {
         {/* Header */}
         <div className="flex items-center gap-3 pb-3 border-b border-stone-200 mb-2">
           <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-md flex items-center justify-center shrink-0">
-            <img src={FeeIcon} alt="" className="w-5 h-5 object-contain" />
+            <Receipt className="w-5 h-5 text-amber-700" />
           </div>
           <h2 className="font-archivo text-2xl text-stone-900 font-bold tracking-tight">Permit Fees Schedule</h2>
         </div>
@@ -54,19 +53,19 @@ export default function PermitFees() {
         <div className="bg-stone-50 border border-stone-200 rounded-lg p-5">
           <div className="flex items-center gap-2.5 font-archivo text-sm font-semibold text-stone-900 mb-3">
             <div className="w-7 h-7 bg-emerald-100 border border-emerald-200 rounded flex items-center justify-center shrink-0">
-              <img src={PaymentIcon} alt="" className="w-4 h-4 object-contain" />
+              <CreditCard className="w-4 h-4 text-emerald-700" />
             </div>
             Payment Methods
           </div>
           <div className="space-y-2 text-xs text-stone-600 leading-relaxed">
             <p>
-              <strong className="text-stone-900">Online Channels:</strong> PayMongo gateway integration supports GCash, Maya, and online bank transfers upon approval.
+              <strong className="text-stone-900">Online Channels:</strong> PayMongo gateway integration supports GCash, Maya, and credit/debit cards upon permit approval.
             </p>
             <p>
-              <strong className="text-stone-900">Over-the-Counter:</strong> Municipal Treasury Office, Ground Floor, New Municipal Hall (Monday–Friday, 8:00 AM – 5:00 PM).
+              <strong className="text-stone-900">Over-the-Counter:</strong> Municipal Treasury Office, Ground Floor, New Municipal Hall (Monday to Friday, 8:00 AM to 5:00 PM).
             </p>
             <p className="text-green-800 font-medium pt-1">
-              Note: Digital transport permit and QR pass will be unlocked immediately upon automated payment verification.
+              Note: Digital transport permit and QR pass are issued immediately upon automated payment verification.
             </p>
           </div>
         </div>

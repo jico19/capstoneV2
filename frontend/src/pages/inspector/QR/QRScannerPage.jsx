@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, ShieldCheck, Upload, ExternalLink, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Camera, ShieldCheck, Upload, ExternalLink, AlertCircle, Loader2, RefreshCw, QrCode } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'sonner';
+
+import { stopAllMediaTracks } from '../../../lib/utils';
 
 const QRScannerPage = () => {
     const navigate = useNavigate();
@@ -14,15 +16,16 @@ const QRScannerPage = () => {
     const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
     const [cameras, setCameras] = useState([]);
-    
+
     const fileInputRef = useRef(null);
     const scannerRef = useRef(null);
-    const isStartingRef = useRef(false);
+    const startingPromiseRef = useRef(null);
+    const isMountedRef = useRef(true);
 
     const getCameras = async () => {
         try {
             const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length > 0) {
+            if (devices && devices.length > 0 && isMountedRef.current) {
                 setCameras(devices);
                 setHasMultipleCameras(devices.length > 1);
             }
@@ -31,63 +34,117 @@ const QRScannerPage = () => {
         }
     };
 
+    const stopCamera = async () => {
+        // Await any in-flight camera startup so we don't leave orphaned tracks
+        if (startingPromiseRef.current) {
+            try {
+                await startingPromiseRef.current;
+            } catch {
+                // ignore
+            }
+        }
+
+        const scanner = scannerRef.current;
+        scannerRef.current = null;
+        setIsScanning(false);
+
+        if (scanner) {
+            try {
+                await scanner.stop();
+            } catch {
+                // ignore if already stopped or wasn't scanning
+            }
+            try {
+                scanner.clear();
+            } catch {
+                // ignore
+            }
+        }
+
+        // Hard-stop all media tracks on any video element
+        stopAllMediaTracks();
+
+        const readerEl = document.getElementById('reader');
+        if (readerEl) readerEl.innerHTML = '';
+    };
+
     const startCamera = async (cameraIdx = 0) => {
-        if (isStartingRef.current) return;
-        
-        isStartingRef.current = true;
+        if (!isMountedRef.current) return;
         setScanError(null);
         setScannedResult(null);
 
-        try {
-            // Stop existing if any
-            if (scannerRef.current?.isScanning) {
-                await scannerRef.current.stop();
-            }
+        // Ensure any previous scanner/tracks are fully stopped
+        await stopCamera();
+        if (!isMountedRef.current) return;
 
+        try {
             const readerEl = document.getElementById('reader');
-            if (readerEl) readerEl.innerHTML = '';
+            if (!readerEl) return;
+            readerEl.innerHTML = '';
 
             const qr = new Html5Qrcode('reader');
             scannerRef.current = qr;
 
-            const config = { 
-                fps: 15, 
-                qrbox: { width: 250, height: 250 },
+            const config = {
+                fps: 15,
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    const qrboxSize = Math.floor(minEdge * 0.75);
+                    return { width: qrboxSize, height: qrboxSize };
+                },
                 aspectRatio: 1.0
             };
 
-            // If we have specific cameras, use the ID, otherwise fallback to environment
-            if (cameras.length > 0) {
-                await qr.start(
-                    cameras[cameraIdx].id,
-                    config,
-                    (decodedText) => handleScanSuccess(decodedText),
-                    () => { }
-                );
-            } else {
-                await qr.start(
-                    { facingMode: 'environment' },
-                    config,
-                    (decodedText) => handleScanSuccess(decodedText),
-                    () => { }
-                );
+            const cameraIdOrConfig = (cameras.length > 0 && cameras[cameraIdx])
+                ? cameras[cameraIdx].id
+                : { facingMode: 'environment' };
+
+            const startPromise = qr.start(
+                cameraIdOrConfig,
+                config,
+                (decodedText) => handleScanSuccess(decodedText),
+                () => { }
+            );
+            startingPromiseRef.current = startPromise;
+
+            await startPromise;
+
+            // If component unmounted while awaiting camera permission / stream start:
+            if (!isMountedRef.current) {
+                try {
+                    await qr.stop();
+                } catch {
+                    // ignore
+                }
+                try {
+                    qr.clear();
+                } catch {
+                    // ignore
+                }
+                stopAllMediaTracks();
+                scannerRef.current = null;
+                return;
             }
 
             setIsScanning(true);
             setCurrentCameraIndex(cameraIdx);
         } catch (err) {
+            if (!isMountedRef.current) {
+                stopAllMediaTracks();
+                return;
+            }
             console.error("Camera Start Error:", err);
             const msg = err?.message || '';
             if (msg.includes('Permission') || msg.includes('NotAllowed')) {
-                setScanError('Please allow camera access in your settings to scan codes.');
+                setScanError('Camera permission was denied. Please allow camera access in browser settings.');
             } else if (msg.includes('NotFound') || msg.includes('DevicesNotFound')) {
-                setScanError('We couldn\'t find a camera on your device.');
+                setScanError('No camera found on this device. You can upload a photo of the QR code instead.');
             } else {
-                setScanError('Something went wrong starting the camera. Please try again.');
+                setScanError('Could not initialize the camera. Tap Try Again or upload a photo.');
             }
             setIsScanning(false);
         } finally {
-            isStartingRef.current = false;
+            startingPromiseRef.current = null;
         }
     };
 
@@ -97,26 +154,13 @@ const QRScannerPage = () => {
         startCamera(nextIdx);
     };
 
-    const stopCamera = async () => {
-        if (scannerRef.current) {
-            try {
-                if (scannerRef.current.isScanning) {
-                    await scannerRef.current.stop();
-                }
-            } catch (e) {
-                console.warn("Camera Stop Warning:", e);
-            }
-            const readerEl = document.getElementById('reader');
-            if (readerEl) readerEl.innerHTML = '';
-            scannerRef.current = null;
-        }
-        setIsScanning(false);
-    };
-
     const handleScanSuccess = async (result) => {
-        // Haptic feedback if supported
         if ('vibrate' in navigator) {
-            navigator.vibrate(100);
+            try {
+                navigator.vibrate(100);
+            } catch {
+                // Ignore vibration failure
+            }
         }
         await stopCamera();
         setScannedResult(result);
@@ -126,9 +170,9 @@ const QRScannerPage = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const maxSize = 30 * 1024 * 1024;
+        const maxSize = 20 * 1024 * 1024;
         if (file.size > maxSize) {
-            toast.error('File size cannot exceed 30MB');
+            toast.error('File size cannot exceed 20MB');
             return;
         }
 
@@ -142,7 +186,7 @@ const QRScannerPage = () => {
             handleScanSuccess(result);
         } catch (err) {
             console.error("File Scan Error:", err);
-            setScanError('We couldn\'t find a QR code in that image. Please try a clearer photo.');
+            setScanError('No QR code detected in the uploaded image. Please ensure the code is clear and in focus.');
         } finally {
             setIsUploading(false);
             if (e.target) e.target.value = '';
@@ -168,7 +212,9 @@ const QRScannerPage = () => {
     const handleScanAnother = () => {
         setScannedResult(null);
         setScanError(null);
-        if (activeTab === 'camera') startCamera(currentCameraIndex);
+        if (activeTab === 'camera') {
+            startCamera(currentCameraIndex);
+        }
     };
 
     const switchTab = (tab) => {
@@ -183,140 +229,183 @@ const QRScannerPage = () => {
     };
 
     useEffect(() => {
+        isMountedRef.current = true;
+
         const init = async () => {
             await getCameras();
-            startCamera(0);
+            if (isMountedRef.current) {
+                startCamera(0);
+            }
         };
         init();
-        return () => { stopCamera(); };
+
+        const handlePageHide = () => {
+            stopAllMediaTracks();
+        };
+        window.addEventListener('pagehide', handlePageHide);
+        window.addEventListener('beforeunload', handlePageHide);
+
+        return () => {
+            isMountedRef.current = false;
+            window.removeEventListener('pagehide', handlePageHide);
+            window.removeEventListener('beforeunload', handlePageHide);
+            stopCamera();
+            stopAllMediaTracks();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
-        <div className="min-h-screen bg-stone-50 font-sans flex flex-col overflow-x-hidden">
-
-            {/* Top Navigation */}
-            <div className="p-6 pb-2 flex items-center gap-4 bg-white">
-                <button
-                    onClick={() => { stopCamera(); navigate(-1); }}
-                    className="p-2 hover:bg-stone-100 transition-colors text-stone-900"
-                >
-                    <ArrowLeft size={24} />
-                </button>
-                <h1 className="text-3xl font-black uppercase tracking-tighter text-stone-800">
-                    QR Scanner
-                </h1>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 flex flex-col items-center px-6 py-8 gap-8">
-
-                {/* Viewport Container */}
-                <div className="relative w-full max-w-[340px] aspect-square bg-white shadow-sm border border-stone-200">
-                    
-                    {/* Corner accents */}
-                    <div className="absolute -top-[1px] -left-[1px] w-12 h-12 border-t-4 border-l-4 border-green-700 z-20" />
-                    <div className="absolute -top-[1px] -right-[1px] w-12 h-12 border-t-4 border-r-4 border-green-700 z-20" />
-                    <div className="absolute -bottom-[1px] -left-[1px] w-12 h-12 border-b-4 border-l-4 border-green-700 z-20" />
-                    <div className="absolute -bottom-[1px] -right-[1px] w-12 h-12 border-b-4 border-r-4 border-green-700 z-20" />
-
-                    <div className="absolute inset-0 overflow-hidden bg-stone-100">
-                        {/* Camera feed */}
-                        <div id="reader" className="w-full h-full object-cover" />
-                        
-                        {/* Hidden file reader node */}
-                        <div id="reader-file" className="hidden" />
-
-                        {/* Scan Line Animation */}
-                        {isScanning && !scannedResult && (
-                            <div className="absolute left-0 right-0 h-[2px] bg-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.8)] animate-scan-line z-10" />
-                        )}
-
-                        {/* Starting Overlay */}
-                        {!isScanning && !scanError && activeTab === 'camera' && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-stone-50">
-                                <Loader2 className="w-8 h-8 text-stone-300 animate-spin" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                                    Initializing...
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Upload Placeholder */}
-                        {activeTab === 'upload' && !scannedResult && !scanError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-stone-50">
-                                <Upload size={48} className="text-stone-200" strokeWidth={1.5} />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 text-center px-12">
-                                    Upload a photo of the permit QR code
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Error Overlay */}
-                        {scanError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white/95 px-8 z-30">
-                                <AlertCircle size={32} className="text-red-600" />
-                                <div className="text-center">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-800 mb-1">
-                                        Scan Failed
-                                    </h3>
-                                    <p className="text-[11px] font-medium text-stone-500 leading-relaxed">
-                                        {scanError}
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setScanError(null);
-                                        if (activeTab === 'camera') startCamera(currentCameraIndex);
-                                    }}
-                                    className="px-6 py-2 bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest rounded-none"
-                                >
-                                    Try Again
-                                </button>
-                            </div>
-                        )}
+        <div className="min-h-screen bg-stone-50 font-sans flex flex-col">
+            {/* Header with 44px+ touch target back button */}
+            <header className="bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={async () => {
+                            await stopCamera();
+                            stopAllMediaTracks();
+                            navigate(-1);
+                        }}
+                        className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-stone-100 text-stone-700 active:scale-95 transition-all"
+                        aria-label="Back"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <h1 className="text-lg sm:text-xl font-black uppercase tracking-tight text-stone-900 leading-none">
+                            QR Permit Scanner
+                        </h1>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                            Checkpoint Verification
+                        </span>
                     </div>
-
-                    {/* Camera Switcher */}
-                    {isScanning && hasMultipleCameras && activeTab === 'camera' && (
-                        <button 
-                            onClick={switchCamera}
-                            className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-none hover:bg-white/40 transition-colors z-20"
-                        >
-                            <RefreshCw size={20} />
-                        </button>
-                    )}
                 </div>
 
-                {/* Navigation Tabs */}
-                <div className="flex w-full max-w-[340px] bg-white border border-stone-200">
+                {hasMultipleCameras && activeTab === 'camera' && isScanning && (
+                    <button
+                        onClick={switchCamera}
+                        className="h-11 px-3 flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors border border-stone-200"
+                        title="Switch Camera"
+                    >
+                        <RefreshCw size={15} />
+                        <span className="hidden sm:inline">Flip</span>
+                    </button>
+                )}
+            </header>
+
+            {/* Main Area: Centered, fluid width */}
+            <main className="flex-1 w-full max-w-md mx-auto px-4 py-4 sm:py-6 flex flex-col items-center gap-4">
+                {/* Mode Selector Tabs (min 44px touch targets) */}
+                <div className="w-full grid grid-cols-2 p-1 bg-stone-200/80 rounded-xl gap-1">
                     <button
                         onClick={() => switchTab('camera')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${
-                            activeTab === 'camera' 
-                            ? 'bg-stone-900 text-white' 
-                            : 'text-stone-400 hover:bg-stone-50'
+                        className={`h-11 flex items-center justify-center gap-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                            activeTab === 'camera'
+                                ? 'bg-white text-stone-900 shadow-xs'
+                                : 'text-stone-600 hover:text-stone-900'
                         }`}
                     >
-                        <Camera size={14} />
+                        <Camera size={16} />
                         Live Camera
                     </button>
                     <button
                         onClick={() => switchTab('upload')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest border-l border-stone-200 transition-colors ${
-                            activeTab === 'upload' 
-                            ? 'bg-stone-900 text-white' 
-                            : 'text-stone-400 hover:bg-stone-50'
+                        className={`h-11 flex items-center justify-center gap-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                            activeTab === 'upload'
+                                ? 'bg-white text-stone-900 shadow-xs'
+                                : 'text-stone-600 hover:text-stone-900'
                         }`}
                     >
-                        <Upload size={14} />
-                        Upload File
+                        <Upload size={16} />
+                        Upload Image
                     </button>
                 </div>
 
-                {/* Action Area */}
-                <div className="w-full max-w-[340px] space-y-4">
-                    
-                    {/* Upload Interaction */}
+                {/* Viewfinder Card */}
+                <div className="w-full relative aspect-square max-h-[380px] bg-stone-900 rounded-xl overflow-hidden border border-stone-300 shadow-xs flex items-center justify-center">
+                    {/* Camera Feed Target */}
+                    <div id="reader" className="w-full h-full object-cover" />
+                    <div id="reader-file" className="hidden" />
+
+                    {/* Camera Corner Guides (Clean, non-slop tactile markers) */}
+                    {activeTab === 'camera' && isScanning && !scannedResult && (
+                        <div className="absolute inset-8 pointer-events-none flex flex-col justify-between">
+                            <div className="flex justify-between">
+                                <div className="w-8 h-8 border-t-3 border-l-3 border-green-500 rounded-tl-sm" />
+                                <div className="w-8 h-8 border-t-3 border-r-3 border-green-500 rounded-tr-sm" />
+                            </div>
+                            <div className="flex justify-between">
+                                <div className="w-8 h-8 border-b-3 border-l-3 border-green-500 rounded-bl-sm" />
+                                <div className="w-8 h-8 border-b-3 border-r-3 border-green-500 rounded-br-sm" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Camera Initializing Overlay */}
+                    {!isScanning && !scanError && activeTab === 'camera' && !scannedResult && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-stone-900 text-stone-300">
+                            <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
+                                Starting Camera...
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Upload Mode Prompt */}
+                    {activeTab === 'upload' && !scannedResult && !scanError && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white p-6 text-center">
+                            <div className="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center text-stone-500">
+                                <Upload size={28} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-wider text-stone-800">
+                                    Upload Permit Photo
+                                </p>
+                                <p className="text-[11px] text-stone-500 mt-1 max-w-xs">
+                                    Select a screenshot or photo of the driver's transport permit QR code.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Error Overlay */}
+                    {scanError && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white p-6 text-center z-20">
+                            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+                                <AlertCircle size={24} />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-black uppercase tracking-wider text-stone-900">
+                                    Scanner Issue
+                                </h3>
+                                <p className="text-[11px] text-stone-600 leading-relaxed max-w-xs">
+                                    {scanError}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setScanError(null);
+                                    if (activeTab === 'camera') startCamera(currentCameraIndex);
+                                }}
+                                className="h-11 px-5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-widest rounded-lg transition-colors mt-2"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Status indicator under camera */}
+                {activeTab === 'camera' && isScanning && !scannedResult && (
+                    <div className="flex items-center gap-2 text-stone-500 text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
+                        <span>Center the permit QR code inside the frame</span>
+                    </div>
+                )}
+
+                {/* Action Controls */}
+                <div className="w-full space-y-3">
+                    {/* Upload File Input & Trigger */}
                     {activeTab === 'upload' && !scannedResult && (
                         <>
                             <input
@@ -329,99 +418,72 @@ const QRScannerPage = () => {
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading}
-                                className="w-full h-16 bg-white border border-stone-200 hover:bg-stone-50 text-stone-800 font-black text-xs uppercase tracking-widest rounded-none flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
+                                className="w-full h-13 bg-green-700 hover:bg-green-600 active:scale-[0.98] text-white font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50"
                             >
                                 {isUploading ? (
                                     <>
                                         <Loader2 className="animate-spin" size={18} />
-                                        Analyzing Image...
+                                        Scanning Image...
                                     </>
                                 ) : (
                                     <>
-                                        <Upload size={18} /> Choose QR Image
+                                        <Upload size={18} /> Select Image File
                                     </>
                                 )}
                             </button>
                         </>
                     )}
 
-                    {/* Scan Status */}
-                    {activeTab === 'camera' && isScanning && !scannedResult && (
-                        <div className="flex items-center justify-center gap-2 py-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                Scanning for permits...
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Result Card */}
+                    {/* Result Card: When QR is Detected */}
                     {scannedResult && (
-                        <div className="w-full bg-white border border-stone-200 p-6 space-y-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="w-full bg-white border border-stone-200 rounded-xl p-5 space-y-4 shadow-xs">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                                    Code Detected
-                                </span>
-                                <div className="px-2 py-0.5 bg-green-50 text-green-700 text-[8px] font-black uppercase tracking-widest border border-green-100">
-                                    Valid Format
+                                <div className="flex items-center gap-2">
+                                    <QrCode size={18} className="text-green-700" />
+                                    <span className="text-xs font-black uppercase tracking-wider text-stone-900">
+                                        QR Code Detected
+                                    </span>
                                 </div>
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-green-200">
+                                    Ready
+                                </span>
                             </div>
-                            
-                            <div className="bg-stone-50 p-3 border border-stone-100">
-                                <p className="text-xs font-mono font-black text-stone-600 break-all leading-relaxed">
+
+                            <div className="bg-stone-50 p-3 rounded-lg border border-stone-200/80">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-stone-400 block mb-0.5">
+                                    Payload / Token
+                                </span>
+                                <p className="text-xs font-mono font-bold text-stone-800 break-all leading-relaxed">
                                     {scannedResult}
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="flex flex-col sm:flex-row gap-2.5">
                                 <button
                                     onClick={handleOpenLink}
-                                    className="w-full h-12 bg-green-700 hover:bg-green-600 text-white font-black text-xs uppercase tracking-widest rounded-none flex items-center justify-center gap-2 transition-colors"
+                                    className="flex-1 h-12 bg-green-700 hover:bg-green-600 active:scale-[0.98] text-white font-black text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 shadow-xs transition-all"
                                 >
-                                    Verify Permit <ExternalLink size={14} />
+                                    Verify Permit <ExternalLink size={15} />
                                 </button>
                                 <button
                                     onClick={handleScanAnother}
-                                    className="w-full h-12 border border-stone-200 hover:bg-stone-50 text-stone-600 font-black text-xs uppercase tracking-widest rounded-none flex items-center justify-center gap-2 transition-colors"
+                                    className="h-12 px-5 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors"
                                 >
                                     Scan Another
                                 </button>
                             </div>
                         </div>
                     )}
-
-                    {/* Footer Info */}
-                    <div className="flex flex-col items-center gap-1 pt-4 opacity-50">
-                        <div className="flex items-center gap-2 text-stone-400">
-                            <ShieldCheck size={14} />
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">
-                                Sariaya Municipal Agriculture
-                            </span>
-                        </div>
-                        <p className="text-[8px] font-medium text-stone-400 uppercase tracking-widest">
-                            Secure Inspection System v2.0
-                        </p>
-                    </div>
                 </div>
-            </div>
+            </main>
 
             <style>{`
-                @keyframes scan {
-                    0%   { top: 5%;   opacity: 0; }
-                    20%  { opacity: 1; }
-                    80%  { opacity: 1; }
-                    100% { top: 95%; opacity: 0; }
-                }
-                .animate-scan-line {
-                    animation: scan 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-                }
-                /* Let html5-qrcode video fill the container cleanly */
                 #reader video {
                     width: 100% !important;
                     height: 100% !important;
                     object-fit: cover !important;
                 }
-                #reader > div { display: none !important; } /* hide default UI chrome */
+                #reader > div { display: none !important; }
             `}</style>
         </div>
     );

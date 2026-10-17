@@ -154,9 +154,9 @@ const BarangayOfficialManagementPage = () => {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Official Directory...</p>
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
+                <span className="loading loading-spinner loading-lg text-emerald-700"></span>
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400 mt-4">Syncing Official Directory...</p>
             </div>
         );
     }
@@ -164,7 +164,7 @@ const BarangayOfficialManagementPage = () => {
     if (isError) {
         return (
             <div className="p-4 md:p-8">
-                <div className="bg-red-50 text-red-600 border border-red-100 p-8 text-center font-black uppercase tracking-widest text-xs">
+                <div className="bg-red-50 text-red-600 border border-red-200 rounded-xl p-8 text-center font-semibold text-xs shadow-xs">
                     Failed to load official registry. Please refresh the page.
                 </div>
             </div>
@@ -179,14 +179,14 @@ const BarangayOfficialManagementPage = () => {
             header: "Official Account",
             render: (official) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 shrink-0">
-                        <Shield size={20} className="text-stone-600" />
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-800 shrink-0">
+                        <Shield size={18} className="text-emerald-700" />
                     </div>
                     <div>
-                        <p className="text-sm font-black text-stone-800 uppercase tracking-tight">
+                        <p className="text-xs sm:text-sm font-semibold text-stone-900 uppercase">
                             {official.first_name} {official.last_name}
                         </p>
-                        <p className="text-[9px] font-mono font-bold text-stone-400 mt-0.5">
+                        <p className="text-[11px] font-mono text-stone-400 mt-0.5">
                             @{official.username}
                         </p>
                     </div>
@@ -196,12 +196,12 @@ const BarangayOfficialManagementPage = () => {
         {
             header: "Phone & Address",
             render: (official) => (
-                <div className="space-y-1">
-                    <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                <div className="space-y-0.5">
+                    <p className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
                         <Phone size={12} className="text-stone-400" />
                         {official.phone_no || 'No phone listed'}
                     </p>
-                    <p className="text-[10px] text-stone-500 font-medium truncate max-w-xs">
+                    <p className="text-[11px] text-stone-500 font-normal truncate max-w-xs">
                         {official.address || 'No address listed'}
                     </p>
                 </div>
@@ -210,10 +210,10 @@ const BarangayOfficialManagementPage = () => {
         {
             header: "Assigned Barangay",
             render: (official) => (
-                <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
-                    <MapPin size={14} className="text-green-600 shrink-0" />
-                    <span className="uppercase tracking-tight text-green-700">{official.barangay_name || 'Unassigned'}</span>
-                </div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+                    <MapPin size={12} className="text-emerald-700 shrink-0" />
+                    <span className="uppercase">{official.barangay_name || 'Unassigned'}</span>
+                </span>
             )
         },
         {
@@ -221,20 +221,21 @@ const BarangayOfficialManagementPage = () => {
             align: "center",
             render: (official) => (
                 <button
+                    type="button"
                     onClick={() => toggleActiveStatus(official)}
-                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border transition-colors inline-flex items-center gap-1.5
+                    className={`btn-tactile px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider rounded-md border transition-all inline-flex items-center gap-1.5
                         ${official.is_active 
-                            ? 'bg-green-50 text-green-700 border-green-600/30 hover:bg-red-50 hover:text-red-600 hover:border-red-600/30' 
-                            : 'bg-red-50 text-red-600 border-red-600/30 hover:bg-green-50 hover:text-green-700 hover:border-green-600/30'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80 hover:bg-red-50 hover:text-red-700 hover:border-red-200' 
+                            : 'bg-red-50 text-red-700 border-red-200/80 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200'
                         }`}
                 >
                     {official.is_active ? (
                         <>
-                            <UserCheck size={12} /> Active
+                            <UserCheck size={13} /> Active
                         </>
                     ) : (
                         <>
-                            <UserX size={12} /> Deactivated
+                            <UserX size={13} /> Deactivated
                         </>
                     )}
                 </button>
@@ -248,20 +249,22 @@ const BarangayOfficialManagementPage = () => {
             render: (official) => (
                 <div className="flex items-center gap-2 justify-end">
                     <button
+                        type="button"
                         onClick={() => setEditUser(official)}
-                        className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2"
+                        className="btn-tactile bg-stone-100 hover:bg-stone-200/80 text-stone-700 hover:text-stone-900 border border-stone-200 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5"
                     >
-                        <Edit size={12} /> Edit Details
+                        <Edit size={13} /> Edit
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleDeleteOfficial(official)}
                         disabled={deleteMutation.isPending}
-                        className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="btn-tactile bg-red-50 hover:bg-red-100/80 text-red-700 border border-red-200 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
                     >
                         {deleteMutation.isPending ? (
                             <span className="loading loading-spinner loading-xs"></span>
                         ) : (
-                            <Trash2 size={12} />
+                            <Trash2 size={13} />
                         )}
                         Delete
                     </button>
@@ -271,24 +274,30 @@ const BarangayOfficialManagementPage = () => {
     ];
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-white min-h-screen font-sans">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 bg-stone-50/40 min-h-screen font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-100 pb-8 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-200 pb-6 gap-4">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Municipal Agriculture Office</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Barangay Officials</h1>
-                    <p className="text-sm text-stone-500 font-medium">Manage and assign Barangay Officials to track localized swine surveys</p>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Municipal Agriculture Office</span>
+                        <span className="text-[10px] font-semibold uppercase bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200/70">
+                            LGU Directory
+                        </span>
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">Barangay Officials</h1>
+                    <p className="text-sm text-stone-500 font-normal">Manage and assign Barangay Officials to track localized swine surveys and endorsements.</p>
                 </div>
                 <button
+                    type="button"
                     onClick={() => setIsCreateOpen(true)}
-                    className="bg-stone-900 hover:bg-stone-800 text-white px-6 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2"
+                    className="btn-tactile bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold rounded-lg shadow-xs transition-all flex items-center gap-2"
                 >
-                    <UserPlus size={16} /> Register New Official
+                    <UserPlus size={16} /> Register Official
                 </button>
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
                     <input
@@ -296,34 +305,37 @@ const BarangayOfficialManagementPage = () => {
                         placeholder="Search name, phone, address..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
+                        className="w-full h-10 pl-9 pr-10 border border-stone-200 text-xs font-medium bg-stone-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 rounded-lg placeholder:text-stone-400 transition-all"
                     />
                     {isFetching && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-emerald-700"></span>
                     )}
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                    Showing {officials.length} of {count} Officials
+                <div className="text-xs font-medium text-stone-500">
+                    Showing <span className="font-semibold text-stone-800">{officials.length}</span> of <span className="font-semibold text-stone-800">{count}</span> Officials
                 </div>
             </div>
 
             {/* Officials Table */}
-            <DataTable
-                columns={officialColumns}
-                data={officials}
-                minWidth="800px"
-                emptyState={{
-                    icon: Users,
-                    title: "No registered officials found",
-                    description: "Try adjusting search filters or adding a new barangay official."
-                }}
-                pagination={count > limit ? {
-                    count,
-                    limit,
-                    offset,
-                    onPageChange: setOffset
-                } : null}
-            />
+            <div className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-xs">
+                <DataTable
+                    columns={officialColumns}
+                    data={officials}
+                    minWidth="800px"
+                    className="border-0"
+                    emptyState={{
+                        icon: Users,
+                        title: "No registered officials found",
+                        description: "Try adjusting search filters or adding a new barangay official."
+                    }}
+                    pagination={count > limit ? {
+                        count,
+                        limit,
+                        offset,
+                        onPageChange: setOffset
+                    } : null}
+                />
+            </div>
 
             {/* Create Official Modal */}
             {isCreateOpen && (
@@ -395,80 +407,87 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs">
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-2xl rounded-2xl overflow-hidden max-h-[90vh] flex flex-col modal-enter">
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <Users size={18} className="text-stone-700" />
-                        <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest">
+                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/70 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-100">
+                            <Users size={16} />
+                        </div>
+                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
                             {isEdit ? "Update Official Profile" : "Register Barangay Official"}
                         </h3>
                     </div>
-                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
-                        <X size={20} />
+                    <button 
+                        type="button"
+                        onClick={onClose} 
+                        disabled={isSubmitting} 
+                        className="btn-tactile text-stone-400 hover:text-stone-700 p-1.5 rounded-lg transition-colors"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Username */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Username / Account ID</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Username / Account ID</label>
                             <input
                                 type="text"
                                 {...register('username', { required: "Username is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 placeholder:text-stone-400 transition-all"
                                 placeholder="barangay_official"
                             />
-                            {errors.username && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.username.message}</p>}
+                            {errors.username && <p className="text-[10px] font-semibold text-red-600">{errors.username.message}</p>}
                         </div>
 
                         {/* Password (only if registering) */}
                         {!isEdit && (
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Account Password</label>
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Account Password</label>
                                 <input
                                     type="password"
                                     {...register('password', { required: "Password is required for new accounts." })}
                                     disabled={isSubmitting}
-                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                    className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 placeholder:text-stone-400 transition-all"
                                     placeholder="••••••••"
                                 />
-                                {errors.password && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.password.message}</p>}
+                                {errors.password && <p className="text-[10px] font-semibold text-red-600">{errors.password.message}</p>}
                             </div>
                         )}
                         
                         {/* First Name */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">First Name</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">First Name</label>
                             <input
                                 type="text"
                                 {...register('first_name', { required: "First name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 placeholder:text-stone-400 transition-all"
                                 placeholder="Pedro"
                             />
-                            {errors.first_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.first_name.message}</p>}
+                            {errors.first_name && <p className="text-[10px] font-semibold text-red-600">{errors.first_name.message}</p>}
                         </div>
 
                         {/* Last Name */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Last Name</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Last Name</label>
                             <input
                                 type="text"
                                 {...register('last_name', { required: "Last name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 placeholder:text-stone-400 transition-all"
                                 placeholder="Sanchez"
                             />
-                            {errors.last_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.last_name.message}</p>}
+                            {errors.last_name && <p className="text-[10px] font-semibold text-red-600">{errors.last_name.message}</p>}
                         </div>
 
                         {/* Phone Number */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Contact Number</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Contact Number</label>
                             <input
                                 type="text"
                                 {...register('phone_no', { 
@@ -479,81 +498,81 @@ const OfficialFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays })
                                     }
                                 })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 placeholder:text-stone-400 transition-all"
                                 placeholder="09171234567"
                             />
-                            {errors.phone_no && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.phone_no.message}</p>}
+                            {errors.phone_no && <p className="text-[10px] font-semibold text-red-600">{errors.phone_no.message}</p>}
                         </div>
 
                         {/* Assigned Barangay Dropdown */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Assign to Barangay</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Assign to Barangay</label>
                             <select
                                 {...register('barangay', { required: "Selecting a barangay is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold text-stone-800 cursor-pointer"
+                                className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 cursor-pointer transition-all"
                             >
                                 <option value="">Select Barangay</option>
                                 {barangays.map((b) => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                             </select>
-                            {errors.barangay && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.barangay.message}</p>}
+                            {errors.barangay && <p className="text-[10px] font-semibold text-red-600">{errors.barangay.message}</p>}
                         </div>
 
                         {/* Address */}
                         <div className="space-y-1 sm:col-span-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Complete Address</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Complete Address</label>
                             <input
                                 type="text"
                                 {...register('address', { required: "Complete address is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="w-full h-10 px-3 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-xs font-medium text-stone-900 placeholder:text-stone-400 transition-all"
                                 placeholder="Barangay Hall, Sariaya, Quezon"
                             />
-                            {errors.address && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.address.message}</p>}
+                            {errors.address && <p className="text-[10px] font-semibold text-red-600">{errors.address.message}</p>}
                         </div>
 
                         {/* Options */}
-                        <div className="sm:col-span-2 flex flex-col gap-3 py-2 border-t border-stone-100 mt-2">
-                            <label className="flex items-center gap-3 cursor-pointer">
+                        <div className="sm:col-span-2 flex flex-col gap-2.5 py-2 border-t border-stone-100 mt-1">
+                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     {...register('receive_sms')}
                                     disabled={isSubmitting}
-                                    className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
+                                    className="checkbox checkbox-success checkbox-sm rounded border-stone-300"
                                 />
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Send SMS notifications to this official</span>
+                                <span className="text-xs font-medium text-stone-700">Send SMS notifications to this official</span>
                             </label>
 
                             {isEdit && (
-                                <label className="flex items-center gap-3 cursor-pointer">
+                                <label className="flex items-center gap-2.5 cursor-pointer select-none">
                                     <input
                                         type="checkbox"
                                         {...register('is_active')}
                                         disabled={isSubmitting}
-                                        className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
+                                        className="checkbox checkbox-success checkbox-sm rounded border-stone-300"
                                     />
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Official account is active and authorized</span>
+                                    <span className="text-xs font-medium text-stone-700">Official account is active and authorized</span>
                                 </label>
                             )}
                         </div>
                     </div>
 
                     {/* Submit Actions */}
-                    <div className="flex gap-4 justify-end pt-6 border-t border-stone-100 shrink-0">
+                    <div className="flex gap-3 justify-end pt-5 border-t border-stone-100 shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors disabled:opacity-50"
+                            className="btn-tactile px-5 py-2.5 border border-stone-200 hover:bg-stone-50 text-xs font-semibold text-stone-700 rounded-lg transition-all disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="btn-tactile bg-emerald-700 hover:bg-emerald-600 disabled:bg-stone-100 text-white px-6 py-2.5 text-xs font-semibold rounded-lg shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <>

@@ -207,22 +207,27 @@ const CreateApplication = () => {
                             {[1, 2, 3].map((num) => (
                                  <div key={num} className="flex items-center flex-1 last:flex-none">
                                      <div className="flex flex-col items-center gap-2">
-                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border-2
+                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border-2 transition-all duration-200
                                              ${step > num 
-                                                 ? "bg-green-700 border-green-700 text-white" 
+                                                 ? "bg-green-700 border-green-700 text-white shadow-2xs" 
                                                  : step === num 
-                                                     ? "bg-white border-stone-800 text-stone-800" 
+                                                     ? "bg-white border-stone-800 text-stone-800 ring-2 ring-stone-800/10" 
                                                      : "bg-white border-stone-200 text-stone-300"}`}
                                          >
-                                             {step > num ? <Check size={18} strokeWidth={3} /> : num}
+                                             {step > num ? <Check size={18} strokeWidth={3} className="animate-in zoom-in-50 duration-150" /> : num}
                                          </div>
-                                         <span className={`text-[9px] font-black uppercase tracking-widest ${step >= num ? 'text-stone-800' : 'text-stone-300'}`}>
+                                         <span className={`text-[9px] font-black uppercase tracking-widest transition-colors duration-150 ${step >= num ? 'text-stone-800' : 'text-stone-300'}`}>
                                              {num === 1 ? "Travel Details" : num === 2 ? "Attach Files" : "Review & Send"}
                                          </span>
                                      </div>
                                      {num < 3 && (
                                          <div className="flex-1 px-4 self-start mt-5">
-                                             <div className={`h-[2px] w-full ${step > num ? "bg-green-700" : "bg-stone-200"}`} />
+                                             <div className="h-[2px] w-full bg-stone-200 overflow-hidden">
+                                                 <div 
+                                                     className="h-full bg-green-700 transition-all duration-400 ease-out" 
+                                                     style={{ width: step > num ? "100%" : "0%" }}
+                                                 />
+                                             </div>
                                          </div>
                                      )}
                                  </div>
@@ -231,87 +236,87 @@ const CreateApplication = () => {
                     </div>
                 </div>
 
-                {/* Form Content - Clean Canvas */}
+                {/* Form Content - Clean Canvas with Animated Step Transitions */}
                 <div className="pt-6 border-t border-stone-200">
                     <form onSubmit={handleSubmit(handleFormSubmit)}>
+                        <div key={step} className="view-enter">
+                            {step === 1 && (
+                                <FarmerInfo
+                                    register={register}
+                                    errors={errors}
+                                    watch={watch}
+                                    setValue={setValue}
+                                    nextStep={() => {
+                                        const step1Fields = [
+                                            'destination', 
+                                            'destination_municipality',
+                                            'destination_barangay',
+                                            'transport_date', 
+                                            'purpose',
+                                            ...origins.map(o => `barangay_${o.id}`),
+                                            ...origins.map(o => `pigs_total_${o.id}`)
+                                        ];
+                                        nextStep(step1Fields, "Please check your answers before continuing.");
+                                    }}
+                                    origins={origins}
+                                    addOrigin={addOrigin}
+                                    removeOrigin={removeOrigin}
+                                />
+                            )}
 
-                        {step === 1 && (
-                            <FarmerInfo
-                                register={register}
-                                errors={errors}
-                                watch={watch}
-                                setValue={setValue}
-                                nextStep={() => {
-                                    const step1Fields = [
-                                        'destination', 
-                                        'destination_municipality',
-                                        'destination_barangay',
-                                        'transport_date', 
-                                        'purpose',
-                                        ...origins.map(o => `barangay_${o.id}`),
-                                        ...origins.map(o => `pigs_total_${o.id}`)
-                                    ];
-                                    nextStep(step1Fields, "Please check your answers before continuing.");
-                                }}
-                                origins={origins}
-                                addOrigin={addOrigin}
-                                removeOrigin={removeOrigin}
-                            />
-                        )}
+                            {(() => {
+                                const destinationMuniKey = watch('destination_municipality');
+                                const isEndorsementRequired = !destinationMuniKey?.toUpperCase().includes('SARIAYA');
 
-                        {(() => {
-                            const destinationMuniKey = watch('destination_municipality');
-                            const isEndorsementRequired = !destinationMuniKey?.toUpperCase().includes('SARIAYA');
+                                return (
+                                    <>
+                                         {step === 2 && (
+                                            <UploadDocument
+                                                register={register}
+                                                errors={errors}
+                                                watch={watch}
+                                                setValue={setValue}
+                                                prevStep={prevStep}
+                                                nextStep={() => {
+                                                    const step2Fields = origins.flatMap(o => {
+                                                        const fields = [`origin_${o.id}_cis`];
+                                                        if (isEndorsementRequired) {
+                                                            fields.push(`origin_${o.id}_endorsement_cert`);
+                                                        }
+                                                        return fields;
+                                                    });
+                                                    nextStep(step2Fields, "Please upload the required barangay certificates for each starting location.");
+                                                }}
+                                                origins={origins}
+                                                isEndorsementRequired={isEndorsementRequired}
+                                            />
+                                        )}
 
-                            return (
-                                <>
-                                     {step === 2 && (
-                                        <UploadDocument
-                                            register={register}
-                                            errors={errors}
-                                            watch={watch}
-                                            setValue={setValue}
-                                            prevStep={prevStep}
-                                            nextStep={() => {
-                                                const step2Fields = origins.flatMap(o => {
-                                                    const fields = [`origin_${o.id}_cis`];
-                                                    if (isEndorsementRequired) {
-                                                        fields.push(`origin_${o.id}_endorsement_cert`);
-                                                    }
-                                                    return fields;
-                                                });
-                                                nextStep(step2Fields, "Please upload the required barangay certificates for each starting location.");
-                                            }}
-                                            origins={origins}
-                                            isEndorsementRequired={isEndorsementRequired}
-                                        />
-                                    )}
-
-                                    {step === 3 && (
-                                        <ReviewApplication
-                                            watch={watch}
-                                            prevStep={prevStep}
-                                            isSubmitting={isSubmitting}
-                                            origins={origins}
-                                            isEndorsementRequired={isEndorsementRequired}
-                                        />
-                                    )}
-                                </>
-                            );
-                        })()}
-
+                                        {step === 3 && (
+                                            <ReviewApplication
+                                                watch={watch}
+                                                prevStep={prevStep}
+                                                isSubmitting={isSubmitting}
+                                                origins={origins}
+                                                isEndorsementRequired={isEndorsementRequired}
+                                            />
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
                     </form>
                 </div>
 
                 {/* Help Notice */}
                 {step === 1 && (
-                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-5 flex gap-4 items-start">
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-5 flex gap-4 items-start view-enter">
                         <div className="bg-white p-2 border border-stone-200 rounded-lg text-green-700 shrink-0">
                             <ArrowRight size={16} />
                         </div>
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-1">Tip for Farmers</p>
-                            <p className="text-xs text-stone-600 leading-relaxed font-medium uppercase tracking-wide">
+                            <p className="text-xs text-stone-600 leading-relaxed font-medium">
                                 Make sure you have photos of your Handler's License and Barangay Certificate of Inspection ready for the next step.
                             </p>
                         </div>

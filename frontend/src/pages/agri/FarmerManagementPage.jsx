@@ -186,24 +186,24 @@ const FarmerManagementPage = () => {
     const count = data?.count || 0;
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-white min-h-screen font-sans">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 min-h-screen font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-100 pb-8 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-stone-200/80 gap-4">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Municipal Agriculture Office</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Farmer Directory</h1>
-                    <p className="text-sm text-stone-500 font-medium">Manage and audit swine owners in Sariaya</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Municipal Agriculture Office</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">Farmer Directory</h1>
+                    <p className="text-sm text-stone-500 font-normal">Manage and audit swine owners in Sariaya</p>
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="bg-stone-900 hover:bg-stone-800 text-white px-6 py-4 text-xs font-black uppercase tracking-widest rounded-none transition-colors flex items-center gap-2"
+                    className="btn-tactile inline-flex items-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold shadow-xs transition-colors shrink-0"
                 >
                     <UserPlus size={16} /> Register New Farmer
                 </button>
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="bg-white p-4 rounded-xl border border-stone-200/80 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <div className="relative w-full sm:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
@@ -212,7 +212,7 @@ const FarmerManagementPage = () => {
                             placeholder="Search name, phone, address..."
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2 border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:border-stone-500 rounded-none placeholder:text-stone-300 transition-colors"
+                            className="h-10 w-full pl-10 pr-10 rounded-lg border border-stone-200 bg-stone-50/50 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                         />
                         {isFetching && (
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs text-stone-400"></span>
@@ -224,7 +224,7 @@ const FarmerManagementPage = () => {
                             setStatusFilter(e.target.value);
                             setOffset(0);
                         }}
-                        className="border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 focus:outline-none focus:border-stone-500 rounded-none"
+                        className="h-10 rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-semibold text-stone-700 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                     >
                         <option value="">All KYC Statuses</option>
                         <option value="PENDING_REVIEW">Pending Review</option>
@@ -233,24 +233,26 @@ const FarmerManagementPage = () => {
                         <option value="REJECTED">Rejected</option>
                     </select>
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                    Showing {farmers.length} of {count} Farmers
+                <div className="text-xs font-semibold text-stone-500">
+                    Showing <span className="font-bold text-stone-800">{farmers.length}</span> of <span className="font-bold text-stone-800">{count}</span> Farmers
                 </div>
             </div>
 
             {/* Farmers Table */}
-            <FarmersTable
-                farmers={farmers}
-                count={count}
-                limit={limit}
-                offset={offset}
-                onOffsetChange={setOffset}
-                onReview={setReviewingFarmer}
-                onEdit={setEditUser}
-                onDelete={handleDeleteFarmer}
-                onToggleStatus={toggleActiveStatus}
-                isDeleting={deleteMutation.isPending}
-            />
+            <div className="rounded-xl border border-stone-200/80 bg-white overflow-hidden shadow-xs">
+                <FarmersTable
+                    farmers={farmers}
+                    count={count}
+                    limit={limit}
+                    offset={offset}
+                    onOffsetChange={setOffset}
+                    onReview={setReviewingFarmer}
+                    onEdit={setEditUser}
+                    onDelete={handleDeleteFarmer}
+                    onToggleStatus={toggleActiveStatus}
+                    isDeleting={deleteMutation.isPending}
+                />
+            </div>
 
             {/* Create Farmer Modal */}
             {isCreateOpen && (

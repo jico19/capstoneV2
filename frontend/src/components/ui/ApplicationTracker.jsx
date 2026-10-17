@@ -46,10 +46,10 @@ const getStageIndex = (status) => {
 const ApplicationTracker = ({ status }) => {
     if (status === 'CANCELLED') {
         return (
-            <div className="bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+            <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center gap-3 shadow-xs">
                 <XCircle className="text-red-600 shrink-0" size={20} />
                 <div>
-                    <h4 className="text-xs font-black text-red-700 uppercase tracking-widest">Application Cancelled</h4>
+                    <h4 className="text-xs font-bold text-red-700 uppercase tracking-wider">Application Cancelled</h4>
                     <p className="text-[11px] font-medium text-red-600">This livestock transport request was cancelled and is no longer active.</p>
                 </div>
             </div>
@@ -59,16 +59,26 @@ const ApplicationTracker = ({ status }) => {
     const currentStageIndex = getStageIndex(status);
 
     return (
-        <div className="bg-white border border-stone-200 p-5 sm:p-6 space-y-4 rounded-none">
+        <div className="bg-white border border-stone-200 p-5 sm:p-6 space-y-4 rounded-xl shadow-xs">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Application Progress</span>
-                <span className="text-xs font-black uppercase tracking-wider text-green-800 bg-green-50 px-2.5 py-1 border border-green-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Application Progress</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/80">
                     Stage {currentStageIndex + 1} of 7: {STAGES[currentStageIndex]?.title || 'Processing'}
                 </span>
             </div>
 
-            {/* Desktop Tracker Stepper */}
+            {/* Desktop Tracker Stepper with Connecting Bar */}
             <div className="hidden md:grid grid-cols-7 gap-2 relative pt-2">
+                {/* Connecting Background Line */}
+                <div className="absolute top-[22px] left-[7%] right-[7%] h-[2px] bg-stone-200 -z-0">
+                    <div 
+                        className="h-full bg-green-700 transition-all duration-500 ease-out"
+                        style={{ 
+                            width: currentStageIndex <= 0 ? '0%' : `${(currentStageIndex / 6) * 100}%` 
+                        }}
+                    />
+                </div>
+
                 {STAGES.map((stage, idx) => {
                     const isCompleted = idx < currentStageIndex;
                     const isCurrent = idx === currentStageIndex;
@@ -76,19 +86,23 @@ const ApplicationTracker = ({ status }) => {
                     return (
                         <div key={stage.key} className="flex flex-col items-center text-center relative z-10 space-y-2">
                             {/* Step Indicator Badge */}
-                            <div className={`w-8 h-8 flex items-center justify-center font-black text-xs transition-colors border
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs transition-all duration-200 border
                                 ${isCompleted 
-                                    ? 'bg-green-700 border-green-700 text-white' 
+                                    ? 'bg-green-700 border-green-700 text-white shadow-2xs' 
                                     : isCurrent 
-                                        ? 'bg-amber-500 border-amber-500 text-white animate-pulse' 
-                                        : 'bg-stone-50 border-stone-200 text-stone-400'}`}
+                                        ? 'bg-amber-500 border-amber-500 text-white shadow-xs ring-2 ring-amber-500/30 ring-offset-2' 
+                                        : 'bg-white border-stone-200 text-stone-400'}`}
                             >
-                                {isCompleted ? <CheckCircle2 size={16} /> : idx + 1}
+                                {isCompleted ? (
+                                    <CheckCircle2 size={16} className="animate-in zoom-in-50 duration-200" />
+                                ) : (
+                                    idx + 1
+                                )}
                             </div>
 
                             {/* Label & Description */}
                             <div className="space-y-0.5">
-                                <h4 className={`text-[10px] font-black uppercase tracking-wider ${
+                                <h4 className={`text-[10px] font-black uppercase tracking-wider transition-colors duration-150 ${
                                     isCurrent ? 'text-amber-700 font-extrabold' : isCompleted ? 'text-green-800 font-bold' : 'text-stone-400'
                                 }`}>
                                     {stage.title}
@@ -104,9 +118,9 @@ const ApplicationTracker = ({ status }) => {
 
             {/* Mobile Compact Progress Bar */}
             <div className="md:hidden space-y-2">
-                <div className="w-full bg-stone-100 h-2 overflow-hidden">
+                <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden border border-stone-200">
                     <div 
-                        className="bg-green-700 h-full transition-all duration-300"
+                        className="bg-green-700 h-full rounded-full transition-all duration-400 ease-out"
                         style={{ width: `${((currentStageIndex + 1) / 7) * 100}%` }}
                     ></div>
                 </div>

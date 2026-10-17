@@ -165,7 +165,7 @@ const PaymentSuccess = () => {
                                 Verification Timeout
                             </h2>
                             <p className="text-xs text-red-600 font-medium leading-relaxed pt-2">
-                                We couldn't confirm your payment status in time. If you were charged, don't worry—your permit will be updated once the gateway syncs.
+                                Payment confirmation is taking longer than expected. If your account was debited, your permit will update automatically once the payment gateway synchronizes.
                             </p>
                         </div>
                         <button

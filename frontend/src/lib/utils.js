@@ -5,6 +5,26 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Safely stops all active hardware media tracks (camera/microphone)
+ * on any video elements in the document.
+ */
+export const stopAllMediaTracks = () => {
+    try {
+        const videos = document.querySelectorAll('video');
+        videos.forEach((video) => {
+            if (video.srcObject && typeof video.srcObject.getTracks === 'function') {
+                video.srcObject.getTracks().forEach((track) => {
+                    track.stop();
+                });
+                video.srcObject = null;
+            }
+        });
+    } catch (e) {
+        console.warn("Failed to stop media tracks:", e);
+    }
+};
+
 export const parseValidationError = (err, fallback = "Action failed.") => {
     if (err.response?.data) {
         const data = err.response.data;

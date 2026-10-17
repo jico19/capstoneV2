@@ -142,7 +142,7 @@ const LoginPage = () => {
                             <Clock className="text-green-100 flex-shrink-0 mt-0.5" size={16} />
                             <div>
                                 <p className="font-bold text-white uppercase tracking-tight text-[11px]">Service Hours</p>
-                                <p className="text-green-100 text-xs mt-0.5">Monday to Friday, 8:00 AM – 5:00 PM</p>
+                                <p className="text-green-100 text-xs mt-0.5">Monday to Friday, 8:00 AM to 5:00 PM</p>
                             </div>
                         </div>
                     </div>

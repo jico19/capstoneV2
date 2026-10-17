@@ -54,19 +54,19 @@ const CsvUploadModal = ({ file, onFileChange, errors, onClose, isPending, onSubm
                         </div>
                     )}
 
-                    <div className="flex gap-4 justify-end pt-4 border-t border-stone-100">
+                    <div className="flex flex-col sm:flex-row gap-2.5 justify-end pt-4 border-t border-stone-100">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isPending}
-                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors"
+                            className="h-11 px-5 border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors order-2 sm:order-1"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isPending || !file}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-50"
+                            className="h-11 px-8 bg-green-700 hover:bg-green-600 disabled:bg-stone-200 disabled:text-stone-400 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 order-1 sm:order-2 disabled:cursor-not-allowed"
                         >
                             {isPending ? (
                                 <>
@@ -75,7 +75,7 @@ const CsvUploadModal = ({ file, onFileChange, errors, onClose, isPending, onSubm
                                 </>
                             ) : (
                                 <>
-                                    <UploadCloud size={14} /> Import Records
+                                    <UploadCloud size={16} /> Import Records
                                 </>
                             )}
                         </button>

@@ -14,7 +14,6 @@ import {
     FilesIcon,
     FileText,
     Users,
-    SlidersHorizontal,
 } from "lucide-react";
 import { useEffect } from "react";
 import useAuthStore from "../../store/authStore";
@@ -121,7 +120,6 @@ const NAVIGATION_CONFIG = {
             title: "System & Account",
             items: [
                 { icon: Bell, label: "Notifications", to: "/agri/notification/" },
-                { icon: SlidersHorizontal, label: "System Settings", to: "/agri/system-settings/" },
                 { icon: Settings, label: "Settings", to: "/agri/settings/" },
             ],
         },

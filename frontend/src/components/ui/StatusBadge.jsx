@@ -69,12 +69,27 @@ const StatusBadge = ({ status }) => {
         return labels[text] || text.replace(/_/g, " ");
     };
 
+    // Live in-progress states that warrant a subtle operational pulse
+    const isLive = [
+        'SUBMITTED',
+        'OCR_VALIDATED',
+        'MANUAL',
+        'FORWARDED_TO_OPV',
+        'PAYMENT_PENDING'
+    ].includes(status);
+
     return (
         <span className={`
             px-2 py-0.5 border rounded-md 
-            text-[10px] font-black uppercase tracking-widest inline-block whitespace-nowrap
+            text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 whitespace-nowrap
             ${getStatusStyle(status)}
         `}>
+            {isLive && (
+                <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-current"></span>
+                </span>
+            )}
             {formatStatus(status)}
         </span>
     );

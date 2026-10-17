@@ -1,124 +1,136 @@
-import { Sparkles, Building, Scale } from "lucide-react";
+import { Building2, Stethoscope, Scale, FileText } from "lucide-react";
 
 /**
- * Tab 1: Transmittal & Routing form fields with quick recipient presets.
+ * Tab 1: Transmittal & Routing
+ * Formatted for standard Philippine Local Government Unit Memorandum header.
  */
 const TransmittalTab = ({ transmittal, onChange, onRecipientPreset }) => {
   return (
-    <div className="space-y-5">
-      <div className="bg-green-50 border border-green-200 rounded-lg p-3.5 flex items-start gap-3">
-        <Sparkles size={18} className="text-green-700 flex-shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-xs font-black text-green-950 uppercase tracking-wide">
-            Memorandum Routing Pre-Filled
+    <div className="space-y-6">
+      {/* Official Routing Notice */}
+      <div className="bg-stone-50 border border-stone-200 rounded-lg p-3.5 flex items-start gap-3">
+        <FileText size={16} className="text-green-700 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <p className="text-xs font-bold text-stone-800">
+            Standard Philippine LGU Memorandum Routing
           </p>
-          <p className="text-xs text-green-800 leading-relaxed">
-            The transmittal header is formatted for official Philippine LGU Memorandum routing. You can select a quick recipient preset or edit any line below.
+          <p className="text-xs text-stone-600 leading-relaxed">
+            Header formatted for formal submission under RA 7160. Choose a recipient preset below to auto-fill or enter a custom address line.
           </p>
         </div>
       </div>
 
       {/* Recipient Presets */}
-      <div className="space-y-1.5">
-        <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-          Quick Recipient Presets (Click to Auto-Fill)
+      <div className="space-y-2">
+        <label className="block text-xs font-semibold text-stone-600">
+          Official Recipient Presets
         </label>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => onRecipientPreset("mayor")}
-            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-md shadow-2xs transition-colors flex items-center gap-1.5"
+            className="btn-tactile text-xs font-medium px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5"
           >
-            <Building size={12} /> Municipal Mayor (Hon. Marcelo P. Gayeta)
+            <Building2 size={13} className="text-stone-500" />
+            Municipal Mayor (Hon. Marcelo P. Gayeta)
           </button>
           <button
             type="button"
             onClick={() => onRecipientPreset("opv")}
-            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-md shadow-2xs transition-colors flex items-center gap-1.5"
+            className="btn-tactile text-xs font-medium px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5"
           >
-            <Building size={12} /> Provincial Veterinarian (OPV Quezon)
+            <Stethoscope size={13} className="text-stone-500" />
+            Provincial Veterinarian (OPV Quezon)
           </button>
           <button
             type="button"
             onClick={() => onRecipientPreset("sb")}
-            className="text-[11px] font-bold px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-md shadow-2xs transition-colors flex items-center gap-1.5"
+            className="btn-tactile text-xs font-medium px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5"
           >
-            <Scale size={12} /> Sangguniang Bayan (Committee on Agriculture)
+            <Scale size={13} className="text-stone-500" />
+            Sangguniang Bayan (Committee on Agriculture)
           </button>
         </div>
       </div>
 
+      {/* Transmittal Header Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+          <label htmlFor="memo-for" className="block text-xs font-semibold text-stone-700">
             MEMORANDUM FOR:
           </label>
           <input
+            id="memo-for"
             type="text"
-            value={transmittal.memo_for}
+            value={transmittal.memo_for || ""}
             onChange={(e) => onChange("memo_for", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
+            className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 shadow-2xs"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+          <label htmlFor="memo-through" className="block text-xs font-semibold text-stone-700">
             THROUGH:
           </label>
           <input
+            id="memo-through"
             type="text"
-            value={transmittal.memo_through}
+            value={transmittal.memo_through || ""}
             onChange={(e) => onChange("memo_through", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
+            className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 shadow-2xs"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+          <label htmlFor="memo-from" className="block text-xs font-semibold text-stone-700">
             FROM:
           </label>
           <input
+            id="memo-from"
             type="text"
-            value={transmittal.memo_from}
+            value={transmittal.memo_from || ""}
             onChange={(e) => onChange("memo_from", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
+            className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 shadow-2xs"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-            DATE:
+          <label htmlFor="memo-date" className="block text-xs font-semibold text-stone-700">
+            DATE OF ISSUANCE:
           </label>
           <input
+            id="memo-date"
             type="text"
-            value={transmittal.date}
+            value={transmittal.date || ""}
             onChange={(e) => onChange("date", e.target.value)}
-            className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
+            className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 shadow-2xs"
           />
         </div>
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+        <label htmlFor="memo-subject" className="block text-xs font-semibold text-stone-700">
           SUBJECT:
         </label>
         <input
+          id="memo-subject"
           type="text"
-          value={transmittal.subject}
+          value={transmittal.subject || ""}
           onChange={(e) => onChange("subject", e.target.value)}
-          className="w-full border border-stone-300 p-2.5 text-xs font-bold text-stone-900 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
+          className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 shadow-2xs"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+        <label htmlFor="memo-legal-bases" className="block text-xs font-semibold text-stone-700">
           LEGAL BASES & REGULATORY REFERENCES:
         </label>
         <textarea
+          id="memo-legal-bases"
           rows={3}
-          value={transmittal.legal_bases}
+          value={transmittal.legal_bases || ""}
           onChange={(e) => onChange("legal_bases", e.target.value)}
-          className="w-full border border-stone-300 p-2.5 text-xs font-medium text-stone-800 bg-white rounded-lg shadow-2xs focus:outline-none focus:border-green-700"
+          className="w-full rounded-lg border border-stone-200 bg-white p-3 text-xs leading-relaxed text-stone-800 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 shadow-2xs"
         />
       </div>
     </div>

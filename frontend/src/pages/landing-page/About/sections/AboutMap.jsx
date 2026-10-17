@@ -1,5 +1,5 @@
 import useScrollReveal from "../../../../hooks/useScrollReveal";
-import LocationIcon from "../../../../assets/about-icons/location.png";
+import { MapPin } from "lucide-react";
 
 const GMAPS_URL = "https://www.google.com/maps/place/New+Sariaya+Municipal+Hall/@13.9569516,121.5118002,1151m/data=!3m1!1e3!4m6!3m5!1s0x33bd4f001084db1b:0xb64703c8f579b191!8m2!3d13.9566288!4d121.5140318!16s%2Fg%2F11xd8mkr77?entry=ttu&g_ep=EgoyMDI2MDMwNC4xIKXMDSoASAFQAw%3D%3D";
 const EMBED_SRC = "https://www.google.com/maps/embed?pb=!4v1772712980735!6m8!1m7!1sCAoSHENJQUJJaEE0Z3VIc1hrRW4tN3ZhNUpIMm9mQ20.!2m2!1d13.95735761845487!2d121.5140318247651!3f324.87219963259867!4f-38.99672389730038!5f0.7820865974627469";
@@ -41,7 +41,7 @@ export default function AboutMap() {
             max-[640px]:flex-col max-[640px]:items-start">
 
             <div className="flex items-center gap-3">
-              <img src={LocationIcon} alt="" className="w-5 h-5 object-contain shrink-0" />
+              <MapPin className="w-5 h-5 text-emerald-700 shrink-0" />
               <div>
                 <p className="font-archivo text-[14px] text-stone-900 m-0 mb-0.5">Sariaya Municipal Hall</p>
                 <p className="font-jakarta text-[12px] text-stone-600 m-0">Municipal Agriculture Office · Mon–Fri, 8:00 AM – 5:00 PM</p>

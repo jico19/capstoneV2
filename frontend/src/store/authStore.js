@@ -74,6 +74,17 @@ const useAuthStore = create(
 
             // Logout Action
             logout: () => {
+                try {
+                    const videos = document.querySelectorAll('video');
+                    videos.forEach((video) => {
+                        if (video.srcObject && typeof video.srcObject.getTracks === 'function') {
+                            video.srcObject.getTracks().forEach((track) => track.stop());
+                            video.srcObject = null;
+                        }
+                    });
+                } catch {
+                    // ignore
+                }
                 set({ user: null, access: null, refresh: null, isAuthenticated: false });
                 sessionStorage.clear()
             },

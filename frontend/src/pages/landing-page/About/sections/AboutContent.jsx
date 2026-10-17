@@ -62,14 +62,13 @@ export default function AboutContent() {
               Our Mission
             </h2>
             <p className="font-jakarta text-[14px] text-stone-700 leading-[1.8] mb-4">
-              FarmPass was developed to modernize and streamline the livestock transport permit issuance
-              process in Sariaya, Quezon. Our mission is to provide farmers, traders, and haulers with a
-              fast, transparent, and secure digital platform that eliminates unnecessary office visits while
-              maintaining strict compliance and disease control measures.
+              FarmPass replaces paper-based permit queues with an online filing and verification system
+              for Sariaya, Quezon. The platform allows farmers, traders, and haulers to apply remotely
+              while maintaining municipal livestock inspection standards and ASF biosecurity controls.
             </p>
             <p className="font-jakarta text-[14px] text-stone-700 leading-[1.8] mb-4">
-              By combining OCR document scanning, census verification, and geospatial analytics, we transform a traditionally manual,
-              time-consuming workflow into an efficient digital process.
+              The system extracts credential data using OCR, cross-references head counts against
+              quarterly barangay livestock census records, and tracks transport corridors across Sariaya.
             </p>
             <h3 className="font-archivo text-[16px] text-brand-primary tracking-[-0.01em] mb-2.5">
               Why FarmPass?

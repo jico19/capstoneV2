@@ -8,23 +8,30 @@ import {
   RotateCcw,
   Download,
   Loader2,
-  UserCheck,
-  CheckCircle2,
+  Users,
+  CheckSquare,
   Send,
+  Building2,
+  Eye,
+  Edit3,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import TransmittalTab from "./TransmittalTab";
 import NarrativeTab from "./NarrativeTab";
 import ObservationsTab from "./ObservationsTab";
 import SignatoriesTab from "./SignatoriesTab";
+import MemorandumPreview from "./MemorandumPreview";
 
 /**
- * ReportDrafterModal
- * Allows the Agri Officer to review, customize, and export an official
- * Philippine LGU Memorandum & Accomplishment Report.
- * All fields are 100% pre-filled with auto-generated government prose.
+ * ReportDrafterModal — Executive Drafting Studio (Option A)
+ * Two-pane studio combining an interactive editing desk with a live,
+ * real-time scaled A4 government memorandum sheet preview.
  */
 const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => {
   const [activeTab, setActiveTab] = useState("transmittal");
+  const [mobileView, setMobileView] = useState("edit"); // 'edit' | 'preview'
+  const [zoom, setZoom] = useState(100);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [draftData, setDraftData] = useState(null);
@@ -54,6 +61,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
     if (isOpen) {
       fetchDraft();
       setActiveTab("transmittal");
+      setMobileView("edit");
     }
   }, [isOpen, fetchDraft]);
 
@@ -87,7 +95,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
     } else if (presetName === "sb") {
       handleTransmittalChange("memo_for", "COMMITTEE ON AGRICULTURE, Sangguniang Bayan of Sariaya");
     }
-    toast.success("Recipient Updated");
+    toast.success("Recipient preset applied");
   };
 
   const handleAddObservation = () => {
@@ -95,7 +103,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
       ...prev,
       operational_observations: [
         ...prev.operational_observations,
-        "New observed operational highlight or checkpoint observation.",
+        "Field inspection observation or biosecurity monitoring note.",
       ],
     }));
   };
@@ -120,7 +128,7 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
       ...prev,
       recommendations: [
         ...prev.recommendations,
-        "New actionable policy or operational recommendation.",
+        "Policy recommendation or corrective checkpoint action.",
       ],
     }));
   };
@@ -150,8 +158,8 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
 
       const filename = `LGU_MEMORANDUM_${report.reportType.toUpperCase()}_${startDate}_to_${endDate}.pdf`;
       downloadBlob(response.data, filename);
-      toast.success("Report Generated", {
-        description: "Official LGU Memorandum PDF downloaded successfully.",
+      toast.success("Official PDF Generated", {
+        description: filename,
       });
       onClose();
     } catch {
@@ -163,150 +171,242 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
     }
   };
 
+  const tabs = [
+    { id: "transmittal", label: "1. Transmittal", icon: Send },
+    { id: "narrative", label: "2. Narrative", icon: FileText },
+    { id: "observations", label: "3. Action Items", icon: CheckSquare },
+    { id: "signatories", label: "4. Signatories", icon: Users },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-stone-200 rounded-xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
-        {/* Modal Header */}
-        <div className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between border-b border-stone-700">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-stone-900/50 backdrop-blur-xs transition-opacity"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !generating) onClose();
+      }}
+    >
+      <div className="bg-white border border-stone-200 rounded-xl w-full max-w-7xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden modal-enter">
+        {/* Studio Header */}
+        <div className="bg-stone-50 border-b border-stone-200 px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-green-400 bg-green-950/80 px-2 py-0.5 rounded-md border border-green-800">
-                Official LGU Report Drafter
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 uppercase tracking-wider">
+                <Building2 size={13} /> Municipality of Sariaya
               </span>
-              <span className="text-[10px] font-mono text-stone-400">
+              <span className="text-stone-300">•</span>
+              <span className="text-xs font-mono text-stone-500">
                 Period: {startDate} → {endDate}
               </span>
             </div>
-            <h2 className="text-base sm:text-lg font-black tracking-tight uppercase">
-              {report?.title || "Municipal Memorandum Report"}
+            <h2 className="text-base sm:text-lg font-bold text-stone-900 tracking-tight">
+              Executive Drafting Studio: {report?.title || "Memorandum Drafter"}
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="text-stone-400 hover:text-white p-1 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Mobile View Toggle (< lg) */}
+            <div className="lg:hidden flex items-center bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+              <button
+                type="button"
+                onClick={() => setMobileView("edit")}
+                className={`btn-tactile px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
+                  mobileView === "edit"
+                    ? "bg-white text-stone-900 shadow-2xs font-bold"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                <Edit3 size={12} /> Edit Form
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileView("preview")}
+                className={`btn-tactile px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
+                  mobileView === "preview"
+                    ? "bg-white text-stone-900 shadow-2xs font-bold"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                <Eye size={12} /> Live Sheet
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={generating}
+              aria-label="Close drafter studio"
+              className="btn-tactile p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors disabled:opacity-50"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-stone-200 bg-stone-50 px-6 text-xs font-bold uppercase tracking-wider overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("transmittal")}
-            className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "transmittal"
-                ? "border-green-700 text-green-800 bg-white"
-                : "border-transparent text-stone-500 hover:text-stone-800"
+        {/* Studio Dual Workspace */}
+        <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0">
+          {/* Left Pane: Interactive Form Desk */}
+          <div
+            className={`lg:col-span-5 min-w-0 flex flex-col border-b lg:border-b-0 lg:border-r border-stone-200 overflow-hidden ${
+              mobileView === "preview" ? "hidden lg:flex" : "flex"
             }`}
           >
-            <Send size={14} /> Transmittal & Routing
-          </button>
-          <button
-            onClick={() => setActiveTab("narrative")}
-            className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "narrative"
-                ? "border-green-700 text-green-800 bg-white"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <FileText size={14} /> Executive Narrative
-          </button>
-          <button
-            onClick={() => setActiveTab("observations")}
-            className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "observations"
-                ? "border-green-700 text-green-800 bg-white"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <CheckCircle2 size={14} /> Findings & Actions
-          </button>
-          <button
-            onClick={() => setActiveTab("signatories")}
-            className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "signatories"
-                ? "border-green-700 text-green-800 bg-white"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <UserCheck size={14} /> Signatories
-          </button>
-        </div>
+            {/* Step Navigation Bar */}
+            <div className="flex border-b border-stone-200 bg-stone-100/60 px-4 text-xs font-semibold overflow-x-auto shrink-0">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-3 px-3.5 border-b-2 font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap btn-tactile ${
+                      isActive
+                        ? "border-green-700 text-green-800 bg-white font-bold shadow-2xs"
+                        : "border-transparent text-stone-600 hover:text-stone-900 hover:bg-stone-50"
+                    }`}
+                  >
+                    <Icon size={13} className={isActive ? "text-green-700" : "text-stone-400"} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {loading ? (
-            <div className="py-24 flex flex-col items-center justify-center space-y-3 text-stone-500">
-              <Loader2 size={32} className="animate-spin text-green-700" />
-              <p className="text-xs font-bold tracking-wider uppercase">
-                Synthesizing Database Records & Auto-Drafting Prose...
-              </p>
-            </div>
-          ) : !draftData ? (
-            <div className="py-16 text-center text-stone-500 text-sm">
-              Failed to load draft data. Please try again.
-            </div>
-          ) : (
-            <>
-              {/* TAB 1: Transmittal & Routing */}
-              {activeTab === "transmittal" && (
-                <TransmittalTab
-                  transmittal={draftData.transmittal}
-                  onChange={handleTransmittalChange}
-                  onRecipientPreset={setRecipientPreset}
-                />
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              {loading ? (
+                <div className="py-20 flex flex-col items-center justify-center space-y-3 text-stone-500">
+                  <Loader2 size={28} className="animate-spin text-green-700" />
+                  <p className="text-xs font-semibold tracking-wide text-stone-600">
+                    Compiling municipal records and drafting official memorandum...
+                  </p>
+                </div>
+              ) : !draftData ? (
+                <div className="py-16 text-center text-stone-500 text-sm">
+                  Failed to load memorandum draft data. Please try again.
+                </div>
+              ) : (
+                <>
+                  {activeTab === "transmittal" && (
+                    <TransmittalTab
+                      transmittal={draftData.transmittal}
+                      onChange={handleTransmittalChange}
+                      onRecipientPreset={setRecipientPreset}
+                    />
+                  )}
+
+                  {activeTab === "narrative" && (
+                    <NarrativeTab
+                      draftData={draftData}
+                      onSummaryChange={(value) => setDraftData({ ...draftData, executive_summary: value })}
+                      onFindingsChange={(value) => setDraftData({ ...draftData, biosecurity_findings: value })}
+                    />
+                  )}
+
+                  {activeTab === "observations" && (
+                    <ObservationsTab
+                      operationalObservations={draftData.operational_observations}
+                      recommendations={draftData.recommendations}
+                      onAddObservation={handleAddObservation}
+                      onChangeObservation={handleObservationChange}
+                      onDeleteObservation={handleDeleteObservation}
+                      onAddRecommendation={handleAddRecommendation}
+                      onChangeRecommendation={handleRecommendationChange}
+                      onDeleteRecommendation={handleDeleteRecommendation}
+                    />
+                  )}
+
+                  {activeTab === "signatories" && (
+                    <SignatoriesTab
+                      signatories={draftData.signatories}
+                      onChange={handleSignatoryChange}
+                    />
+                  )}
+                </>
               )}
+            </div>
+          </div>
 
-              {/* TAB 2: Executive Narrative */}
-              {activeTab === "narrative" && (
-                <NarrativeTab
+          {/* Right Pane: Live A4 Memorandum Sheet Preview */}
+          <div
+            className={`lg:col-span-7 min-w-0 bg-stone-100/70 flex flex-col overflow-hidden ${
+              mobileView === "edit" ? "hidden lg:flex" : "flex"
+            }`}
+          >
+            {/* Preview Status Ribbon with Zoom Controls */}
+            <div className="px-4 py-2 border-b border-stone-200 bg-stone-100/90 flex items-center justify-between text-xs text-stone-600 shrink-0">
+              <span className="font-semibold flex items-center gap-1.5 text-stone-700">
+                <Eye size={13} className="text-green-700" /> Live Memorandum Sheet
+              </span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-white border border-stone-200 rounded-md p-0.5 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.max(70, z - 10))}
+                    disabled={zoom <= 70}
+                    title="Zoom Out"
+                    aria-label="Zoom Out"
+                    className="btn-tactile p-1 text-stone-600 hover:text-stone-900 disabled:opacity-40"
+                  >
+                    <ZoomOut size={13} />
+                  </button>
+                  <span className="px-1.5 text-[10px] font-mono font-bold text-stone-700 min-w-[34px] text-center">
+                    {zoom}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.min(120, z + 10))}
+                    disabled={zoom >= 120}
+                    title="Zoom In"
+                    aria-label="Zoom In"
+                    className="btn-tactile p-1 text-stone-600 hover:text-stone-900 disabled:opacity-40"
+                  >
+                    <ZoomIn size={13} />
+                  </button>
+                </div>
+                <span className="text-[11px] font-mono text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200 hidden sm:inline">
+                  Synced Real-Time
+                </span>
+              </div>
+            </div>
+
+            {/* Scrollable Document Simulation */}
+            <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 flex justify-center items-start">
+              {loading ? (
+                <div className="h-full flex items-center justify-center text-stone-400 text-xs">
+                  Preparing document preview...
+                </div>
+              ) : (
+                <MemorandumPreview
                   draftData={draftData}
-                  onSummaryChange={(value) => setDraftData({ ...draftData, executive_summary: value })}
-                  onFindingsChange={(value) => setDraftData({ ...draftData, biosecurity_findings: value })}
+                  report={report}
+                  startDate={startDate}
+                  endDate={endDate}
+                  zoom={zoom}
                 />
               )}
-
-              {/* TAB 3: Observations & Recommendations */}
-              {activeTab === "observations" && (
-                <ObservationsTab
-                  operationalObservations={draftData.operational_observations}
-                  recommendations={draftData.recommendations}
-                  onAddObservation={handleAddObservation}
-                  onChangeObservation={handleObservationChange}
-                  onDeleteObservation={handleDeleteObservation}
-                  onAddRecommendation={handleAddRecommendation}
-                  onChangeRecommendation={handleRecommendationChange}
-                  onDeleteRecommendation={handleDeleteRecommendation}
-                />
-              )}
-
-              {/* TAB 4: Signatories */}
-              {activeTab === "signatories" && (
-                <SignatoriesTab
-                  signatories={draftData.signatories}
-                  onChange={handleSignatoryChange}
-                />
-              )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
 
-        {/* Modal Footer Action Bar */}
-        <div className="bg-stone-100 border-t border-stone-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Studio Action Footer */}
+        <div className="bg-stone-50 border-t border-stone-200 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={fetchDraft}
             disabled={loading || generating}
-            className="text-xs font-bold text-stone-600 hover:text-stone-900 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            className="btn-tactile text-xs font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-1.5 transition-colors disabled:opacity-50"
           >
-            <RotateCcw size={14} /> Reset to Auto-Drafted Defaults
+            <RotateCcw size={13} /> Reset to System Defaults
           </button>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-initial px-4 py-2.5 border border-stone-300 text-stone-700 text-xs font-bold uppercase tracking-wider hover:bg-stone-200 rounded-lg shadow-xs transition-colors"
+              disabled={generating}
+              className="btn-tactile flex-1 sm:flex-initial px-4 py-2 border border-stone-200 bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium rounded-lg shadow-2xs transition-colors"
             >
               Cancel
             </button>
@@ -314,17 +414,17 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
               type="button"
               disabled={loading || generating || !draftData}
               onClick={handleExportFormalPdf}
-              className="flex-1 sm:flex-initial px-6 py-2.5 bg-green-700 hover:bg-green-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              className="btn-tactile flex-1 sm:flex-initial px-5 py-2 bg-green-700 hover:bg-green-600 text-white text-xs font-bold rounded-lg shadow-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
             >
               {generating ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Generating LGU PDF...
+                  <Loader2 size={14} className="animate-spin" />
+                  Compiling PDF...
                 </>
               ) : (
                 <>
-                  <Download size={16} />
-                  Export Formal Government PDF
+                  <Download size={14} />
+                  Export Official LGU PDF
                 </>
               )}
             </button>

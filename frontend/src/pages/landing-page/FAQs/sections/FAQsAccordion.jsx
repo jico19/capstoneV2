@@ -6,15 +6,15 @@ const CATEGORIES = [
     items: [
       {
         q: "What is FarmPass?",
-        a: "FarmPass is a web-based livestock transport permit issuance system for Sariaya Municipal Agriculture Office. It uses OCR document validation, and Geospatial monitoring to process permits quickly and securely, all online, 24/7."
+        a: "FarmPass is the official livestock transport permitting portal for the Sariaya Municipal Agriculture Office. It processes transport applications, validates documentary requirements, and issues digital permits with QR verification."
       },
       {
         q: "Who can use FarmPass?",
-        a: "Licensed traders, haulers, and livestock owners can use FarmPass to apply for transport permits. All users must have valid licenses and register an account to access the system."
+        a: "Licensed traders, haulers, and livestock owners transporting animals in Sariaya can use FarmPass. Users register an account and attach valid credentials to apply."
       },
       {
         q: "Is FarmPass free to use?",
-        a: "Creating an account is FREE. You only pay the standard government permit fees when you apply for a transport permit."
+        a: "Creating an account is free. You only pay official municipal permit fees once your application is reviewed and approved."
       },
     ],
   },
@@ -23,11 +23,11 @@ const CATEGORIES = [
     items: [
       {
         q: "What documents do I need?",
-        a: "Required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Inspection (CIS), and Barangay Endorsement (Pagpapatunay — required only for transport outside Sariaya). All must be in PDF, JPG, or PNG format (max 5MB each)."
+        a: "Required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Inspection (CIS), and Barangay Endorsement (Pagpapatunay, required only for transport outside Sariaya). All files must be in PDF, JPG, or PNG format under 10MB each."
       },
       {
         q: "How long are documents valid?",
-        a: "Handler's License and Transport Carrier Registration must be current. Trader's Pass must be within 60 days from issue date. Always check validity before uploading."
+        a: "Handler's License and Transport Carrier Registration must be active. The Trader's Pass must be within 60 days of issuance. Always verify document validity before submitting."
       },
     ],
   },
@@ -36,15 +36,15 @@ const CATEGORIES = [
     items: [
       {
         q: "How long does approval take?",
-        a: "15–30 minutes during office hours (Mon–Fri, 8AM–5PM). The system validates documents automatically, then staff reviews your application. You'll receive SMS updates on status changes."
+        a: "15 to 30 minutes during regular office hours (Monday to Friday, 8:00 AM to 5:00 PM). Staff reviews your application after automated credential extraction. You receive SMS notifications at each status update."
       },
       {
         q: "Can I track my application?",
-        a: "Yes! Login and go to \"My Applications\" or use your tracking number (sent via SMS) to see real-time status: Submitted → Under Review → Approved/Rejected."
+        a: "Sign in and open \"My Applications\" or enter your SMS tracking number to check your status: Submitted, Under Review, Approved (Payment Pending), or Released."
       },
       {
         q: "What if my application is rejected?",
-        a: "You'll receive an SMS with the rejection reason. Fix the issues and submit a new application. Rejected applications don't incur charges; you only pay after approval."
+        a: "You will receive an SMS explaining the reason for rejection. Correct the flagged items and submit an updated application. Rejected applications incur no fees; you only pay upon approval."
       },
     ],
   },
@@ -53,15 +53,15 @@ const CATEGORIES = [
     items: [
       {
         q: "How much does a permit cost?",
-        a: "Standard permit fees:\n• Veterinary Health Certificate – ₱50\n• Transportation Pass – ₱50\n• Sariaya Transportation Permit – ₱50\n\nTotal: ₱150 per application."
+        a: "Standard statutory permit fees:\n• Veterinary Health Certificate: ₱50\n• Transportation Pass: ₱50\n• Local Transport Permit (Sariaya): ₱50\n\nTotal: ₱150 statutory fee per application."
       },
       {
         q: "What payment methods are accepted?",
-        a: "Online: GCash, PayMaya, Bank Transfer\nIn-Person: Cash at Sariaya Agriculture Office (Mon–Fri, 8AM–5PM)"
+        a: "Online: GCash, Maya, and credit/debit card (via PayMongo)\nIn-Person: Cash at Sariaya Municipal Treasury / MAO (Monday to Friday, 8:00 AM to 5:00 PM)"
       },
       {
         q: "When do I need to pay?",
-        a: "Payment is required AFTER you submit your application. Process: Submit → Pay → Approved → Receive Permit."
+        a: "Payment is required only after your application has been reviewed and approved by the Municipal Agriculture Office and Provincial Veterinarian. If your application is rejected or requires revisions, you pay nothing."
       },
     ],
   },
@@ -70,11 +70,11 @@ const CATEGORIES = [
     items: [
       {
         q: "Can I use this on my phone?",
-        a: "Yes! FarmPass is a Progressive Web App that works on phones, tablets, and computers. You can even install it on your home screen for an app-like experience."
+        a: "FarmPass runs on smartphones, tablets, and desktop computers. You can also add it to your mobile home screen for quick access in the field."
       },
       {
         q: "Is my information secure?",
-        a: "Yes! We use secure servers, access controls, and comply with the Data Privacy Act. Your information is never shared with third parties."
+        a: "User data is stored securely and handled in strict compliance with the Data Privacy Act of 2012 (RA 10173). Credentials and personal details are used solely for municipal livestock regulation."
       },
     ],
   },

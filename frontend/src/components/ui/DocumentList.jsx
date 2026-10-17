@@ -15,11 +15,11 @@ const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) =
     // Empty state when no documents are provided or the list is empty
     if (!documents || documents.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center border border-stone-200 bg-white rounded-none">
-                <div className="w-10 h-10 flex items-center justify-center bg-stone-50 text-stone-300 mb-3 border border-stone-200">
+            <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center border border-stone-200 bg-white rounded-xl shadow-xs">
+                <div className="w-10 h-10 flex items-center justify-center bg-stone-50 text-stone-400 mb-3 rounded-lg border border-stone-200">
                     <FolderOpen size={20} />
                 </div>
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400">No documents yet</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400">No documents yet</h3>
                 <p className="text-xs font-medium text-stone-500 mt-1">We couldn't find any documents for this request.</p>
             </div>
         );
@@ -32,9 +32,8 @@ const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) =
                 const needsReview = hasOcr && (doc.ocr.status === 'MANUAL' || doc.ocr.status === 'FAILED');
                 const isViewed = viewedDocIds.includes(doc.id);
 
-                // Determine border and status styles based on the document state
+                // Determine badge and status styles based on the document state
                 let stateStyles = {
-                    border: 'border-l-4 border-stone-200',
                     badge: 'bg-stone-50 text-stone-600 border-stone-200',
                     statusText: 'Pending Review',
                     helperText: 'Awaiting office verification.',
@@ -45,8 +44,7 @@ const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) =
                 if (hasOcr) {
                     if (needsReview) {
                         stateStyles = {
-                            border: 'border-l-4 border-amber-500',
-                            badge: 'bg-amber-50 text-amber-700 border-amber-500',
+                            badge: 'bg-amber-50 text-amber-800 border-amber-300',
                             statusText: 'Needs Attention',
                             helperText: 'Issue requires manual check.',
                             icon: <AlertTriangle size={16} className="text-amber-600" />,
@@ -54,22 +52,20 @@ const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) =
                         };
                     } else if (doc.ocr.status === "OVERRIDDEN") {
                         stateStyles = {
-                            border: 'border-l-4 border-green-600',
-                            badge: 'bg-green-50 text-green-700 border-green-600',
+                            badge: 'bg-emerald-50 text-emerald-800 border-emerald-300',
                             statusText: 'Manually Checked',
                             helperText: 'Verified by agriculture office.',
-                            icon: <CheckCircle size={16} className="text-green-600" />,
-                            iconBg: 'bg-green-50 border-green-200'
+                            icon: <CheckCircle size={16} className="text-emerald-600" />,
+                            iconBg: 'bg-emerald-50 border-emerald-200'
                         };
                     }
                     else {
                         stateStyles = {
-                            border: 'border-l-4 border-green-600',
-                            badge: 'bg-green-50 text-green-700 border-green-600',
+                            badge: 'bg-emerald-50 text-emerald-800 border-emerald-300',
                             statusText: 'Verified',
                             helperText: 'Checked and confirmed valid.',
-                            icon: <CheckCircle size={16} className="text-green-600" />,
-                            iconBg: 'bg-green-50 border-green-200'
+                            icon: <CheckCircle size={16} className="text-emerald-600" />,
+                            iconBg: 'bg-emerald-50 border-emerald-200'
                         };
                     }
                 }
@@ -77,32 +73,27 @@ const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) =
                 return (
                     <div
                         key={doc.id}
-                        className={`
-                            group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-5 
-                            bg-white border-t border-r border-b border-stone-200 rounded-none 
-                            transition-colors duration-100 ease-out hover:bg-stone-50 gap-3
-                            ${stateStyles.border}
-                        `}
+                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-5 bg-white border border-stone-200 rounded-xl shadow-xs transition-colors duration-100 ease-out hover:bg-stone-50/70 gap-3"
                     >
                         <div className="flex items-start gap-3 min-w-0">
-                            {/* Square Icon Container */}
+                            {/* Icon Container */}
                             <div className={`
-                                w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-none border shrink-0
+                                w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg border shrink-0
                                 ${stateStyles.iconBg}
                             `}>
                                 {stateStyles.icon}
                             </div>
 
                             <div className="space-y-1 min-w-0 flex-1">
-                                <h3 className="text-xs sm:text-sm font-black text-stone-800 uppercase tracking-tight leading-snug truncate">
+                                <h3 className="text-xs sm:text-sm font-bold text-stone-800 uppercase tracking-tight leading-snug truncate">
                                     {doc.document_type_display}
                                 </h3>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className={`px-1.5 py-0.5 border rounded-none text-[8px] sm:text-[9px] font-black uppercase tracking-wider inline-block shrink-0 ${stateStyles.badge}`}>
+                                    <span className={`px-2 py-0.5 border rounded-md text-[10px] font-semibold uppercase tracking-wider inline-block shrink-0 ${stateStyles.badge}`}>
                                         {stateStyles.statusText}
                                     </span>
                                     {isViewed && (
-                                        <span className="px-1.5 py-0.5 border border-green-300 bg-green-100 text-green-800 rounded-none text-[8px] sm:text-[9px] font-black uppercase tracking-wider inline-block shrink-0">
+                                        <span className="px-2 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-800 rounded-md text-[10px] font-semibold uppercase tracking-wider inline-block shrink-0">
                                             Handled ✓
                                         </span>
                                     )}
@@ -116,21 +107,23 @@ const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) =
                         <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
                             {hasOcr && (needsReview || doc.ocr.status === 'OVERRIDDEN') && fixData && (
                                 <button
+                                    type="button"
                                     onClick={() => fixData({ ocr_id: doc.ocr.id, doc_id: doc.id })}
                                     className={`
-                                        ${doc.ocr.status === 'OVERRIDDEN' ? 'bg-stone-800 hover:bg-stone-700' : 'bg-amber-600 hover:bg-amber-700'} 
-                                        text-white text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-none transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-none`
+                                        btn-tactile rounded-lg text-xs font-semibold px-3 py-1.5 transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-none
+                                        ${doc.ocr.status === 'OVERRIDDEN' ? 'bg-stone-800 hover:bg-stone-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'}`
                                     }
                                 >
-                                    <Pencil size={12} /> {doc.ocr.status === 'OVERRIDDEN' ? 'Edit' : 'Fix'}
+                                    <Pencil size={13} /> {doc.ocr.status === 'OVERRIDDEN' ? 'Edit' : 'Fix'}
                                 </button>
                             )}
                             {documentView && (
                                 <button
+                                    type="button"
                                     onClick={() => documentView(doc.id)}
-                                    className="bg-green-700 hover:bg-green-600 text-white text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-none transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-none"
+                                    className="btn-tactile rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-none shadow-xs"
                                 >
-                                    <Search size={12} /> View Document
+                                    <Search size={13} /> View Document
                                 </button>
                             )}
                         </div>

@@ -23,46 +23,46 @@ const ApplicationHeader = ({ data }) => {
                 </div>
 
                 <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
                         Current Status
                     </span>
-                    <div className="px-3 py-1 bg-green-50 text-green-700 border border-green-600 rounded-none text-[10px] font-black uppercase tracking-widest">
+                    <div className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-md text-xs font-semibold uppercase tracking-wider">
                         {data.status_display}
                     </div>
                 </div>
             </div>
 
             {/* Transport Details Grid (2x2 on mobile, 4-col on desktop) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 border border-stone-200 bg-stone-50/60 divide-x divide-y md:divide-y-0 divide-stone-200">
+            <div className="grid grid-cols-2 md:grid-cols-4 border border-stone-200 bg-stone-50/60 rounded-xl overflow-hidden divide-x divide-y md:divide-y-0 divide-stone-200 shadow-xs">
                 <DetailItem 
                     label="From Area" 
                     value={data.origins?.length > 1 ? "Multiple Origins" : (data.origins?.[0]?.barangay_name || data.origin_barangay_name)} 
                     sub={data.origins?.length > 1 ? `${data.origins.length} Locations` : "Sariaya, Quezon"} 
-                    icon={<MapPin size={14} className="text-green-700 shrink-0" />} 
+                    icon={<MapPin size={14} className="text-emerald-700 shrink-0" />} 
                 />
                 <DetailItem 
                     label="Going To" 
                     value={data.destination || "Not specified"} 
-                    icon={<Clipboard size={14} className="text-green-700 shrink-0" />} 
+                    icon={<Clipboard size={14} className="text-emerald-700 shrink-0" />} 
                 />
                 <DetailItem 
                     label="Total Count" 
                     value={`${data.number_of_pigs} Pigs`} 
                     sub="Live Swine" 
-                    icon={<User size={14} className="text-green-700 shrink-0" />} 
+                    icon={<User size={14} className="text-emerald-700 shrink-0" />} 
                 />
                 <DetailItem 
                     label="Travel Date" 
                     value={data.transport_date} 
-                    icon={<Calendar size={14} className="text-green-700 shrink-0" />} 
+                    icon={<Calendar size={14} className="text-emerald-700 shrink-0" />} 
                 />
             </div>
 
             {/* Purpose Flag */}
             {data.purpose && (
-                <div className="flex items-start gap-3 p-3 sm:p-4 border-l-4 border-green-700 bg-stone-50 border border-stone-200 text-stone-700 text-xs sm:text-sm">
-                    <span className="font-black uppercase text-[9px] tracking-widest text-stone-400 shrink-0 mt-0.5">Purpose:</span>
-                    <span className="font-bold text-stone-800 italic">"{data.purpose}"</span>
+                <div className="flex items-start gap-3 p-3.5 sm:p-4 rounded-lg bg-stone-50 border border-stone-200 text-stone-700 text-xs sm:text-sm">
+                    <span className="font-semibold uppercase text-[10px] tracking-wider text-stone-400 shrink-0 mt-0.5">Purpose:</span>
+                    <span className="font-medium text-stone-800 italic">"{data.purpose}"</span>
                 </div>
             )}
         </header>

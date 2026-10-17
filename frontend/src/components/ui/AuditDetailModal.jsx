@@ -60,12 +60,12 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
 
     return (
         <div 
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-100"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs transition-opacity duration-200"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden modal-enter">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/50">
                     <div className="flex items-center gap-3">
@@ -156,11 +156,11 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                         </div>
                         <button
                             onClick={handleCopyId}
-                            className="flex items-center gap-1 text-stone-600 hover:text-stone-900 font-sans font-bold uppercase text-[9px] tracking-wider transition-colors"
+                            className="flex items-center gap-1 text-stone-600 hover:text-stone-900 font-sans font-bold uppercase text-[9px] tracking-wider transition-colors btn-tactile px-1.5 py-0.5 rounded"
                         >
                             {copied ? (
                                 <>
-                                    <Check size={14} className="text-emerald-600" />
+                                    <Check size={14} className="text-emerald-600 animate-in zoom-in-75 duration-150" />
                                     <span className="text-emerald-600">Copied Ref</span>
                                 </>
                             ) : (
@@ -178,7 +178,7 @@ const AuditDetailModal = ({ isOpen, onClose, log, categoryInfo }) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs transition-colors cursor-pointer"
+                        className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs btn-tactile cursor-pointer"
                     >
                         Dismiss
                     </button>

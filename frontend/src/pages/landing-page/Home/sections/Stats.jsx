@@ -18,9 +18,9 @@ function useCounter(target, duration = 1800, start = false) {
 }
 
 const STATS = [
-  { value: 43,   suffix: "",     label: "Barangays Covered",        delay: "0s"    },
-  { value: 100,  suffix: "%",    label: "Digital Permitting",       delay: "0.1s"  },
-  { value: 24,   suffix: "/7",   label: "Application Submission",   delay: "0.2s"  },
+  { value: 43,   suffix: "",       label: "Barangays Covered",        delay: "0s"    },
+  { value: 3,    suffix: " in 1",  label: "Unified Clearances",       delay: "0.1s"  },
+  { value: 24,   suffix: "/7",     label: "Application Submission",   delay: "0.2s"  },
 ];  
 
 function StatItem({ value, suffix, label, delay, animate }) {

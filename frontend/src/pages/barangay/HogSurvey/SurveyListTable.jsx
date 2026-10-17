@@ -1,4 +1,4 @@
-import { Activity, Calendar, User, Phone, Edit, Trash2, X } from 'lucide-react';
+import { Activity, Calendar, User, Phone, Edit, Trash2, X, Search } from 'lucide-react';
 import DataTable from '../../../components/ui/DataTable';
 
 const ACTIVE_DAYS = 180;
@@ -10,15 +10,31 @@ const isFarmerActive = (lastSurveyDate) => {
 };
 
 /**
- * Paginated Hog Survey Records Table
+ * Paginated Hog Survey Records Table & Mobile Cards
  */
-const SurveyListTable = ({ surveys, count, limit, offset, onOffsetChange, onEdit, onDelete, filterFarmer, filterDateFrom, filterDateTo, onFilterChange, onClearFilters, onFilterByFarmer }) => {
+const SurveyListTable = ({
+    surveys,
+    count,
+    limit,
+    offset,
+    onOffsetChange,
+    onEdit,
+    onDelete,
+    filterFarmer,
+    filterDateFrom,
+    filterDateTo,
+    onFilterChange,
+    onClearFilters,
+    onFilterByFarmer
+}) => {
+    const isFiltered = Boolean(filterFarmer || filterDateFrom || filterDateTo);
+
     const columns = [
         {
             header: 'Survey Date',
             accessor: 'survey_date',
             render: (survey) => (
-                <div className="font-mono font-bold flex items-center gap-2 whitespace-nowrap">
+                <div className="font-mono font-bold flex items-center gap-1.5 whitespace-nowrap text-stone-800">
                     <Calendar size={14} className="text-stone-400 shrink-0" />
                     {survey.survey_date}
                 </div>
@@ -29,14 +45,14 @@ const SurveyListTable = ({ surveys, count, limit, offset, onOffsetChange, onEdit
             accessor: 'farmer_name',
             render: (survey) => survey.farmer_name ? (
                 <span
-                    className="flex items-center gap-1.5 cursor-pointer hover:text-green-700 hover:underline font-bold text-stone-800"
+                    className="flex items-center gap-1.5 cursor-pointer hover:text-green-700 font-bold text-stone-900 group"
                     onClick={() => onFilterByFarmer(survey.farmer_name)}
                     title="Click to view all surveys for this farmer"
                 >
-                    <User size={13} className="text-stone-400 shrink-0" />
-                    {survey.farmer_name}
-                    <span className={`inline-block text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 ml-1.5 ${
-                        isFarmerActive(survey.survey_date) ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
+                    <User size={14} className="text-stone-400 group-hover:text-green-700 shrink-0" />
+                    <span className="group-hover:underline">{survey.farmer_name}</span>
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ml-1 ${
+                        isFarmerActive(survey.survey_date) ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'
                     }`}>
                         {isFarmerActive(survey.survey_date) ? 'Active' : 'Inactive'}
                     </span>
@@ -57,34 +73,34 @@ const SurveyListTable = ({ surveys, count, limit, offset, onOffsetChange, onEdit
                 <span className="text-stone-300 font-normal italic">—</span>
             ),
         },
-        { header: 'Inahin (Sow)', accessor: 'inahin', align: 'center' },
-        { header: 'Barako (Boar)', accessor: 'barako', align: 'center' },
+        { header: 'Inahin', accessor: 'inahin', align: 'center' },
+        { header: 'Barako', accessor: 'barako', align: 'center' },
         { header: 'Fattener', accessor: 'fattener', align: 'center' },
         { header: 'Grower', accessor: 'grower', align: 'center' },
         { header: 'Starter', accessor: 'starter', align: 'center' },
         { header: 'Bulaw', accessor: 'bulaw', align: 'center' },
         {
-            header: 'Total Pigs',
+            header: 'Total Swine',
             accessor: 'total_pigs',
             align: 'center',
-            className: 'font-black text-green-700 bg-green-50/30',
+            className: 'font-mono font-black text-green-800 bg-green-50/50',
         },
         {
             header: 'Actions',
             align: 'right',
-            headerClassName: 'pr-8',
-            className: 'pr-8 whitespace-nowrap',
+            headerClassName: 'pr-6',
+            className: 'pr-6 whitespace-nowrap',
             render: (survey) => (
-                <div className="flex items-center gap-2 justify-end">
+                <div className="flex items-center gap-1.5 justify-end">
                     <button
                         onClick={() => onEdit(survey)}
-                        className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5"
+                        className="h-8 px-2.5 bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-md transition-colors flex items-center gap-1 shadow-2xs"
                     >
                         <Edit size={12} /> Edit
                     </button>
                     <button
                         onClick={() => onDelete(survey)}
-                        className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5"
+                        className="h-8 px-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold uppercase tracking-wider rounded-md transition-colors flex items-center gap-1 shadow-2xs"
                     >
                         <Trash2 size={12} /> Delete
                     </button>
@@ -94,66 +110,89 @@ const SurveyListTable = ({ surveys, count, limit, offset, onOffsetChange, onEdit
     ];
 
     const renderMobileCards = (items) => (
-        <div className="divide-y divide-stone-100">
+        <div className="p-3 space-y-3 bg-stone-50/60">
             {items.map((survey) => (
-                <div key={survey.id} className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-stone-500">
-                            <Calendar size={13} className="text-stone-400" />
-                            {survey.survey_date}
+                <div key={survey.id} className="bg-white border border-stone-200 rounded-xl p-4 space-y-3 shadow-xs">
+                    {/* Header: Date + Total Pigs */}
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-2.5">
+                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-stone-600">
+                            <Calendar size={14} className="text-stone-400" />
+                            <span>{survey.survey_date}</span>
                         </div>
-                        <span className="text-sm font-black text-green-700 bg-green-50 px-2 py-0.5 border border-green-100">
+                        <span className="text-xs font-mono font-black text-green-800 bg-green-100 px-2 py-0.5 rounded-md border border-green-200">
                             {survey.total_pigs} pigs
                         </span>
                     </div>
 
+                    {/* Farmer Details */}
                     <div>
                         {survey.farmer_name ? (
-                            <span
-                                className="text-xs font-bold text-stone-800 flex items-center gap-1.5 cursor-pointer hover:text-green-700"
-                                onClick={() => onFilterByFarmer(survey.farmer_name)}
-                                title="View all surveys for this farmer"
-                            >
-                                <User size={13} className="text-stone-400 shrink-0" />
-                                {survey.farmer_name}
-                                <span className={`inline-block text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 ${
-                                    isFarmerActive(survey.survey_date) ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
+                            <div className="flex items-center justify-between gap-2">
+                                <span
+                                    className="text-sm font-bold text-stone-900 flex items-center gap-1.5 cursor-pointer hover:text-green-700"
+                                    onClick={() => onFilterByFarmer(survey.farmer_name)}
+                                >
+                                    <User size={15} className="text-stone-400 shrink-0" />
+                                    <span>{survey.farmer_name}</span>
+                                </span>
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
+                                    isFarmerActive(survey.survey_date) ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'
                                 }`}>
                                     {isFarmerActive(survey.survey_date) ? 'Active' : 'Inactive'}
                                 </span>
-                            </span>
+                            </div>
                         ) : (
-                            <span className="text-xs text-stone-300 italic">No farmer name</span>
+                            <span className="text-xs text-stone-400 italic">No farmer name</span>
                         )}
                         {survey.contact_number && (
-                            <span className="flex items-center gap-1.5 text-[11px] text-stone-500 mt-1">
+                            <div className="flex items-center gap-1.5 text-xs text-stone-500 mt-1 font-mono">
                                 <Phone size={12} className="text-stone-400 shrink-0" />
-                                {survey.contact_number}
-                            </span>
+                                <span>{survey.contact_number}</span>
+                            </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[10px] text-stone-500 border-t border-stone-100 pt-2">
-                        <span><b className="text-stone-700">{survey.inahin}</b> inahin</span>
-                        <span><b className="text-stone-700">{survey.barako}</b> barako</span>
-                        <span><b className="text-stone-700">{survey.fattener}</b> fattener</span>
-                        <span><b className="text-stone-700">{survey.grower}</b> grower</span>
-                        <span><b className="text-stone-700">{survey.starter}</b> starter</span>
-                        <span><b className="text-stone-700">{survey.bulaw}</b> bulaw</span>
+                    {/* Classification Grid */}
+                    <div className="grid grid-cols-3 gap-1.5 text-center bg-stone-50 p-2 rounded-lg border border-stone-200/60">
+                        <div className="p-1">
+                            <span className="text-[9px] font-black text-stone-400 uppercase block">Inahin</span>
+                            <span className="text-xs font-mono font-bold text-stone-800">{survey.inahin}</span>
+                        </div>
+                        <div className="p-1">
+                            <span className="text-[9px] font-black text-stone-400 uppercase block">Barako</span>
+                            <span className="text-xs font-mono font-bold text-stone-800">{survey.barako}</span>
+                        </div>
+                        <div className="p-1">
+                            <span className="text-[9px] font-black text-stone-400 uppercase block">Starter</span>
+                            <span className="text-xs font-mono font-bold text-stone-800">{survey.starter}</span>
+                        </div>
+                        <div className="p-1 border-t border-stone-200/60 pt-1">
+                            <span className="text-[9px] font-black text-stone-400 uppercase block">Grower</span>
+                            <span className="text-xs font-mono font-bold text-stone-800">{survey.grower}</span>
+                        </div>
+                        <div className="p-1 border-t border-stone-200/60 pt-1">
+                            <span className="text-[9px] font-black text-stone-400 uppercase block">Fattener</span>
+                            <span className="text-xs font-mono font-bold text-stone-800">{survey.fattener}</span>
+                        </div>
+                        <div className="p-1 border-t border-stone-200/60 pt-1">
+                            <span className="text-[9px] font-black text-stone-400 uppercase block">Bulaw</span>
+                            <span className="text-xs font-mono font-bold text-stone-800">{survey.bulaw}</span>
+                        </div>
                     </div>
 
+                    {/* Actions (44px+ hit areas) */}
                     <div className="flex items-center gap-2 pt-1">
                         <button
                             onClick={() => onEdit(survey)}
-                            className="flex-1 bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
+                            className="flex-1 h-11 bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
                         >
-                            <Edit size={12} /> Edit
+                            <Edit size={14} /> Edit
                         </button>
                         <button
                             onClick={() => onDelete(survey)}
-                            className="flex-1 bg-white border border-red-200 hover:bg-red-50 text-red-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
+                            className="flex-1 h-11 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
                         >
-                            <Trash2 size={12} /> Delete
+                            <Trash2 size={14} /> Delete
                         </button>
                     </div>
                 </div>
@@ -162,81 +201,87 @@ const SurveyListTable = ({ surveys, count, limit, offset, onOffsetChange, onEdit
     );
 
     return (
-        <div className="border border-stone-200 bg-white">
-            {/* Farmer history summary card */}
+        <div className="border border-stone-200 bg-white rounded-xl shadow-xs overflow-hidden">
+            {/* Filter Active Ribbon */}
             {filterFarmer && (
-                <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Farmer History</p>
-                        <p className="text-sm font-black text-blue-800">{filterFarmer}</p>
-                        <p className="text-[10px] text-blue-500 mt-0.5">
-                            {count} record{count !== 1 ? 's' : ''} found
-                        </p>
+                <div className="px-4 sm:px-6 py-2.5 bg-sky-50 border-b border-sky-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <User size={14} className="text-sky-700 shrink-0" />
+                        <span className="text-xs text-sky-900 font-bold truncate">
+                            Viewing surveys for: <strong>{filterFarmer}</strong> ({count} {count === 1 ? 'record' : 'records'})
+                        </span>
                     </div>
                     <button
                         onClick={onClearFilters}
-                        className="text-[10px] font-black uppercase tracking-widest text-blue-400 hover:text-red-500 flex items-center gap-1"
+                        className="text-[10px] font-black uppercase tracking-wider text-sky-700 hover:text-red-600 flex items-center gap-1 shrink-0"
                     >
-                        <X size={12} /> Clear filter
+                        <X size={13} /> Clear
                     </button>
                 </div>
             )}
 
-            {/* Filter bar */}
-            <div className="px-6 py-4 border-b border-stone-200 bg-stone-50/50 flex flex-wrap gap-4 items-end">
-                <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Farmer Name</label>
-                    <input
-                        type="text"
-                        value={filterFarmer}
-                        onChange={e => onFilterChange('farmer_name', e.target.value)}
-                        placeholder="Search farmer..."
-                        className="bg-white border border-stone-300 rounded-none text-xs w-52 h-9 px-3 focus:outline-none focus:border-stone-500 placeholder:text-stone-400"
-                    />
-                </div>
-                <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Date From</label>
-                    <input
-                        type="date"
-                        value={filterDateFrom}
-                        onChange={e => onFilterChange('date_from', e.target.value)}
-                        className="bg-white border border-stone-300 rounded-none text-xs w-36 h-9 px-3 focus:outline-none focus:border-stone-500"
-                    />
-                </div>
-                <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Date To</label>
-                    <input
-                        type="date"
-                        value={filterDateTo}
-                        onChange={e => onFilterChange('date_to', e.target.value)}
-                        className="bg-white border border-stone-300 rounded-none text-xs w-36 h-9 px-3 focus:outline-none focus:border-stone-500"
-                    />
-                </div>
-                <div className="flex items-end gap-2 pb-0.5">
-                    {(filterFarmer || filterDateFrom || filterDateTo) && (
-                        <span className="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-2 py-1">
-                            Filtered
-                        </span>
+            {/* Responsive Filter Bar */}
+            <div className="p-4 sm:p-5 border-b border-stone-200 bg-stone-50/50 space-y-3">
+                <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                        Search & Filter Records
+                    </span>
+                    {isFiltered && (
+                        <button
+                            onClick={onClearFilters}
+                            className="text-stone-400 hover:text-red-600 text-xs font-bold flex items-center gap-1 transition-colors"
+                        >
+                            <X size={13} /> Reset Filters
+                        </button>
                     )}
-                    <button
-                        onClick={onClearFilters}
-                        className="text-stone-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-colors"
-                    >
-                        Clear
-                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={filterFarmer}
+                            onChange={e => onFilterChange('farmer_name', e.target.value)}
+                            placeholder="Filter by farmer name..."
+                            className="w-full h-10 pl-9 pr-3 bg-white border border-stone-300 rounded-lg text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700/20"
+                        />
+                    </div>
+
+                    <div>
+                        <input
+                            type="date"
+                            value={filterDateFrom}
+                            onChange={e => onFilterChange('date_from', e.target.value)}
+                            aria-label="Filter from date"
+                            className="w-full h-10 px-3 bg-white border border-stone-300 rounded-lg text-xs font-medium text-stone-800 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700/20"
+                        />
+                    </div>
+
+                    <div>
+                        <input
+                            type="date"
+                            value={filterDateTo}
+                            onChange={e => onFilterChange('date_to', e.target.value)}
+                            aria-label="Filter to date"
+                            className="w-full h-10 px-3 bg-white border border-stone-300 rounded-lg text-xs font-medium text-stone-800 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700/20"
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Universal DataTable */}
+            {/* Universal DataTable with Mobile Card Fallback */}
             <DataTable
                 columns={columns}
                 data={surveys}
-                minWidth="1050px"
+                minWidth="960px"
                 className="border-0"
                 emptyState={{
                     icon: Activity,
-                    title: 'No hog surveys found',
-                    description: 'No survey records match the current criteria.',
+                    title: 'No hog surveys recorded',
+                    description: isFiltered
+                        ? 'No survey records match your search filters.'
+                        : 'Start recording swine inventory surveys using Add Survey or Batch Entry.',
                 }}
                 mobileRenderer={renderMobileCards}
                 pagination={{

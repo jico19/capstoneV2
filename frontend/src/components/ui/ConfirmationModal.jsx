@@ -92,13 +92,13 @@ const ConfirmationModal = ({
 
     return (
         <div 
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs transition-opacity duration-200"
             onClick={(e) => {
                 // Close on clicking backdrop
                 if (e.target === e.currentTarget && !isSubmitting) onClose();
             }}
         >
-            <div className="bg-white w-full max-w-md border border-stone-200 shadow-xl rounded-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+            <div className="bg-white w-full max-w-md border border-stone-200 shadow-xl rounded-xl overflow-hidden modal-enter">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/50">
                     <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ const ConfirmationModal = ({
                     <button 
                         onClick={onClose} 
                         disabled={isSubmitting} 
-                        className="text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50"
+                        className="text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50 btn-tactile p-1 rounded-md"
                     >
                         <X size={20} />
                     </button>
@@ -131,7 +131,7 @@ const ConfirmationModal = ({
                             type="button"
                             onClick={onClose}
                             disabled={activeIsSubmitting}
-                            className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg shadow-2xs disabled:opacity-50"
+                            className="px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg shadow-2xs disabled:opacity-50 btn-tactile"
                         >
                             {cancelText}
                         </button>
@@ -142,7 +142,7 @@ const ConfirmationModal = ({
                                 type="button"
                                 onClick={onNo}
                                 disabled={activeIsSubmitting}
-                                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg shadow-2xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${getNoButtonClass()}`}
+                                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg shadow-2xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed btn-tactile ${getNoButtonClass()}`}
                             >
                                 {activeIsSubmitting && submittingAction === 'no' ? (
                                     <>
@@ -160,7 +160,7 @@ const ConfirmationModal = ({
                             type="button"
                             onClick={handleYes}
                             disabled={activeIsSubmitting}
-                            className={`px-5 py-2 text-xs font-black uppercase tracking-widest transition-colors rounded-lg shadow-xs flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${getYesButtonClass()}`}
+                            className={`px-5 py-2 text-xs font-black uppercase tracking-widest transition-colors rounded-lg shadow-xs flex items-center gap-2 btn-tactile disabled:opacity-50 disabled:cursor-not-allowed ${getYesButtonClass()}`}
                         >
                             {activeIsSubmitting && (submittingAction === 'yes' || !submittingAction) ? (
                                 <>

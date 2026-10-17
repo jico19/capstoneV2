@@ -35,14 +35,14 @@ const FarmersTable = ({
             header: 'Farmer Account',
             render: (farmer) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 shrink-0">
-                        <User size={20} />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-600 border border-stone-200/60">
+                        <User size={18} />
                     </div>
                     <div>
-                        <p className="text-sm font-black text-stone-800 uppercase tracking-tight">
+                        <p className="text-sm font-semibold text-stone-900 tracking-tight">
                             {farmer.first_name} {farmer.last_name}
                         </p>
-                        <p className="text-[9px] font-mono font-bold text-stone-400 mt-0.5">
+                        <p className="text-xs font-mono text-stone-500 mt-0.5">
                             @{farmer.username}
                         </p>
                     </div>
@@ -53,11 +53,11 @@ const FarmersTable = ({
             header: 'Phone & Address',
             render: (farmer) => (
                 <div className="space-y-1">
-                    <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-stone-700 flex items-center gap-1.5">
                         <Phone size={12} className="text-stone-400" />
                         {farmer.phone_no || 'No phone listed'}
                     </p>
-                    <p className="text-[10px] text-stone-500 font-medium truncate max-w-xs">
+                    <p className="text-xs text-stone-500 font-normal truncate max-w-xs">
                         {farmer.address || 'No address listed'}
                     </p>
                 </div>
@@ -66,9 +66,9 @@ const FarmersTable = ({
         {
             header: 'Location',
             render: (farmer) => (
-                <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
-                    <MapPin size={14} className="text-green-600 shrink-0" />
-                    <span className="uppercase tracking-tight">{farmer.barangay_name || 'None'}</span>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
+                    <MapPin size={14} className="text-emerald-600 shrink-0" />
+                    <span>{farmer.barangay_name || 'None'}</span>
                 </div>
             ),
         },
@@ -78,22 +78,22 @@ const FarmersTable = ({
             render: (farmer) => (
                 <>
                     {farmer.verification_status === 'VERIFIED' && (
-                        <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-green-50 text-green-700 border border-green-300 inline-flex items-center gap-1">
-                            <CheckCircle2 size={11} /> Verified
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                            <CheckCircle2 size={12} /> Verified
                         </span>
                     )}
                     {farmer.verification_status === 'PENDING_REVIEW' && (
-                        <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-300 inline-flex items-center gap-1">
-                            <Clock size={11} /> Pending Review
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-amber-50 text-amber-700 border border-amber-200/80">
+                            <Clock size={12} /> Pending Review
                         </span>
                     )}
                     {farmer.verification_status === 'REJECTED' && (
-                        <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-700 border border-red-300 inline-flex items-center gap-1">
-                            <AlertCircle size={11} /> Rejected
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-rose-50 text-rose-700 border border-rose-200/80">
+                            <AlertCircle size={12} /> Rejected
                         </span>
                     )}
                     {(!farmer.verification_status || farmer.verification_status === 'UNVERIFIED') && (
-                        <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-stone-100 text-stone-600 border border-stone-300 inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-stone-100 text-stone-600 border border-stone-200">
                             Unverified
                         </span>
                     )}
@@ -106,11 +106,11 @@ const FarmersTable = ({
             render: (farmer) => (
                 <button
                     onClick={() => onToggleStatus(farmer)}
-                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border transition-colors inline-flex items-center gap-1.5
-                        ${farmer.is_active 
-                            ? 'bg-green-50 text-green-700 border-green-600/30 hover:bg-red-50 hover:text-red-600 hover:border-red-600/30' 
-                            : 'bg-red-50 text-red-600 border-red-600/30 hover:bg-green-50 hover:text-green-700 hover:border-green-600/30'
-                        }`}
+                    className={`btn-tactile inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
+                        farmer.is_active 
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200' 
+                            : 'bg-rose-50 text-rose-700 border-rose-200/80 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
+                    }`}
                 >
                     {farmer.is_active ? (
                         <>
@@ -127,30 +127,30 @@ const FarmersTable = ({
         {
             header: 'Actions',
             align: 'right',
-            headerClassName: 'pr-8',
-            className: 'pr-8',
+            headerClassName: 'pr-6',
+            className: 'pr-6',
             render: (farmer) => (
                 <div className="flex items-center gap-2 justify-end">
                     <button
                         onClick={() => onReview(farmer)}
-                        className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border ${
+                        className={`btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors border shadow-2xs ${
                             farmer.verification_status === 'PENDING_REVIEW'
-                                ? 'bg-amber-600 text-white border-amber-700 hover:bg-amber-700 shadow-sm'
-                                : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
+                                ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-600'
+                                : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
                         }`}
                     >
                         <ShieldCheck size={13} /> Review Docs
                     </button>
                     <button
                         onClick={() => onEdit(farmer)}
-                        className="bg-white border border-stone-200 hover:bg-stone-100 text-stone-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5"
+                        className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 shadow-2xs transition-colors"
                     >
                         <Edit size={12} /> Edit Details
                     </button>
                     <button
                         onClick={() => onDelete(farmer)}
                         disabled={isDeleting}
-                        className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                        className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 shadow-2xs transition-colors disabled:opacity-50"
                     >
                         {isDeleting ? (
                             <span className="loading loading-spinner loading-xs"></span>

@@ -33,9 +33,9 @@ const ActionGroup = ({ buttons = [] }) => {
                         key={i}
                         className="group relative"
                     >
-                        {/* Custom Flat Tooltip */}
+                        {/* Custom Flat Tooltip with smooth origin-aware transition */}
                         {label && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md shadow-xs whitespace-nowrap z-50 pointer-events-none">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-150 ease-out translate-y-1 group-hover:translate-y-0 scale-95 group-hover:scale-100 bg-stone-800 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md shadow-xs whitespace-nowrap z-50">
                                 {label}
                             </div>
                         )}
@@ -47,8 +47,7 @@ const ActionGroup = ({ buttons = [] }) => {
                             className={`
                                 h-9 w-9 flex items-center justify-center
                                 border border-stone-200
-                                rounded-lg bg-white shadow-2xs transition-all duration-100
-                                active:scale-[0.98]
+                                rounded-lg bg-white shadow-2xs btn-tactile
                                 ${isDisabled
                                     ? "bg-stone-50 text-stone-300 border-stone-100 cursor-not-allowed shadow-none"
                                     : isDestructive

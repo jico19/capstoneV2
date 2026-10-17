@@ -254,18 +254,19 @@ const HogSurveyPage = () => {
         {
             header: 'Last Survey',
             accessor: 'last_survey_date',
-            render: (f) => <span className="font-mono">{f.last_survey_date || '—'}</span>,
+            render: (f) => <span className="font-mono text-stone-600">{f.last_survey_date || '—'}</span>,
         },
         {
             header: 'Records',
             accessor: 'survey_count',
             align: 'center',
+            render: (f) => <span className="font-mono font-bold">{f.survey_count}</span>,
         },
         {
             header: 'Status',
             accessor: 'is_active',
             render: (f) => (
-                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${
+                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
                     f.is_active ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
                 }`}>
                     {f.is_active ? 'Active' : 'Inactive'}
@@ -274,41 +275,101 @@ const HogSurveyPage = () => {
         },
     ];
 
-    return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-white min-h-screen font-sans">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-100 pb-8 gap-4">
-                <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">{user?.barangay_name} Records</p>
-                    <h1 className="text-3xl font-black text-stone-800 uppercase tracking-tighter leading-none">Hog Surveys</h1>
-                    <p className="text-sm text-stone-500 font-medium">Record and update swine inventory surveys for your assigned barangay</p>
+    const renderMobileRoster = (items) => (
+        <div className="divide-y divide-stone-100 p-2">
+            {items.map((f, i) => (
+                <div
+                    key={f.farmer_name || i}
+                    onClick={() => { setFilterFarmer(f.farmer_name); setOffset(0); }}
+                    className="p-3 bg-white hover:bg-green-50/50 rounded-lg flex items-center justify-between gap-2 cursor-pointer transition-colors"
+                >
+                    <div className="space-y-0.5 min-w-0">
+                        <span className="text-xs font-bold text-stone-900 block truncate">{f.farmer_name}</span>
+                        <span className="text-[11px] font-mono text-stone-500 block">{f.contact_number || 'No contact'}</span>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                            f.is_active ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400'
+                        }`}>
+                            {f.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className="text-[10px] text-stone-400 font-mono">{f.survey_count} surveys</span>
+                    </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-5 sm:space-y-6 bg-stone-50 min-h-screen font-sans">
+            {/* Header & Quick Actions */}
+            <div className="bg-white border border-stone-200 rounded-xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-green-700 bg-green-50 px-2 py-0.5 rounded-md border border-green-200 inline-block">
+                        Brgy. {user?.barangay_name} Portal
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase tracking-tight">
+                        Hog Surveys
+                    </h1>
+                    <p className="text-xs text-stone-500 font-medium">
+                        Swine population monitoring & household census for African Swine Fever prevention
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
                     <button
                         type="button"
                         onClick={() => setIsCsvModalOpen(true)}
-                        className="flex-1 sm:flex-initial bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2"
+                        className="h-11 px-4 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial"
                     >
-                        <UploadCloud size={14} /> Upload Survey
+                        <UploadCloud size={15} /> Upload CSV
                     </button>
                     <button
                         type="button"
                         onClick={() => setShowEncoder(prev => !prev)}
-                        className={`flex-1 sm:flex-initial px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 ${
-                            showEncoder 
-                                ? 'bg-white border border-stone-300 hover:bg-stone-50 text-stone-700' 
-                                : 'bg-white border border-stone-300 hover:bg-stone-50 text-stone-700'
+                        className={`h-11 px-4 text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial border ${
+                            showEncoder
+                                ? 'bg-stone-900 text-white border-stone-900'
+                                : 'bg-white border-stone-300 hover:bg-stone-50 text-stone-700'
                         }`}
                     >
-                        <Table2 size={14} /> {showEncoder ? 'Close Batch Form' : 'Batch Entry'}
+                        <Table2 size={15} /> {showEncoder ? 'Hide Batch Form' : 'Batch Entry'}
                     </button>
                     <button
                         type="button"
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex-1 sm:flex-initial bg-green-700 hover:bg-green-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2"
+                        className="h-11 px-5 bg-green-700 hover:bg-green-600 active:scale-[0.98] text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
-                        <Plus size={14} /> Add Survey
+                        <Plus size={16} /> Add Survey
                     </button>
+                </div>
+            </div>
+
+            {/* Quick Stats Bar */}
+            <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white border border-stone-200 rounded-xl p-3 sm:p-4 shadow-xs">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-stone-400 block mb-0.5">
+                        Total Surveys
+                    </span>
+                    <span className="text-lg sm:text-2xl font-black text-stone-900 font-mono">
+                        {count}
+                    </span>
+                </div>
+                <div className="bg-white border border-stone-200 rounded-xl p-3 sm:p-4 shadow-xs">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-stone-400 block mb-0.5">
+                        Active Farmers
+                    </span>
+                    <span className="text-lg sm:text-2xl font-black text-green-700 font-mono">
+                        {activeCount}
+                    </span>
+                </div>
+                <div className="bg-white border border-stone-200 rounded-xl p-3 sm:p-4 shadow-xs">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-stone-400 block mb-0.5">
+                        Due for Survey
+                    </span>
+                    <span className="text-lg sm:text-2xl font-black text-amber-700 font-mono">
+                        {inactiveCount}
+                    </span>
                 </div>
             </div>
 
@@ -330,40 +391,50 @@ const HogSurveyPage = () => {
             )}
 
             {/* Farmer Roster Panel */}
-            <div className="border border-stone-200 bg-white">
+            <div className="border border-stone-200 bg-white rounded-xl shadow-xs overflow-hidden">
                 {/* Summary bar — always visible */}
                 <button
                     onClick={() => setRosterOpen(p => !p)}
-                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-stone-50 transition-colors"
+                    className="w-full flex items-center justify-between px-4 sm:px-6 py-3.5 hover:bg-stone-50 transition-colors"
                 >
-                    <div className="flex items-center gap-3">
-                        <Users size={16} className="text-stone-400" />
-                        <span className="text-xs font-black uppercase tracking-widest text-stone-700">Farmer Roster</span>
-                        <span className="text-[9px] font-black uppercase tracking-widest bg-green-100 text-green-700 px-2 py-0.5">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <Users size={16} className="text-stone-400 shrink-0" />
+                        <span className="text-xs font-black uppercase tracking-wider text-stone-800">
+                            Registered Farmer Roster
+                        </span>
+                        <span className="text-[10px] font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded-md">
                             {activeCount} Active
                         </span>
-                        <span className="text-[9px] font-black uppercase tracking-widest bg-stone-100 text-stone-400 px-2 py-0.5">
+                        <span className="text-[10px] font-bold bg-stone-100 text-stone-600 px-2 py-0.5 rounded-md">
                             {inactiveCount} Inactive
                         </span>
                     </div>
-                    <ChevronDown size={16} className={`text-stone-400 transition-transform ${rosterOpen ? 'rotate-180' : ''}`} />
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-stone-400 hidden sm:inline">
+                            {rosterOpen ? 'Collapse Roster' : 'View Farmer List'}
+                        </span>
+                        <ChevronDown size={16} className={`text-stone-400 transition-transform ${rosterOpen ? 'rotate-180' : ''}`} />
+                    </div>
                 </button>
 
-                {/* Expanded roster table */}
+                {/* Expanded roster table / mobile cards */}
                 {rosterOpen && (
-                    <DataTable
-                        columns={rosterColumns}
-                        data={roster}
-                        keyField={(f, i) => f.farmer_name || i}
-                        onRowClick={(f) => { setFilterFarmer(f.farmer_name); setOffset(0); }}
-                        minWidth="700px"
-                        className="border-0 border-t border-stone-100"
-                        emptyState={{
-                            icon: Users,
-                            title: 'No registered farmers',
-                            description: 'No farmer survey records available for this barangay.',
-                        }}
-                    />
+                    <div className="border-t border-stone-100">
+                        <DataTable
+                            columns={rosterColumns}
+                            data={roster}
+                            keyField={(f, i) => f.farmer_name || i}
+                            onRowClick={(f) => { setFilterFarmer(f.farmer_name); setOffset(0); }}
+                            minWidth="700px"
+                            className="border-0"
+                            emptyState={{
+                                icon: Users,
+                                title: 'No registered farmers',
+                                description: 'No farmer survey records available for this barangay.',
+                            }}
+                            mobileRenderer={renderMobileRoster}
+                        />
+                    </div>
                 )}
             </div>
 

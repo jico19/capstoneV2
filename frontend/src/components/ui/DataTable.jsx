@@ -50,11 +50,14 @@ const DataTable = ({
             {mobileRenderer && (
                 <div className="block sm:hidden">
                     {isLoading ? (
-                        <div className="py-16 text-center">
-                            <Loader2 size={24} className="animate-spin text-green-700 mx-auto mb-2" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                {loadingMessage}
-                            </p>
+                        <div className="p-4 space-y-3">
+                            {[1, 2, 3].map((item) => (
+                                <div key={item} className="p-4 border border-stone-200 rounded-xl space-y-2.5">
+                                    <div className="skeleton-shimmer h-4 w-1/3 rounded-md" />
+                                    <div className="skeleton-shimmer h-3 w-3/4 rounded-md" />
+                                    <div className="skeleton-shimmer h-3 w-1/2 rounded-md" />
+                                </div>
+                            ))}
                         </div>
                     ) : data.length === 0 ? (
                         <div className="py-16 px-4 bg-stone-50/30 flex flex-col items-center justify-center text-center">
@@ -80,7 +83,9 @@ const DataTable = ({
                 <table
                     className="w-full text-left border-collapse"
                     style={{ minWidth }}
+                    aria-busy={isLoading}
                 >
+                    {isLoading && <caption className="sr-only">{loadingMessage}</caption>}
                     <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-600">
                         <tr>
                             {columns.map((col, idx) => (
@@ -98,14 +103,20 @@ const DataTable = ({
                     </thead>
                     <tbody className="divide-y divide-stone-100 text-xs text-stone-800">
                         {isLoading ? (
-                            <tr>
-                                <td colSpan={columns.length} className="py-20 text-center">
-                                    <Loader2 size={28} className="animate-spin text-green-700 mx-auto mb-2" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                        {loadingMessage}
-                                    </p>
-                                </td>
-                            </tr>
+                            <>
+                                {[1, 2, 3, 4].map((item) => (
+                                    <tr key={item} className="animate-pulse">
+                                        {columns.map((col, colIdx) => (
+                                            <td key={colIdx} className="px-6 py-4.5">
+                                                <div 
+                                                    className="skeleton-shimmer h-4 rounded-md" 
+                                                    style={{ width: `${Math.max(40, (colIdx * 17 + 55) % 85)}%` }}
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </>
                         ) : data.length === 0 ? (
                             <tr>
                                 <td colSpan={columns.length} className="py-20 bg-stone-50/30">

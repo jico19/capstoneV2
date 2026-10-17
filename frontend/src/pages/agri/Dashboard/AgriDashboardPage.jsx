@@ -58,40 +58,48 @@ const AgriOfficerKPIDashboard = () => {
                 </div>
             </div>
 
-            {/* KPI Grid */}
+            {/* KPI Grid with subtle stagger entrance */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard
-                    title="Needs Attention"
-                    value={kpis.pending_agri_review}
-                    subtitle="Requires officer verification"
-                    icon={AlertCircle}
-                    colorClass="bg-red-50 text-red-600"
-                />
-                <KPICard
-                    title="For OPV Review"
-                    value={kpis.currently_at_opv}
-                    subtitle="Awaiting health certificate"
-                    icon={Clock}
-                    colorClass="bg-blue-50 text-blue-600"
-                />
-                <KPICard
-                    title="OPV Approved"
-                    value={kpis.opv_validated || kpis.opv_approved || 0}
-                    subtitle="Health cleared / Ready to issue"
-                    icon={CheckCircle2}
-                    colorClass="bg-green-50 text-green-700"
-                />
-                <KPICard
-                    title="Awaiting Payment"
-                    value={kpis.awaiting_payment}
-                    subtitle="Pending permit fee"
-                    icon={CreditCard}
-                    colorClass="bg-amber-50 text-amber-600"
-                />
+                <div className="stagger-1">
+                    <KPICard
+                        title="Needs Attention"
+                        value={kpis.pending_agri_review}
+                        subtitle="Requires officer verification"
+                        icon={AlertCircle}
+                        colorClass="bg-red-50 text-red-600"
+                    />
+                </div>
+                <div className="stagger-2">
+                    <KPICard
+                        title="For OPV Review"
+                        value={kpis.currently_at_opv}
+                        subtitle="Awaiting health certificate"
+                        icon={Clock}
+                        colorClass="bg-blue-50 text-blue-600"
+                    />
+                </div>
+                <div className="stagger-3">
+                    <KPICard
+                        title="OPV Approved"
+                        value={kpis.opv_validated || kpis.opv_approved || 0}
+                        subtitle="Health cleared / Ready to issue"
+                        icon={CheckCircle2}
+                        colorClass="bg-green-50 text-green-700"
+                    />
+                </div>
+                <div className="stagger-4">
+                    <KPICard
+                        title="Awaiting Payment"
+                        value={kpis.awaiting_payment}
+                        subtitle="Pending permit fee"
+                        icon={CreditCard}
+                        colorClass="bg-amber-50 text-amber-600"
+                    />
+                </div>
             </div>
 
             {/* Main Visual Data Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 view-enter">
                 {/* Density Tracking - Spans 2 cols on Large */}
                 <div className="xl:col-span-2 bg-white border border-stone-200 p-6 md:p-8 rounded-xl shadow-xs flex flex-col">
                     <div className="mb-8 border-l-4 border-green-700 pl-6">

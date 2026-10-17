@@ -72,34 +72,35 @@ const ApplicationDetail = () => {
             )}
 
             <div className="max-w-5xl mx-auto p-3 sm:p-6 md:p-8 min-h-screen bg-white font-sans">
-                {/* Minimalist Flat Navigation */}
+                {/* Navigation */}
                 <button
+                    type="button"
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-stone-500 text-[10px] font-black uppercase tracking-[0.15em] hover:text-green-700 transition-all mb-4 sm:mb-8 border-b border-transparent hover:border-green-700 pb-0.5 w-fit"
+                    className="inline-flex items-center gap-2 text-stone-500 text-xs font-semibold hover:text-emerald-700 transition-colors mb-4 sm:mb-6 pb-0.5 w-fit"
                 >
-                    <ArrowLeft size={14} strokeWidth={2.5} /> Return to Applications
+                    <ArrowLeft size={15} /> Return to Applications
                 </button>
 
-                <div className="space-y-4 sm:space-y-8">
+                <div className="space-y-6 sm:space-y-8">
                     <ApplicationHeader data={application} />
 
                     <ApplicationTracker status={application.status} />
 
                     {application.aic_pdf && (
-                        <div className="bg-emerald-50 border border-emerald-300 p-3.5 sm:p-5 rounded-md flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+                        <div className="bg-emerald-50/70 border border-emerald-200 p-4 sm:p-5 rounded-xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                     <FileCheck2 size={16} className="text-emerald-700 shrink-0" />
-                                    <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest">
+                                    <h3 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
                                         Animal Inspection Certificate (AIC) Issued
                                     </h3>
                                     {application.aic_number && (
-                                        <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-0.5 border border-emerald-200 rounded">
+                                        <span className="text-[10px] font-mono font-medium bg-white text-emerald-800 px-2 py-0.5 border border-emerald-200 rounded-md">
                                             AIC #{application.aic_number}
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-xs font-bold text-emerald-800/80 uppercase tracking-wider leading-normal max-w-xl">
+                                <p className="text-xs text-emerald-800/80 leading-normal max-w-xl font-normal">
                                     Your application has been inspected and approved by MAO and forwarded to OPV. You can view or download your official AIC copy.
                                 </p>
                             </div>
@@ -108,34 +109,35 @@ const ApplicationDetail = () => {
                                     href={application.aic_pdf}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-600 px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors w-full sm:w-auto text-center flex items-center justify-center gap-2"
+                                    className="btn-tactile bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-300 px-4 py-2 text-xs font-semibold rounded-lg transition-all w-full sm:w-auto text-center flex items-center justify-center gap-1.5"
                                 >
-                                    <ExternalLink size={14} /> Open in Browser PDF Viewer
+                                    <ExternalLink size={13} /> Open in Browser
                                 </a>
                                 <a 
                                     href={application.aic_pdf}
                                     target="_blank"
                                     rel="noreferrer"
                                     download={`AIC_${application.application_id || id}.pdf`}
-                                    className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors w-full sm:w-auto text-center flex items-center justify-center gap-2"
+                                    className="btn-tactile bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 text-xs font-semibold rounded-lg shadow-xs transition-all w-full sm:w-auto text-center flex items-center justify-center gap-1.5"
                                 >
-                                    <Download size={14} /> Download AIC Copy
+                                    <Download size={13} /> Download AIC Copy
                                 </a>
                             </div>
                         </div>
                     )}
                     
                     {(application.status === "RESUBMISSION" || application.status === "OPV_REJECTED") && (
-                        <div className="bg-amber-50 border border-amber-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="bg-amber-50/80 border border-amber-200 p-4 sm:p-5 rounded-xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1">
-                                <h3 className="text-xs font-black text-amber-800 uppercase tracking-widest">Action Required</h3>
-                                <p className="text-xs font-bold text-amber-700/80 uppercase tracking-wider leading-normal max-w-xl">
+                                <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider">Action Required</h3>
+                                <p className="text-xs text-amber-800 leading-normal max-w-xl font-normal">
                                     Your application was returned for correction. Please update your details or documents to proceed.
                                 </p>
                             </div>
                             <button 
+                                type="button"
                                 onClick={() => navigate(`/farmer/application/resubmit/${id}`)}
-                                className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto text-center"
+                                className="btn-tactile bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 text-xs font-semibold rounded-lg shadow-xs transition-all w-full md:w-auto text-center"
                             >
                                 Resubmit Now
                             </button>
@@ -143,21 +145,22 @@ const ApplicationDetail = () => {
                     )}
 
                     {application.status === "PAYMENT_PENDING" && (
-                        <div className="bg-green-50 border border-green-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="bg-emerald-50/80 border border-emerald-200 p-4 sm:p-5 rounded-xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-2.5">
-                                    <h3 className="text-xs font-black text-green-700 uppercase tracking-widest">Payment Required</h3>
+                                    <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payment Required</h3>
                                     {application.issued_permit?.payment_deadline && (
                                         <PaymentCountdownTimer compact deadline={application.issued_permit.payment_deadline} />
                                     )}
                                 </div>
-                                <p className="text-xs font-bold text-green-700/80 uppercase tracking-wider leading-normal max-w-xl">
+                                <p className="text-xs text-emerald-700 leading-normal max-w-xl font-normal">
                                     Your application has been approved. Please complete the permit fee payment to release your transport permit.
                                 </p>
                             </div>
                             <button 
+                                type="button"
                                 onClick={() => navigate(`/farmer/payment/checkout/${id}`)}
-                                className="bg-green-700 hover:bg-green-600 text-white px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
+                                className="btn-tactile bg-emerald-700 hover:bg-emerald-600 text-white px-5 py-2.5 text-xs font-semibold rounded-lg shadow-xs transition-all w-full md:w-auto flex items-center justify-center gap-2"
                             >
                                 <HandCoins size={14} /> Pay Fee (₱{application.permit_fee || 150})
                             </button>
@@ -165,16 +168,20 @@ const ApplicationDetail = () => {
                     )}
 
                     {['PAID', 'RELEASED'].includes(application.status) && (
-                        <div className="bg-stone-800 border border-stone-700 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
+                        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-stone-900 border border-emerald-800/40 p-5 sm:p-6 rounded-xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
                             <div className="space-y-1">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-green-600">Permit Issued</h3>
-                                <p className="text-xs font-bold text-stone-300 uppercase tracking-wider leading-normal max-w-xl">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-300">Permit Issued</h3>
+                                </div>
+                                <p className="text-xs text-stone-300 leading-normal max-w-xl font-normal">
                                     Your transport permit is active and ready to use. Download or view your official PDF copy.
                                 </p>
                             </div>
                             <button 
+                                type="button"
                                 onClick={() => navigate(`/farmer/application/download/${id}`)}
-                                className="bg-green-700 hover:bg-green-600 text-white px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-none w-full md:w-auto flex items-center justify-center gap-2"
+                                className="btn-tactile bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 text-xs font-semibold rounded-lg shadow-xs transition-all w-full md:w-auto flex items-center justify-center gap-2"
                             >
                                 <Download size={14} /> Get Permit PDF
                             </button>
@@ -182,25 +189,25 @@ const ApplicationDetail = () => {
                     )}
                     
                     {application.origins && application.origins.length > 0 && (
-                        <div className="border border-stone-200 bg-white p-5 space-y-3">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-stone-700">
+                        <div className="border border-stone-200 bg-white p-5 space-y-3 rounded-xl shadow-xs">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700">
                                 Swine Source & Origin Details
                             </h3>
                             <div className="divide-y divide-stone-100">
                                 {application.origins.map((orig, idx) => (
                                     <div key={orig.id || idx} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                                         <div>
-                                            <span className="text-xs font-bold text-stone-800 uppercase">
+                                            <span className="text-xs font-semibold text-stone-800 uppercase">
                                                 Location #{idx + 1}: Barangay {orig.barangay_name}
                                             </span>
                                             {orig.source_farmer_name && (
-                                                <p className="text-[10px] font-medium text-stone-500">
-                                                    Source Farmer: <span className="font-bold text-stone-700">{orig.source_farmer_name}</span>
+                                                <p className="text-xs font-medium text-stone-500">
+                                                    Source Farmer: <span className="font-semibold text-stone-700">{orig.source_farmer_name}</span>
                                                     {orig.source_phone_no ? ` • ${orig.source_phone_no}` : ''}
                                                 </p>
                                             )}
                                         </div>
-                                        <span className="text-xs font-black font-mono text-stone-800">
+                                        <span className="text-xs font-bold font-mono text-stone-800 bg-stone-50 px-2.5 py-1 rounded-md border border-stone-200">
                                             {orig.number_of_pigs} pigs
                                         </span>
                                     </div>
@@ -212,12 +219,12 @@ const ApplicationDetail = () => {
                     <section className="pt-2">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="bg-stone-900 text-white p-2.5 hidden sm:block">
+                                <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100 hidden sm:block">
                                     <FileText size={18} />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">Submission Evidence</p>
-                                    <h2 className="text-xl font-black text-stone-900 uppercase tracking-tight leading-none">Attached Documents</h2>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Submission Evidence</p>
+                                    <h2 className="text-lg sm:text-xl font-bold text-stone-900 uppercase tracking-tight leading-none">Attached Documents</h2>
                                 </div>
                             </div>
                             <div className="h-[1px] flex-1 bg-stone-200 hidden sm:block"></div>
@@ -231,17 +238,17 @@ const ApplicationDetail = () => {
                 </div>
 
                 {['SUBMITTED', 'DRAFT', 'MANUAL', 'OCR_VALIDATED', 'RESUBMISSION'].includes(application.status) && !application.is_checked && (
-                    <div className="bg-amber-50 border border-amber-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="mt-8 bg-stone-50 border border-stone-200 p-4 sm:p-5 rounded-xl shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <h3 className="text-xs font-black uppercase tracking-widest text-amber-900">Need to Cancel this Request?</h3>
-                            <p className="text-[11px] font-medium text-amber-800 mt-0.5">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-800">Need to Cancel this Request?</h3>
+                            <p className="text-xs text-stone-500 mt-0.5 font-normal">
                                 You can cancel your permit request before MAO staff inspects or processes it.
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setConfirmCancel(true)}
-                            className="px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-[10px] font-black uppercase tracking-widest transition-colors shrink-0 flex items-center gap-1.5"
+                            className="btn-tactile px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold rounded-lg transition-all shrink-0 flex items-center gap-1.5"
                         >
                             <XCircle size={14} /> Cancel Request
                         </button>

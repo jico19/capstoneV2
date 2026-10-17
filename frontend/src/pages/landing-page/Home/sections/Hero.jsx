@@ -18,16 +18,14 @@ export default function Hero() {
 
           {/* Title */}
           <h1 className="font-archivo text-[clamp(36px,4.5vw,56px)] leading-[1.08] text-white mb-6 tracking-[-0.02em]">
-            Streamline Your<br />
+            Apply for Sariaya<br />
             <span className="text-brand-amber">Livestock Transport</span><br />
-            Permits
+            Permits Online
           </h1>
 
           {/* Subtitle */}
           <p className="font-jakarta text-[16px] leading-[1.75] text-white/70 mb-10 max-w-[480px] max-[900px]:mx-auto font-normal">
-            FarmPass digitizes the livestock shipping permit workflow for Sariaya.
-            Apply for transport permits online, track regulatory reviews in real-time,
-            and present verified permits at municipal checkpoints.
+            Submit livestock transport permit applications, monitor Municipal Agriculture Office and provincial veterinary reviews, and carry verified QR credentials for municipal checkpoints.
           </p>
 
           {/* Actions */}

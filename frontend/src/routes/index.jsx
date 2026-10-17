@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import ProtectedRoute from "./protectedRoute";
 import RootRedirect from "./RootRedirect";
@@ -52,7 +52,6 @@ const AgriReportsPage = lazy(() => import("../pages/agri/Reports/AgriReportsPage
 const AuditTrailPage = lazy(() => import("../pages/agri/Audit/AuditTrailPage"));
 const FarmerManagementPage = lazy(() => import("../pages/agri/FarmerManagementPage"));
 const BarangayOfficialManagementPage = lazy(() => import("../pages/agri/BarangayOfficialManagementPage"));
-const AgriSystemSettings = lazy(() => import("../pages/agri/SystemSettings/AgriSystemSettings"));
 
 // barangay
 const BarangayDashboard = lazy(() => import("../pages/barangay/Dashboard/BarangayDashboard"));
@@ -128,7 +127,7 @@ const router = createBrowserRouter([
             { path: 'barangay-officials/', element: withSuspense(BarangayOfficialManagementPage) },
             { path: 'notification/', element: withSuspense(NotificationPage) },
             { path: 'settings/', element: withSuspense(SettingsPage) },
-            { path: 'system-settings/', element: withSuspense(AgriSystemSettings) },
+            { path: 'system-settings/', element: <Navigate to="/agri/settings?tab=system" replace /> },
         ]
     },
     // barangay official route

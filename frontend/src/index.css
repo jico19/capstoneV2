@@ -427,3 +427,123 @@
   border: 0.3rem solid transparent; border-top-color: var(--tooltip-color, #333);
 }
 .profile-card-social-btn:hover .profile-card-tooltip { opacity: 1; scale: 1; }
+
+/* ==========================================================================
+   FARMPASS DIGNIFIED MOTION SYSTEM (Design System 2.1 + Emil Kowalski)
+   ========================================================================== */
+
+:root {
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes beaconPing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.3;
+  }
+}
+
+/* Tactile button feedback: snappy press (<160ms) with hardware-accelerated transform */
+.btn-tactile {
+  transition: transform 140ms var(--ease-out-quint), background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  will-change: transform;
+}
+.btn-tactile:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Interactive card micro-lift */
+.card-interactive {
+  transition: transform 180ms var(--ease-out-quint), border-color 180ms ease, box-shadow 180ms ease;
+  will-change: transform;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive:hover {
+    transform: translateY(-2px);
+  }
+}
+.card-interactive:active {
+  transform: scale(0.99);
+}
+
+/* Modal decelerating entrance */
+.modal-enter {
+  animation: modalEnter 180ms var(--ease-out-quint) forwards;
+}
+
+/* Fluid view/step crossfade */
+.view-enter {
+  animation: fadeInUp 180ms var(--ease-out-quint) forwards;
+}
+
+/* Stagger entrance utility for dashboards & lists */
+.stagger-1 {
+  animation: fadeInUp 200ms var(--ease-out-quint) both;
+  animation-delay: 0ms;
+}
+.stagger-2 {
+  animation: fadeInUp 200ms var(--ease-out-quint) both;
+  animation-delay: 40ms;
+}
+.stagger-3 {
+  animation: fadeInUp 200ms var(--ease-out-quint) both;
+  animation-delay: 80ms;
+}
+.stagger-4 {
+  animation: fadeInUp 200ms var(--ease-out-quint) both;
+  animation-delay: 120ms;
+}
+
+/* Skeleton shimmer pulse for tables */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f5f5f4 25%, #e7e5e3 50%, #f5f5f4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Accessibility: Safe fallback when users prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn-tactile:active:not(:disabled),
+  .card-interactive:hover,
+  .card-interactive:active {
+    transform: none !important;
+  }
+}
+

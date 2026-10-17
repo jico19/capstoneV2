@@ -183,21 +183,22 @@ const OPVApplicationDetail = () => {
             <div className="flex-1 max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white space-y-12">
                 {/* Navigation */}
                 <button
+                    type="button"
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-stone-500 text-[10px] font-black uppercase tracking-[0.2em] hover:text-green-700 transition-all border-b-2 border-transparent hover:border-green-700 w-fit pb-1"
+                    className="inline-flex items-center gap-2 text-stone-500 text-xs font-semibold hover:text-emerald-700 transition-colors w-fit pb-1"
                 >
-                    <ArrowLeft size={16} strokeWidth={3} /> Return to Application List
+                    <ArrowLeft size={16} /> Return to Application List
                 </button>
 
-                <div className="space-y-12">
+                <div className="space-y-8">
                     {/* Header Info */}
                     <ApplicationHeader data={application} />
 
                     {application.origins && application.origins.length > 0 && (
                         <div className="border border-stone-200 bg-white p-6 space-y-4 rounded-xl shadow-xs">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Provincial Review</p>
-                                <h3 className="text-lg font-black text-stone-800 uppercase tracking-tight">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Provincial Review</p>
+                                <h3 className="text-base font-bold text-stone-800 uppercase tracking-tight">
                                     Swine Source Farms & Origins
                                 </h3>
                             </div>
@@ -205,19 +206,19 @@ const OPVApplicationDetail = () => {
                                 {application.origins.map((orig, idx) => (
                                     <div key={orig.id || idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                         <div className="space-y-0.5">
-                                            <span className="text-sm font-bold text-stone-800 uppercase">
+                                            <span className="text-sm font-semibold text-stone-800 uppercase">
                                                 Location #{idx + 1}: Barangay {orig.barangay_name}
                                             </span>
                                             {orig.source_farmer_name ? (
                                                 <p className="text-xs font-medium text-stone-500">
-                                                    Source Farmer: <span className="font-bold text-stone-800">{orig.source_farmer_name}</span>
+                                                    Source Farmer: <span className="font-semibold text-stone-800">{orig.source_farmer_name}</span>
                                                     {orig.source_phone_no ? ` • Contact: ${orig.source_phone_no}` : ''}
                                                 </p>
                                             ) : (
                                                 <p className="text-xs text-stone-400 italic">Source farmer not specified</p>
                                             )}
                                         </div>
-                                        <span className="text-xs font-black font-mono text-stone-800 bg-stone-50 px-3 py-1.5 border border-stone-200 rounded-md">
+                                        <span className="text-xs font-bold font-mono text-stone-800 bg-stone-50 px-3 py-1.5 border border-stone-200 rounded-md">
                                             {orig.number_of_pigs} pigs
                                         </span>
                                     </div>
@@ -230,36 +231,36 @@ const OPVApplicationDetail = () => {
                     <section className="space-y-6">
                         <div className="flex items-center gap-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 1</p>
-                                <h2 className="text-2xl font-black text-stone-900 tracking-tight">Check Documents</h2>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Step 1</p>
+                                <h2 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">Check Documents</h2>
                             </div>
-                            <div className="h-[2px] flex-1 bg-stone-200"></div>
+                            <div className="h-[1px] flex-1 bg-stone-200"></div>
                         </div>
 
                         {application.aic_pdf && (
-                            <div className="bg-emerald-50/70 border-2 border-emerald-600 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div className="space-y-1">
+                            <div className="bg-emerald-50/70 border border-emerald-200 p-5 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1.5">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                                        <span className="bg-emerald-700 text-white text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md">
                                             MAO Official Certificate
                                         </span>
-                                        <span className="text-xs font-mono font-bold text-emerald-950">
+                                        <span className="text-xs font-mono font-medium text-emerald-950">
                                             AIC No: {application.aic_number || "PENDING"}
                                         </span>
                                         {application.opv_validation?.aic_verified ? (
-                                            <span className="bg-emerald-800 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 flex items-center gap-1">
-                                                <FileCheck2 size={10} /> Verified by OPV
+                                            <span className="bg-emerald-800 text-white text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1">
+                                                <FileCheck2 size={12} /> Verified by OPV
                                             </span>
                                         ) : application.status === "FORWARDED_TO_OPV" ? (
-                                            <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                                            <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md">
                                                 Awaiting OPV Verification
                                             </span>
                                         ) : null}
                                     </div>
-                                    <h3 className="text-base font-black text-stone-900 uppercase tracking-tight">
+                                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-tight">
                                         Animal Inspection Certificate (AIC)
                                     </h3>
-                                    <p className="text-xs text-stone-600 font-medium">
+                                    <p className="text-xs text-stone-600 font-normal leading-relaxed">
                                         Certified by the Municipal Agriculture Office. Swine health & origin verified prior to provincial forwarding.
                                     </p>
                                 </div>
@@ -267,7 +268,7 @@ const OPVApplicationDetail = () => {
                                     <button
                                         type="button"
                                         onClick={() => viewDocument(`aic-${application.id}`)}
-                                        className="bg-emerald-800 hover:bg-emerald-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 transition-colors flex items-center gap-1.5"
+                                        className="btn-tactile bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-xs transition-all flex items-center gap-1.5"
                                     >
                                         <FileCheck2 size={14} /> Inspect AIC
                                     </button>
@@ -275,7 +276,7 @@ const OPVApplicationDetail = () => {
                                         href={application.aic_pdf}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="border border-emerald-600 hover:bg-emerald-100 text-emerald-900 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 transition-colors flex items-center gap-1.5"
+                                        className="btn-tactile border border-emerald-300 hover:bg-emerald-100/70 text-emerald-900 text-xs font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5"
                                     >
                                         <ExternalLink size={14} /> Open PDF
                                     </a>
@@ -291,13 +292,13 @@ const OPVApplicationDetail = () => {
 
                     {/* Actions Section */}
                     {application.status === "FORWARDED_TO_OPV" ? (
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                             <div className="flex items-center gap-6">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 2</p>
-                                    <h2 className="text-2xl font-black text-stone-900 tracking-tight">Health Validation</h2>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Step 2</p>
+                                    <h2 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">Health Validation</h2>
                                 </div>
-                                <div className="h-[2px] flex-1 bg-stone-200"></div>
+                                <div className="h-[1px] flex-1 bg-stone-200"></div>
                             </div>
                             <OPVApprovalControls
                                 aicNumber={application.aic_number}
@@ -308,10 +309,10 @@ const OPVApplicationDetail = () => {
                             />
                         </div>
                     ) : (
-                        <div className="bg-stone-50 border border-stone-200 p-8 flex flex-col items-center text-center gap-3 rounded-xl shadow-xs">
-                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Validation Status</p>
-                            <p className="text-sm font-black text-stone-900 uppercase">
-                                Current State: <span className="text-green-700">{application.status_display}</span>
+                        <div className="bg-white border border-stone-200 p-6 sm:p-8 flex flex-col items-center text-center gap-2 rounded-xl shadow-xs">
+                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Validation Status</p>
+                            <p className="text-sm font-semibold text-stone-900">
+                                Current State: <span className="text-emerald-700 font-bold">{application.status_display}</span>
                             </p>
                         </div>
                     )}

@@ -185,7 +185,7 @@ const DocumentVerificationPage = () => {
                     </div>
                     <div className="space-y-2">
                         <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-stone-900">
-                            Documents Submitted — Waiting for Verification
+                            Documents Submitted: Pending Verification
                         </h2>
                         <p className="text-xs sm:text-sm text-stone-700 max-w-xl mx-auto font-medium">
                             Your two required credentials have been uploaded and are now pending
@@ -294,7 +294,7 @@ const DocumentVerificationPage = () => {
                             </span>
                         </div>
                         <p className="text-xs text-amber-700">
-                            Your submitted documents have been received and are currently being reviewed by MAO staff. You will receive an SMS notification once approved. Permit requests will unlock automatically.
+                            Your submitted documents have been received and are currently being reviewed by MAO staff. You will receive an SMS notification once approved. Permit applications will become available once verified.
                         </p>
                     </div>
                 </div>

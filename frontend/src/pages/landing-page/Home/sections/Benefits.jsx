@@ -1,59 +1,54 @@
 import { useRef, useEffect } from "react";
 import useScrollReveal from '../../../../hooks/useScrollReveal';
-import TimeMoney    from '../../../../assets/home-icons/time-money.svg';
-import Hours24      from '../../../../assets/home-icons/24hours-icon.svg';
-import Tracking     from '../../../../assets/home-icons/tracking-icon.svg';
-import Disease      from '../../../../assets/home-icons/disease-icon.svg';
-import ErrorIcon    from '../../../../assets/home-icons/error-icon.svg';
-import Transparency from '../../../../assets/home-icons/transparency-icon.svg';
-import BenefitsBg   from '../../../../assets/home-icons/benefits-bg.jpg';
+import { Timer, Clock, Activity, ShieldAlert, FileCheck2, ScrollText } from "lucide-react";
+import BenefitsBg from '../../../../assets/home-icons/benefits-bg.jpg';
 
 const BENEFITS = [
   {
-    icon: TimeMoney,
+    icon: Timer,
+    color: "text-amber-300",
     title: "Reduced Transit Delays",
     desc: "Apply online prior to transport. Skip long checkpoint queues and avoid unnecessary travel to the municipal hall.",
     bg: "bg-amber-400/15 border-amber-400/30",
-    filter: "invert(70%) sepia(85%) saturate(1200%) hue-rotate(5deg) brightness(98%)", // warm amber
   },
   {
-    icon: Hours24,
+    icon: Clock,
+    color: "text-emerald-300",
     title: "24/7 Portal Access",
     desc: "Submit permit requests outside regular office hours for early morning livestock dispatches.",
     bg: "bg-emerald-400/15 border-emerald-400/30",
-    filter: "invert(65%) sepia(60%) saturate(600%) hue-rotate(100deg) brightness(98%)", // emerald
   },
   {
-    icon: Tracking,
+    icon: Activity,
+    color: "text-sky-300",
     title: "Real-Time Tracking",
     desc: "Monitor your permit's progress across barangay endorsement and provincial veterinary clearance.",
     bg: "bg-sky-400/15 border-sky-400/30",
-    filter: "invert(65%) sepia(60%) saturate(700%) hue-rotate(170deg) brightness(100%)", // sky blue
   },
   {
-    icon: Disease,
+    icon: ShieldAlert,
+    color: "text-rose-300",
     title: "Biosecurity Protection",
     desc: "Supports Sariaya's African Swine Fever surveillance by verifying origin zones and health inspections.",
     bg: "bg-rose-400/15 border-rose-400/30",
-    filter: "invert(65%) sepia(60%) saturate(900%) hue-rotate(320deg) brightness(98%)", // rose/coral
   },
   {
-    icon: ErrorIcon,
+    icon: FileCheck2,
+    color: "text-indigo-300",
     title: "Document Accuracy",
     desc: "Instant document checks flag incomplete or unverified credentials before submission.",
     bg: "bg-indigo-400/15 border-indigo-400/30",
-    filter: "invert(70%) sepia(50%) saturate(700%) hue-rotate(200deg) brightness(100%)", // indigo
   },
   {
-    icon: Transparency,
+    icon: ScrollText,
+    color: "text-teal-300",
     title: "Official Audit Trail",
     desc: "Every permit approval and checkpoint scan is permanently logged in the municipal records.",
     bg: "bg-teal-400/15 border-teal-400/30",
-    filter: "invert(65%) sepia(60%) saturate(600%) hue-rotate(130deg) brightness(98%)", // teal
   },
 ];
 
-function BenefitCard({ icon, title, desc, bg, filter }) {
+function BenefitCard({ icon: Icon, color, title, desc, bg }) {
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -73,7 +68,7 @@ function BenefitCard({ icon, title, desc, bg, filter }) {
 
       {/* Icon */}
       <div className={`w-10 h-10 ${bg} border rounded-md flex items-center justify-center mb-3 transition-transform duration-200 group-hover:scale-105`}>
-        <img src={icon} alt="" className="w-5 h-5 object-contain" style={{ filter }} />
+        <Icon className={`w-5 h-5 ${color}`} strokeWidth={2} />
       </div>
 
       <h3 className="font-archivo text-[15px] text-white mb-1.5 tracking-tight">{title}</h3>

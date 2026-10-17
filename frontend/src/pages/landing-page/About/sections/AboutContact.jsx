@@ -1,32 +1,33 @@
 import { useRef, useEffect } from "react";
 import useScrollReveal from "../../../../hooks/useScrollReveal";
-import PhoneIcon    from "../../../../assets/about-icons/phone.png";
-import LocationIcon from "../../../../assets/about-icons/location.png";
-import ServicesIcon from "../../../../assets/about-icons/services.png";
-import ClockIcon    from "../../../../assets/about-icons/clock.png";
+import { MapPin, Clock, Phone, Headphones } from "lucide-react";
 import LoginBg      from "../../../../assets/login-bg.png";
 
 const CARDS = [
   {
-    icon: LocationIcon,
+    icon: MapPin,
+    color: "text-amber-300",
     title: "Office Location",
     lines: ["Municipal Agriculture Office", "Ground Floor, Sariaya Municipal Hall", "Sariaya, Quezon Province 4322"],
     bg: "bg-amber-400/15 border-amber-400/30",
   },
   {
-    icon: ClockIcon,
+    icon: Clock,
+    color: "text-emerald-300",
     title: "Service Hours",
     lines: ["Monday to Friday", "8:00 AM – 5:00 PM", "Closed on weekends and public holidays"],
     bg: "bg-emerald-400/15 border-emerald-400/30",
   },
   {
-    icon: PhoneIcon,
+    icon: Phone,
+    color: "text-sky-300",
     title: "Direct Inquiries",
     lines: ["Office: (042) 525-8200", "Email: agri@sariaya.gov.ph", "Official Portal: sariaya.gov.ph"],
     bg: "bg-sky-400/15 border-sky-400/30",
   },
   {
-    icon: ServicesIcon,
+    icon: Headphones,
+    color: "text-teal-300",
     title: "Online Permitting",
     lines: ["Permit application: 24/7 online", "Staff review: Regular office hours", "Checkpoint QR scans: Active anytime"],
     bg: "bg-teal-400/15 border-teal-400/30",
@@ -46,6 +47,8 @@ function ContactCard({ card }) {
     return () => observer.disconnect();
   }, []);
 
+  const Icon = card.icon;
+
   return (
     <div ref={ref}
       className="contact-card-inner bg-white/10 border border-white/20 p-5 rounded-lg box-border w-full opacity-0 transition-[opacity,transform,background-color] duration-200 hover:bg-white/15 group">
@@ -53,7 +56,7 @@ function ContactCard({ card }) {
       <div className="flex items-start gap-4">
         {/* Icon wrap */}
         <div className={`w-11 h-11 shrink-0 ${card.bg} border rounded-md flex items-center justify-center mt-0.5 transition-transform duration-200 group-hover:scale-105`}>
-          <img src={card.icon} alt="" className="w-5 h-5 object-contain" />
+          <Icon className={`w-5 h-5 ${card.color}`} strokeWidth={2} />
         </div>
 
         <div className="min-w-0">

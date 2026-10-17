@@ -1,24 +1,24 @@
 import { useRef, useEffect } from "react";
 import useScrollReveal from '../../../../hooks/useScrollReveal';
-import AppGuideIcon from '../../../../assets/requirements-icons/app-guide-icon.png';
+import { ListOrdered } from "lucide-react";
 
 const STEPS = [
   { n: "1", title: "Create Account & Login",
     desc: "Register on FarmPass with your mobile number for SMS notifications. Verify your account through the code sent to your phone. Login to access the application dashboard." },
   { n: "2", title: "Prepare Documents",
-    desc: "Gather required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Inspection (CIS), and Endorsement Form (if transporting outside Sariaya). Scan or take clear photos ensuring files are under size limits." },
+    desc: "Gather required documents: Handler's License, Transport Carrier Registration, Trader's Pass, Certificate of Inspection (CIS), and Barangay Endorsement (if transporting outside Sariaya). Clear scans or photos must be under 10MB each." },
   { n: "3", title: "Fill Application Form",
     desc: "Complete the online form with source details (owner name, barangay, address), livestock information (type, quantity), destination details, and transport information. Provide accurate data for all required fields." },
   { n: "4", title: "Upload Documents",
-    desc: "Upload all required documents in acceptable formats (PDF, JPG, PNG). System will automatically extract data using OCR and validate document authenticity using ML fraud detection. Documents will be cross-checked with census data." },
+    desc: "Upload required credentials in PDF, JPG, or PNG format. The system extracts document details using OCR and cross-references declared animal counts against barangay livestock census records." },
   { n: "5", title: "Review & Submit",
-    desc: "Review all entered information and uploaded documents for accuracy. Make any necessary corrections. Once satisfied, confirm and submit your application. You'll receive immediate SMS confirmation with your tracking number." },
-  { n: "6", title: "Make Payment",
-    desc: "Pay the permit fee through available payment options: online payment (GCash, PayMaya, Bank Transfer) or in-person at the office. Upload payment proof if paying online or get official receipt if paying at the office." },
-  { n: "7", title: "Wait for Approval",
-    desc: "Agriculture office staff will review your application and verify payment. Average processing time: 15–30 minutes during office hours. You'll receive SMS updates on status changes (Under Review, Approved, or Rejected with reasons)." },
-  { n: "8", title: "Receive Permit",
-    desc: "Once approved and payment confirmed, download your digital permit with QR code from your dashboard or collect printed copy from the office. Permit is valid for the specified transport date and route only. Present QR code at checkpoints during transport." },
+    desc: "Review all entered information and uploaded documents for accuracy. Make any necessary corrections. Once satisfied, confirm and submit your application. You will receive an immediate SMS confirmation with your tracking number." },
+  { n: "6", title: "Official Review & Approval",
+    desc: "Municipal Agriculture Office (MAO) and Provincial Veterinarian (OPV) staff review your submitted application and inspect health documents. Average turnaround: 15 to 30 minutes during office hours. You will receive SMS alerts upon approval." },
+  { n: "7", title: "Complete Payment",
+    desc: "Once approved, settle the ₱150 statutory fee online (GCash, Maya, or card via PayMongo) or over-the-counter at the Municipal Hall Treasury. Digital permits are released immediately upon payment confirmation." },
+  { n: "8", title: "Receive & Download Permit",
+    desc: "Your official livestock transport permit with checkpoint QR verification is available in your dashboard. Download the PDF to your device or present the QR code at roadside inspection checkpoints." },
 ];
 
 function GuideStep({ step, index }) {
@@ -69,7 +69,7 @@ export default function AppGuide() {
         {/* Header */}
         <div ref={headerRef} className="reveal-block flex items-center gap-3 pb-3 border-b border-stone-200 mb-2">
           <div className="w-10 h-10 bg-sky-50 border border-sky-200 rounded-md flex items-center justify-center shrink-0">
-            <img src={AppGuideIcon} alt="" className="w-5 h-5 object-contain" />
+            <ListOrdered className="w-5 h-5 text-sky-700" strokeWidth={2} />
           </div>
           <h2 className="font-archivo text-2xl text-stone-900 font-bold tracking-tight">Step-by-Step Application Guide</h2>
         </div>

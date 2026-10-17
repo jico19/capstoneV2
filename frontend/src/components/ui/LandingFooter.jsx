@@ -1,8 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import PhoneIcon    from '../../assets/home-icons/phone.png';
-import MailIcon     from '../../assets/home-icons/mail.png';
-import LocationIcon from '../../assets/home-icons/location.png';
-import WebIcon      from '../../assets/home-icons/web.png';
+import { Phone, Mail, MapPin, Globe } from "lucide-react";
 import LogoImg      from '../../assets/farmpass-logo.png';
 import AgriLogo     from '../../assets/sariaya-agri-logo.jpg';
 
@@ -21,10 +18,10 @@ const ACCOUNT_LINKS = [
 const GMAPS_URL = "https://www.google.com/maps/place/New+Sariaya+Municipal+Hall/@13.9569516,121.5118002,1151m/data=!3m1!1e3!4m6!3m5!1s0x33bd4f001084db1b:0xb64703c8f579b191!8m2!3d13.9566288!4d121.5140318!16s%2Fg%2F11xd8mkr77?entry=ttu";
 
 const CONTACT_ITEMS = [
-  { icon: PhoneIcon,    alt: "Phone",    label: "(042) 525-8200 (MAO Sariaya)",              href: "tel:0425258200"                    },
-  { icon: MailIcon,     alt: "Email",    label: "agri@sariaya.gov.ph",                       href: "mailto:agri@sariaya.gov.ph"        },
-  { icon: LocationIcon, alt: "Location", label: "New Municipal Hall, Sariaya, Quezon",      href: GMAPS_URL                           },
-  { icon: WebIcon,      alt: "Website",  label: "sariaya.gov.ph",                            href: "https://www.sariaya.gov.ph"        },
+  { icon: Phone,  alt: "Phone",    label: "(042) 525-8200 (MAO Sariaya)",         href: "tel:0425258200"             },
+  { icon: Mail,   alt: "Email",    label: "agri@sariaya.gov.ph",                  href: "mailto:agri@sariaya.gov.ph" },
+  { icon: MapPin, alt: "Location", label: "New Municipal Hall, Sariaya, Quezon", href: GMAPS_URL                    },
+  { icon: Globe,  alt: "Website",  label: "sariaya.gov.ph",                       href: "https://www.sariaya.gov.ph" },
 ];
 
 export default function Footer() {
@@ -50,7 +47,7 @@ export default function Footer() {
 
           {/* Tagline */}
           <p className="text-sm leading-relaxed text-stone-400 mb-6 max-w-[280px] max-[1024px]:max-w-full">
-            Municipal livestock transport permit management for Sariaya, Quezon. Fast, auditable, and regulatory compliant.
+            Municipal livestock transport permit management for Sariaya, Quezon. Fast, auditable, and compliant with local agricultural ordinances.
           </p>
 
           {/* Official badge */}
@@ -112,13 +109,10 @@ export default function Footer() {
             Contact
           </h4>
           <ul className="list-none p-0 m-0 flex flex-col gap-3">
-            {CONTACT_ITEMS.map(({ icon, alt, label, href }) => (
+            {CONTACT_ITEMS.map(({ icon: Icon, alt, label, href }) => (
               <li key={alt} className="flex items-start gap-3">
                 <div className="w-8 h-8 bg-stone-900 border border-stone-800 flex items-center justify-center shrink-0 rounded-md">
-                  <img
-                    src={icon} alt={alt}
-                    className="w-4 h-4 object-contain transition-transform duration-150 hover:scale-110"
-                  />
+                  <Icon size={16} className="text-stone-400 group-hover:text-white transition-colors" />
                 </div>
                 <a
                   href={href}

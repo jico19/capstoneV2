@@ -21,80 +21,80 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs">
-            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-white w-full max-w-xl border border-stone-200 shadow-xl rounded-2xl overflow-hidden max-h-[90vh] flex flex-col modal-enter">
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100 bg-stone-50 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <Users size={18} className="text-stone-700" />
-                        <h3 className="text-xs font-black text-stone-800 uppercase tracking-widest">
+                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-200 bg-stone-50/60 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <Users size={18} className="text-emerald-700" />
+                        <h3 className="text-sm font-bold text-stone-900 tracking-tight">
                             {isEdit ? "Update Farmer Profile" : "Register Swine Owner"}
                         </h3>
                     </div>
-                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
-                        <X size={20} />
+                    <button onClick={onClose} disabled={isSubmitting} className="text-stone-400 hover:text-stone-600 p-1.5 rounded-lg hover:bg-stone-100 transition-colors">
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Username */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Username / Account ID</label>
+                            <label className="text-xs font-semibold text-stone-700">Username / Account ID</label>
                             <input
                                 type="text"
                                 {...register('username', { required: "Username is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                                 placeholder="john_doe"
                             />
-                            {errors.username && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.username.message}</p>}
+                            {errors.username && <p className="text-xs font-medium text-rose-600 mt-1">{errors.username.message}</p>}
                         </div>
 
                         {/* Password (only if registering) */}
                         {!isEdit && (
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Account Password</label>
+                                <label className="text-xs font-semibold text-stone-700">Account Password</label>
                                 <input
                                     type="password"
                                     {...register('password', { required: "Password is required for new accounts." })}
                                     disabled={isSubmitting}
-                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                    className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                                     placeholder="••••••••"
                                 />
-                                {errors.password && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.password.message}</p>}
+                                {errors.password && <p className="text-xs font-medium text-rose-600 mt-1">{errors.password.message}</p>}
                             </div>
                         )}
                         
                         {/* First Name */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">First Name</label>
+                            <label className="text-xs font-semibold text-stone-700">First Name</label>
                             <input
                                 type="text"
                                 {...register('first_name', { required: "First name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                                 placeholder="Juan"
                             />
-                            {errors.first_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.first_name.message}</p>}
+                            {errors.first_name && <p className="text-xs font-medium text-rose-600 mt-1">{errors.first_name.message}</p>}
                         </div>
 
                         {/* Last Name */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Last Name</label>
+                            <label className="text-xs font-semibold text-stone-700">Last Name</label>
                             <input
                                 type="text"
                                 {...register('last_name', { required: "Last name is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                                 placeholder="Dela Cruz"
                             />
-                            {errors.last_name && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.last_name.message}</p>}
+                            {errors.last_name && <p className="text-xs font-medium text-rose-600 mt-1">{errors.last_name.message}</p>}
                         </div>
 
                         {/* Phone Number */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Contact Number</label>
+                            <label className="text-xs font-semibold text-stone-700">Contact Number</label>
                             <input
                                 type="text"
                                 {...register('phone_no', { 
@@ -105,81 +105,81 @@ const FarmerFormModal = ({ user, onClose, onSubmit, isSubmitting, barangays }) =
                                     }
                                 })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                                 placeholder="09171234567"
                             />
-                            {errors.phone_no && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.phone_no.message}</p>}
+                            {errors.phone_no && <p className="text-xs font-medium text-rose-600 mt-1">{errors.phone_no.message}</p>}
                         </div>
 
                         {/* Barangay Dropdown */}
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Barangay</label>
+                            <label className="text-xs font-semibold text-stone-700">Barangay</label>
                             <select
                                 {...register('barangay', { required: "Selecting a barangay is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold text-stone-800 cursor-pointer"
+                                className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-semibold text-stone-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 cursor-pointer transition-colors"
                             >
                                 <option value="">Select Barangay</option>
                                 {barangays.map((b) => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                             </select>
-                            {errors.barangay && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.barangay.message}</p>}
+                            {errors.barangay && <p className="text-xs font-medium text-rose-600 mt-1">{errors.barangay.message}</p>}
                         </div>
 
                         {/* Address */}
                         <div className="space-y-1 sm:col-span-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Complete Address</label>
+                            <label className="text-xs font-semibold text-stone-700">Complete Address</label>
                             <input
                                 type="text"
                                 {...register('address', { required: "Complete address is required." })}
                                 disabled={isSubmitting}
-                                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-lg shadow-2xs focus:outline-none focus:border-stone-500 text-xs font-semibold placeholder:text-stone-300"
+                                className="h-10 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 transition-colors"
                                 placeholder="Purok 4, Sariaya, Quezon"
                             />
-                            {errors.address && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{errors.address.message}</p>}
+                            {errors.address && <p className="text-xs font-medium text-rose-600 mt-1">{errors.address.message}</p>}
                         </div>
 
                         {/* Options */}
                         <div className="sm:col-span-2 flex flex-col gap-3 py-2 border-t border-stone-100 mt-2">
-                            <label className="flex items-center gap-3 cursor-pointer">
+                            <label className="flex items-center gap-2.5 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     {...register('receive_sms')}
                                     disabled={isSubmitting}
                                     className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
                                 />
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Send SMS notifications to this farmer</span>
+                                <span className="text-xs font-medium text-stone-700">Send SMS notifications to this farmer</span>
                             </label>
 
                             {isEdit && (
-                                <label className="flex items-center gap-3 cursor-pointer">
+                                <label className="flex items-center gap-2.5 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         {...register('is_active')}
                                         disabled={isSubmitting}
                                         className="checkbox checkbox-success checkbox-sm rounded-md border-stone-300"
                                     />
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-600">Farmer account is active and authorized</span>
+                                    <span className="text-xs font-medium text-stone-700">Farmer account is active and authorized</span>
                                 </label>
                             )}
                         </div>
                     </div>
 
                     {/* Submit Actions */}
-                    <div className="flex gap-4 justify-end pt-6 border-t border-stone-100 shrink-0">
+                    <div className="flex gap-3 justify-end pt-5 border-t border-stone-200/80 shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-6 py-3 border border-stone-200 hover:bg-stone-50 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors disabled:opacity-50"
+                            className="btn-tactile rounded-lg border border-stone-200 px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-100 text-white px-10 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="btn-tactile inline-flex items-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white px-5 py-2.5 text-xs font-semibold shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <>

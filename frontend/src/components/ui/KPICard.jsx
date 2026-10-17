@@ -11,8 +11,8 @@ const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent, on
             onClick={onClick}
             role={onClick ? "button" : undefined}
             tabIndex={onClick ? 0 : undefined}
-            className={`bg-white border border-stone-200 p-3.5 sm:p-5 md:p-6 flex flex-col justify-between min-h-[100px] sm:min-h-[130px] rounded-xl shadow-xs transition-all relative overflow-hidden ${
-                onClick ? 'cursor-pointer hover:border-green-700 hover:shadow-sm active:bg-stone-50' : ''
+            className={`group bg-white border border-stone-200 p-3.5 sm:p-5 md:p-6 flex flex-col justify-between min-h-[100px] sm:min-h-[130px] rounded-xl shadow-xs relative overflow-hidden transition-all duration-150 ${
+                onClick ? 'cursor-pointer card-interactive hover:border-green-700/50 hover:shadow-sm' : 'hover:border-stone-300'
             }`}
         >
             {/* Top Section: Title, Value & Icon */}
@@ -31,7 +31,7 @@ const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent, on
                 
                 {/* Responsive Square Icon Container */}
                 {Icon && (
-                    <div className={`p-2 sm:p-3 rounded-lg border border-current/10 flex items-center justify-center shrink-0 ${colorClass || 'bg-stone-50 text-stone-500'}`}>
+                    <div className={`p-2 sm:p-3 rounded-lg border border-current/10 flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105 ${colorClass || 'bg-stone-50 text-stone-500'}`}>
                         <Icon className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
                     </div>
                 )}

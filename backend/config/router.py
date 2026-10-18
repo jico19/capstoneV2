@@ -16,6 +16,7 @@ router.register(r'issued-permit', PermitViewSets.IssuedPermitViewSet)
 router.register(r'ocr-validation', PermitViewSets.OCRValidationResultViewSet)
 router.register(r'report', PermitViewSets.ReportViewSet, basename='report')
 router.register(r'municipal-config', PermitViewSets.MunicipalConfigViewSet, basename='municipal-config')
+router.register(r'signatory', PermitViewSets.SignatoryViewSet)
 
 # map
 router.register(r'barangay', MapsViewSets.BarangayViewSet)

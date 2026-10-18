@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
-import { ArrowLeft, FileCheck2, ExternalLink } from "lucide-react"
+import { ArrowLeft, FileCheck2, ExternalLink, ShieldCheck } from "lucide-react"
 import DocumentList from "../../../components/ui/DocumentList"
 import OPVApprovalControls from "./OPVApprovalControl"
 import { api } from "../../../lib/api"
@@ -275,6 +275,44 @@ const OPVApplicationDetail = () => {
                                     </button>
                                     <a
                                         href={getAuthenticatedMediaUrl(application.aic_pdf)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn-tactile border border-emerald-300 hover:bg-emerald-100/70 text-emerald-900 text-xs font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5"
+                                    >
+                                        <ExternalLink size={14} /> Open PDF
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
+                        {application.mao_certificate_pdf && (
+                            <div className="bg-emerald-50/70 border border-emerald-200 p-5 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="bg-emerald-700 text-white text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1">
+                                            <ShieldCheck size={12} /> Official Disease Clearance
+                                        </span>
+                                        <span className="text-xs font-mono font-medium text-emerald-950">
+                                            Cert No: {application.mao_certificate_number || "PENDING"}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-tight">
+                                        MAO Health & ASF-Free Certification
+                                    </h3>
+                                    <p className="text-xs text-stone-600 font-normal leading-relaxed">
+                                        Official municipal certification that the origin barangay has no reported swine disease or ASF mortalities.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => viewDocument(`mao-cert-${application.id}`)}
+                                        className="btn-tactile bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-xs transition-all flex items-center gap-1.5"
+                                    >
+                                        <ShieldCheck size={14} /> Inspect Cert
+                                    </button>
+                                    <a
+                                        href={getAuthenticatedMediaUrl(application.mao_certificate_pdf)}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="btn-tactile border border-emerald-300 hover:bg-emerald-100/70 text-emerald-900 text-xs font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5"

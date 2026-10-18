@@ -56,6 +56,11 @@ class PermitApplication(models.Model):
     aic_number = models.CharField(max_length=20, default="", blank=True)
     aic_pdf = models.FileField(upload_to='issued_docs/aic/', null=True, blank=True, validators=[validate_file_size])
     aic_issued_at = models.DateTimeField(null=True, blank=True)
+
+    # MAO Health / ASF-Free Certification auto-generated upon MAO review approval
+    mao_certificate_number = models.CharField(max_length=50, default="", blank=True)
+    mao_certificate_pdf = models.FileField(upload_to='issued_docs/mao_cert/', null=True, blank=True, validators=[validate_file_size])
+    mao_cert_issued_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -226,6 +231,8 @@ class IssuedPermit(models.Model):
     permit_pdf = models.FileField(upload_to='issued_docs/permits/', null=True, blank=True, validators=[validate_file_size])
     aic_number = models.CharField(max_length=20, default="", blank=True)
     aic_pdf = models.FileField(upload_to='issued_docs/aic/', null=True, blank=True, validators=[validate_file_size])
+    mao_certificate_number = models.CharField(max_length=50, default="", blank=True)
+    mao_certificate_pdf = models.FileField(upload_to='issued_docs/mao_cert/', null=True, blank=True, validators=[validate_file_size])
 
     date_issued = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True)
@@ -259,6 +266,16 @@ class AicNumberCounter(models.Model):
         return f"AIC counter {self.date} -> {self.last_number:03d}"
 
 
+class MaoCertNumberCounter(models.Model):
+    """Daily counter row that guarantees unique MAO Certification numbers (OMA-ANN-ASFCert-YYYYMMDD-XX)."""
+
+    date = models.DateField(unique=True, editable=False)
+    last_number = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"MAO Cert counter {self.date} -> {self.last_number:02d}"
+
+
 class MunicipalConfig(models.Model):
     vet_health_cert_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
     transport_pass_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
@@ -281,4 +298,85 @@ class MunicipalConfig(models.Model):
 
     def __str__(self):
         return f"Municipal Config (Fee: ₱{self.permit_fee}, Validity: {self.validity_days} days)"
+
+
+class Signatory(models.Model):
+    """
+    Reusable roster of officials who may sign MAO-issued documents.
+
+    Maintained by Agri officers. Retire a signatory with ``is_active=False``
+    rather than deleting it, since issued documents reference it via PROTECT.
+    """
+
+    class Position(models.TextChoices):
+        MUNICIPAL_AGRICULTURIST = 'MUNICIPAL_AGRICULTURIST', 'Municipal Agriculturist'
+        MUNICIPAL_VETERINARIAN = 'MUNICIPAL_VETERINARIAN', 'Municipal Veterinarian'
+        OIC = 'OIC', 'Officer-in-Charge'
+
+    name = models.CharField(max_length=100)
+    title = models.CharField(max_length=100)
+    position = models.CharField(max_length=40, choices=Position.choices)
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Pre-selected for this position when an Agri officer reviews an application.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['position', 'name']
+        verbose_name_plural = 'signatories'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['position'],
+                condition=models.Q(is_default=True),
+                name='unique_default_signatory_per_position',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name} — {self.get_position_display()}"
+
+
+class ApplicationSignatory(models.Model):
+    """
+    Pins the signatory stamped on each document of a single application.
+
+    Rows are written when an Agri officer approves the application and are
+    immutable once the application reaches RELEASED.
+    """
+
+    class DocumentType(models.TextChoices):
+        AIC = 'AIC', 'Animal Inspection Certificate'
+        MAO_CERTIFICATE = 'MAO_CERTIFICATE', 'MAO Health & ASF-Free Certification'
+        PERMIT = 'PERMIT', 'Transport Permit'
+
+    application = models.ForeignKey(
+        PermitApplication, on_delete=models.CASCADE, related_name='signatories'
+    )
+    document_type = models.CharField(max_length=20, choices=DocumentType.choices)
+    signatory = models.ForeignKey(
+        Signatory, on_delete=models.PROTECT, related_name='application_assignments'
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='signatory_assignments',
+    )
+
+    class Meta:
+        ordering = ['application', 'document_type']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['application', 'document_type'],
+                name='unique_signatory_per_application_document',
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.application.application_id} · "
+            f"{self.get_document_type_display()} → {self.signatory.name}"
+        )
 

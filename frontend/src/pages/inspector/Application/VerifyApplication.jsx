@@ -367,7 +367,7 @@ const VerifyApplication = () => {
                         </h2>
                     </div>
                     <span className="text-[10px] text-stone-400 font-mono font-bold">
-                        {(application.all_documents?.length || 0) + (issuedPermit?.permit_pdf ? 1 : 0) + (opv?.veterinary_health_certificate ? 1 : 0)} files
+                        {(application.all_documents?.length || 0) + (issuedPermit?.permit_pdf ? 1 : 0) + (opv?.veterinary_health_certificate ? 1 : 0) + (issuedPermit?.mao_certificate_pdf || application?.mao_certificate_pdf ? 1 : 0)} files
                     </span>
                 </div>
 
@@ -391,6 +391,33 @@ const VerifyApplication = () => {
                                 })}
                                 className="h-11 w-11 bg-green-700 hover:bg-green-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-2xs active:scale-95 transition-all"
                                 aria-label="View Official Permit PDF"
+                            >
+                                <Eye size={18} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* MAO Health & ASF-Free Certificate */}
+                    {(issuedPermit?.mao_certificate_pdf || application?.mao_certificate_pdf) && (
+                        <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-lg flex items-center justify-between gap-3">
+                            <div className="space-y-0.5 min-w-0">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-1.5 py-0.2 rounded">
+                                    MAO Clearance
+                                </span>
+                                <p className="text-xs font-bold text-stone-900 truncate">MAO ASF-Free Certification</p>
+                                <p className="text-[10px] font-mono text-stone-500">
+                                    {issuedPermit?.mao_certificate_number || application?.mao_certificate_number || "OMA-ANN-ASFCert"}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setPreviewDoc({
+                                    url: issuedPermit?.mao_certificate_pdf || application?.mao_certificate_pdf,
+                                    title: `MAO ASF-Free Health Certification`,
+                                    subtitle: `Origin: Brgy. ${application.origins?.[0]?.barangay_name || 'Sariaya'}`
+                                })}
+                                className="h-11 w-11 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-2xs active:scale-95 transition-all"
+                                aria-label="View MAO ASF Certificate PDF"
                             >
                                 <Eye size={18} />
                             </button>

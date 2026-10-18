@@ -316,7 +316,8 @@ def get_issued_permit_details(application, user):
         raise PermissionDenied("This permit has not been paid for yet.")
 
     # Guard: Ensure PDFs have been generated
-    if not issued_permit_instance.permit_pdf or not issued_permit_instance.aic_pdf:
+    has_mao_cert = bool(issued_permit_instance.mao_certificate_pdf or application.mao_certificate_pdf)
+    if not issued_permit_instance.permit_pdf or not issued_permit_instance.aic_pdf or not has_mao_cert:
         raise ValidationError(
             "Permit PDF is still being generated. Please try again in a moment.", code="pdf_generating"
         )

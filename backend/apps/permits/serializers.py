@@ -7,6 +7,7 @@ from .models import (
     IssuedPermit,
     TransportOrigin,
     MunicipalConfig,
+    Signatory,
 )
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -118,6 +119,7 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     aic_pdf = serializers.SerializerMethodField()
+    mao_certificate_pdf = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
@@ -134,6 +136,9 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
             "aic_number",
             "aic_pdf",
             "aic_issued_at",
+            "mao_certificate_number",
+            "mao_certificate_pdf",
+            "mao_cert_issued_at",
         ]
 
     def get_aic_pdf(self, obj):
@@ -143,6 +148,14 @@ class PermitApplicationListSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.aic_pdf.url)
         return obj.aic_pdf.url
+
+    def get_mao_certificate_pdf(self, obj):
+        if not obj.mao_certificate_pdf:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.mao_certificate_pdf.url)
+        return obj.mao_certificate_pdf.url
 
 
 class PermitApplicationDetailSerializer(serializers.ModelSerializer):
@@ -157,6 +170,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     origins = TransportOriginListSerializer(many=True, read_only=True)
     permit_fee = serializers.SerializerMethodField()
     aic_pdf = serializers.SerializerMethodField()
+    mao_certificate_pdf = serializers.SerializerMethodField()
     opv_validation = serializers.SerializerMethodField()
     issued_permit = serializers.SerializerMethodField()
 
@@ -182,6 +196,9 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "aic_number",
             "aic_pdf",
             "aic_issued_at",
+            "mao_certificate_number",
+            "mao_certificate_pdf",
+            "mao_cert_issued_at",
             "opv_validation",
             "issued_permit",
         ]
@@ -193,6 +210,14 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.aic_pdf.url)
         return obj.aic_pdf.url
+
+    def get_mao_certificate_pdf(self, obj):
+        if not obj.mao_certificate_pdf:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.mao_certificate_pdf.url)
+        return obj.mao_certificate_pdf.url
 
     def get_all_documents(self, obj):
         # Flatten all documents from all transport origins, deduplicating by type & file
@@ -236,6 +261,31 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
                     "remarks": {}
                 },
                 "uploaded_at": obj.aic_issued_at or obj.updated_at,
+                "is_generated": True,
+            })
+
+        # Include official MAO Health & ASF-Free Certification if generated
+        if obj.mao_certificate_pdf:
+            mao_url = request.build_absolute_uri(obj.mao_certificate_pdf.url) if request else obj.mao_certificate_pdf.url
+            origin_brgy = obj.origins.first().barangay.name if (obj.origins.exists() and obj.origins.first().barangay) else (obj.farmer.barangay.name if (obj.farmer and obj.farmer.barangay) else "N/A")
+
+            data.append({
+                "id": f"mao-cert-{obj.id}",
+                "document_type": "mao_certificate",
+                "document_type_display": "MAO Health & ASF-Free Certification",
+                "file": mao_url,
+                "ocr": {
+                    "status": "completed",
+                    "extracted_field": {
+                        "Certificate Number": obj.mao_certificate_number or f"OMA-ANN-ASFCert-{str(obj.id)[:8].upper()}",
+                        "Application ID": str(obj.application_id or obj.id),
+                        "Origin Barangay": origin_brgy,
+                        "Status": "NO REPORTED ASF / SWINE DISEASE",
+                        "Issue Date": obj.mao_cert_issued_at.strftime("%Y-%m-%d %H:%M") if obj.mao_cert_issued_at else "N/A",
+                    },
+                    "remarks": {}
+                },
+                "uploaded_at": obj.mao_cert_issued_at or obj.updated_at,
                 "is_generated": True,
             })
         return data
@@ -423,6 +473,8 @@ class IssuedPermitDetailSerializer(serializers.ModelSerializer):
             "permit_pdf",
             "aic_number",
             "aic_pdf",
+            "mao_certificate_number",
+            "mao_certificate_pdf",
             "date_issued",
             "valid_until",
             "permit_fee",
@@ -454,3 +506,27 @@ class MunicipalConfigSerializer(serializers.ModelSerializer):
             "oic_title",
             "updated_at",
         ]
+
+
+class SignatorySerializer(serializers.ModelSerializer):
+    position_display = serializers.CharField(source="get_position_display", read_only=True)
+
+    class Meta:
+        model = Signatory
+        fields = [
+            "id",
+            "name",
+            "title",
+            "position",
+            "position_display",
+            "is_active",
+            "is_default",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        is_active = attrs.get("is_active", getattr(self.instance, "is_active", True))
+        is_default = attrs.get("is_default", getattr(self.instance, "is_default", False))
+        if is_default and not is_active:
+            raise ValidationError("An inactive signatory cannot be set as the default.")
+        return attrs

@@ -142,6 +142,9 @@ def handle_application_status_change(application, new_status, reason=None):
 def approve_application(application, user, remarks):
     """
     Agri officer approval to forward the application to OPV and auto-generate AIC.
+
+    Signatories are not chosen here — every generated PDF reads the current
+    Settings > Signatories roster (see ``resolve_signatory``).
     """
     if user.role != "Agri":
         raise PermissionDenied("Only Agri officers can approve applications.")
@@ -178,12 +181,28 @@ def approve_application(application, user, remarks):
             app_locked.aic_issued_at = timezone.now()
             app_locked.save(update_fields=["aic_issued_at"])
 
+        # Ensure MAO Certificate number and issue timestamp on application
+        if not app_locked.mao_certificate_number:
+            from .numbers import get_mao_cert_number
+            app_locked.mao_certificate_number = get_mao_cert_number(app_locked)
+            app_locked.mao_cert_issued_at = timezone.now()
+            app_locked.save(update_fields=["mao_certificate_number", "mao_cert_issued_at"])
+        elif not app_locked.mao_cert_issued_at:
+            app_locked.mao_cert_issued_at = timezone.now()
+            app_locked.save(update_fields=["mao_cert_issued_at"])
+
         handle_application_status_change(app_locked, models.PermitApplication.Status.FORWARDED_TO_OPV)
 
-        # Trigger AIC PDF generation
-        from apps.documents.services import generate_aic_pdf
+        # Trigger AIC and MAO Certificate PDF generation
+        from apps.documents.services import generate_aic_pdf, generate_mao_certificate_pdf
         transaction.on_commit(
             lambda: generate_aic_pdf.enqueue(
+                permit_application_id=application.pk,
+                issued_by_user_id=user.pk
+            )
+        )
+        transaction.on_commit(
+            lambda: generate_mao_certificate_pdf.enqueue(
                 permit_application_id=application.pk,
                 issued_by_user_id=user.pk
             )

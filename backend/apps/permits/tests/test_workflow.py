@@ -103,12 +103,16 @@ class TestPermitWorkflow:
         assert application.status == PermitApplication.Status.FORWARDED_TO_OPV
         assert application.aic_number != ""
         assert application.aic_issued_at is not None
+        assert application.mao_certificate_number != ""
+        assert application.mao_cert_issued_at is not None
 
-        # Verify AIC PDF generation and download endpoint
-        from apps.documents.services import generate_aic_pdf
+        # Verify AIC and MAO Certificate PDF generation and download endpoint
+        from apps.documents.services import generate_aic_pdf, generate_mao_certificate_pdf
         generate_aic_pdf.func(application.pk)
+        generate_mao_certificate_pdf.func(application.pk)
         application.refresh_from_db()
         assert bool(application.aic_pdf) is True
+        assert bool(application.mao_certificate_pdf) is True
 
         aic_url = reverse('permitapplication-aic', kwargs={'pk': app_id})
         aic_resp = api_client.get(aic_url)

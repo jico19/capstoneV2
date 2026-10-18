@@ -128,6 +128,15 @@ class IssuedPermitViewSet(BaseModelViewSet):
                     if (issued_permit_instance.aic_pdf or application_instance.aic_pdf)
                     else None
                 ),
+                "mao_certificate": (
+                    request.build_absolute_uri(
+                        issued_permit_instance.mao_certificate_pdf.url
+                        if issued_permit_instance.mao_certificate_pdf
+                        else application_instance.mao_certificate_pdf.url
+                    )
+                    if (issued_permit_instance.mao_certificate_pdf or application_instance.mao_certificate_pdf)
+                    else None
+                ),
             },
             status=status.HTTP_200_OK,
         )
@@ -154,6 +163,8 @@ class MunicipalConfigViewSet(viewsets.ViewSet):
         tp_fee = request.data.get("transport_pass_fee")
         ltp_fee = request.data.get("local_transport_permit_fee")
         validity = request.data.get("validity_days")
+        oic_name = (request.data.get("oic_name") or "").strip()
+        oic_title = (request.data.get("oic_title") or "").strip()
 
         errors = {}
         
@@ -188,6 +199,11 @@ class MunicipalConfigViewSet(viewsets.ViewSet):
         ltp_val = validate_positive_decimal(ltp_fee, "local_transport_permit_fee")
         validity_val = validate_positive_integer(validity, "validity_days")
 
+        if len(oic_name) > 100:
+            errors["oic_name"] = "Must be 100 characters or fewer."
+        if len(oic_title) > 100:
+            errors["oic_title"] = "Must be 100 characters or fewer."
+
         if errors:
             raise ValidationError(errors)
 
@@ -205,16 +221,117 @@ class MunicipalConfigViewSet(viewsets.ViewSet):
                 config.transport_pass_fee = tp_val
                 config.local_transport_permit_fee = ltp_val
                 config.validity_days = validity_val
-                config.save()
+
+            # Global fallback signatory. The Settings > Signatory roster
+            # (position defaults) takes precedence over these values; these
+            # only apply when no roster default exists.
+            if oic_name:
+                config.oic_name = oic_name
+            if oic_title:
+                config.oic_title = oic_title
+            config.save()
 
             AuditTrail.objects.create(
                 who_performed=request.user,
                 what_performed=(
                     f"[MUNICIPAL CONFIG UPDATED] - VHC Fee: ₱{vhc_val}, TP Fee: ₱{tp_val}, "
                     f"LTP Fee: ₱{ltp_val}, Validity: {validity_val} days"
+                    + (f", Default Signatory: {config.oic_name} ({config.oic_title})"
+                       if oic_name or oic_title else "")
                 ),
                 when_performed=timezone.now(),
             )
 
         serializer = serializers.MunicipalConfigSerializer(config)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SignatoryViewSet(BaseModelViewSet):
+    """
+    Roster of officials who may sign MAO-issued documents.
+
+    Reads are open to any authenticated user because the roster feeds the
+    signatory pickers; writes are restricted to Agri officers. Entries are
+    retired rather than deleted — `ApplicationSignatory.signatory` is PROTECTed,
+    so a hard delete would fail once a signatory has signed anything.
+    """
+
+    queryset = models.Signatory.objects.all()
+    serializer_class = serializers.SignatorySerializer
+
+    def _require_agri(self):
+        if self.request.user.role != "Agri":
+            raise PermissionDenied("Only Agri officers can manage signatories.")
+
+    @staticmethod
+    def _clear_conflicting_default(validated_data, instance=None):
+        """
+        Keep exactly one default per position.
+
+        The DB enforces this with a conditional unique constraint, so the
+        previous default has to be cleared *before* the new one is written.
+        """
+        if not validated_data.get("is_default"):
+            return
+
+        position = validated_data.get("position") or (instance.position if instance else None)
+        if not position:
+            return
+
+        conflicting = models.Signatory.objects.filter(position=position, is_default=True)
+        if instance and instance.pk:
+            conflicting = conflicting.exclude(pk=instance.pk)
+        conflicting.update(is_default=False)
+
+    def create(self, request, *args, **kwargs):
+        self._require_agri()
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self._require_agri()
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self._require_agri()
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        self._require_agri()
+        signatory = self.get_object()
+        signatory.is_active = False
+        signatory.is_default = False
+        signatory.save(update_fields=["is_active", "is_default", "updated_at"])
+
+        AuditTrail.objects.create(
+            who_performed=request.user,
+            what_performed=(
+                f"[SIGNATORY RETIRED] - {signatory.name} "
+                f"({signatory.get_position_display()})"
+            ),
+            when_performed=timezone.now(),
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_create(self, serializer):
+        self._clear_conflicting_default(serializer.validated_data)
+        signatory = serializer.save()
+        AuditTrail.objects.create(
+            who_performed=self.request.user,
+            what_performed=(
+                f"[SIGNATORY ADDED] - {signatory.name} "
+                f"({signatory.get_position_display()})"
+            ),
+            when_performed=timezone.now(),
+        )
+
+    def perform_update(self, serializer):
+        self._clear_conflicting_default(serializer.validated_data, serializer.instance)
+        signatory = serializer.save()
+        AuditTrail.objects.create(
+            who_performed=self.request.user,
+            what_performed=(
+                f"[SIGNATORY UPDATED] - {signatory.name} "
+                f"({signatory.get_position_display()})"
+            ),
+            when_performed=timezone.now(),
+        )

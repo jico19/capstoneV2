@@ -12,7 +12,7 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 from apps.permits.services.numbers import get_aic_number
-from apps.documents.services import generate_permit_pdf, generate_aic_pdf, generate_collection_report_pdf
+from apps.documents.services import generate_permit_pdf, generate_aic_pdf, generate_mao_certificate_pdf, generate_collection_report_pdf
 from apps.api.models import AuditTrail
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,7 @@ def _release_permit_and_queue_pdfs(application):
     p_app_pk = application.pk
     transaction.on_commit(lambda f=generate_permit_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
     transaction.on_commit(lambda f=generate_aic_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+    transaction.on_commit(lambda f=generate_mao_certificate_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
 
 
 def ensure_aic_number(issued_permit):
@@ -31,6 +32,17 @@ def ensure_aic_number(issued_permit):
     if not issued_permit.aic_number:
         issued_permit.aic_number = get_aic_number(issued_permit)
     return issued_permit.aic_number
+
+
+def ensure_mao_cert_number(issued_permit):
+    """Assign a unique MAO Cert number if none is set yet. Caller persists."""
+    if not issued_permit.mao_certificate_number:
+        from apps.permits.services.numbers import get_mao_cert_number
+        if issued_permit.application and issued_permit.application.mao_certificate_number:
+            issued_permit.mao_certificate_number = issued_permit.application.mao_certificate_number
+        else:
+            issued_permit.mao_certificate_number = get_mao_cert_number(issued_permit)
+    return issued_permit.mao_certificate_number
 
 
 def _paymongo_post(url, payload):
@@ -61,6 +73,7 @@ def create_checkout_session(application_pk: int):
         if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
             with transaction.atomic():
                 ensure_aic_number(issued_permit_instance)
+                ensure_mao_cert_number(issued_permit_instance)
                 issued_permit_instance.save()
                 _release_permit_and_queue_pdfs(application)
             raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
@@ -124,6 +137,7 @@ def create_qrph_payment(application_pk: int):
         if application.status == permits.PermitApplication.Status.PAYMENT_PENDING:
             with transaction.atomic():
                 ensure_aic_number(issued_permit_instance)
+                ensure_mao_cert_number(issued_permit_instance)
                 issued_permit_instance.save()
                 _release_permit_and_queue_pdfs(application)
             raise ValidationError('This permit has already been paid and is now released. Please refresh the page.')
@@ -327,8 +341,9 @@ def verify_paymongo_session(application_pk: int, user):
             issued_permit.payment_method = 'ONLINE'
             issued_permit.valid_until = timezone.now().date() + timedelta(days=3)
 
-            # Generate the unique AIC number using the atomic helper
+            # Generate unique numbers using the atomic helpers
             ensure_aic_number(issued_permit)
+            ensure_mao_cert_number(issued_permit)
 
             issued_permit.save()
 
@@ -427,8 +442,9 @@ def farmer_simulate_payment(application_pk: int, user, payment_method: str):
         issued_permit.is_paid = True
         issued_permit.payment_method = permits.IssuedPermit.PaymentMethodChoices.ONLINE
 
-        # Assign AIC number atomically (if not already set)
+        # Assign AIC and MAO Certificate numbers atomically (if not already set)
         ensure_aic_number(issued_permit)
+        ensure_mao_cert_number(issued_permit)
 
         issued_permit.save()
 
@@ -525,8 +541,9 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
         issued_permit.is_paid = True
         issued_permit.payment_method = permits.IssuedPermit.PaymentMethodChoices.OFFLINE
 
-        # Assign AIC number atomically (if not already set)
+        # Assign AIC and MAO Certificate numbers atomically (if not already set)
         ensure_aic_number(issued_permit)
+        ensure_mao_cert_number(issued_permit)
 
         issued_permit.save()
 

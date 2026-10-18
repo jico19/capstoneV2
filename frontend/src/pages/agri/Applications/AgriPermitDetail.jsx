@@ -39,6 +39,7 @@ const AgriPermitDetail = () => {
         };
         fetchConfig();
     }, []);
+
     const { id } = useParams();
     const navigate = useNavigate();
     const { data: application, isLoading, isError } = useApplicationDetail(id);
@@ -103,7 +104,15 @@ const AgriPermitDetail = () => {
         return new Promise((resolve, reject) => {
             setConfirmModal({
                 title: "Approve Permit Request?",
-                message: "Are you sure you want to approve this livestock transport permit application? This will forward it to the Office of the Provincial Veterinarian (OPV) for final health validation.",
+                message: (
+                    <div className="space-y-3 normal-case tracking-normal">
+                        <p>
+                            Are you sure you want to approve this livestock transport permit application?
+                            This will forward it to the Office of the Provincial Veterinarian (OPV) for final
+                            health validation.
+                        </p>
+                    </div>
+                ),
                 yesText: "Yes, Approve",
                 yesVariant: "success",
                 type: "success",

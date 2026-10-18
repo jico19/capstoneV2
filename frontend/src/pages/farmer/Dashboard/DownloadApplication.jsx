@@ -5,7 +5,8 @@ import {
     AlertCircle,
     ArrowLeft,
     FileBadge,
-    FileCheck2
+    FileCheck2,
+    ShieldCheck
 } from "lucide-react"
 import DownloadCard from "./DownloadCard"
 
@@ -107,6 +108,15 @@ const DownloadApplication = () => {
                             url={docs?.animal_inspection_certificate}
                             fileName={`AIC_${id}.pdf`}
                             icon={FileCheck2}
+                        />
+
+                        {/* MAO Certificate */}
+                        <DownloadCard
+                            title="MAO Health & ASF-Free Certification"
+                            description="Official certification of no swine disease and ASF-free status issued by the Municipal Agriculturist."
+                            url={docs?.mao_certificate}
+                            fileName={`MAO_Certificate_${id}.pdf`}
+                            icon={ShieldCheck}
                         />
 
                         {/* VHC */}

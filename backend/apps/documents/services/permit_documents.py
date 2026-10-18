@@ -31,7 +31,7 @@ from apps.documents.pdf_builder import (
 from apps.permits.models import (
     PermitApplication,
     SubmittedDocument,
-    MunicipalConfig,
+    ApplicationSignatory,
 )
 
 logger = logging.getLogger(__name__)
@@ -134,10 +134,11 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
 
             breakdown_str = " | ".join(breakdown_parts) if breakdown_parts else f"Live Swine (Commercial Hogs): {total_pigs}"
 
-            # Signatory config
-            config = MunicipalConfig.objects.first()
-            oic_name = config.oic_name if config and config.oic_name else "AMALITA C. AMORES"
-            oic_title = config.oic_title if config and config.oic_title else "OIC - Municipal Agriculturist"
+            # Signatory config — resolved per application/document type
+            from apps.permits.services.signatory import resolve_signatory
+            oic_name, oic_title = resolve_signatory(
+                application, ApplicationSignatory.DocumentType.PERMIT
+            )
 
             farmer_name = (
                 application.farmer.get_full_name() or application.farmer.username
@@ -574,9 +575,11 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
                 issued_permit.save(update_fields=["aic_number"])
             
             # 1. Fetch config or use defaults
-            config = MunicipalConfig.objects.first()
-            oic_name = config.oic_name if config and config.oic_name else "AMALITA C. AMORES"
-            oic_title = config.oic_title if config and config.oic_title else "OIC - Municipal Agriculturist"
+            # Signatory config — resolved per application/document type
+            from apps.permits.services.signatory import resolve_signatory
+            oic_name, oic_title = resolve_signatory(
+                application, ApplicationSignatory.DocumentType.AIC
+            )
             
             # 2. Get OCR documents data
             handlers_license_doc = SubmittedDocument.objects.filter(
@@ -889,3 +892,275 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
             generate_aic_pdf, "AIC", permit_application_id, current_attempt, e,
             extra_kwargs={"issued_by_user_id": issued_by_user_id},
         )
+
+
+def get_ordinal_day(day: int) -> str:
+    """Return ordinal day string e.g. 24th, 1st, 2nd, 3rd."""
+    if 11 <= (day % 100) <= 13:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th')
+    return f"{day}{suffix}"
+
+
+@task()
+def generate_mao_certificate_pdf(permit_application_id, current_attempt=1, issued_by_user_id=None):
+    """
+    Background task to generate an official Office of the Municipal Agriculturist (OMA / MAO)
+    ASF-Free & Swine Health Monitoring Certification PDF.
+    Matches the official physical certification layout from Municipality of Sariaya OMA.
+    """
+    try:
+        with transaction.atomic():
+            application = (
+                PermitApplication.objects.select_related("farmer")
+                .prefetch_related("origins__barangay")
+                .get(pk=permit_application_id)
+            )
+            issued_permit = getattr(application, "issued_permit", None)
+
+            # Ensure MAO Certificate number and issue timestamp on application
+            if not application.mao_certificate_number:
+                from apps.permits.services.numbers import get_mao_cert_number
+                application.mao_certificate_number = get_mao_cert_number(application)
+                application.mao_cert_issued_at = timezone.now()
+                application.save(update_fields=["mao_certificate_number", "mao_cert_issued_at"])
+            elif not application.mao_cert_issued_at:
+                application.mao_cert_issued_at = timezone.now()
+                application.save(update_fields=["mao_cert_issued_at"])
+
+            if issued_permit and not issued_permit.mao_certificate_number:
+                issued_permit.mao_certificate_number = application.mao_certificate_number
+                issued_permit.save(update_fields=["mao_certificate_number"])
+
+            # 1. Fetch municipal configuration or defaults
+            # Signatory config — resolved per application/document type
+            from apps.permits.services.signatory import resolve_signatory
+            oic_name, oic_title = resolve_signatory(
+                application, ApplicationSignatory.DocumentType.MAO_CERTIFICATE
+            )
+
+            # 2. Extract barangay origin(s)
+            origins = list(application.origins.all())
+            barangay_names = []
+            for o in origins:
+                b_name = o.barangay.name if o.barangay else ""
+                if b_name and b_name not in barangay_names:
+                    barangay_names.append(b_name.upper())
+
+            if not barangay_names:
+                barangays_display = "BRGY. LUTUAN BATA"
+            elif len(barangay_names) == 1:
+                barangays_display = f"BRGY. {barangay_names[0]}"
+            elif len(barangay_names) == 2:
+                barangays_display = f"BRGY. {barangay_names[0]} AND BRGY. {barangay_names[1]}"
+            else:
+                barangays_display = f"BARANGAYS {', '.join(barangay_names[:-1])} AND {barangay_names[-1]}"
+
+            # 3. Identify encoder / processed by staff
+            processed_by = "OMA - SARIAYA"
+            if issued_by_user_id:
+                try:
+                    from apps.api.models import User
+                    staff_user = User.objects.get(pk=issued_by_user_id)
+                    name = staff_user.get_full_name() or staff_user.username
+                    if name:
+                        processed_by = name.upper()
+                except Exception:
+                    pass
+            elif issued_permit and issued_permit.issued_by:
+                name = issued_permit.issued_by.get_full_name() or issued_permit.issued_by.username
+                if name:
+                    processed_by = name.upper()
+
+            # 4. Dates
+            issue_date = application.mao_cert_issued_at or timezone.now()
+            day_ordinal = get_ordinal_day(issue_date.day)
+            month_name = issue_date.strftime("%B")
+            year_str = issue_date.strftime("%Y")
+            date_signed_str = issue_date.strftime("%m-%d-%y")
+
+            # 5. Canvas setup
+            buffer = BytesIO()
+            p = canvas.Canvas(buffer, pagesize=A4)
+            width, height = A4
+
+            PRIMARY_GREEN = PDF_GREEN
+            TEXT_MAIN = PDF_TEXT_MAIN
+            TEXT_MUTED = PDF_TEXT_MUTED
+
+            # 6. Center Watermark
+            watermark_logo = AGRI_LOGO if os.path.exists(AGRI_LOGO) else OFFICIAL_LOGO
+            if os.path.exists(watermark_logo):
+                p.saveState()
+                p.setFillAlpha(0.08)
+                wm_size = 13.0 * cm
+                p.drawImage(
+                    watermark_logo,
+                    (width - wm_size) / 2,
+                    (height - wm_size) / 2 - 1.0 * cm,
+                    width=wm_size,
+                    height=wm_size,
+                    mask="auto",
+                )
+                p.restoreState()
+
+            # 7. Letterhead Logos & Typography
+            logo_size = 2.2 * cm
+            header_top_y = height - 1.5 * cm
+
+            if os.path.exists(OFFICIAL_LOGO):
+                p.drawImage(
+                    OFFICIAL_LOGO,
+                    1.8 * cm,
+                    header_top_y - 2.3 * cm,
+                    width=logo_size,
+                    height=logo_size,
+                    mask="auto",
+                )
+
+            if os.path.exists(AGRI_LOGO):
+                p.drawImage(
+                    AGRI_LOGO,
+                    width - 1.8 * cm - logo_size,
+                    header_top_y - 2.3 * cm,
+                    width=logo_size,
+                    height=logo_size,
+                    mask="auto",
+                )
+
+            p.setFillColor(TEXT_MUTED)
+            p.setFont("Helvetica", 9)
+            p.drawCentredString(width / 2, header_top_y - 0.5 * cm, "Republic of the Philippines")
+            p.drawCentredString(width / 2, header_top_y - 0.95 * cm, "Region IV-A (CALABARZON)")
+            p.drawCentredString(width / 2, header_top_y - 1.4 * cm, "Province of Quezon")
+            p.setFont("Helvetica-Bold", 10.5)
+            p.setFillColor(TEXT_MAIN)
+            p.drawCentredString(width / 2, header_top_y - 1.9 * cm, "MUNICIPALITY OF SARIAYA")
+            p.setFont("Helvetica-Bold", 11.5)
+            p.setFillColor(PRIMARY_GREEN)
+            p.drawCentredString(width / 2, header_top_y - 2.65 * cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
+
+            # Reference Number (left-aligned, subtle)
+            ref_num = application.mao_certificate_number or "OMA-ANN-ASFCert-PENDING"
+            p.setFillColor(colors.HexColor("#78716c"))
+            p.setFont("Helvetica", 7.5)
+            p.drawString(1.8 * cm, header_top_y - 3.4 * cm, ref_num)
+
+            # 8. Document Title: CERTIFICATION
+            p.setFillColor(TEXT_MAIN)
+            p.setFont("Helvetica-Bold", 20)
+            p.drawCentredString(width / 2, header_top_y - 4.6 * cm, "C E R T I F I C A T I O N")
+
+            # 9. Body Paragraphs using ReportLab Flowable Paragraph for crisp justification & word-wrapping
+            content_width = width - 4.4 * cm
+            body_style = ParagraphStyle(
+                'CertBody',
+                fontName='Helvetica',
+                fontSize=10.5,
+                leading=17,
+                textColor=TEXT_MAIN,
+                alignment=4,  # Justified
+                firstLineIndent=28,
+            )
+
+            current_y = header_top_y - 6.0 * cm
+
+            # Paragraph 1
+            p1_text = (
+                f"This is to certify that <b>{html.escape(barangays_display)}, SARIAYA, QUEZON</b> "
+                f"has no confirmed case of reportable swine diseases in the area, no reported case "
+                f"of unusual swine mortalities, nor any suspected ASF case being investigated on "
+                f"swine population within the farm."
+            )
+            para1 = Paragraph(p1_text, body_style)
+            w1, h1 = para1.wrapOn(p, content_width, 10 * cm)
+            current_y -= h1
+            para1.drawOn(p, 2.2 * cm, current_y)
+            current_y -= 0.9 * cm
+
+            # Paragraph 2
+            p2_text = (
+                "This certification is issued as partial compliance to the requirements "
+                "for the local transport of live pigs only from within the farm vicinity."
+            )
+            para2 = Paragraph(p2_text, body_style)
+            w2, h2 = para2.wrapOn(p, content_width, 10 * cm)
+            current_y -= h2
+            para2.drawOn(p, 2.2 * cm, current_y)
+            current_y -= 0.9 * cm
+
+            # Paragraph 3
+            p3_text = (
+                f"Issued on this {day_ordinal} day of {month_name}, {year_str} at Sariaya, Quezon "
+                f"for whatever legal purpose it may serve."
+            )
+            para3 = Paragraph(p3_text, body_style)
+            w3, h3 = para3.wrapOn(p, content_width, 10 * cm)
+            current_y -= h3
+            para3.drawOn(p, 2.2 * cm, current_y)
+            current_y -= 2.2 * cm
+
+            # 10. Signatory Block (Right-aligned / Center-right)
+            sig_x = width - 7.5 * cm
+            p.setFillColor(TEXT_MAIN)
+            p.setFont("Helvetica-Bold", 10)
+            p.drawString(sig_x, current_y, "Signed:")
+            current_y -= 1.8 * cm
+
+            p.setFont("Helvetica-Bold", 10.5)
+            p.drawString(sig_x, current_y, oic_name.upper())
+            current_y -= 0.45 * cm
+            p.setFont("Helvetica", 9.5)
+            p.drawString(sig_x, current_y, oic_title)
+            current_y -= 0.45 * cm
+            p.drawString(sig_x, current_y, f"Date Signed: {date_signed_str}")
+
+            # 11. Verification QR Code (Bottom-right)
+            qr_token = getattr(issued_permit, "qr_token", None) or str(application.application_id)
+            qr_url = f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')}/inspector/verify/{qr_token}"
+            qr_img = qrcode.make(qr_url)
+            qr_buffer = BytesIO()
+            qr_img.save(qr_buffer, format="PNG")
+            qr_buffer.seek(0)
+            qr_reader = ImageReader(qr_buffer)
+            qr_size = 2.4 * cm
+            qr_x = width - 2.2 * cm - qr_size
+            qr_y = 2.0 * cm
+            p.drawImage(qr_reader, qr_x, qr_y, width=qr_size, height=qr_size)
+
+            # 12. Encoder Block (Bottom-left)
+            p.setFillColor(TEXT_MAIN)
+            p.setFont("Helvetica-Bold", 7.5)
+            p.drawString(2.2 * cm, 2.9 * cm, f"ENCODED BY: {processed_by}")
+            p.setFont("Helvetica", 7.5)
+            p.drawString(2.2 * cm, 2.5 * cm, "OMA -SARIAYA")
+
+            # 13. Footer Address / Email (Bottom-center)
+            p.setFillColor(TEXT_MUTED)
+            p.setFont("Helvetica", 7)
+            p.drawCentredString(width / 2, 1.5 * cm, "Municipal Hall, Mabini St., Poblacion 6, Sariaya, Quezon 4322")
+            p.drawCentredString(width / 2, 1.15 * cm, "agriculture_sariaya@yahoo.com")
+
+            p.showPage()
+            p.save()
+
+            buffer.seek(0)
+            filename = f"MAO_Certificate_{application.application_id}.pdf"
+            application.mao_certificate_pdf.save(filename, File(buffer), save=True)
+            if issued_permit:
+                buffer.seek(0)
+                issued_permit.mao_certificate_number = application.mao_certificate_number
+                issued_permit.mao_certificate_pdf.save(filename, File(buffer), save=True)
+
+            logger.info(f"Successfully generated MAO Certificate PDF for application {permit_application_id}")
+            return f"MAO Certificate PDF Generated: {filename}"
+
+    except PermitApplication.DoesNotExist:
+        logger.error(f"PermitApplication {permit_application_id} not found.")
+    except Exception as e:
+        _retry_pdf_task(
+            generate_mao_certificate_pdf, "MAO Certificate", permit_application_id, current_attempt, e,
+            extra_kwargs={"issued_by_user_id": issued_by_user_id},
+        )
+

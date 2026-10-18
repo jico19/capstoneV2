@@ -156,6 +156,9 @@ class PermitApplicationViewSet(BaseModelViewSet):
     def approve(self, request, pk=None):
         """
         Agri officer approval to forward the application to OPV.
+
+        Signatories are not part of this step — generated documents read the
+        current Settings > Signatories roster when they are rendered.
         """
         application_instance = self.get_object()
         remarks = request.data.get("remarks", "").strip()
@@ -163,7 +166,7 @@ class PermitApplicationViewSet(BaseModelViewSet):
         services.approve_application(
             application=application_instance,
             user=request.user,
-            remarks=remarks
+            remarks=remarks,
         )
         return Response(
             {"msg": "Application approved and forwarded to OPV"},

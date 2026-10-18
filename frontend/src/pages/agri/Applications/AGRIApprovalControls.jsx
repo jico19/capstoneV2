@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 /**
  * Agri Approval Controls
  * Friendly-first design with clear natural language and flat UI.
+ *
+ * Signatories are not chosen here — the PDFs read the roster configured under
+ * Settings > Signatories at render time.
  */
 const COMMON_FEEDBACK_OPTIONS = [
     { value: "", label: "Select common feedback template..." },
@@ -57,7 +60,7 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
     return (
         <div className="bg-white border border-stone-200 p-6 md:p-10 rounded-xl shadow-xs space-y-8">
             <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 2</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Step 1</p>
                 <h2 className="text-2xl font-black text-stone-900 tracking-tight flex items-center gap-3">
                     <MessageSquare size={20} className="text-green-700" />
                     Officer Notes
@@ -123,7 +126,11 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
                     type="button"
                     disabled={isProcessing || !isAllDocsViewed}
                     onClick={handleSubmit(handleApprove)}
-                    title={!isAllDocsViewed ? "Please view all attached documents above first" : undefined}
+                    title={
+                        !isAllDocsViewed
+                            ? "Please view all attached documents above first"
+                            : undefined
+                    }
                     className="w-full sm:w-auto bg-green-700 hover:bg-green-600 text-white px-8 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
                 >
                     {activeAction === 'approve' ? (

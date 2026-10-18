@@ -20,3 +20,4 @@ from .opv import (
     request_opv_resubmission,
 )
 from .ocr import override_ocr_result
+from .signatory import resolve_signatory

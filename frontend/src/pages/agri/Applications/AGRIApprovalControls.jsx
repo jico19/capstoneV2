@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, MessageSquare } from 'lucide-react';
+import { CheckCircle, XCircle, MessageSquare, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 /**
@@ -99,7 +99,7 @@ const ApprovalControls = ({ onApprove, onReject, isAllDocsViewed = true, unviewe
 
             {!isAllDocsViewed && (
                 <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 rounded-lg">
-                    <span className="text-base">🔒</span>
+                    <Lock size={15} className="text-amber-700 shrink-0" />
                     <span>Review Checklist: You must click and view all attached documents above before approving. ({unviewedCount} unreviewed document remaining)</span>
                 </div>
             )}

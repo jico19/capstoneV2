@@ -22,7 +22,7 @@ const DocRow = ({ label, field, watch, docData, user, setViewerDoc, optional = f
         (Array.isArray(fileVal) && fileVal.length > 0)
     );
 
-    const isStandingDoc = ['traders_pass', 'handlers_license', 'transport_carrier_reg'].includes(field);
+    const isStandingDoc = ['handlers_license', 'transport_carrier_reg'].includes(field);
     const onFileDoc = docData?.documents?.find((d) => d.document_type === field);
     const isAutoAttached = isStandingDoc && !isNewUpload && !isExisting && (
         user?.verification_status === 'VERIFIED' || !!onFileDoc?.file

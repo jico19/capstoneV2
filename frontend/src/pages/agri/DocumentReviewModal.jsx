@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Eye, Check } from 'lucide-react';
+import { X, Eye, Check, Lock } from 'lucide-react';
 import FileViewerModal from '../../components/ui/FileViewerModal';
 
 /**
@@ -11,7 +11,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
     const [viewedTypes, setViewedTypes] = useState([]);
     const docs = farmer.farmer_documents || [];
 
-    const attachedTypes = ['handlers_license', 'transport_carrier_reg', 'traders_pass'].filter(dtype => {
+    const attachedTypes = ['handlers_license', 'transport_carrier_reg'].filter(dtype => {
         const d = docs.find(doc => doc.document_type === dtype);
         return d && d.file;
     });
@@ -43,7 +43,6 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
     const docLabels = {
         handlers_license: "Handler's License (BAI)",
         transport_carrier_reg: "Transport License / Vehicle OR-CR",
-        traders_pass: "Trader's Pass (LGU)",
     };
 
     return (
@@ -71,7 +70,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
                 <div className="space-y-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-stone-600">Submitted Standing Documents & OCR Data</p>
                     
-                    {['handlers_license', 'transport_carrier_reg', 'traders_pass'].map((dtype) => {
+                    {['handlers_license', 'transport_carrier_reg'].map((dtype) => {
                         const doc = docs.find((d) => d.document_type === dtype);
                         const edit = docEdits[dtype] || {};
 
@@ -171,7 +170,7 @@ const DocumentReviewModal = ({ farmer, onClose, onApprove, onReject, isSubmittin
 
                 {unviewedCount > 0 && (
                     <div className="p-3 bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-medium rounded-xl flex items-center gap-2">
-                        <span>🔒</span>
+                        <Lock size={15} className="text-amber-700 shrink-0" />
                         <span>Action Required: Please click and view all submitted files above before approving. ({unviewedCount} unreviewed document remaining)</span>
                     </div>
                 )}

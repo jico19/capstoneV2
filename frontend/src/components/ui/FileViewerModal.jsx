@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     X, 
     ZoomIn, 
@@ -16,6 +17,7 @@ import { getAuthenticatedMediaUrl } from '../../lib/utils';
  * Universal In-App Document Viewer Modal
  * Supports both Image and PDF files.
  * Provides controls for zoom, rotation, reset, download, and external view.
+ * Uses React Portal to prevent CSS transform containing block trapping from parent modals.
  */
 const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview", subtitle }) => {
 
@@ -23,7 +25,26 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
     const [rotation, setRotation] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    if (!isOpen || !fileUrl) return null;
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [isOpen, onClose]);
+
+    if (!isOpen || !fileUrl || typeof document === 'undefined') return null;
 
     const resolvedUrl = getAuthenticatedMediaUrl(fileUrl);
 
@@ -33,9 +54,6 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
         resolvedUrl.includes('.pdf?')
     );
 
-
-
-
     const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3));
     const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
     const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
@@ -44,9 +62,13 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
         setRotation(0);
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-2 sm:p-6 animate-in fade-in duration-150">
+    return createPortal(
+        <div 
+            onClick={onClose}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-2 sm:p-6 animate-in fade-in duration-150"
+        >
             <div 
+                onClick={(e) => e.stopPropagation()}
                 className={`bg-white border border-stone-200 flex flex-col shadow-xl transition-all ${
                     isFullscreen 
                         ? 'w-screen h-screen max-w-none max-h-none rounded-none' 
@@ -208,7 +230,8 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                     <span>Press ESC or click close to dismiss</span>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

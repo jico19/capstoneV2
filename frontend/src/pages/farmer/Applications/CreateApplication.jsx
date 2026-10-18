@@ -74,7 +74,7 @@ const CreateApplication = () => {
                 });
 
                 // Append documents
-                ['traders_pass', 'handlers_license', 'transport_carrier_reg'].forEach(docType => {
+                ['handlers_license', 'transport_carrier_reg'].forEach(docType => {
                     if (data[docType]?.[0]) formData.append(docType, data[docType][0]);
                 });
 

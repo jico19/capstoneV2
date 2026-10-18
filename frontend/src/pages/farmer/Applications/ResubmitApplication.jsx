@@ -65,7 +65,7 @@ const ResubmitApplication = () => {
 
             // Pre-fill common documents
             if (application.all_documents) {
-                ['traders_pass', 'handlers_license', 'transport_carrier_reg'].forEach(docType => {
+                ['handlers_license', 'transport_carrier_reg'].forEach(docType => {
                     const doc = application.all_documents.find(d => d.document_type === docType);
                     if (doc) {
                         const filename = doc.file ? doc.file.substring(doc.file.lastIndexOf('/') + 1) : `${docType}.png`;
@@ -173,7 +173,7 @@ const ResubmitApplication = () => {
         });
 
         // Appending common documents only if a new file is uploaded
-        ['traders_pass', 'handlers_license', 'transport_carrier_reg'].forEach(docType => {
+        ['handlers_license', 'transport_carrier_reg'].forEach(docType => {
             const fileVal = data[docType];
             if (isFile(fileVal)) {
                 formData.append(docType, getFileObject(fileVal));
@@ -334,7 +334,6 @@ const ResubmitApplication = () => {
                                         prevStep={prevStep}
                                         nextStep={() => {
                                             const step2Fields = [
-                                                'traders_pass', 
                                                 'handlers_license', 
                                                 'transport_carrier_reg',
                                                 ...origins.flatMap(o => {

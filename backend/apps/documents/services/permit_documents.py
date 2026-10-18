@@ -15,7 +15,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.platypus import Table, TableStyle, Paragraph, Image as RLImage
 from reportlab.lib.styles import ParagraphStyle
 
 from apps.documents.pdf_builder import (
@@ -53,15 +53,51 @@ def _retry_pdf_task(task_fn, task_name, permit_application_id, current_attempt, 
         )
         raise error
 
+def format_heads_in_words(n):
+    """Convert an integer head count to formal words."""
+    if not n or n <= 0:
+        return "ZERO"
+    ones = ["", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE",
+            "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN",
+            "SEVENTEEN", "EIGHTEEN", "NINETEEN"]
+    tens = ["", "", "TWENTY", "THIRTY", "FORTY", "FIFTY", "SIXTY", "SEVENTY", "EIGHTY", "NINETY"]
+
+    def convert_chunk(num):
+        res = []
+        if num >= 100:
+            res.append(ones[num // 100] + " HUNDRED")
+            num %= 100
+        if 0 < num < 20:
+            res.append(ones[num])
+        elif num >= 20:
+            t = tens[num // 10]
+            o = ones[num % 10]
+            res.append(f"{t}-{o}" if o else t)
+        return " ".join(res)
+
+    parts = []
+    if n >= 1000000:
+        parts.append(f"{convert_chunk(n // 1000000)} MILLION")
+        n %= 1000000
+    if n >= 1000:
+        parts.append(f"{convert_chunk(n // 1000)} THOUSAND")
+        n %= 1000
+    if n > 0:
+        parts.append(convert_chunk(n))
+    return " ".join(parts).strip()
+
+
 @task()
 def generate_permit_pdf(permit_application_id, current_attempt=1):
     """
-    Background task to generate a professional PDF permit.
-    Aligns with the current PermitApplication model structure.
+    Background task to generate an official executive Livestock Transport Permit.
+    Uses formal Republic of the Philippines / Municipality of Sariaya letterhead,
+    dual municipal seals, official double border, dynamic auto-wrapping tables
+    for long destinations/origins/purposes, high-resolution QR verification,
+    and official Municipal Agriculturist attestation.
     """
     try:
         with transaction.atomic():
-            # Select related and prefetch origins for efficiency
             application = (
                 PermitApplication.objects.select_related("farmer", "issued_permit")
                 .prefetch_related("origins__barangay")
@@ -69,33 +105,92 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             )
             issued_permit = application.issued_permit
 
-            # Aggregate data from origins
-            origins = application.origins.all()
+            # Origins and swine aggregations
+            origins = list(application.origins.all())
             total_pigs = sum(o.number_of_pigs for o in origins)
             origin_barangays = ", ".join(o.barangay.name for o in origins)
+
+            # Categorized breakdown
+            inahin_total = sum(o.inahin for o in origins)
+            barako_total = sum(o.barako for o in origins)
+            fattener_total = sum(o.fattener for o in origins)
+            grower_total = sum(o.grower for o in origins)
+            bulaw_total = sum(o.bulaw for o in origins)
+            starter_total = sum(o.starter for o in origins)
+
+            breakdown_parts = []
+            if inahin_total > 0:
+                breakdown_parts.append(f"Sow (Inahin): {inahin_total}")
+            if barako_total > 0:
+                breakdown_parts.append(f"Boar (Barako): {barako_total}")
+            if fattener_total > 0:
+                breakdown_parts.append(f"Fattener: {fattener_total}")
+            if grower_total > 0:
+                breakdown_parts.append(f"Grower: {grower_total}")
+            if bulaw_total > 0:
+                breakdown_parts.append(f"Bulaw: {bulaw_total}")
+            if starter_total > 0:
+                breakdown_parts.append(f"Starter: {starter_total}")
+
+            breakdown_str = " | ".join(breakdown_parts) if breakdown_parts else f"Live Swine (Commercial Hogs): {total_pigs}"
+
+            # Signatory config
+            config = MunicipalConfig.objects.first()
+            oic_name = config.oic_name if config and config.oic_name else "AMALITA C. AMORES"
+            oic_title = config.oic_title if config and config.oic_title else "OIC - Municipal Agriculturist"
+
+            farmer_name = (
+                application.farmer.get_full_name() or application.farmer.username
+            ).upper()
+
+            date_issued_str = (
+                issued_permit.date_issued.strftime("%B %d, %Y")
+                if issued_permit.date_issued
+                else timezone.now().strftime("%B %d, %Y")
+            )
+            valid_until_str = (
+                issued_permit.valid_until.strftime("%B %d, %Y")
+                if issued_permit.valid_until
+                else "N/A"
+            )
+            transport_date_str = (
+                application.transport_date.strftime("%B %d, %Y")
+                if application.transport_date
+                else "N/A"
+            )
+            in_words_str = f"{format_heads_in_words(total_pigs)} HEADS ONLY"
 
             buffer = BytesIO()
             p = canvas.Canvas(buffer, pagesize=A4)
             width, height = A4
 
-            # --- Branding & Design Constants ---
-            PRIMARY_GREEN, TEXT_MAIN, TEXT_MUTED, BORDER_COLOR, ACCENT_BG = (
-                PDF_GREEN, PDF_TEXT_MAIN, PDF_TEXT_MUTED, PDF_BORDER_COLOR, PDF_ACCENT_BG
-            )
+            PRIMARY_GREEN = PDF_GREEN
+            TEXT_MAIN = PDF_TEXT_MAIN
+            TEXT_MUTED = PDF_TEXT_MUTED
+            BORDER_COLOR = PDF_BORDER_COLOR
+            ACCENT_BG = PDF_ACCENT_BG
 
+            # 1. Page Background & Double Formal Certificate Border
             p.setFillColor(colors.white)
             p.rect(0, 0, width, height, fill=True, stroke=False)
 
-            # Subtle accent on the left
-            p.setFillColor(PRIMARY_GREEN)
-            p.rect(0, 0, 0.5 * cm, height, fill=True, stroke=False)
+            # Outer frame (green)
+            p.setStrokeColor(PRIMARY_GREEN)
+            p.setLineWidth(1.5)
+            p.rect(1.0 * cm, 1.0 * cm, width - 2.0 * cm, height - 2.0 * cm, fill=False, stroke=True)
 
-            logo_size = 2.2 * cm
+            # Inner hairline frame
+            p.setStrokeColor(BORDER_COLOR)
+            p.setLineWidth(0.5)
+            p.rect(1.18 * cm, 1.18 * cm, width - 2.36 * cm, height - 2.36 * cm, fill=False, stroke=True)
+
+            # 2. Letterhead Logos & Typography
+            logo_size = 2.0 * cm
             if os.path.exists(OFFICIAL_LOGO):
                 p.drawImage(
                     OFFICIAL_LOGO,
-                    1.5 * cm,
-                    height - 2.8 * cm,
+                    1.6 * cm,
+                    height - 3.5 * cm,
                     width=logo_size,
                     height=logo_size,
                     mask="auto",
@@ -104,131 +199,188 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             if os.path.exists(AGRI_LOGO):
                 p.drawImage(
                     AGRI_LOGO,
-                    width - 1.5 * cm - logo_size,
-                    height - 2.8 * cm,
+                    width - 1.6 * cm - logo_size,
+                    height - 3.5 * cm,
                     width=logo_size,
                     height=logo_size,
                     mask="auto",
                 )
 
-            p.setFillColor(TEXT_MAIN)
-            p.setFont("Helvetica-Bold", 20)
-            p.drawCentredString(
-                width / 2, height - 1.2 * cm, "LIVESTOCK TRANSPORT PERMIT"
-            )
-
-            p.setFont("Helvetica", 10)
             p.setFillColor(TEXT_MUTED)
-            p.drawCentredString(
-                width / 2, height - 1.8 * cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST"
-            )
-            p.drawCentredString(
-                width / 2, height - 2.3 * cm, "SARIAYA, QUEZON PROVINCE, PHILIPPINES"
-            )
-
-            # Reference Number Badge
-            badge_width = 6.5 * cm
-            badge_x = width - badge_width - 1.5 * cm  # 1.5cm margin from right edge
-            badge_y = height - 4.8 * cm
-
-            p.setFillColor(ACCENT_BG)
-            p.rect(badge_x, badge_y, badge_width, 1.5 * cm, fill=True, stroke=False)
-
+            p.setFont("Helvetica", 8.5)
+            p.drawCentredString(width / 2, height - 1.6 * cm, "Republic of the Philippines")
+            p.drawCentredString(width / 2, height - 2.0 * cm, "Province of Quezon")
+            p.setFont("Helvetica-Bold", 10.5)
             p.setFillColor(TEXT_MAIN)
-            p.setFont("Helvetica-Bold", 8)
-            p.drawString(badge_x + 0.3 * cm, badge_y + 1.1 * cm, "PERMIT NUMBER")
-            p.setFont("Helvetica-Bold", 13)  # Slightly smaller so long IDs fit
-            p.drawString(
-                badge_x + 0.3 * cm, badge_y + 0.4 * cm, issued_permit.permit_number
+            p.drawCentredString(width / 2, height - 2.45 * cm, "MUNICIPALITY OF SARIAYA")
+            p.setFont("Helvetica-Bold", 11.5)
+            p.setFillColor(PRIMARY_GREEN)
+            p.drawCentredString(width / 2, height - 2.95 * cm, "OFFICE OF THE MUNICIPAL AGRICULTURIST")
+
+            # Green decorative separator line
+            p.setStrokeColor(PRIMARY_GREEN)
+            p.setLineWidth(1.5)
+            p.line(1.5 * cm, height - 3.35 * cm, width - 1.5 * cm, height - 3.35 * cm)
+
+            # 3. Document Title
+            p.setFillColor(TEXT_MAIN)
+            p.setFont("Helvetica-Bold", 16)
+            p.drawCentredString(width / 2, height - 4.0 * cm, "LIVESTOCK TRANSPORT PERMIT")
+            p.setFont("Helvetica-Bold", 7.5)
+            p.setFillColor(TEXT_MUTED)
+            p.drawCentredString(width / 2, height - 4.45 * cm, "OFFICIAL LIVESTOCK MOVEMENT CLEARANCE & MANIFEST")
+
+            # 4. Top Reference Banner Table (Permit #, Date Issued, Valid Until)
+            ref_label_style = ParagraphStyle(
+                'RefLabel',
+                fontName='Helvetica-Bold',
+                fontSize=7,
+                leading=8,
+                textColor=TEXT_MUTED,
+                alignment=1,
+            )
+            ref_val_style = ParagraphStyle(
+                'RefVal',
+                fontName='Helvetica-Bold',
+                fontSize=11,
+                leading=13,
+                textColor=PRIMARY_GREEN,
+                alignment=1,
+            )
+            ref_val_dark = ParagraphStyle(
+                'RefValDark',
+                fontName='Helvetica-Bold',
+                fontSize=10,
+                leading=12,
+                textColor=TEXT_MAIN,
+                alignment=1,
             )
 
-            def draw_info_row(x, y, label, value, w=8 * cm, h=1.4 * cm):
-                # Box
-                p.setStrokeColor(BORDER_COLOR)
-                p.setLineWidth(0.5)
-                p.rect(x, y, w, h, fill=False, stroke=True)
-                # Label
-                p.setFillColor(TEXT_MUTED)
-                p.setFont("Helvetica-Bold", 7)
-                p.drawString(x + 0.3 * cm, y + h - 0.4 * cm, label.upper())
-                # Value
-                p.setFillColor(TEXT_MAIN)
-                p.setFont("Helvetica-Bold", 11)
-                p.drawString(x + 0.3 * cm, y + 0.3 * cm, str(value))
+            ref_table_data = [
+                [
+                    Paragraph("PERMIT NUMBER", ref_label_style),
+                    Paragraph("DATE ISSUED", ref_label_style),
+                    Paragraph("VALID UNTIL", ref_label_style),
+                ],
+                [
+                    Paragraph(html.escape(issued_permit.permit_number), ref_val_style),
+                    Paragraph(html.escape(date_issued_str), ref_val_dark),
+                    Paragraph(html.escape(valid_until_str), ref_val_style),
+                ]
+            ]
+            ref_table = Table(ref_table_data, colWidths=[6.0 * cm, 6.0 * cm, 6.0 * cm])
+            ref_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), ACCENT_BG),
+                ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
 
-            # Row 1: Farmer & Application ID
-            draw_info_row(
-                1.5 * cm,
-                height - 7.5 * cm,
-                "Registered Farmer",
-                (
-                    application.farmer.get_full_name() or application.farmer.username
-                ).upper(),
-                w=11 * cm,
-            )
-            draw_info_row(
-                13 * cm,
-                height - 7.5 * cm,
-                "System ID",
-                application.application_id,
-                w=6.5 * cm,
-            )
+            current_y = height - 4.7 * cm
+            rw, rh = ref_table.wrapOn(p, 18.0 * cm, 3 * cm)
+            current_y -= rh
+            ref_table.drawOn(p, 1.5 * cm, current_y)
 
-            # Row 2: Origins & Destination
-            draw_info_row(
-                1.5 * cm,
-                height - 9.2 * cm,
-                "Origin Barangay(s)",
-                origin_barangays,
-                w=11 * cm,
-            )
-            draw_info_row(
-                13 * cm,
-                height - 9.2 * cm,
-                "Destination",
-                application.destination,
-                w=6.5 * cm,
-            )
+            current_y -= 0.35 * cm
 
-            # Row 3: Livestock Count & Dates
-            draw_info_row(
-                1.5 * cm,
-                height - 10.9 * cm,
-                "Total Quantity (Swine)",
-                f"{total_pigs} PIGS",
-                w=6 * cm,
+            # Style definitions for data tables
+            val_style = ParagraphStyle(
+                'PermitValBold',
+                fontName='Helvetica-Bold',
+                fontSize=8.5,
+                leading=10.5,
+                textColor=TEXT_MAIN,
+                wordWrap='CJK',
             )
-            draw_info_row(
-                8 * cm,
-                height - 10.9 * cm,
-                "Transport Date",
-                application.transport_date.strftime("%B %d, %Y"),
-                w=5.5 * cm,
+            val_style_norm = ParagraphStyle(
+                'PermitValNorm',
+                fontName='Helvetica',
+                fontSize=8.5,
+                leading=10.5,
+                textColor=TEXT_MAIN,
+                wordWrap='CJK',
             )
-            draw_info_row(
-                14 * cm,
-                height - 10.9 * cm,
-                "Valid Until",
-                issued_permit.valid_until.strftime("%B %d, %Y"),
-                w=5.5 * cm,
+            section_hdr_style = ParagraphStyle(
+                'PermitSecHdr',
+                fontName='Helvetica-Bold',
+                fontSize=7.5,
+                leading=9,
+                textColor=PRIMARY_GREEN,
             )
 
-            # Row 4: Purpose
-            draw_info_row(
-                1.5 * cm,
-                height - 12.6 * cm,
-                "Authorized Purpose",
-                application.purpose or "LIVESTOCK TRADE/TRANSPORT",
-                w=18 * cm,
-            )
+            # 5. Section I: Permittee & Route Specifications (Dynamic Auto-wrapping)
+            p_data_1 = [
+                [
+                    Paragraph("<b>I. PERMITTEE & TRANSPORT ROUTE</b>", section_hdr_style),
+                    "",
+                ],
+                [
+                    Paragraph(f"<font color='#57534e'><b>REGISTERED PERMITTEE (FARMER):</b></font><br/>{html.escape(farmer_name)}", val_style),
+                    Paragraph(f"<font color='#57534e'><b>SYSTEM APPLICATION ID:</b></font><br/>{html.escape(application.application_id)}", val_style),
+                ],
+                [
+                    Paragraph(f"<font color='#57534e'><b>POINT(S) OF ORIGIN (SARIAYA BARANGAY):</b></font><br/>{html.escape(origin_barangays)}", val_style_norm),
+                    Paragraph(f"<font color='#57534e'><b>FINAL DESTINATION ADDRESS:</b></font><br/>{html.escape(application.destination or 'N/A')}", val_style_norm),
+                ],
+                [
+                    Paragraph(f"<font color='#57534e'><b>SCHEDULED TRANSPORT DATE:</b></font><br/>{html.escape(transport_date_str)}", val_style),
+                    Paragraph(f"<font color='#57534e'><b>AUTHORIZED PURPOSE:</b></font><br/>{html.escape(application.purpose or 'LIVESTOCK TRADE/TRANSPORT')}", val_style_norm),
+                ],
+            ]
+            t_route = Table(p_data_1, colWidths=[9.0 * cm, 9.0 * cm])
+            t_route.setStyle(TableStyle([
+                ('SPAN', (0, 0), (1, 0)),
+                ('BACKGROUND', (0, 0), (1, 0), colors.HexColor("#f0fdf4")),
+                ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]))
+            tw1, th1 = t_route.wrapOn(p, 18.0 * cm, 8 * cm)
+            current_y -= th1
+            t_route.drawOn(p, 1.5 * cm, current_y)
 
-            p.setFillColor(ACCENT_BG)
-            p.rect(1.5 * cm, 3.5 * cm, 18 * cm, 6 * cm, fill=True, stroke=True)
-            p.setStrokeColor(BORDER_COLOR)
+            current_y -= 0.35 * cm
 
-            qr_url = (
-                f"{settings.FRONTEND_URL}/inspector/verify/{issued_permit.qr_token}"
-            )
+            # 6. Section II: Consignment Breakdown Table
+            p_data_2 = [
+                [
+                    Paragraph("<b>II. LIVESTOCK CONSIGNMENT & CLASSIFICATION</b>", section_hdr_style),
+                    "",
+                ],
+                [
+                    Paragraph(f"<font color='#57534e'><b>TOTAL SWINE HEADCOUNT:</b></font><br/><font color='#166534'><b>{total_pigs} HEADS</b></font>", val_style),
+                    Paragraph(f"<font color='#57534e'><b>HEADCOUNT IN WORDS:</b></font><br/>{html.escape(in_words_str)}", val_style),
+                ],
+                [
+                    Paragraph(f"<font color='#57534e'><b>CLASSIFIED BREAKDOWN:</b></font><br/>{html.escape(breakdown_str)}", val_style_norm),
+                    Paragraph(f"<font color='#57534e'><b>REGULATORY STATUS:</b></font><br/><font color='#166534'><b>OFFICIALLY CLEARED FOR MOVEMENT</b></font>", val_style),
+                ],
+            ]
+            t_consignment = Table(p_data_2, colWidths=[9.0 * cm, 9.0 * cm])
+            t_consignment.setStyle(TableStyle([
+                ('SPAN', (0, 0), (1, 0)),
+                ('BACKGROUND', (0, 0), (1, 0), colors.HexColor("#f0fdf4")),
+                ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]))
+            tw2, th2 = t_consignment.wrapOn(p, 18.0 * cm, 6 * cm)
+            current_y -= th2
+            t_consignment.drawOn(p, 1.5 * cm, current_y)
+
+            current_y -= 0.35 * cm
+
+            # 7. Section III: Digital Security & Field Verification (QR Code)
+            qr_url = f"{settings.FRONTEND_URL}/inspector/verify/{issued_permit.qr_token}"
             qr = qrcode.QRCode(version=1, box_size=10, border=1)
             qr.add_data(qr_url)
             qr.make(fit=True)
@@ -237,54 +389,137 @@ def generate_permit_pdf(permit_application_id, current_attempt=1):
             qr_img.save(qr_buffer, format="PNG")
             qr_buffer.seek(0)
 
-            p.drawImage(
-                ImageReader(qr_buffer), 2 * cm, 4 * cm, width=5 * cm, height=5 * cm
+            qr_rl_img = RLImage(qr_buffer, width=3.8 * cm, height=3.8 * cm)
+
+            qr_notice_style = ParagraphStyle(
+                'QRNotice',
+                fontName='Helvetica',
+                fontSize=7.5,
+                leading=10,
+                textColor=TEXT_MUTED,
+            )
+            qr_title_style = ParagraphStyle(
+                'QRTitle',
+                fontName='Helvetica-Bold',
+                fontSize=9,
+                leading=11,
+                textColor=TEXT_MAIN,
+            )
+            token_style = ParagraphStyle(
+                'TokenStyle',
+                fontName='Courier-Bold',
+                fontSize=8,
+                leading=10,
+                textColor=PRIMARY_GREEN,
             )
 
-            p.setFillColor(TEXT_MAIN)
-            p.setFont("Helvetica-Bold", 12)
-            p.drawString(7.5 * cm, 7.5 * cm, "SECURE DIGITAL VERIFICATION")
-            p.setFont("Helvetica", 10)
-            p.setFillColor(TEXT_MUTED)
-            p.drawString(
-                7.5 * cm,
-                6.8 * cm,
-                "This permit is equipped with a unique QR code for field verification.",
-            )
-            p.drawString(
-                7.5 * cm,
-                6.3 * cm,
-                "Inspectors may scan this code using the FarmPass Official App.",
-            )
-            p.drawString(
-                7.5 * cm,
-                5.8 * cm,
-                "Validation confirms authenticity and real-time status of the permit.",
-            )
+            qr_card_data = [
+                [
+                    Paragraph("<b>III. DIGITAL SECURITY & FIELD VERIFICATION</b>", section_hdr_style),
+                    "",
+                ],
+                [
+                    qr_rl_img,
+                    [
+                        Paragraph("<b>SECURE FIELD INSPECTION QR VERIFICATION</b>", qr_title_style),
+                        Paragraph(
+                            "This permit is cryptographically protected and registered with the FarmPass municipal livestock transport tracking system.",
+                            qr_notice_style
+                        ),
+                        Paragraph(
+                            "Authorized Checkpoint Officers, Police, and Abattoir Inspectors must scan this QR code using the official FarmPass Inspector App to authenticate active status in real-time.",
+                            qr_notice_style
+                        ),
+                        Paragraph(
+                            f"<b>SECURITY TOKEN:</b> {html.escape(str(issued_permit.qr_token))}",
+                            token_style
+                        ),
+                    ]
+                ]
+            ]
 
-            p.setFillColor(TEXT_MAIN)
+            t_qr = Table(qr_card_data, colWidths=[4.2 * cm, 13.8 * cm])
+            t_qr.setStyle(TableStyle([
+                ('SPAN', (0, 0), (1, 0)),
+                ('BACKGROUND', (0, 0), (1, 0), colors.HexColor("#f0fdf4")),
+                ('BACKGROUND', (0, 1), (-1, -1), ACCENT_BG),
+                ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+                ('ALIGN', (0, 1), (0, 1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            tw3, th3 = t_qr.wrapOn(p, 18.0 * cm, 6 * cm)
+            current_y -= th3
+            t_qr.drawOn(p, 1.5 * cm, current_y)
+
+            current_y -= 0.35 * cm
+
+            # 8. Section IV: Official Certification & Signatory Block
+            attest_style = ParagraphStyle(
+                'AttestStyle',
+                fontName='Helvetica-Oblique',
+                fontSize=7.5,
+                leading=9.5,
+                textColor=TEXT_MAIN,
+                alignment=1,
+            )
+            attest_text = (
+                "This certifies that the livestock movement specified herein has complied with municipal animal welfare guidelines, "
+                "veterinary quarantine health clearances, and local transport ordinances of the Municipality of Sariaya, Province of Quezon."
+            )
+            p_attest = Paragraph(attest_text, attest_style)
+            aw, ah = p_attest.wrapOn(p, 18.0 * cm, 2 * cm)
+            current_y -= ah
+            p_attest.drawOn(p, 1.5 * cm, current_y)
+
+            current_y -= 0.3 * cm
+
+            # Signatory Line
+            sig_box_width = 8.5 * cm
+            sig_x = width - 1.5 * cm - sig_box_width
+            sig_y = current_y
+
+            p.setStrokeColor(TEXT_MAIN)
+            p.setLineWidth(0.8)
+            p.line(sig_x, sig_y - 0.9 * cm, sig_x + sig_box_width, sig_y - 0.9 * cm)
+
             p.setFont("Helvetica-Bold", 10)
-            p.drawString(1.5 * cm, 2 * cm, "ISSUED BY:")
-            p.line(1.5 * cm, 1.2 * cm, 8 * cm, 1.2 * cm)
+            p.setFillColor(TEXT_MAIN)
+            p.drawCentredString(sig_x + (sig_box_width / 2), sig_y - 1.3 * cm, oic_name.upper())
+
             p.setFont("Helvetica", 8)
-            p.drawString(1.5 * cm, 0.8 * cm, "MUNICIPAL AGRICULTURE OFFICE")
+            p.setFillColor(TEXT_MUTED)
+            p.drawCentredString(sig_x + (sig_box_width / 2), sig_y - 1.7 * cm, oic_title)
+            p.drawCentredString(sig_x + (sig_box_width / 2), sig_y - 2.05 * cm, "Office of the Municipal Agriculturist — Sariaya, Quezon")
+
+            # Left side: Issuance timestamp note
+            p.setFont("Helvetica-Bold", 7.5)
+            p.setFillColor(TEXT_MUTED)
+            p.drawString(1.5 * cm, sig_y - 0.8 * cm, "OFFICIAL MUNICIPAL CLEARANCE")
+            p.setFont("Helvetica", 7)
+            p.drawString(1.5 * cm, sig_y - 1.2 * cm, f"Electronic Authorization Ref: #{application.pk:05d}")
+            p.drawString(1.5 * cm, sig_y - 1.55 * cm, f"Certified Issued: {date_issued_str}")
+            p.drawString(1.5 * cm, sig_y - 1.9 * cm, "Valid for transport within stated validity window.")
+
+            # 9. Micro-Footer
+            p.setStrokeColor(BORDER_COLOR)
+            p.setLineWidth(0.5)
+            p.line(1.5 * cm, 1.35 * cm, width - 1.5 * cm, 1.35 * cm)
+
+            p.setFont("Helvetica", 6.5)
+            p.setFillColor(TEXT_MUTED)
             p.drawString(
                 1.5 * cm,
-                0.4 * cm,
-                f"Date Issued: {issued_permit.date_issued.strftime('%B %d, %Y')}",
-            )
-
-            p.setFillColor(TEXT_MUTED)
-            p.setFont("Helvetica-Oblique", 7)
-            p.drawRightString(
-                width - 1.5 * cm,
-                0.4 * cm,
-                f"Verification Token: {issued_permit.qr_token[:16]}...",
+                1.15 * cm,
+                f"FarmPass Electronic Livestock Clearance System • Municipality of Sariaya • Generated {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
             p.drawRightString(
                 width - 1.5 * cm,
-                0.8 * cm,
-                "This is a computer-generated document. Unauthorized alteration is a criminal offense.",
+                1.15 * cm,
+                "Computer-generated clearance. Any alteration, tampering, or erasure voids this permit."
             )
 
             p.showPage()
@@ -490,39 +725,6 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
             p_body.drawOn(p, 1.5 * cm, height - 6.7 * cm)
 
             current_y = height - 7.0 * cm
-
-            # Section A to G - Details Table
-            def format_heads_in_words(n):
-                if not n or n <= 0:
-                    return "ZERO"
-                ones = ["", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE",
-                        "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN",
-                        "SEVENTEEN", "EIGHTEEN", "NINETEEN"]
-                tens = ["", "", "TWENTY", "THIRTY", "FORTY", "FIFTY", "SIXTY", "SEVENTY", "EIGHTY", "NINETY"]
-
-                def convert_chunk(num):
-                    res = []
-                    if num >= 100:
-                        res.append(ones[num // 100] + " HUNDRED")
-                        num %= 100
-                    if 0 < num < 20:
-                        res.append(ones[num])
-                    elif num >= 20:
-                        t = tens[num // 10]
-                        o = ones[num % 10]
-                        res.append(f"{t}-{o}" if o else t)
-                    return " ".join(res)
-
-                parts = []
-                if n >= 1000000:
-                    parts.append(f"{convert_chunk(n // 1000000)} MILLION")
-                    n %= 1000000
-                if n >= 1000:
-                    parts.append(f"{convert_chunk(n // 1000)} THOUSAND")
-                    n %= 1000
-                if n > 0:
-                    parts.append(convert_chunk(n))
-                return " ".join(parts).strip()
 
             in_words_str = f"{format_heads_in_words(total_pigs)} HEADS ONLY"
             

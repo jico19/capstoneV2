@@ -14,12 +14,14 @@ import {
     Check,
     Building2,
     FileCheck2,
-    MapPin
+    MapPin,
+    ShieldCheck
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../../lib/api";
 import { toast } from "sonner";
 import AgriLogo from "../../assets/sariaya-agri-logo.jpg";
+import TermsPrivacyModal from "./TermsPrivacyModal";
 
 /**
  * Register Page
@@ -82,6 +84,8 @@ const RegisterPage = () => {
     const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
     const [globalError, setGlobalError] = useState(null);
     const [isRegistered, setIsRegistered] = useState(false);
+    const [agreeTerms, setAgreeTerms] = useState(false);
+    const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
     // Password visibility toggles
     const [showPassword, setShowPassword] = useState(false);
@@ -236,6 +240,10 @@ const RegisterPage = () => {
     // Step 3: Final Account Creation
     const onFinalRegister = async (data) => {
         setGlobalError(null);
+        if (!agreeTerms) {
+            setGlobalError("You must agree to the Terms of Service and Data Privacy Policy to complete registration.");
+            return;
+        }
         try {
             await api.post("/user/", {
                 username: data.username,
@@ -647,6 +655,10 @@ const RegisterPage = () => {
                                         A 6-digit confirmation code will be sent via SMS to this number.
                                     </p>
                                 )}
+                                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-stone-500">
+                                    <ShieldCheck size={13} className="text-green-700 shrink-0" />
+                                    <span>Protected under RA 10173 and used solely for official municipal operations.</span>
+                                </div>
                             </div>
 
                             {/* Username Preview & Customization */}
@@ -959,11 +971,51 @@ const RegisterPage = () => {
                                 </div>
                             </div>
 
+                            {/* Terms & Data Privacy Consent Agreement */}
+                            <div className="bg-stone-50 border border-stone-200 rounded-lg p-3 space-y-2">
+                                <label className="flex items-start gap-2.5 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        id="agree-terms-checkbox"
+                                        checked={agreeTerms}
+                                        onChange={(e) => {
+                                            setAgreeTerms(e.target.checked);
+                                            clearFormErrors();
+                                        }}
+                                        className="mt-0.5 w-4 h-4 rounded border-stone-300 text-green-700 focus:ring-green-700 cursor-pointer accent-green-700 shrink-0"
+                                    />
+                                    <div className="text-xs text-stone-700 leading-relaxed select-none">
+                                        <span>I agree to the </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsTermsModalOpen(true)}
+                                            className="font-bold text-green-700 underline hover:text-green-800 cursor-pointer"
+                                        >
+                                            Terms of Service
+                                        </button>
+                                        <span> and consent to the collection and use of my data solely for municipal operations under the </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsTermsModalOpen(true)}
+                                            className="font-bold text-green-700 underline hover:text-green-800 cursor-pointer"
+                                        >
+                                            Data Privacy Act of 2012 (RA 10173)
+                                        </button>
+                                        <span>.</span>
+                                    </div>
+                                </label>
+                                {!agreeTerms && (
+                                    <p className="text-[10px] text-stone-500 pl-6">
+                                        You must accept the terms and data privacy agreement to proceed.
+                                    </p>
+                                )}
+                            </div>
+
                             {/* Final Submit Button */}
                             <button
                                 id="submit-registration"
                                 type="submit"
-                                disabled={isSubmitting || !hasMinLength || !passwordsMatch}
+                                disabled={isSubmitting || !hasMinLength || !passwordsMatch || !agreeTerms}
                                 className="w-full bg-green-700 text-white font-black uppercase tracking-widest text-xs px-4 py-3 rounded-lg shadow-xs hover:bg-green-600 transition-colors duration-100 ease-out flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 {isSubmitting ? (
@@ -993,6 +1045,13 @@ const RegisterPage = () => {
 
                 </div>
             </div>
+
+            {/* Terms and Privacy Modal */}
+            <TermsPrivacyModal
+                isOpen={isTermsModalOpen}
+                onClose={() => setIsTermsModalOpen(false)}
+                onAccept={() => setAgreeTerms(true)}
+            />
         </div>
     );
 };

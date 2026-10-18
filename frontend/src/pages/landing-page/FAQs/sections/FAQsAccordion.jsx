@@ -66,6 +66,23 @@ const CATEGORIES = [
     ],
   },
   {
+    title: "Data Privacy & Protection",
+    items: [
+      {
+        q: "Is my data protected and what is it used for?",
+        a: "All data collected in FarmPass is strictly protected under the Data Privacy Act of 2012 (Republic Act No. 10173). All collected information is used solely and exclusively for municipal livestock transport operations, official biosecurity verification, and statutory permit issuance. Your data is never sold, shared with unauthorized third parties, or used outside official municipal operations."
+      },
+      {
+        q: "How is my personal information secured?",
+        a: "Sensitive citizen records—including mobile contact numbers, origin farm details, and uploaded credentials—are encrypted at rest using industry-standard AES encryption. Access is strictly restricted through role-based permissions to authorized Municipal Agriculture Office (MAO) and Provincial Veterinary Office (OPV) personnel."
+      },
+      {
+        q: "Can I access or export my personal data?",
+        a: "Yes. In compliance with citizen rights under the Data Privacy Act of 2012, registered users can view their credentials, review permit activity, and request an official machine-readable export of their personal data archive at any time."
+      },
+    ],
+  },
+  {
     title: "Technical",
     items: [
       {
@@ -73,8 +90,8 @@ const CATEGORIES = [
         a: "FarmPass runs on smartphones, tablets, and desktop computers. You can also add it to your mobile home screen for quick access in the field."
       },
       {
-        q: "Is my information secure?",
-        a: "User data is stored securely and handled in strict compliance with the Data Privacy Act of 2012 (RA 10173). Credentials and personal details are used solely for municipal livestock regulation."
+        q: "Do I need an internet connection at checkpoint scans?",
+        a: "Checkpoints can verify the authenticity of issued permits instantly by scanning the embedded QR code on your printed or digital permit document."
       },
     ],
   },

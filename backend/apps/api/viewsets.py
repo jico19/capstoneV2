@@ -51,6 +51,22 @@ class UserViewSet(BaseModelViewSet):
         else:
             return serializers.UserListSerializer
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+        # Log explicit consent under Data Privacy Act of 2012 (RA 10173) upon account creation
+        ip = (
+            self.request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+            or self.request.META.get("REMOTE_ADDR")
+        )
+        ua = self.request.META.get("HTTP_USER_AGENT", "")
+        models.PrivacyConsentLog.objects.create(
+            user=user,
+            consent_version="v1.0-2026",
+            consent_scope="registration_kyc_transport",
+            ip_address=ip if ip else None,
+            user_agent=ua,
+        )
+
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated:

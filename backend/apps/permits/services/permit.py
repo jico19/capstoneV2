@@ -173,6 +173,9 @@ def verify_permit(qr_token, user):
     issued_permit_instance = get_object_or_404(models.IssuedPermit, qr_token=qr_token)
     application_instance = issued_permit_instance.application
 
+    if user.role == "Farmer" and application_instance.farmer != user:
+        raise PermissionDenied("You do not have permission to access another farmer's permit.")
+
     if issued_permit_instance.valid_until < timezone.now().date():
         # Audit failure
         AuditTrail.objects.create(

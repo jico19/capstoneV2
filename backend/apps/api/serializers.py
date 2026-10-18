@@ -154,6 +154,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class AuditTrailSerializer(serializers.ModelSerializer):
     who_performed_username = serializers.CharField(source='who_performed.username', read_only=True, default='System')
+    target_user_username = serializers.CharField(source='target_user.username', read_only=True, default=None)
 
     class Meta:
         model = models.AuditTrail
@@ -161,7 +162,11 @@ class AuditTrailSerializer(serializers.ModelSerializer):
             'id',
             'who_performed',
             'who_performed_username',
+            'target_user',
+            'target_user_username',
+            'action_type',
             'what_performed',
+            'ip_address',
             'when_performed',
         ]
 

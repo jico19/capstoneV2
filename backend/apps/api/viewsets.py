@@ -82,6 +82,38 @@ class UserViewSet(BaseModelViewSet):
         serializer = serializers.UserListSerializer(request.user, context={"request": request})
         return Response(serializer.data)
 
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def export_personal_data(self, request):
+        """
+        Data Privacy Act of 2012 (RA 10173 Sec. 16 - Right to Data Portability).
+        Generates a comprehensive machine-readable personal dossier for the authenticated citizen.
+        """
+        user = request.user
+        from .audit import log_audit_event
+        from apps.permits.models import PermitApplication
+
+        user_data = serializers.UserListSerializer(user, context={"request": request}).data
+        apps = list(PermitApplication.objects.filter(farmer=user).values(
+            "id", "application_id", "status", "destination", "transport_date", "created_at"
+        ))
+        consents = list(models.PrivacyConsentLog.objects.filter(user=user).values(
+            "consent_version", "consent_scope", "ip_address", "agreed_at"
+        ))
+
+        log_audit_event(
+            request=request,
+            action_type=models.AuditTrail.ActionType.EXPORT,
+            what_performed=f"[DPA_DATA_PORTABILITY] - Citizen {user.username} requested personal data archive export.",
+            target_user=user,
+        )
+
+        return Response({
+            "generated_at": timezone.now().isoformat(),
+            "data_subject": user_data,
+            "permit_records": apps,
+            "consent_history": consents,
+        })
+
     @action(detail=False, methods=["get", "post"], permission_classes=[IsAuthenticated])
     def documents(self, request):
         user = request.user

@@ -10,6 +10,7 @@ import {
     Maximize2, 
     Minimize2 
 } from 'lucide-react';
+import { getAuthenticatedMediaUrl } from '../../lib/utils';
 
 /**
  * Universal In-App Document Viewer Modal
@@ -24,9 +25,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
 
     if (!isOpen || !fileUrl) return null;
 
-    const resolvedUrl = typeof fileUrl === 'string' && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://') && !fileUrl.startsWith('blob:')
-        ? `${(import.meta.env.VITE_BASE_URL || '').replace(/\/$/, '')}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
-        : fileUrl;
+    const resolvedUrl = getAuthenticatedMediaUrl(fileUrl);
 
     const isPdf = typeof resolvedUrl === 'string' && (
         resolvedUrl.toLowerCase().endsWith('.pdf') || 

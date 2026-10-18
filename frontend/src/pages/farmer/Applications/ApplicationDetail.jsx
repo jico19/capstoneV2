@@ -11,6 +11,7 @@ import PaymentCountdownTimer from "../../../components/ui/PaymentCountdownTimer"
 import { useQueryClient } from "@tanstack/react-query"
 import { api } from "../../../lib/api"
 import { toast } from "sonner"
+import { getAuthenticatedMediaUrl } from "../../../lib/utils"
 
 
 /**
@@ -106,7 +107,7 @@ const ApplicationDetail = () => {
                             </div>
                             <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                                 <a 
-                                    href={application.aic_pdf}
+                                    href={getAuthenticatedMediaUrl(application.aic_pdf)}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="btn-tactile bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-300 px-4 py-2 text-xs font-semibold rounded-lg transition-all w-full sm:w-auto text-center flex items-center justify-center gap-1.5"
@@ -114,7 +115,7 @@ const ApplicationDetail = () => {
                                     <ExternalLink size={13} /> Open in Browser
                                 </a>
                                 <a 
-                                    href={application.aic_pdf}
+                                    href={getAuthenticatedMediaUrl(application.aic_pdf)}
                                     target="_blank"
                                     rel="noreferrer"
                                     download={`AIC_${application.application_id || id}.pdf`}

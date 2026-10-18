@@ -42,12 +42,13 @@ class HogSurveyViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if not user.is_authenticated:
-            return models.HogSurvey.objects.none()
-        if user.role == "Barangay":
+        if user.role in ["Admin", "Agri"]:
+            queryset = models.HogSurvey.objects.all()
+        elif user.role == "Barangay":
             queryset = models.HogSurvey.objects.filter(barangay=user.barangay)
         else:
-            queryset = models.HogSurvey.objects.all()
+            # Farmers, Inspectors, and third parties cannot view citizen hog survey PII
+            return models.HogSurvey.objects.none()
 
         farmer_name = self.request.query_params.get("farmer_name")
         date_from = self.request.query_params.get("date_from")

@@ -6,9 +6,6 @@ and testing purposes across all system user roles and workflow stages.
 
 Usage:
     python manage.py runscript seed_realistic_operations
-    # Or import and run with custom options:
-    # from scripts.seed_realistic_operations import run
-    # run(total_applications=160, months=12, clean=True)
 """
 
 import os
@@ -21,15 +18,17 @@ from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
 
-from apps.api.models import User, Notification, AuditTrail
+from apps.api.models import User, Notification, AuditTrail, FarmerDocument, PrivacyConsentLog
 from apps.maps.models import Barangay, HogSurvey
 from apps.permits.models import (
     PermitApplication, TransportOrigin, SubmittedDocument,
-    OPVValidation, OCRValidationResult, IssuedPermit
+    PermitApplicationDocument, OPVValidation, OCRValidationResult,
+    IssuedPermit, MunicipalConfig
 )
 from apps.payment.models import PaymentHistory
 from apps.inspector.models import InspectorLogs
 from apps.sms.models import SMSLog
+from apps.dashboard.models import CachedInsight
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +134,6 @@ def ensure_sample_media_file(relative_path: str, file_type: str = "pdf") -> str:
 
     if not os.path.exists(full_path):
         if file_type == "pdf":
-            # Minimal 1-page valid PDF structure
             pdf_content = (
                 b"%PDF-1.4\n"
                 b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
@@ -147,7 +145,6 @@ def ensure_sample_media_file(relative_path: str, file_type: str = "pdf") -> str:
             with open(full_path, "wb") as f:
                 f.write(pdf_content)
         else:
-            # Minimal 1x1 transparent PNG structure
             png_content = (
                 b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
                 b"\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05"
@@ -176,6 +173,7 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
     if clean:
         print("\n[Step 1/6] Cleaning up old operational records...")
         AuditTrail.objects.all().delete()
+        PrivacyConsentLog.objects.all().delete()
         Notification.objects.all().delete()
         SMSLog.objects.all().delete()
         InspectorLogs.objects.all().delete()
@@ -184,10 +182,13 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
         OPVValidation.objects.all().delete()
         OCRValidationResult.objects.all().delete()
         SubmittedDocument.objects.all().delete()
+        PermitApplicationDocument.objects.all().delete()
         TransportOrigin.objects.all().delete()
         PermitApplication.objects.all().delete()
+        FarmerDocument.objects.all().delete()
         HogSurvey.objects.all().delete()
-        print("  -> Existing operational and survey data successfully cleared.")
+        CachedInsight.objects.all().delete()
+        print("  -> Existing operational, KYC, and survey data successfully cleared.")
 
     # 2. Check Barangays
     barangays = list(Barangay.objects.all())
@@ -198,10 +199,24 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
     print(f"\n[Step 2/6] Found {len(barangays)} Sariaya Barangays.")
 
-    # 3. Create / Standardize Key Users Across All Roles
-    print("\n[Step 3/6] Setting up realistic user accounts with 'password123'...")
+    # Ensure MunicipalConfig
+    MunicipalConfig.objects.update_or_create(
+        id=1,
+        defaults={
+            'vet_health_cert_fee': Decimal("50.00"),
+            'transport_pass_fee': Decimal("50.00"),
+            'local_transport_permit_fee': Decimal("50.00"),
+            'validity_days': 3,
+            'oic_name': "AMALITA C. AMORES",
+            'oic_title': "OIC - Municipal Agriculturist"
+        }
+    )
+    print("  -> Initialized official MunicipalConfig (PHP 150.00 total permit fee).")
 
-    def get_or_create_user(username, role, first_name, last_name, barangay=None, phone_suffix="0001", is_staff_user=False):
+    # 3. Create / Standardize Key Users Across All Roles
+    print("\n[Step 3/6] Setting up realistic user accounts with 'password123' and verified KYC...")
+
+    def get_or_create_user(username, role, first_name, last_name, barangay=None, phone_suffix="0001", is_staff_user=False, verification_status=User.VerificationStatus.VERIFIED):
         email = f"{username}@sariaya.gov.ph" if role in ['Agri', 'Opv', 'Admin', 'Barangay'] else f"{username}@gmail.com"
         phone = f"0917{phone_suffix}"
 
@@ -217,15 +232,30 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                 'barangay': barangay,
                 'receive_sms': True,
                 'is_staff': is_staff_user or (role in ['Admin', 'Agri']),
-                'is_superuser': (role == 'Admin' and username == 'admin')
+                'is_superuser': (role == 'Admin' and username == 'admin'),
+                'verification_status': verification_status,
+                'verification_remarks': "Verified official municipal account." if verification_status == User.VerificationStatus.VERIFIED else "",
+                'verified_at': timezone.now() if verification_status == User.VerificationStatus.VERIFIED else None
             }
         )
         if created or not user.check_password("password123"):
             user.set_password("password123")
+            user.verification_status = verification_status
             user.save()
             print(f"  + Created User: {username:<22} [{role:<10}] - {first_name} {last_name}")
         else:
             print(f"  = Ready User:   {username:<22} [{role:<10}] - {first_name} {last_name}")
+
+        # Record DPA Privacy Consent
+        PrivacyConsentLog.objects.get_or_create(
+            user=user,
+            consent_version="v1.0-2026",
+            defaults={
+                'consent_scope': "registration_kyc_transport",
+                'ip_address': "127.0.0.1",
+                'user_agent': "FarmPass Seed Engine/2.0"
+            }
+        )
         return user
 
     # Admin User
@@ -279,15 +309,56 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
         ("farmer_lourdes", "Lourdes", "Custodio", random.choice(barangays), "5012"),
     ]
 
-    farmers = [
-        get_or_create_user(uname, "Farmer", fname, lname, bg, pnum, False)
-        for uname, fname, lname, bg, pnum in farmer_seed_data
-    ]
+    farmers = []
+    for f_idx, (uname, fname, lname, bg, pnum) in enumerate(farmer_seed_data):
+        farmer_user = get_or_create_user(uname, "Farmer", fname, lname, bg, pnum, False, User.VerificationStatus.VERIFIED)
+        farmers.append(farmer_user)
+
+        # Seed Verified Farmer KYC Documents
+        hl_file = f"farmer_licenses/HL_{uname}.pdf"
+        tcr_file = f"farmer_licenses/TCR_{uname}.pdf"
+        ensure_sample_media_file(hl_file, "pdf")
+        ensure_sample_media_file(tcr_file, "pdf")
+
+        FarmerDocument.objects.update_or_create(
+            user=farmer_user,
+            document_type=FarmerDocument.DocumentType.HANDLERS_LICENSE,
+            defaults={
+                'file': hl_file,
+                'license_number': f"HL-2026-SAR-{f_idx+1000:04d}",
+                'expiration_date': timezone.now().date() + timedelta(days=365),
+                'extracted_data': {
+                    "license_type": "Handler's License",
+                    "full_name": f"{fname} {lname}",
+                    "issued_by": "Bureau of Animal Industry (BAI) Region IV-A",
+                    "status": "VALID"
+                },
+                'ocr_status': "PROCESSED",
+                'is_verified': True
+            }
+        )
+
+        FarmerDocument.objects.update_or_create(
+            user=farmer_user,
+            document_type=FarmerDocument.DocumentType.TRANSPORT_CARRIER_REG,
+            defaults={
+                'file': tcr_file,
+                'license_number': f"TCR-2026-SAR-{f_idx+2000:04d}",
+                'expiration_date': timezone.now().date() + timedelta(days=365),
+                'extracted_data': {
+                    "carrier_type": "Livestock Carrier Van",
+                    "owner": f"{fname} {lname}",
+                    "plate_number": SAMPLE_VEHICLES[f_idx % len(SAMPLE_VEHICLES)]['plate'],
+                    "status": "VALID"
+                },
+                'ocr_status': "PROCESSED",
+                'is_verified': True
+            }
+        )
 
     # 4. Hog Survey Full 2022-2026 Naturalized Seasonal Time Series Generation
     print("\n[Step 4/6] Generating naturalized 2022–2026 quarterly Hog Surveys across all density tiers...")
 
-    # 5-Tier Authentic Sariaya Density Zoning
     VERY_HIGH_BARANGAYS = ["lutucan 1", "lutucan malabag"]
     HIGH_BARANGAYS = [
         "lutucan bata", "guisguis-san roque", "guisguis-talon", "manggalang 1",
@@ -310,122 +381,63 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
         return "MEDIUM"
 
     all_survey_dates = [
-        # 2022
-        datetime.date(2022, 3, 31),
-        datetime.date(2022, 6, 30),
-        datetime.date(2022, 9, 30),
-        datetime.date(2022, 12, 31),
-        # 2023
-        datetime.date(2023, 3, 31),
-        datetime.date(2023, 6, 30),
-        datetime.date(2023, 9, 30),
-        datetime.date(2023, 12, 31),
-        # 2024
-        datetime.date(2024, 3, 31),
-        datetime.date(2024, 6, 30),
-        datetime.date(2024, 9, 30),
-        datetime.date(2024, 12, 31),
-        # 2025
-        datetime.date(2025, 3, 31),
-        datetime.date(2025, 6, 30),
-        datetime.date(2025, 9, 30),
-        datetime.date(2025, 12, 31),
-        # 2026
-        datetime.date(2026, 3, 31),
-        datetime.date(2026, 6, 30),
+        datetime.date(2022, 3, 31), datetime.date(2022, 6, 30), datetime.date(2022, 9, 30), datetime.date(2022, 12, 31),
+        datetime.date(2023, 3, 31), datetime.date(2023, 6, 30), datetime.date(2023, 9, 30), datetime.date(2023, 12, 31),
+        datetime.date(2024, 3, 31), datetime.date(2024, 6, 30), datetime.date(2024, 9, 30), datetime.date(2024, 12, 31),
+        datetime.date(2025, 3, 31), datetime.date(2025, 6, 30), datetime.date(2025, 9, 30), datetime.date(2025, 12, 31),
+        datetime.date(2026, 3, 31), datetime.date(2026, 6, 30),
     ]
 
     all_surveys_to_create = []
+    sample_raiser_names = [
+        "Mang Pedro Alcantara Backyard Piggery", "Aling Maria Santos Farm",
+        "Ka Dencio Swine Raisers", "Sariaya Commercial Hog Farm",
+        "Lutucan Valley Farm", "Lucio Valdez Commercial Piggery",
+        "Kristel Agro-Livestock", "Ernesto Vega Farm", "Rodrigo Castillo Raisers"
+    ]
 
     for bg in barangays:
         tier = get_barangay_tier(bg.name)
 
-        # Baseline seed values per tier
         if tier == "VERY_HIGH":
-            base_inahin = random.randint(45, 55)
-            base_barako = random.randint(4, 5)
-            base_fattener = random.randint(140, 180)
-            base_grower = random.randint(120, 160)
-            base_starter = random.randint(70, 100)
-            base_bulaw = random.randint(15, 25)
+            base_inahin, base_barako = random.randint(45, 55), random.randint(4, 5)
+            base_fattener, base_grower = random.randint(140, 180), random.randint(120, 160)
+            base_starter, base_bulaw = random.randint(70, 100), random.randint(15, 25)
         elif tier == "HIGH":
-            base_inahin = random.randint(16, 26)
-            base_barako = random.randint(2, 3)
-            base_fattener = random.randint(55, 90)
-            base_grower = random.randint(50, 85)
-            base_starter = random.randint(30, 55)
-            base_bulaw = random.randint(6, 16)
+            base_inahin, base_barako = random.randint(16, 26), random.randint(2, 3)
+            base_fattener, base_grower = random.randint(55, 90), random.randint(50, 85)
+            base_starter, base_bulaw = random.randint(30, 55), random.randint(6, 16)
         elif tier == "MEDIUM":
-            base_inahin = random.randint(5, 10)
-            base_barako = 1
-            base_fattener = random.randint(15, 32)
-            base_grower = random.randint(14, 28)
-            base_starter = random.randint(8, 20)
-            base_bulaw = random.randint(3, 8)
+            base_inahin, base_barako = random.randint(5, 10), 1
+            base_fattener, base_grower = random.randint(15, 32), random.randint(14, 28)
+            base_starter, base_bulaw = random.randint(8, 20), random.randint(3, 8)
         elif tier == "LOW":
-            base_inahin = random.randint(1, 3)
-            base_barako = 1 if base_inahin >= 2 else 0
-            base_fattener = random.randint(4, 10)
-            base_grower = random.randint(3, 8)
-            base_starter = random.randint(2, 5)
-            base_bulaw = random.randint(1, 3)
-        else:  # NONE (Urban commercial center)
-            base_inahin = 0
-            base_barako = 0
-            base_fattener = 0
-            base_grower = 0
-            base_starter = 0
-            base_bulaw = 0
+            base_inahin, base_barako = random.randint(1, 3), (1 if random.random() < 0.5 else 0)
+            base_fattener, base_grower = random.randint(4, 10), random.randint(3, 8)
+            base_starter, base_bulaw = random.randint(2, 5), random.randint(1, 3)
+        else:
+            base_inahin = base_barako = base_fattener = base_grower = base_starter = base_bulaw = 0
 
         for s_date in all_survey_dates:
             quarter = (s_date.month - 1) // 3 + 1
             year = s_date.year
 
-            # 1. Multi-Year Macro Cycle Factors
-            if year == 2022:
-                year_mult = 0.95
-            elif year == 2023:
-                year_mult = 1.05
-            elif year == 2024:
-                year_mult = 0.90 if quarter in [2, 3] else 1.02  # Mid-year ASF preventive market dip
-            elif year == 2025:
-                year_mult = 1.15  # Post-recovery expansion
-            else:  # 2026
-                year_mult = 1.12  # Modern stable
+            if year == 2022: year_mult = 0.95
+            elif year == 2023: year_mult = 1.05
+            elif year == 2024: year_mult = 0.90 if quarter in [2, 3] else 1.02
+            elif year == 2025: year_mult = 1.15
+            else: year_mult = 1.12
 
-            # 2. Natural Seasonal Biological Multipliers
-            inahin_mult = 1.0
-            barako_mult = 1.0
-            fattener_mult = 1.0
-            grower_mult = 1.0
-            starter_mult = 1.0
+            inahin_mult = 1.05 if quarter in [1, 4] else 1.0
+            barako_mult = 1.05 if quarter == 4 else 1.0
+            fattener_mult = 1.30 if quarter == 4 else (1.25 if quarter == 3 else 0.85)
+            grower_mult = 1.20 if quarter == 2 else 1.0
+            starter_mult = 1.20 if quarter == 1 else 1.0
 
-            if quarter == 1:  # Post-holiday farrowing & restocking
-                starter_mult = 1.20
-                fattener_mult = 0.85
-                inahin_mult = 1.05
-            elif quarter == 2:  # Mid-year growth
-                grower_mult = 1.20
-                starter_mult = 0.95
-            elif quarter == 3:  # Pre-holiday fattening surge
-                fattener_mult = 1.25
-                grower_mult = 1.10
-            elif quarter == 4:  # Peak holiday readiness & transport sales
-                fattener_mult = 1.30
-                inahin_mult = 1.10
-                barako_mult = 1.05
-
-            # 3. Organic Local Noise (+/- 8% random walk)
             noise = random.uniform(0.92, 1.08)
 
             if tier == "NONE":
-                # Urban center: 75% chance of 0, 25% chance of 1-3 backyard hogs
-                if random.random() < 0.25:
-                    fattener = random.randint(1, 2)
-                    grower = random.randint(0, 1)
-                    inahin = barako = starter = bulaw = 0
-                else:
-                    fattener = grower = inahin = barako = starter = bulaw = 0
+                fattener = grower = inahin = barako = starter = bulaw = 0
             else:
                 inahin = max(0, int(base_inahin * year_mult * inahin_mult * noise))
                 barako = max(0, int(base_barako * year_mult * barako_mult * noise))
@@ -434,14 +446,17 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                 starter = max(0, int(base_starter * year_mult * starter_mult * noise))
                 bulaw = max(0, int(base_bulaw * year_mult * noise))
 
-                # Enforce biological consistency
                 if inahin > 0:
                     barako = max(barako, 1 if inahin >= 3 else 0)
 
             total = inahin + barako + fattener + grower + starter + bulaw
+            f_name = random.choice(sample_raiser_names) if total > 0 else ""
+            c_phone = f"0917{random.randint(1000000, 9999999)}" if total > 0 else ""
 
             all_surveys_to_create.append(HogSurvey(
                 barangay=bg,
+                farmer_name=f_name,
+                contact_number=c_phone,
                 survey_date=s_date,
                 inahin=inahin,
                 barako=barako,
@@ -454,14 +469,13 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
     if all_surveys_to_create:
         HogSurvey.objects.bulk_create(all_surveys_to_create)
-        print(f"  + Added {len(all_surveys_to_create)} naturalized quarterly Hog Survey records spanning 2022–2026 (all density tiers covered).")
+        print(f"  + Added {len(all_surveys_to_create)} naturalized quarterly Hog Survey records spanning 2022–2026.")
 
     # 5. Generate Realistic Operational Applications & Lifecycle Data
     print(f"\n[Step 5/6] Generating {total_applications} realistic Permit Applications & workflows...")
 
     now = timezone.now()
     start_time = now - timedelta(days=months * 30)
-
     timestamps = []
     total_seconds = int((now - start_time).total_seconds())
 
@@ -469,46 +483,29 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
         weight = random.random() ** 1.35
         offset_seconds = int(total_seconds * weight)
         app_dt = start_time + timedelta(seconds=offset_seconds)
-
         hour = random.randint(7, 16)
         minute = random.randint(0, 59)
         second = random.randint(0, 59)
         app_dt = app_dt.replace(hour=hour, minute=minute, second=second)
-
         if app_dt.weekday() == 6:
             app_dt += timedelta(days=1)
-
         timestamps.append(app_dt)
 
     timestamps.sort()
-
     recent_cutoff = now - timedelta(days=14)
 
     recent_status_weights = [
-        ('DRAFT', 0.08),
-        ('SUBMITTED', 0.10),
-        ('RESUBMISSION', 0.06),
-        ('OCR_VALIDATED', 0.08),
-        ('MANUAL', 0.08),
-        ('FORWARDED_TO_OPV', 0.10),
-        ('OPV_VALIDATED', 0.08),
-        ('OPV_REJECTED', 0.08),
-        ('PAYMENT_PENDING', 0.12),
+        ('DRAFT', 0.08), ('SUBMITTED', 0.10), ('RESUBMISSION', 0.06),
+        ('OCR_VALIDATED', 0.08), ('MANUAL', 0.08), ('FORWARDED_TO_OPV', 0.10),
+        ('OPV_VALIDATED', 0.08), ('OPV_REJECTED', 0.08), ('PAYMENT_PENDING', 0.12),
         ('RELEASED', 0.22)
     ]
     recent_statuses, recent_weights = zip(*recent_status_weights)
 
     guaranteed_demo_statuses = [
-        'DRAFT',
-        'SUBMITTED',
-        'RESUBMISSION',
-        'OCR_VALIDATED',
-        'MANUAL',
-        'FORWARDED_TO_OPV',
-        'OPV_VALIDATED',
-        'PAYMENT_PENDING',
-        'RELEASED',
-        'OPV_REJECTED'
+        'DRAFT', 'SUBMITTED', 'RESUBMISSION', 'OCR_VALIDATED',
+        'MANUAL', 'FORWARDED_TO_OPV', 'OPV_VALIDATED', 'PAYMENT_PENDING',
+        'RELEASED', 'OPV_REJECTED'
     ]
 
     apps_created = 0
@@ -545,7 +542,11 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
             AuditTrail.objects.create(
                 who_performed=farmer,
+                target_user=farmer,
+                action_type=AuditTrail.ActionType.CREATE,
                 what_performed=f"[APPLICATION_CREATED] - Farmer {farmer.get_full_name()} initiated Transport Permit application ({app.application_id}).",
+                ip_address="127.0.0.1",
+                user_agent="FarmPass Seed Engine/2.0",
                 when_performed=created_at
             )
 
@@ -562,7 +563,11 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
                 AuditTrail.objects.create(
                     who_performed=farmer,
+                    target_user=farmer,
+                    action_type=AuditTrail.ActionType.UPDATE,
                     what_performed=f"[APPLICATION_SUBMITTED] - Application #{app.pk} ({app.application_id}) submitted for municipal validation.",
+                    ip_address="127.0.0.1",
+                    user_agent="FarmPass Seed Engine/2.0",
                     when_performed=submitted_at
                 )
 
@@ -581,6 +586,21 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                     sent_at=submitted_at
                 )
 
+                # Seed Application-Level Documents (PermitApplicationDocument)
+                app_doc_types = [
+                    PermitApplicationDocument.DocumentType.TRADERS_PASS,
+                    PermitApplicationDocument.DocumentType.HANDLERS_LICENSE,
+                    PermitApplicationDocument.DocumentType.TRANSPORT_CARRIER_REG,
+                ]
+                for adtype in app_doc_types:
+                    doc_filename = f"submitted_docs/app_doc_{adtype}_{app.pk}.pdf"
+                    ensure_sample_media_file(doc_filename, "pdf")
+                    PermitApplicationDocument.objects.create(
+                        application=app,
+                        document_type=adtype,
+                        file=doc_filename
+                    )
+
                 # 2. Transport Origins & Breakdown
                 origin_bg = farmer.barangay or random.choice(barangays)
                 num_origins = 1 if random.random() < 0.85 else 2
@@ -592,7 +612,7 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                 origins = []
                 total_swine_in_app = 0
 
-                for bg in chosen_bgs:
+                for bg_item in chosen_bgs:
                     batch_total = random.randint(4, 18)
                     fattener_count = int(batch_total * random.uniform(0.60, 0.90))
                     grower_count = batch_total - fattener_count
@@ -610,7 +630,9 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
                     origin = TransportOrigin(
                         application=app,
-                        barangay=bg,
+                        barangay=bg_item,
+                        source_farmer_name=f"{farmer.get_full_name()} ({bg_item.name} Farm)",
+                        source_phone_no=farmer.phone_no,
                         number_of_pigs=total_origin_pigs,
                         fattener=fattener_count,
                         grower=grower_count,
@@ -622,18 +644,13 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                     origin.save_base(raw=True)
                     origins.append(origin)
 
-                # 3. Submitted Documents & OCR Validation Results
-                standard_docs = [
-                    SubmittedDocument.DocumentType.CIS,
-                    SubmittedDocument.DocumentType.TRADERS_PASS,
-                    SubmittedDocument.DocumentType.HANDLERS_LICENSE,
-                    SubmittedDocument.DocumentType.TRANSPORT_CARRIER_REG,
-                ]
-                if random.random() < 0.75:
-                    standard_docs.append(SubmittedDocument.DocumentType.ENDORSEMENT_CERTIFICATE)
+                # 3. Origin-Scoped Submitted Documents (CIS & Endorsement)
+                origin_doc_types = [SubmittedDocument.DocumentType.CIS]
+                if random.random() < 0.80:
+                    origin_doc_types.append(SubmittedDocument.DocumentType.ENDORSEMENT_CERTIFICATE)
 
                 for origin in origins:
-                    for dtype in standard_docs:
+                    for dtype in origin_doc_types:
                         doc_filename = f"submitted_docs/mock_{dtype}_{app.pk}_{origin.pk}.pdf"
                         ensure_sample_media_file(doc_filename, "pdf")
 
@@ -668,9 +685,10 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                             status=ocr_status,
                             extracted_field=extracted_metadata,
                             remarks={
-                                "verification": "Standard template verified, official municipal seal detected.",
+                                "verification": "Standard template verified, official seal detected.",
                                 "legibility": "Clear, all fields extracted with high confidence."
                             },
+                            provider="ocrspace",
                             validated_at=ocr_time
                         )
 
@@ -687,7 +705,11 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
                             AuditTrail.objects.create(
                                 who_performed=officer,
+                                target_user=farmer,
+                                action_type=AuditTrail.ActionType.VERIFY,
                                 what_performed=f"[OCR_MANUAL_OVERRIDE] - Document #{sub_doc.pk} ({sub_doc.get_document_type_display()}) manually approved by {officer.get_full_name()}.",
+                                ip_address="127.0.0.1",
+                                user_agent="FarmPass Seed Engine/2.0",
                                 when_performed=override_time
                             )
 
@@ -721,7 +743,11 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
                     AuditTrail.objects.create(
                         who_performed=opv_staff,
+                        target_user=farmer,
+                        action_type=AuditTrail.ActionType.VERIFY,
                         what_performed=f"[OPV_REVIEW_{opv_status}] - Provincial Veterinary Officer {opv_staff.get_full_name()} marked Application #{app.pk} as {opv_status}.",
+                        ip_address="127.0.0.1",
+                        user_agent="FarmPass Seed Engine/2.0",
                         when_performed=opv_time
                     )
 
@@ -777,13 +803,21 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                             valid_until=issued_time.date() + timedelta(days=3)
                         )
 
+                        # Synchronize PermitApplication AIC and issuance fields
                         app.is_issued = is_paid
                         app.issued_at = issued_time if is_paid else None
+                        app.aic_number = aic_number if is_paid else ""
+                        app.aic_pdf = aic_pdf_path if is_paid else None
+                        app.aic_issued_at = issued_time if is_paid else None
                         app.save()
 
                         AuditTrail.objects.create(
                             who_performed=opv_staff,
+                            target_user=farmer,
+                            action_type=AuditTrail.ActionType.CREATE,
                             what_performed=f"[PERMIT_ISSUED] - Local Transport Permit #{permit_number} prepared by OPV Staff {opv_staff.get_full_name()}.",
+                            ip_address="127.0.0.1",
+                            user_agent="FarmPass Seed Engine/2.0",
                             when_performed=issued_time
                         )
 
@@ -808,13 +842,17 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
                             paymongo_payment_intent_id=f"pi_{uuid.uuid4().hex[:20]}" if is_paid else "",
                             confirmed_by=confirming_officer,
                             confirmed_at=payment_time if is_paid else None,
-                            or_number=f"OR-{created_at.year}-{random.randint(1000000, 9999999)}" if is_paid else ""
+                            or_number=f"{random.randint(1000000, 9999999)}" if is_paid else ""
                         )
 
                         if is_paid:
                             AuditTrail.objects.create(
                                 who_performed=confirming_officer or admin_user,
-                                what_performed=f"[PAYMENT_CONFIRMED] - Official Receipt #{pay_history.or_number} generated. Payment of ₱150.00 confirmed for Permit #{permit_number}.",
+                                target_user=farmer,
+                                action_type=AuditTrail.ActionType.UPDATE,
+                                what_performed=f"[PAYMENT_CONFIRMED] - Official Receipt #{pay_history.or_number} generated. Payment of PHP 150.00 confirmed for Permit #{permit_number}.",
+                                ip_address="127.0.0.1",
+                                user_agent="FarmPass Seed Engine/2.0",
                                 when_performed=payment_time
                             )
 
@@ -871,7 +909,11 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
                                 AuditTrail.objects.create(
                                     who_performed=inspector,
+                                    target_user=farmer,
+                                    action_type=AuditTrail.ActionType.VERIFY,
                                     what_performed=f"[CHECKPOINT_INSPECTED] - Permit #{permit_number} verified at {dest_info['checkpoint']} by Inspector {inspector.get_full_name()}.",
+                                    ip_address="127.0.0.1",
+                                    user_agent="FarmPass Seed Engine/2.0",
                                     when_performed=scan_time
                                 )
 
@@ -908,9 +950,12 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
     print(" SEEDING COMPLETED SUCCESSFULLY!")
     print("=" * 80)
     print(f"  • Total Users:            {User.objects.count()} (Admin, Agri, OPV, Inspectors, Barangay, Farmers)")
+    print(f"  • Total Farmer Docs:      {FarmerDocument.objects.count()} KYC items (verified)")
+    print(f"  • Total Consent Logs:     {PrivacyConsentLog.objects.count()} DPA 2012 records")
     print(f"  • Total Barangays:        {Barangay.objects.count()}")
-    print(f"  • Total Hog Surveys:      {HogSurvey.objects.count()} quarterly records")
+    print(f"  • Total Hog Surveys:      {HogSurvey.objects.count()} quarterly records (with contacts)")
     print(f"  • Total Applications:     {PermitApplication.objects.count()}")
+    print(f"  • Total App Documents:    {PermitApplicationDocument.objects.count()}")
     print(f"  • Total Submitted Docs:   {SubmittedDocument.objects.count()}")
     print(f"  • Total OCR Results:      {OCRValidationResult.objects.count()}")
     print(f"  • Total OPV Validations:  {OPVValidation.objects.count()}")
@@ -919,7 +964,7 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
     print(f"  • Total Inspector Logs:   {InspectorLogs.objects.count()}")
     print(f"  • Total Notifications:    {Notification.objects.count()}")
     print(f"  • Total SMS Logs:         {SMSLog.objects.count()}")
-    print(f"  • Total Audit Trails:     {AuditTrail.objects.count()}")
+    print(f"  • Total Audit Trails:     {AuditTrail.objects.count()} (with IP, action_type, user_agent)")
     print("=" * 80)
     print(" Ready for demonstration and test runs.")
     print("=" * 80)
@@ -927,6 +972,6 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
 
 if __name__ == "__main__":
     import django
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.base")
     django.setup()
     run()

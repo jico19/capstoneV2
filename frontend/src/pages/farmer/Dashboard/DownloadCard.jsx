@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, ExternalLink, Eye } from "lucide-react";
 import FileViewerModal from "../../../components/ui/FileViewerModal";
+import { getAuthenticatedMediaUrl } from "../../../lib/utils";
 
 // Shows a download option for a specific document.
 // Props:
@@ -15,15 +16,17 @@ const DownloadCard = ({ title, description, url, fileName, icon: Icon, isPrimary
 
     if (!url) return null;
 
-    const isPdf = typeof url === 'string' && (
-        url.toLowerCase().endsWith('.pdf') || 
-        url.includes('application/pdf') ||
-        url.includes('.pdf?')
+    const authenticatedUrl = getAuthenticatedMediaUrl(url);
+
+    const isPdf = typeof authenticatedUrl === 'string' && (
+        authenticatedUrl.toLowerCase().endsWith('.pdf') || 
+        authenticatedUrl.includes('application/pdf') ||
+        authenticatedUrl.includes('.pdf?')
     );
 
     const handlePreview = () => {
         if (isPdf) {
-            window.open(url, '_blank', 'noopener,noreferrer');
+            window.open(authenticatedUrl, '_blank', 'noopener,noreferrer');
         } else {
             setIsPreviewOpen(true);
         }

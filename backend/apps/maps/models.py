@@ -1,4 +1,5 @@
 from django.db import models
+from apps.api.crypto import EncryptedCharField
 
 
 
@@ -17,8 +18,8 @@ class Barangay(models.Model):
 
 class HogSurvey(models.Model):
     barangay = models.ForeignKey(Barangay, on_delete=models.CASCADE)
-    farmer_name = models.CharField(max_length=200, blank=True, default="")
-    contact_number = models.CharField(max_length=20, blank=True, default="")
+    farmer_name = EncryptedCharField(max_length=255, blank=True, default="")
+    contact_number = EncryptedCharField(max_length=255, blank=True, default="")
 
     inahin = models.PositiveIntegerField(
         default=0,

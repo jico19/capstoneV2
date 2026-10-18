@@ -63,6 +63,38 @@ def health_check(request):
     return JsonResponse({"message": "ok!!"})
 
 
+def _authenticate_media_user(request):
+    """
+    Authenticates a media request from:
+    1. Active session (request.user)
+    2. Authorization: Bearer <token> header
+    3. ?token=<token> query parameter (for browser previews, downloads, img tags)
+    """
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        return request.user
+
+    raw_token = None
+    auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION")
+    if auth_header and auth_header.startswith("Bearer "):
+        raw_token = auth_header.split(" ", 1)[1].strip()
+
+    if not raw_token:
+        raw_token = request.GET.get("token")
+
+    if raw_token:
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+
+        jwt_auth = JWTAuthentication()
+        try:
+            validated_token = jwt_auth.get_validated_token(raw_token)
+            return jwt_auth.get_user(validated_token)
+        except (InvalidToken, TokenError, Exception):
+            return None
+
+    return None
+
+
 def secure_serve_media(request, path):
     """
     Secure media serving view.
@@ -71,8 +103,8 @@ def secure_serve_media(request, path):
     Farmers can access their own uploaded docs, issued permits, and AICs.
     Inspectors can access issued permits and verification docs.
     """
-    user = request.user
-    if not user.is_authenticated:
+    user = _authenticate_media_user(request)
+    if not user or not user.is_authenticated:
         return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
 
     normalized_path = path.replace("\\", "/").lstrip("/")
@@ -101,17 +133,34 @@ def secure_serve_media(request, path):
             return serve(request, normalized_path, document_root=settings.MEDIA_ROOT)
         return JsonResponse({"detail": "Access denied to requested document."}, status=403)
 
+    # Barangay officials can view submitted documents from farmers in their barangay, and endorsement files
+    if getattr(user, "role", None) == "Barangay":
+        from apps.permits.models import SubmittedDocument, PermitApplicationDocument
+
+        is_barangay_doc = (
+            SubmittedDocument.objects.filter(origin__application__farmer__barangay=user.barangay, file__icontains=normalized_path).exists()
+            or PermitApplicationDocument.objects.filter(application__farmer__barangay=user.barangay, file__icontains=normalized_path).exists()
+            or normalized_path.startswith("endorsements/")
+            or normalized_path.startswith("hog_surveys/")
+        )
+        if is_barangay_doc:
+            from django.views.static import serve
+            from django.conf import settings
+            return serve(request, normalized_path, document_root=settings.MEDIA_ROOT)
+        return JsonResponse({"detail": "Access denied to requested document."}, status=403)
+
     # Farmers can access files attached to their own applications or user profile
     if getattr(user, "role", None) == "Farmer":
-        from apps.permits.models import SubmittedDocument, IssuedPermit, PermitApplication
+        from apps.permits.models import SubmittedDocument, PermitApplicationDocument, IssuedPermit, PermitApplication
         from apps.api.models import FarmerDocument
 
         is_owner = (
-            SubmittedDocument.objects.filter(application__farmer=user, file__icontains=normalized_path).exists()
+            SubmittedDocument.objects.filter(origin__application__farmer=user, file__icontains=normalized_path).exists()
+            or PermitApplicationDocument.objects.filter(application__farmer=user, file__icontains=normalized_path).exists()
             or IssuedPermit.objects.filter(application__farmer=user, permit_pdf__icontains=normalized_path).exists()
             or IssuedPermit.objects.filter(application__farmer=user, aic_pdf__icontains=normalized_path).exists()
             or PermitApplication.objects.filter(farmer=user, aic_pdf__icontains=normalized_path).exists()
-            or FarmerDocument.objects.filter(farmer=user, file__icontains=normalized_path).exists()
+            or FarmerDocument.objects.filter(user=user, file__icontains=normalized_path).exists()
         )
         if is_owner:
             from django.views.static import serve

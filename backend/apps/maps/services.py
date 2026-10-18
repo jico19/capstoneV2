@@ -6,6 +6,7 @@ from django.db.models import Sum, Q
 from apps.api.utils import parse_date_range_strings
 from apps.permits.models import PermitApplication, TransportOrigin
 from .models import Barangay, HogSurvey
+from apps.api.cache_utils import get_or_set_cached_data
 
 class HogSurveyService:
     # Returns a tuple: (number of records created, list of error messages).
@@ -219,7 +220,7 @@ class HogSurveyService:
         return len(records_to_create) + len(records_to_update), errors
 
     @staticmethod
-    def calculate_transport_volume():
+    def _compute_transport_volume():
         """
         Calculates the total number of pigs being transported out of each barangay
         based on active/released permits.
@@ -272,6 +273,14 @@ class HogSurveyService:
         return volume_payload
 
     @staticmethod
+    def calculate_transport_volume():
+        return get_or_set_cached_data(
+            "maps:transport_volume",
+            HogSurveyService._compute_transport_volume,
+            timeout=120,
+        )
+
+    @staticmethod
     def generate_export_csv_data(start_date_str, end_date_str):
         """
         Retrieves survey data and builds CSV rows list.
@@ -305,7 +314,7 @@ class HogSurveyService:
         return rows
 
     @staticmethod
-    def get_aggregated_survey_data(target_month, start_month, end_month, target_season, target_year):
+    def _compute_aggregated_survey_data(target_month, start_month, end_month, target_season, target_year):
         """
         Aggregates pig population per barangay for heatmap.
         """
@@ -399,4 +408,15 @@ class HogSurveyService:
             )
 
         return heatmap_payload
+
+    @staticmethod
+    def get_aggregated_survey_data(target_month=None, start_month=None, end_month=None, target_season=None, target_year=None):
+        cache_key = f"maps:survey_data:{target_month}_{start_month}_{end_month}_{target_season}_{target_year}"
+        return get_or_set_cached_data(
+            cache_key,
+            lambda: HogSurveyService._compute_aggregated_survey_data(
+                target_month, start_month, end_month, target_season, target_year
+            ),
+            timeout=120,
+        )
 

@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from apps.maps.models import Barangay
+from apps.api.crypto import EncryptedCharField, EncryptedJSONField
 
 
 def validate_license_file_size(value):
@@ -32,16 +33,13 @@ class User(AbstractUser):
         null=False,
         help_text="User role",
     )
-    phone_no = models.CharField(
-        max_length=11,
-        validators=[
-            RegexValidator(
-                regex=r"^(?:\+639|639|09)\d{9}$", message="Enter a valid mobile number."
-            )
-        ],
+    phone_no = EncryptedCharField(
+        max_length=255,
+        deterministic=True,
         unique=True,
         blank=True,
         null=True,
+        help_text="User phone number (encrypted at rest)",
     )
     address = models.CharField(max_length=255, blank=True)
     barangay = models.ForeignKey(
@@ -90,9 +88,9 @@ class FarmerDocument(models.Model):
             validate_license_file_size,
         ],
     )
-    license_number = models.CharField(max_length=100, null=True, blank=True)
+    license_number = EncryptedCharField(max_length=255, null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)
-    extracted_data = models.JSONField(default=dict, blank=True)
+    extracted_data = EncryptedJSONField(default=dict, blank=True)
     ocr_status = models.CharField(
         max_length=20,
         choices=[
@@ -149,11 +147,50 @@ class Notification(models.Model):
 
 
 class AuditTrail(models.Model):
-    who_performed = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    class ActionType(models.TextChoices):
+        CREATE = "CREATE", "Create"
+        READ = "READ", "Read / View"
+        UPDATE = "UPDATE", "Update"
+        DELETE = "DELETE", "Delete"
+        EXPORT = "EXPORT", "Export"
+        VERIFY = "VERIFY", "Field Verification"
+
+    who_performed = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="audit_actions"
+    )
+    target_user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="audit_targets"
+    )
+    action_type = models.CharField(
+        max_length=20, choices=ActionType.choices, default=ActionType.UPDATE
+    )
     what_performed = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default="")
     when_performed = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["-when_performed"]
+
     def __str__(self):
-        # Fallback to "System" if the performing user is None (e.g. deleted user or automated task)
         who = self.who_performed.username if self.who_performed else "System"
-        return f"AuditTrails -> #{self.pk} - {who}"
+        return f"AuditTrail #{self.pk} [{self.action_type}] - {who}"
+
+
+class PrivacyConsentLog(models.Model):
+    """
+    Data Privacy Act of 2012 (RA 10173 Sec. 12 & 13) Consent Record.
+    Tracks explicit consent for personal data processing.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="consent_logs")
+    consent_version = models.CharField(max_length=20, default="v1.0-2026")
+    consent_scope = models.CharField(max_length=100, default="registration_kyc_transport")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default="")
+    agreed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-agreed_at"]
+
+    def __str__(self):
+        return f"Consent {self.consent_version} -> {self.user.username} ({self.agreed_at})"

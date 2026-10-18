@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, AlertCircle, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText } from 'lucide-react';
 import { useDocument } from '../../../hooks/useApplications';
 import { useForm } from 'react-hook-form';
+import { getAuthenticatedMediaUrl } from '../../../lib/utils';
 
 
 /**
@@ -46,10 +47,12 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
         </div>
     );
 
-    const isPdf = typeof doc?.file === 'string' && (
-        doc.file.toLowerCase().endsWith('.pdf') || 
-        doc.file.includes('application/pdf') ||
-        doc.file.includes('.pdf?')
+    const fileUrl = getAuthenticatedMediaUrl(doc?.file);
+
+    const isPdf = typeof fileUrl === 'string' && (
+        fileUrl.toLowerCase().endsWith('.pdf') || 
+        fileUrl.includes('application/pdf') ||
+        fileUrl.includes('.pdf?')
     );
 
     const extracted = doc?.ocr?.extracted_field || {};
@@ -118,7 +121,7 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                             ) : (
                                 <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">PDF Viewer</span>
                             )}
-                            <a href={doc.file} target="_blank" rel="noreferrer" className="text-green-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">
+                            <a href={fileUrl} target="_blank" rel="noreferrer" className="text-green-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">
                                 <ExternalLink size={14} /> Open Tab
                             </a>
                         </div>
@@ -130,14 +133,14 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="text-xs font-black uppercase tracking-tight text-stone-900">
-                                            Official PDF Document
+                                             Official PDF Document
                                         </h4>
                                         <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
                                             Open this document in Google Chrome / your browser's built-in PDF viewer in a new tab.
                                         </p>
                                     </div>
                                     <a
-                                        href={doc.file}
+                                        href={fileUrl}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest transition-colors"
@@ -154,7 +157,7 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                                     }}
                                 >
                                     <img 
-                                        src={doc.file} 
+                                        src={fileUrl} 
                                         alt="Submitted Document" 
                                         className="max-w-full max-h-[55vh] object-contain"
                                     />

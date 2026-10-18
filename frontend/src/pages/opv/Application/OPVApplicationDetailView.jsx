@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { useState } from "react"
 import DocumentViewModal from "../../../components/ui/DocumentViewModal"
 import ConfirmationModal from '../../../components/ui/ConfirmationModal'
+import { getAuthenticatedMediaUrl } from '../../../lib/utils'
 
 
 /**
@@ -273,7 +274,7 @@ const OPVApplicationDetail = () => {
                                         <FileCheck2 size={14} /> Inspect AIC
                                     </button>
                                     <a
-                                        href={application.aic_pdf}
+                                        href={getAuthenticatedMediaUrl(application.aic_pdf)}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="btn-tactile border border-emerald-300 hover:bg-emerald-100/70 text-emerald-900 text-xs font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5"

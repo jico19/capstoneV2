@@ -6,8 +6,9 @@ from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate, TruncMonth, ExtractHour
 from django.utils import timezone
 from datetime import timedelta
+from apps.api.cache_utils import get_or_set_cached_data
 
-def get_agri_dashboard_data():
+def _compute_agri_dashboard_data():
     pending_agri = permits.PermitApplication.objects.filter(
         status__in=[permits.PermitApplication.Status.SUBMITTED, permits.PermitApplication.Status.OCR_VALIDATED, permits.PermitApplication.Status.MANUAL]
     ).count()
@@ -51,7 +52,7 @@ def get_agri_dashboard_data():
             date_str = item['date'].strftime('%Y-%m') if hasattr(item['date'], 'strftime') else str(item['date'])
             revenue_data.append({"date": date_str, "amount": item['amount']})
 
-    status_dist = permits.PermitApplication.objects.values('status').annotate(count=Count('id'))
+    status_dist = list(permits.PermitApplication.objects.values('status').annotate(count=Count('id')))
 
     return {
         "kpis": {
@@ -69,7 +70,15 @@ def get_agri_dashboard_data():
     }
 
 
-def get_farmer_dashboard_data(user):
+def get_agri_dashboard_data():
+    return get_or_set_cached_data(
+        "dashboard:agri_metrics",
+        _compute_agri_dashboard_data,
+        timeout=120,
+    )
+
+
+def _compute_farmer_dashboard_data(user):
     my_apps = permits.PermitApplication.objects.filter(farmer=user)
     
     total_apps = my_apps.count()
@@ -87,7 +96,7 @@ def get_farmer_dashboard_data(user):
             date_str = item['date'].strftime('%Y-%m') if hasattr(item['date'], 'strftime') else str(item['date'])
             transport_data.append({"date": date_str, "total_pigs": item['total_pigs']})
 
-    status_dist = my_apps.values('status').annotate(count=Count('id'))
+    status_dist = list(my_apps.values('status').annotate(count=Count('id')))
 
     validated_opv = permits.OPVValidation.objects.filter(status=permits.OPVValidation.Status.VALIDATED)
     validations = validated_opv.select_related('application')[:100]
@@ -111,11 +120,20 @@ def get_farmer_dashboard_data(user):
             "transport_volume": transport_data,
             "status_distribution": status_dist,
         },
-        "recent_applications": my_apps.order_by('-updated_at')[:5].values('id','application_id', 'status', 'transport_date' )
+        "recent_applications": list(my_apps.order_by('-updated_at')[:5].values('id','application_id', 'status', 'transport_date' ))
     }
 
 
-def get_opv_dashboard_data():
+def get_farmer_dashboard_data(user):
+    user_id = getattr(user, 'id', 'anon')
+    return get_or_set_cached_data(
+        f"dashboard:farmer_metrics:{user_id}",
+        lambda: _compute_farmer_dashboard_data(user),
+        timeout=60,
+    )
+
+
+def _compute_opv_dashboard_data():
     thirty_days_ago = timezone.now() - timedelta(days=30)
     
     pending_validation = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
@@ -206,7 +224,15 @@ def get_opv_dashboard_data():
     }
 
 
-def get_inspector_dashboard_data(user):
+def get_opv_dashboard_data():
+    return get_or_set_cached_data(
+        "dashboard:opv_metrics",
+        _compute_opv_dashboard_data,
+        timeout=120,
+    )
+
+
+def _compute_inspector_dashboard_data(user):
     my_logs = inspector.InspectorLogs.objects.filter(inspector=user)
     
     total_scans = my_logs.count()
@@ -265,3 +291,13 @@ def get_inspector_dashboard_data(user):
         },
         "recent_activity": recent_activity
     }
+
+
+def get_inspector_dashboard_data(user):
+    user_id = getattr(user, 'id', 'anon')
+    return get_or_set_cached_data(
+        f"dashboard:inspector_metrics:{user_id}",
+        lambda: _compute_inspector_dashboard_data(user),
+        timeout=120,
+    )
+

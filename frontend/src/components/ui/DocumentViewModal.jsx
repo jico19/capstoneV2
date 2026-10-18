@@ -12,6 +12,7 @@ import {
     Download 
 } from 'lucide-react';
 import { useDocument } from '../../hooks/useApplications';
+import { getAuthenticatedMediaUrl } from '../../lib/utils';
 
 /**
  * Global Document Review Modal
@@ -74,16 +75,7 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
     const extracted = doc?.ocr?.extracted_field || {};
     const remarks = doc?.ocr?.remarks || {};
 
-    const resolveFileUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
-            return url;
-        }
-        const base = (import.meta.env.VITE_BASE_URL || '').replace(/\/$/, '');
-        return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
-
-    const fileUrl = resolveFileUrl(doc?.file);
+    const fileUrl = getAuthenticatedMediaUrl(doc?.file);
 
     const isPdf = typeof fileUrl === 'string' && (
         fileUrl.toLowerCase().endsWith('.pdf') || 

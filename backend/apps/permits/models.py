@@ -1,5 +1,6 @@
 from django.db import models
 from apps.api.models import User
+from apps.api.crypto import EncryptedCharField
 from apps.maps.models import Barangay
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
@@ -70,8 +71,8 @@ class PermitApplication(models.Model):
 class TransportOrigin(models.Model):
     application = models.ForeignKey(PermitApplication, on_delete=models.CASCADE, related_name='origins')
     barangay = models.ForeignKey(Barangay, on_delete=models.CASCADE)
-    source_farmer_name = models.CharField(max_length=200, blank=True, default="")
-    source_phone_no = models.CharField(max_length=20, blank=True, default="")
+    source_farmer_name = EncryptedCharField(max_length=255, blank=True, default="")
+    source_phone_no = EncryptedCharField(max_length=255, blank=True, default="")
     number_of_pigs = models.PositiveIntegerField(default=0)
 
     PIG_FIELDS = ("inahin", "barako", "fattener", "grower", "bulaw", "starter")

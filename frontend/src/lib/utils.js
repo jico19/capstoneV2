@@ -144,3 +144,43 @@ export const formatPeso = (amount) => {
     const num = Number(amount);
     return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
+
+/**
+ * Resolves a media file path or relative URL to a fully qualified URL
+ * and appends the user's JWT access token as a query parameter (?token=...)
+ * so native browser tags (<img src>, <a href>, window.open) authenticate against Django's secure media server.
+ */
+export const getAuthenticatedMediaUrl = (url) => {
+    if (!url || typeof url !== 'string') return '';
+    if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+
+    const base = (import.meta.env.VITE_BASE_URL || '').replace(/\/$/, '');
+    let resolved = url;
+    const isRelative = !url.startsWith('http://') && !url.startsWith('https://');
+
+    if (isRelative) {
+        resolved = `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    // Attach token if directed to backend media endpoints (avoid third-party CDNs like Cloudinary)
+    const isBackendHost = !base || resolved.startsWith(base);
+    const isCloudinary = resolved.includes('res.cloudinary.com');
+    if ((isBackendHost || resolved.includes('/media/')) && !isCloudinary) {
+        try {
+            const authStorage = sessionStorage.getItem('auth-context');
+            if (authStorage) {
+                const parsed = JSON.parse(authStorage);
+                const token = parsed?.state?.access;
+                if (token && !resolved.includes('token=')) {
+                    const separator = resolved.includes('?') ? '&' : '?';
+                    return `${resolved}${separator}token=${encodeURIComponent(token)}`;
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to retrieve auth token for media url:", e);
+        }
+    }
+
+    return resolved;
+};
+

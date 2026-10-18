@@ -99,6 +99,9 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD'),
         'HOST': os.environ.get('DB_HOST'),  # Use 'localhost' or your server IP
         'PORT': os.environ.get('DB_PORT'),       # The default PostgreSQL port
+        'OPTIONS': {
+            'sslmode': os.environ.get('DB_SSLMODE', 'prefer'),
+        },
     }
 }
 
@@ -219,3 +222,6 @@ CACHES = {
 }
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000  # Set finite limit to prevent Hash Collision DoS / CPU exhaustion
+
+# FIELD-LEVEL ENCRYPTION (Data Privacy Act of 2012 / NPC Circular 16-01)
+FIELD_ENCRYPTION_KEY = os.environ.get("FIELD_ENCRYPTION_KEY")

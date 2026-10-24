@@ -14,7 +14,7 @@ services:
       - key: DEBUG
         value: "False"
       - key: DATABASE_URL
-        sync: false  # Paste your Neon connection string in the Render dashboard
+        sync: false postgresql://neondb_owner:npg_xsmPK9IqQ2fL@ep-long-frost-a1q9d7kd-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       # Cloudinary (media storage)
       - key: CLOUDINARY_CLOUD_NAME
         sync: false

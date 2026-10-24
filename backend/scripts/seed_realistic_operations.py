@@ -1,977 +1,483 @@
-"""
-Seed Realistic Operations Script for Sariaya Hog Transport & Permit Management System
-=======================================================================================
-Generates rich, highly realistic end-to-end operational data for demonstration, presentation,
-and testing purposes across all system user roles and workflow stages.
+"""Small, one-time FarmPass demo: 100 applications and 100 hog surveys.
 
-Usage:
-    python manage.py runscript seed_realistic_operations
+From backend/: python manage.py runscript seed_realistic_operations
+Render: append that command after migrations with --settings=config.settings.prod
+and FARMPASS_DEMO_SEED_ENABLED=true. Otherwise DEBUG=False is a successful no-op.
+Existing data is never deleted or updated. Use a fresh demo database to start over,
+not deletion of the completion marker. Credentials print on success and skips.
+Integration results are fixtures; only configured file storage uses the network.
 """
 
+import datetime
+import hashlib
 import os
 import random
 import uuid
-import datetime
-from datetime import timedelta
 from decimal import Decimal
-from django.utils import timezone
-from django.db import transaction
+from io import BytesIO
+from urllib.parse import urlsplit
+
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db import connection, transaction
+from django.utils import timezone
+from reportlab.graphics import renderPDF
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
+from reportlab.pdfgen import canvas
 
-from apps.api.models import User, Notification, AuditTrail, FarmerDocument, PrivacyConsentLog
-from apps.maps.models import Barangay, HogSurvey
-from apps.permits.models import (
-    PermitApplication, TransportOrigin, SubmittedDocument,
-    PermitApplicationDocument, OPVValidation, OCRValidationResult,
-    IssuedPermit, MunicipalConfig
-)
-from apps.payment.models import PaymentHistory
-from apps.inspector.models import InspectorLogs
-from apps.sms.models import SMSLog
+from apps.api.models import AuditTrail, FarmerDocument, Notification, PrivacyConsentLog, User
 from apps.dashboard.models import CachedInsight
+from apps.inspector.models import InspectorLogs
+from apps.maps.models import Barangay, HogSurvey
+from apps.payment.models import PaymentHistory
+from apps.permits.models import (
+    IssuedPermit, MunicipalConfig, OCRValidationResult, OPVValidation,
+    PermitApplication, PermitApplicationDocument, SubmittedDocument, TransportOrigin,
+)
+from apps.sms.models import SMSLog
 
 
-# ---------------------------------------------------------------------------
-# Realistic Sariaya & Regional Metadata
-# ---------------------------------------------------------------------------
+APPLICATION_COUNT = 100
+SURVEY_COUNT = 100
+PASSWORD = "password123"
+# Stable across revisions: deploying new code is not permission to reseed.
+COMPLETION_MARKER = "[FARMPASS_DEMO_SEED_COMPLETE]"
+LOCK_ID = 741025601
+ASSET_PREFIX = "farmpass_demo"
+SEED_AGENT = "FarmPass Demo Seed"
+V = User.VerificationStatus
+S = PermitApplication.Status
 
-SAMPLE_VEHICLES = [
-    {"type": "Isuzu Elf Dropside Livestock Carrier", "plate": "DAE-4819"},
-    {"type": "Mitsubishi Fuso Canter Closed Van", "plate": "NAY-3912"},
-    {"type": "Hino 300 Series Livestock Transport", "plate": "WOT-8123"},
-    {"type": "Isuzu Forward 6-Wheeler Hauler", "plate": "CAL-9041"},
-    {"type": "Foton Tornado Swine Carrier", "plate": "NCA-2754"},
-    {"type": "Hyundai Mighty Double Cab Dropside", "plate": "DBD-6628"},
-    {"type": "Isuzu Giga Heavy Swine Hauler", "plate": "TAZ-1934"},
-    {"type": "Mitsubishi Canter Custom Aluminum Cage", "plate": "EAA-5281"},
-]
+# username, role, first name, last name, barangay key, verification state
+ACCOUNTS = (
+    ("admin", "Admin", "Municipal", "Administrator", None, V.VERIFIED),
+    ("agri_user123", "Agri", "Armando", "Agripino", None, V.VERIFIED),
+    ("opv_user123", "Opv", "Olivia", "Providencia", None, V.VERIFIED),
+    ("inspector_mario", "Inspector", "Mario", "Dalisay", None, V.VERIFIED),
+    ("brgy_lutucan", "Barangay", "Ernesto", "Vega", "lutucan", V.VERIFIED),
+    ("brgy_castanas", "Barangay", "Rodrigo", "Castillo", "casta", V.VERIFIED),
+    ("brgy_bucal", "Barangay", "Maria", "Hernandez", "bucal", V.VERIFIED),
+    ("farmer_lucio", "Farmer", "Lucio", "Valdez", "lutucan", V.VERIFIED),
+    ("farmer_kristel", "Farmer", "Kristel", "Santos", "bucal", V.VERIFIED),
+    ("jerwin_nico", "Farmer", "Jerwin", "Nico", "casta", V.VERIFIED),
+    ("farmer_pending", "Farmer", "Paolo", "Reyes", "lutucan", V.PENDING_REVIEW),
+    ("farmer_rejected", "Farmer", "Rosa", "Cruz", "bucal", V.REJECTED),
+)
 
-DESTINATION_CATALOG = [
-    {
-        "name": "Lucena City Public Slaughterhouse, Lucena City, Quezon",
-        "route_direction": "east",
-        "purpose": "For immediate commercial slaughter and distribution to Lucena Central Market.",
-        "checkpoint": "Castañas Checkpoint",
-        "checkpoint_coords": {"lat": 13.9328, "long": 121.5287}
-    },
-    {
-        "name": "Batangas International Port (Inter-Island Shipping to Visayas), Batangas City",
-        "route_direction": "southwest",
-        "purpose": "For maritime transport and livestock trade delivery to Panay & Negros meat dealers.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "San Jose Livestock & Meat Processing Center, Lipa City, Batangas",
-        "route_direction": "west",
-        "purpose": "For commercial slaughter, meat cutting, and dressed pork supply to CALABARZON supermarkets.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "Tondo Central Slaughterhouse & Meat Depot, Vitas, Tondo, Manila",
-        "route_direction": "northwest",
-        "purpose": "Wholesale delivery for direct auction and supply to Divisoria & Pritil wet markets.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "Calamba Livestock Distribution Hub & Growing Facility, Calamba, Laguna",
-        "route_direction": "northwest",
-        "purpose": "For grower swine restocking and contracted fattening facility transfer.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "Dasmariñas Commercial Livestock Market, Dasmariñas, Cavite",
-        "route_direction": "northwest",
-        "purpose": "Live swine delivery for retail butchers and local institutional buyers.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "Tayabas City Public Abattoir, Tayabas, Quezon",
-        "route_direction": "northeast",
-        "purpose": "Local meat distribution to Tayabas Public Market and institutional meat shops.",
-        "checkpoint": "Bucal Checkpoint",
-        "checkpoint_coords": {"lat": 13.9893, "long": 121.5231}
-    },
-    {
-        "name": "San Fernando Wholesale Food Terminal, City of San Fernando, Pampanga",
-        "route_direction": "north",
-        "purpose": "Inter-regional live hog transfer for North Luzon meat processing contracts.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "Pasay City Public Abattoir & Cold Storage, Pasay City, Metro Manila",
-        "route_direction": "northwest",
-        "purpose": "For slaughter and daily carcass deliveries to Pasay and Parañaque commercial outlets.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    },
-    {
-        "name": "Candelaria Livestock Trading Post, Candelaria, Quezon",
-        "route_direction": "west",
-        "purpose": "Live hog trade and consignment to registered regional swine traders.",
-        "checkpoint": "Lutucan Checkpoint",
-        "checkpoint_coords": {"lat": 13.9654, "long": 121.5103}
-    }
-]
+OPERATIONAL_MODELS = (
+    PermitApplication, HogSurvey, FarmerDocument, PrivacyConsentLog, Notification,
+    AuditTrail, SMSLog, InspectorLogs, PaymentHistory, IssuedPermit, OPVValidation,
+    OCRValidationResult, SubmittedDocument, PermitApplicationDocument, TransportOrigin,
+    CachedInsight,
+)
 
 
-# ---------------------------------------------------------------------------
-# Dummy Physical File Helper
-# ---------------------------------------------------------------------------
+def _pdf_bytes(title, lines, qr_url=None):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=(612, 792), invariant=1)
+    pdf.setTitle(title)
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(48, 744, "FarmPass demonstration sample")
+    pdf.setFont("Helvetica", 11)
+    for index, line in enumerate((title, *lines)):
+        pdf.drawString(48, 716 - index * 20, str(line))
+    if qr_url:
+        qr = QrCodeWidget(qr_url, barBorder=4)
+        x1, y1, x2, y2 = qr.getBounds()
+        size = 180
+        drawing = Drawing(size, size, transform=[size / (x2-x1), 0, 0, size / (y2-y1), 0, 0])
+        drawing.add(qr)
+        renderPDF.draw(drawing, pdf, 48, 360)
+        pdf.linkURL(qr_url, (48, 360, 228, 540), relative=0)
+        pdf.drawString(48, 340, "Scan with the FarmPass inspector portal.")
+    pdf.save()
+    return buffer.getvalue()
 
-def ensure_sample_media_file(relative_path: str, file_type: str = "pdf") -> str:
-    """
-    Creates a valid minimal placeholder file in the media directory if it does
-    not already exist, preventing FileNotFoundError and 404 errors when testing.
-    """
-    full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
-    os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
-    if not os.path.exists(full_path):
-        if file_type == "pdf":
-            pdf_content = (
-                b"%PDF-1.4\n"
-                b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-                b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-                b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\n"
-                b"xref\n0 4\n0000000000 65535 f\n0000000010 00000 n\n0000000053 00000 n\n0000000102 00000 n\n"
-                b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n178\n%%EOF\n"
+class DemoFiles:
+    """Configured storage, with stable Cloudinary IDs instead of random IDs."""
+
+    def __init__(self):
+        self.saved = {}
+
+    def pdf(self, name, title, lines=(), qr_url=None):
+        content_bytes = _pdf_bytes(title, lines, qr_url)
+        digest = hashlib.sha256(content_bytes).hexdigest()[:12]
+        path = f"{ASSET_PREFIX}/{name}-{digest}.pdf"
+        is_cloudinary = _uses_cloudinary()
+        # Image resources use a public ID without the format suffix. Raw
+        # storage retains it. Use the prefix on both saved and reused IDs.
+        resource_type = default_storage._get_resource_type(path) if is_cloudinary else None
+        key = path.removesuffix(".pdf") if resource_type == "image" else path
+        if is_cloudinary:
+            key = default_storage._prepend_prefix(key)
+        if key in self.saved:
+            return self.saved[key]
+        if default_storage.exists(key):
+            self.saved[key] = key
+            return key
+        content = ContentFile(content_bytes)
+        if is_cloudinary:
+            import cloudinary.uploader
+
+            # Preserve configured resource type, prefix and tag. Reuse assets
+            # left by interrupted attempts without overwriting existing files.
+            result = cloudinary.uploader.upload(
+                content, public_id=key, resource_type=resource_type,
+                tags=default_storage.TAG, overwrite=False, unique_filename=False,
             )
-            with open(full_path, "wb") as f:
-                f.write(pdf_content)
+            stored = result["public_id"]
         else:
-            png_content = (
-                b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
-                b"\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05"
-                b"\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-            )
-            with open(full_path, "wb") as f:
-                f.write(png_content)
-
-    return relative_path
+            stored = default_storage.save(key, content)
+        self.saved[key] = stored
+        return stored
 
 
-# ---------------------------------------------------------------------------
-# Main Seeding Routine
-# ---------------------------------------------------------------------------
+def _uses_cloudinary():
+    # Importing cloudinary_storage itself requires credentials, even when the
+    # configured backend is local storage. Inspect the active backend instead.
+    return any(base.__module__ == "cloudinary_storage.storage"
+               for base in default_storage.__class__.__mro__)
 
-def run(total_applications: int = 160, months: int = 12, clean: bool = True):
-    if not settings.DEBUG:
-        raise RuntimeError("Seed script execution is strictly forbidden in production (DEBUG=False).")
 
-    print("=" * 80)
-    print(" STARTING REALISTIC OPERATIONS SEED SCRIPT FOR SARIAYA LIVESTOCK SYSTEM")
-    print(f" Target: {total_applications} applications over past {months} months")
-    print("=" * 80)
-
-    # 1. Clean up operational data if requested
-    if clean:
-        print("\n[Step 1/6] Cleaning up old operational records...")
-        AuditTrail.objects.all().delete()
-        PrivacyConsentLog.objects.all().delete()
-        Notification.objects.all().delete()
-        SMSLog.objects.all().delete()
-        InspectorLogs.objects.all().delete()
-        PaymentHistory.objects.all().delete()
-        IssuedPermit.objects.all().delete()
-        OPVValidation.objects.all().delete()
-        OCRValidationResult.objects.all().delete()
-        SubmittedDocument.objects.all().delete()
-        PermitApplicationDocument.objects.all().delete()
-        TransportOrigin.objects.all().delete()
-        PermitApplication.objects.all().delete()
-        FarmerDocument.objects.all().delete()
-        HogSurvey.objects.all().delete()
-        CachedInsight.objects.all().delete()
-        print("  -> Existing operational, KYC, and survey data successfully cleared.")
-
-    # 2. Check Barangays
-    barangays = list(Barangay.objects.all())
-    if not barangays:
-        print("\n[!] ERROR: No Barangays found in the database.")
-        print("    Please run 'python manage.py runscript barangay' first to seed Sariaya barangays.")
-        return
-
-    print(f"\n[Step 2/6] Found {len(barangays)} Sariaya Barangays.")
-
-    # Ensure MunicipalConfig
-    MunicipalConfig.objects.update_or_create(
-        id=1,
-        defaults={
-            'vet_health_cert_fee': Decimal("50.00"),
-            'transport_pass_fee': Decimal("50.00"),
-            'local_transport_permit_fee': Decimal("50.00"),
-            'validity_days': 3,
-            'oic_name': "AMALITA C. AMORES",
-            'oic_title': "OIC - Municipal Agriculturist"
-        }
+def _audit(actor, message, at, target=None):
+    AuditTrail.objects.create(
+        who_performed=actor, target_user=target, action_type=AuditTrail.ActionType.CREATE,
+        what_performed=message, when_performed=at, ip_address="127.0.0.1",
+        user_agent=SEED_AGENT,
     )
-    print("  -> Initialized official MunicipalConfig (PHP 150.00 total permit fee).")
 
-    # 3. Create / Standardize Key Users Across All Roles
-    print("\n[Step 3/6] Setting up realistic user accounts with 'password123' and verified KYC...")
 
-    def get_or_create_user(username, role, first_name, last_name, barangay=None, phone_suffix="0001", is_staff_user=False, verification_status=User.VerificationStatus.VERIFIED):
-        email = f"{username}@sariaya.gov.ph" if role in ['Agri', 'Opv', 'Admin', 'Barangay'] else f"{username}@gmail.com"
-        phone = f"0917{phone_suffix}"
-
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={
-                'role': role,
-                'email': email,
-                'phone_no': phone,
-                'first_name': first_name,
-                'last_name': last_name,
-                'address': f"{barangay.name if barangay else 'Poblacion'}, Sariaya, Quezon",
-                'barangay': barangay,
-                'receive_sms': True,
-                'is_staff': is_staff_user or (role in ['Admin', 'Agri']),
-                'is_superuser': (role == 'Admin' and username == 'admin'),
-                'verification_status': verification_status,
-                'verification_remarks': "Verified official municipal account." if verification_status == User.VerificationStatus.VERIFIED else "",
-                'verified_at': timezone.now() if verification_status == User.VerificationStatus.VERIFIED else None
-            }
+def _preflight():
+    barangays = list(Barangay.objects.order_by("name"))
+    if not 5 <= len(barangays) <= SURVEY_COUNT:
+        raise RuntimeError("Demo requires 5 to 100 reference barangays. Run 'runscript barangay' first.")
+    selected = {}
+    for key in ("lutucan", "casta", "bucal"):
+        selected[key] = next((bg for bg in barangays if key in bg.name.lower()), None)
+        if selected[key] is None:
+            raise RuntimeError(f"Missing required reference barangay: {key}. Run 'runscript barangay' first.")
+    occupied = [model.__name__ for model in OPERATIONAL_MODELS if model.objects.exists()]
+    if occupied:
+        raise RuntimeError(
+            f"Refusing to seed existing operational data ({', '.join(occupied)}). "
+            "Use a fresh demo database. Nothing was deleted."
         )
-        if created or not user.check_password("password123"):
-            user.set_password("password123")
-            user.verification_status = verification_status
-            user.save()
-            print(f"  + Created User: {username:<22} [{role:<10}] - {first_name} {last_name}")
-        else:
-            print(f"  = Ready User:   {username:<22} [{role:<10}] - {first_name} {last_name}")
+    usernames = [row[0] for row in ACCOUNTS]
+    phones = [f"0999000{index:04d}" for index in range(len(ACCOUNTS))]
+    if User.objects.filter(username__in=usernames).exists() or User.objects.filter(phone_no__in=phones).exists():
+        raise RuntimeError("Demo username or phone conflict. Existing accounts were not changed.")
+    frontend = (getattr(settings, "FRONTEND_URL", None) or ("http://localhost:5173" if settings.DEBUG else "")).rstrip("/")
+    parsed = urlsplit(frontend)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise RuntimeError("Set FRONTEND_URL to the demo frontend origin for inspector QR links.")
+    # Read-only availability check before creating records.
+    suffix = "" if _uses_cloudinary() else ".pdf"
+    default_storage.exists(f"{ASSET_PREFIX}/handlers_license{suffix}")
+    return barangays, selected, frontend
 
-        # Record DPA Privacy Consent
-        PrivacyConsentLog.objects.get_or_create(
-            user=user,
-            consent_version="v1.0-2026",
-            defaults={
-                'consent_scope': "registration_kyc_transport",
-                'ip_address': "127.0.0.1",
-                'user_agent': "FarmPass Seed Engine/2.0"
-            }
+
+def _create_accounts(selected, files, now):
+    users = {}
+    for index, (username, role, first, last, bg_key, verification) in enumerate(ACCOUNTS):
+        verified = verification == V.VERIFIED
+        remarks = ("Demo verified account." if verified else
+                   "Demo KYC awaiting review." if verification == V.PENDING_REVIEW else
+                   "Demo: license needs replacement.")
+        user = User.objects.create_user(
+            username=username, password=PASSWORD, role=role,
+            first_name=first, last_name=last, email=f"{username}@example.com",
+            phone_no=f"0999000{index:04d}", barangay=selected.get(bg_key),
+            address=f"{selected[bg_key].name if bg_key else 'Poblacion'}, Sariaya, Quezon",
+            is_staff=role in ("Admin", "Agri"), is_superuser=role == "Admin",
+            receive_sms=False, verification_status=verification,
+            verification_remarks=remarks, verified_at=now if verified else None,
+            verified_by=users.get("agri_user123") if role == "Farmer" and verified else None,
         )
-        return user
-
-    # Admin User
-    admin_user = get_or_create_user("admin", "Admin", "Municipal", "Administrator", None, "0000", True)
-
-    # Municipal Agriculture Officers (Office of the Municipal Agriculturist - OMA Sariaya)
-    agri_officers = [
-        get_or_create_user("agri_user123", "Agri", "Armando", "Agripino", None, "1001", True),
-        get_or_create_user("agri_officer_luis", "Agri", "Luis", "Santos", None, "1002", True),
-        get_or_create_user("agri_officer_sandra", "Agri", "Sandra", "Reyes", None, "1003", True),
-    ]
-
-    # Office of the Provincial Veterinarian (OPV Quezon) Staff
-    opv_staffs = [
-        get_or_create_user("opv_user123", "Opv", "Olivia", "Providencia", None, "2001", False),
-        get_or_create_user("opv_staff_rose", "Opv", "Rosemary", "Cruz", None, "2002", False),
-        get_or_create_user("opv_staff_mark", "Opv", "Mark", "Alcantara", None, "2003", False),
-    ]
-
-    # Field Checkpoint Livestock Inspectors
-    inspectors = [
-        get_or_create_user("inspector_mario", "Inspector", "Mario", "Dalisay", None, "3001", False),
-        get_or_create_user("inspector_clara", "Inspector", "Clara", "De Guzman", None, "3002", False),
-        get_or_create_user("inspector_juan", "Inspector", "Juan", "Luna", None, "3003", False),
-    ]
-
-    # Barangay Officials
-    lutucan_bg = next((b for b in barangays if "Lutucan" in b.name), barangays[0])
-    castanas_bg = next((b for b in barangays if "Casta" in b.name or "Canda" in b.name), barangays[1])
-    bucal_bg = next((b for b in barangays if "Bucal" in b.name), barangays[2])
-
-    barangay_officials = [
-        get_or_create_user("brgy_lutucan", "Barangay", "Ernesto", "Vega", lutucan_bg, "4001", False),
-        get_or_create_user("brgy_castanas", "Barangay", "Rodrigo", "Castillo", castanas_bg, "4002", False),
-        get_or_create_user("brgy_bucal", "Barangay", "Maria", "Hernandez", bucal_bg, "4003", False),
-    ]
-
-    # Registered Hog Raisers / Farmers across Sariaya Barangays
-    farmer_seed_data = [
-        ("jerwin_nico", "Jerwin", "Nico", lutucan_bg, "5001"),
-        ("farmer_lucio", "Lucio", "Valdez", castanas_bg, "5002"),
-        ("farmer_kristel", "Kristel", "Santos", bucal_bg, "5003"),
-        ("farmer_dondon", "Dondon", "Ramos", random.choice(barangays), "5004"),
-        ("farmer_analyn", "Analyn", "Perez", random.choice(barangays), "5005"),
-        ("farmer_bryan", "Bryan", "Gomez", random.choice(barangays), "5006"),
-        ("farmer_elena", "Elena", "Torres", random.choice(barangays), "5007"),
-        ("farmer_nestor", "Nestor", "Aquino", random.choice(barangays), "5008"),
-        ("farmer_renato", "Renato", "Villanueva", random.choice(barangays), "5009"),
-        ("farmer_marites", "Marites", "De Chavez", random.choice(barangays), "5010"),
-        ("farmer_pedro", "Pedro", "Alcala", random.choice(barangays), "5011"),
-        ("farmer_lourdes", "Lourdes", "Custodio", random.choice(barangays), "5012"),
-    ]
-
-    farmers = []
-    for f_idx, (uname, fname, lname, bg, pnum) in enumerate(farmer_seed_data):
-        farmer_user = get_or_create_user(uname, "Farmer", fname, lname, bg, pnum, False, User.VerificationStatus.VERIFIED)
-        farmers.append(farmer_user)
-
-        # Seed Verified Farmer KYC Documents
-        hl_file = f"farmer_licenses/HL_{uname}.pdf"
-        tcr_file = f"farmer_licenses/TCR_{uname}.pdf"
-        ensure_sample_media_file(hl_file, "pdf")
-        ensure_sample_media_file(tcr_file, "pdf")
-
-        FarmerDocument.objects.update_or_create(
-            user=farmer_user,
-            document_type=FarmerDocument.DocumentType.HANDLERS_LICENSE,
-            defaults={
-                'file': hl_file,
-                'license_number': f"HL-2026-SAR-{f_idx+1000:04d}",
-                'expiration_date': timezone.now().date() + timedelta(days=365),
-                'extracted_data': {
-                    "license_type": "Handler's License",
-                    "full_name": f"{fname} {lname}",
-                    "issued_by": "Bureau of Animal Industry (BAI) Region IV-A",
-                    "status": "VALID"
-                },
-                'ocr_status': "PROCESSED",
-                'is_verified': True
-            }
-        )
-
-        FarmerDocument.objects.update_or_create(
-            user=farmer_user,
-            document_type=FarmerDocument.DocumentType.TRANSPORT_CARRIER_REG,
-            defaults={
-                'file': tcr_file,
-                'license_number': f"TCR-2026-SAR-{f_idx+2000:04d}",
-                'expiration_date': timezone.now().date() + timedelta(days=365),
-                'extracted_data': {
-                    "carrier_type": "Livestock Carrier Van",
-                    "owner": f"{fname} {lname}",
-                    "plate_number": SAMPLE_VEHICLES[f_idx % len(SAMPLE_VEHICLES)]['plate'],
-                    "status": "VALID"
-                },
-                'ocr_status': "PROCESSED",
-                'is_verified': True
-            }
-        )
-
-    # 4. Hog Survey Full 2022-2026 Naturalized Seasonal Time Series Generation
-    print("\n[Step 4/6] Generating naturalized 2022–2026 quarterly Hog Surveys across all density tiers...")
-
-    VERY_HIGH_BARANGAYS = ["lutucan 1", "lutucan malabag"]
-    HIGH_BARANGAYS = [
-        "lutucan bata", "guisguis-san roque", "guisguis-talon", "manggalang 1",
-        "manggalang-bantilan", "concepcion banahaw", "concepcion pinagbakuran",
-        "bignay 1", "bignay 2", "janagdong 1"
-    ]
-    NONE_BARANGAYS = ["barangay 4", "barangay 5", "barangay 6"]
-    LOW_BARANGAYS = ["barangay 1", "barangay 2", "barangay 3", "casta", "talaan", "tumbaga"]
-
-    def get_barangay_tier(name):
-        name_lower = name.lower()
-        if any(k in name_lower for k in VERY_HIGH_BARANGAYS):
-            return "VERY_HIGH"
-        elif any(k in name_lower for k in HIGH_BARANGAYS):
-            return "HIGH"
-        elif any(k in name_lower for k in NONE_BARANGAYS):
-            return "NONE"
-        elif any(k in name_lower for k in LOW_BARANGAYS):
-            return "LOW"
-        return "MEDIUM"
-
-    all_survey_dates = [
-        datetime.date(2022, 3, 31), datetime.date(2022, 6, 30), datetime.date(2022, 9, 30), datetime.date(2022, 12, 31),
-        datetime.date(2023, 3, 31), datetime.date(2023, 6, 30), datetime.date(2023, 9, 30), datetime.date(2023, 12, 31),
-        datetime.date(2024, 3, 31), datetime.date(2024, 6, 30), datetime.date(2024, 9, 30), datetime.date(2024, 12, 31),
-        datetime.date(2025, 3, 31), datetime.date(2025, 6, 30), datetime.date(2025, 9, 30), datetime.date(2025, 12, 31),
-        datetime.date(2026, 3, 31), datetime.date(2026, 6, 30),
-    ]
-
-    all_surveys_to_create = []
-    sample_raiser_names = [
-        "Mang Pedro Alcantara Backyard Piggery", "Aling Maria Santos Farm",
-        "Ka Dencio Swine Raisers", "Sariaya Commercial Hog Farm",
-        "Lutucan Valley Farm", "Lucio Valdez Commercial Piggery",
-        "Kristel Agro-Livestock", "Ernesto Vega Farm", "Rodrigo Castillo Raisers"
-    ]
-
-    for bg in barangays:
-        tier = get_barangay_tier(bg.name)
-
-        if tier == "VERY_HIGH":
-            base_inahin, base_barako = random.randint(45, 55), random.randint(4, 5)
-            base_fattener, base_grower = random.randint(140, 180), random.randint(120, 160)
-            base_starter, base_bulaw = random.randint(70, 100), random.randint(15, 25)
-        elif tier == "HIGH":
-            base_inahin, base_barako = random.randint(16, 26), random.randint(2, 3)
-            base_fattener, base_grower = random.randint(55, 90), random.randint(50, 85)
-            base_starter, base_bulaw = random.randint(30, 55), random.randint(6, 16)
-        elif tier == "MEDIUM":
-            base_inahin, base_barako = random.randint(5, 10), 1
-            base_fattener, base_grower = random.randint(15, 32), random.randint(14, 28)
-            base_starter, base_bulaw = random.randint(8, 20), random.randint(3, 8)
-        elif tier == "LOW":
-            base_inahin, base_barako = random.randint(1, 3), (1 if random.random() < 0.5 else 0)
-            base_fattener, base_grower = random.randint(4, 10), random.randint(3, 8)
-            base_starter, base_bulaw = random.randint(2, 5), random.randint(1, 3)
-        else:
-            base_inahin = base_barako = base_fattener = base_grower = base_starter = base_bulaw = 0
-
-        for s_date in all_survey_dates:
-            quarter = (s_date.month - 1) // 3 + 1
-            year = s_date.year
-
-            if year == 2022: year_mult = 0.95
-            elif year == 2023: year_mult = 1.05
-            elif year == 2024: year_mult = 0.90 if quarter in [2, 3] else 1.02
-            elif year == 2025: year_mult = 1.15
-            else: year_mult = 1.12
-
-            inahin_mult = 1.05 if quarter in [1, 4] else 1.0
-            barako_mult = 1.05 if quarter == 4 else 1.0
-            fattener_mult = 1.30 if quarter == 4 else (1.25 if quarter == 3 else 0.85)
-            grower_mult = 1.20 if quarter == 2 else 1.0
-            starter_mult = 1.20 if quarter == 1 else 1.0
-
-            noise = random.uniform(0.92, 1.08)
-
-            if tier == "NONE":
-                fattener = grower = inahin = barako = starter = bulaw = 0
-            else:
-                inahin = max(0, int(base_inahin * year_mult * inahin_mult * noise))
-                barako = max(0, int(base_barako * year_mult * barako_mult * noise))
-                fattener = max(0, int(base_fattener * year_mult * fattener_mult * noise))
-                grower = max(0, int(base_grower * year_mult * grower_mult * noise))
-                starter = max(0, int(base_starter * year_mult * starter_mult * noise))
-                bulaw = max(0, int(base_bulaw * year_mult * noise))
-
-                if inahin > 0:
-                    barako = max(barako, 1 if inahin >= 3 else 0)
-
-            total = inahin + barako + fattener + grower + starter + bulaw
-            f_name = random.choice(sample_raiser_names) if total > 0 else ""
-            c_phone = f"0917{random.randint(1000000, 9999999)}" if total > 0 else ""
-
-            all_surveys_to_create.append(HogSurvey(
-                barangay=bg,
-                farmer_name=f_name,
-                contact_number=c_phone,
-                survey_date=s_date,
-                inahin=inahin,
-                barako=barako,
-                fattener=fattener,
-                grower=grower,
-                starter=starter,
-                bulaw=bulaw,
-                total_pigs=total
-            ))
-
-    if all_surveys_to_create:
-        HogSurvey.objects.bulk_create(all_surveys_to_create)
-        print(f"  + Added {len(all_surveys_to_create)} naturalized quarterly Hog Survey records spanning 2022–2026.")
-
-    # 5. Generate Realistic Operational Applications & Lifecycle Data
-    print(f"\n[Step 5/6] Generating {total_applications} realistic Permit Applications & workflows...")
-
-    now = timezone.now()
-    start_time = now - timedelta(days=months * 30)
-    timestamps = []
-    total_seconds = int((now - start_time).total_seconds())
-
-    for _ in range(total_applications):
-        weight = random.random() ** 1.35
-        offset_seconds = int(total_seconds * weight)
-        app_dt = start_time + timedelta(seconds=offset_seconds)
-        hour = random.randint(7, 16)
-        minute = random.randint(0, 59)
-        second = random.randint(0, 59)
-        app_dt = app_dt.replace(hour=hour, minute=minute, second=second)
-        if app_dt.weekday() == 6:
-            app_dt += timedelta(days=1)
-        timestamps.append(app_dt)
-
-    timestamps.sort()
-    recent_cutoff = now - timedelta(days=14)
-
-    recent_status_weights = [
-        ('DRAFT', 0.08), ('SUBMITTED', 0.10), ('RESUBMISSION', 0.06),
-        ('OCR_VALIDATED', 0.08), ('MANUAL', 0.08), ('FORWARDED_TO_OPV', 0.10),
-        ('OPV_VALIDATED', 0.08), ('OPV_REJECTED', 0.08), ('PAYMENT_PENDING', 0.12),
-        ('RELEASED', 0.22)
-    ]
-    recent_statuses, recent_weights = zip(*recent_status_weights)
-
-    guaranteed_demo_statuses = [
-        'DRAFT', 'SUBMITTED', 'RESUBMISSION', 'OCR_VALIDATED',
-        'MANUAL', 'FORWARDED_TO_OPV', 'OPV_VALIDATED', 'PAYMENT_PENDING',
-        'RELEASED', 'OPV_REJECTED'
-    ]
-
-    apps_created = 0
-
-    with transaction.atomic():
-        for idx, created_at in enumerate(timestamps):
-            farmer = random.choice(farmers)
-            dest_info = random.choice(DESTINATION_CATALOG)
-            vehicle_info = random.choice(SAMPLE_VEHICLES)
-
-            is_recent = created_at >= recent_cutoff
-            last_records_start = total_applications - len(guaranteed_demo_statuses)
-
-            if idx >= last_records_start:
-                status = guaranteed_demo_statuses[idx - last_records_start]
-            elif not is_recent:
-                status = 'RELEASED' if random.random() < 0.94 else 'OPV_REJECTED'
-            else:
-                status = random.choices(recent_statuses, weights=recent_weights, k=1)[0]
-
-            transport_date = (created_at + timedelta(days=random.randint(1, 4))).date()
-            purpose_text = f"{dest_info['purpose']} Transport via {vehicle_info['type']} (Plate: {vehicle_info['plate']})."
-
-            # 1. Create PermitApplication
-            app = PermitApplication.objects.create(
-                farmer=farmer,
-                status=status,
-                destination=dest_info['name'],
-                transport_date=transport_date,
-                purpose=purpose_text,
-                is_issued=(status == 'RELEASED'),
-                is_checked=False
-            )
-
-            AuditTrail.objects.create(
-                who_performed=farmer,
-                target_user=farmer,
-                action_type=AuditTrail.ActionType.CREATE,
-                what_performed=f"[APPLICATION_CREATED] - Farmer {farmer.get_full_name()} initiated Transport Permit application ({app.application_id}).",
-                ip_address="127.0.0.1",
-                user_agent="FarmPass Seed Engine/2.0",
-                when_performed=created_at
-            )
-
-            SMSLog.objects.create(
-                phone_number=farmer.phone_no,
-                message_type=SMSLog.Type.OTP,
-                status_captured="success",
-                send_at=created_at
-            )
-
-            submitted_at = None
-            if status != 'DRAFT':
-                submitted_at = created_at + timedelta(minutes=random.randint(15, 180))
-
-                AuditTrail.objects.create(
-                    who_performed=farmer,
-                    target_user=farmer,
-                    action_type=AuditTrail.ActionType.UPDATE,
-                    what_performed=f"[APPLICATION_SUBMITTED] - Application #{app.pk} ({app.application_id}) submitted for municipal validation.",
-                    ip_address="127.0.0.1",
-                    user_agent="FarmPass Seed Engine/2.0",
-                    when_performed=submitted_at
+        users[username] = user
+        PrivacyConsentLog.objects.create(user=user, user_agent=SEED_AGENT)
+        if role == "Farmer":
+            for doc_type in FarmerDocument.DocumentType.values:
+                FarmerDocument.objects.create(
+                    user=user, document_type=doc_type,
+                    file=files.pdf(doc_type, doc_type.replace("_", " ").title(),
+                                   ("Synthetic KYC document for demo review.",)),
+                    license_number=f"DEMO-{index:02d}-{doc_type[:3]}",
+                    expiration_date=now.date() + datetime.timedelta(days=365),
+                    extracted_data={"full_name": user.get_full_name(), "demo": True},
+                    ocr_status="PROCESSED", is_verified=verified,
                 )
+        _audit(user, f"[DEMO ACCOUNT] {username}: {verification}", now, user)
+    return users
 
-                SMSLog.objects.create(
-                    phone_number=farmer.phone_no,
-                    message_type=SMSLog.Type.NOTIFICATION,
-                    status_captured="success",
-                    send_at=submitted_at
+
+def _create_surveys(barangays, now, users):
+    records = []
+    totals = (0, 20, 120, 600, 1800)
+    farmers = {users[name].barangay_id: users[name]
+               for name in ("farmer_lucio", "farmer_kristel", "jerwin_nico")}
+    quarter_start = datetime.date(now.year, ((now.month - 1) // 3) * 3 + 1, 1)
+    for index in range(SURVEY_COUNT):
+        bg_index = index % len(barangays)
+        history = index // len(barangays)
+        survey_date = now.date()
+        if history:
+            survey_date = quarter_start - datetime.timedelta(days=1)
+            for _ in range(history - 1):
+                survey_date = datetime.date(
+                    survey_date.year, ((survey_date.month - 1) // 3) * 3 + 1, 1
+                ) - datetime.timedelta(days=1)
+        # Up to two populated historical quarters keep the default yearly
+        # aggregation in the intended five density ranges, even on small sets.
+        total = totals[bg_index % 5]
+        if history:
+            total = int(total * 0.8) if history <= 2 else 0
+        inahin, barako, grower = total // 10, total // 50, total // 4
+        farmer = farmers.get(barangays[bg_index].pk)
+        records.append(HogSurvey(
+            barangay=barangays[bg_index],
+            farmer_name=(farmer.get_full_name() if farmer else "Demo Hog Raisers") if total else "",
+            contact_number=(farmer.phone_no if farmer else "09990000007") if total else "",
+            survey_date=survey_date,
+            inahin=inahin, barako=barako, grower=grower,
+            fattener=total-inahin-barako-grower, total_pigs=total,
+        ))
+    HogSurvey.objects.bulk_create(records)
+
+
+def _scenarios(now, validity_days):
+    """Explicit cases first, historical variation second; no missing stages."""
+    cases = [(status, status, now - datetime.timedelta(hours=6), False) for status in S.values]
+    cases += [
+        ("payment_failed", S.PAYMENT_PENDING, now - datetime.timedelta(hours=6), False),
+        ("released_valid_unchecked", S.RELEASED, now - datetime.timedelta(hours=6), False),
+        ("released_valid_checked", S.RELEASED, now - datetime.timedelta(hours=8), True),
+        ("released_expired", S.RELEASED, now - datetime.timedelta(days=validity_days + 7), False),
+    ]
+    rng = random.Random(2026)
+    for index in range(APPLICATION_COUNT - len(cases)):
+        created = now - datetime.timedelta(days=7 + index * 4, hours=2)
+        status = rng.choice((S.RELEASED, S.RELEASED, S.OPV_REJECTED, S.CANCELLED))
+        cases.append((f"history_{index+1:03d}", status, created, status == S.RELEASED))
+    return cases
+
+
+def _create_application(index, case, users, files, frontend, fee, validity_days):
+    label, status, created, inspected = case
+    farmer = users["farmer_lucio"] if index < 16 else users[
+        ("farmer_lucio", "farmer_kristel", "jerwin_nico")[index % 3]
+    ]
+    agri, opv = users["agri_user123"], users["opv_user123"]
+    transport = created.date() if inspected else created.date() + datetime.timedelta(days=1)
+    app = PermitApplication.objects.create(
+        application_id=f"DEMO-{index+1:03d}", farmer=farmer, status=status,
+        destination=("Lucena City Public Slaughterhouse, Quezon",
+                     "Lipa Livestock Center, Batangas", "Tayabas Public Abattoir, Quezon")[index % 3],
+        transport_date=transport,
+        purpose=f"[DEMO:{label}] Hog transport for commercial distribution. Vehicle DAE-4819.",
+    )
+    submitted = None if status == S.DRAFT else created + datetime.timedelta(minutes=15)
+    changed = submitted or created
+    _audit(farmer, f"[DEMO APPLICATION] {app.application_id}: {label} ({status})", created, farmer)
+    if submitted:
+        for doc_type in PermitApplicationDocument.DocumentType.values:
+            PermitApplicationDocument.objects.create(
+                application=app, document_type=doc_type,
+                file=files.pdf(doc_type, doc_type.replace("_", " ").title()),
+            )
+    origins = [TransportOrigin.objects.create(
+        application=app, barangay=farmer.barangay, source_farmer_name=farmer.get_full_name(),
+        source_phone_no=farmer.phone_no, fattener=8 + index % 8, grower=2,
+    )]
+    if status == S.OCR_VALIDATED:
+        other = users["farmer_kristel"]
+        origins.append(TransportOrigin.objects.create(
+            application=app, barangay=other.barangay,
+            source_farmer_name=other.get_full_name(), source_phone_no=other.phone_no,
+            inahin=1, barako=1, starter=2, bulaw=1,
+        ))
+    if submitted:
+        for origin in origins:
+            doc_types = [SubmittedDocument.DocumentType.CIS,
+                         SubmittedDocument.DocumentType.ENDORSEMENT_CERTIFICATE]
+            if origin == origins[0]:
+                doc_types.extend(PermitApplicationDocument.DocumentType.values)
+            for doc_type in doc_types:
+                doc = SubmittedDocument.objects.create(
+                    origin=origin, document_type=doc_type,
+                    file=files.pdf(doc_type, doc_type.replace("_", " ").title()),
                 )
-
-                Notification.objects.create(
-                    recipient=farmer,
-                    type=Notification.Type.INFO,
-                    title="Permit Application Submitted",
-                    message=f"Your permit application {app.application_id} for transport to {dest_info['name'][:30]}... has been received.",
-                    sent_at=submitted_at
-                )
-
-                # Seed Application-Level Documents (PermitApplicationDocument)
-                app_doc_types = [
-                    PermitApplicationDocument.DocumentType.TRADERS_PASS,
-                    PermitApplicationDocument.DocumentType.HANDLERS_LICENSE,
-                    PermitApplicationDocument.DocumentType.TRANSPORT_CARRIER_REG,
-                ]
-                for adtype in app_doc_types:
-                    doc_filename = f"submitted_docs/app_doc_{adtype}_{app.pk}.pdf"
-                    ensure_sample_media_file(doc_filename, "pdf")
-                    PermitApplicationDocument.objects.create(
-                        application=app,
-                        document_type=adtype,
-                        file=doc_filename
-                    )
-
-                # 2. Transport Origins & Breakdown
-                origin_bg = farmer.barangay or random.choice(barangays)
-                num_origins = 1 if random.random() < 0.85 else 2
-                chosen_bgs = [origin_bg]
-                if num_origins > 1:
-                    other_bg = random.choice([b for b in barangays if b.id != origin_bg.id])
-                    chosen_bgs.append(other_bg)
-
-                origins = []
-                total_swine_in_app = 0
-
-                for bg_item in chosen_bgs:
-                    batch_total = random.randint(4, 18)
-                    fattener_count = int(batch_total * random.uniform(0.60, 0.90))
-                    grower_count = batch_total - fattener_count
-                    bulaw_count = random.randint(0, 2) if random.random() < 0.2 else 0
-                    starter_count = 0
-                    inahin_count = random.randint(1, 3) if "breeding" in dest_info['purpose'].lower() else 0
-                    barako_count = 1 if (inahin_count > 0 and random.random() < 0.3) else 0
-
-                    total_origin_pigs = fattener_count + grower_count + bulaw_count + starter_count + inahin_count + barako_count
-                    if total_origin_pigs == 0:
-                        fattener_count = batch_total
-                        total_origin_pigs = batch_total
-
-                    total_swine_in_app += total_origin_pigs
-
-                    origin = TransportOrigin(
-                        application=app,
-                        barangay=bg_item,
-                        source_farmer_name=f"{farmer.get_full_name()} ({bg_item.name} Farm)",
-                        source_phone_no=farmer.phone_no,
-                        number_of_pigs=total_origin_pigs,
-                        fattener=fattener_count,
-                        grower=grower_count,
-                        bulaw=bulaw_count,
-                        starter=starter_count,
-                        inahin=inahin_count,
-                        barako=barako_count
-                    )
-                    origin.save_base(raw=True)
-                    origins.append(origin)
-
-                # 3. Origin-Scoped Submitted Documents (CIS & Endorsement)
-                origin_doc_types = [SubmittedDocument.DocumentType.CIS]
-                if random.random() < 0.80:
-                    origin_doc_types.append(SubmittedDocument.DocumentType.ENDORSEMENT_CERTIFICATE)
-
-                for origin in origins:
-                    for dtype in origin_doc_types:
-                        doc_filename = f"submitted_docs/mock_{dtype}_{app.pk}_{origin.pk}.pdf"
-                        ensure_sample_media_file(doc_filename, "pdf")
-
-                        sub_doc = SubmittedDocument.objects.create(
-                            origin=origin,
-                            document_type=dtype,
-                            file=doc_filename
-                        )
-
-                        ocr_time = submitted_at + timedelta(minutes=random.randint(2, 12))
-
-                        if status in ['DRAFT', 'SUBMITTED', 'MANUAL']:
-                            ocr_status = OCRValidationResult.ValidationStatus.PASSED if random.random() < 0.7 else OCRValidationResult.ValidationStatus.MANUAL
-                        elif status == 'RESUBMISSION':
-                            ocr_status = OCRValidationResult.ValidationStatus.MANUAL
-                        else:
-                            ocr_status = OCRValidationResult.ValidationStatus.PASSED if random.random() < 0.85 else OCRValidationResult.ValidationStatus.OVERRIDDEN
-
-                        extracted_metadata = {
-                            "document_type": str(dtype),
-                            "document_number": f"{dtype[:3].upper()}-SAR-{created_at.year}-{random.randint(10000, 99999)}",
-                            "owner_name": f"{farmer.first_name} {farmer.last_name}",
+                if status not in (S.SUBMITTED, S.CANCELLED):
+                    manual = status in (S.MANUAL, S.RESUBMISSION)
+                    overridden = status == S.OCR_VALIDATED
+                    ocr = OCRValidationResult.objects.create(
+                        document=doc, status="MANUAL" if manual else "OVERRIDDEN" if overridden else "PASSED",
+                        provider="none", extracted_field={
+                            "demo": True, "owner_name": origin.source_farmer_name,
                             "origin_barangay": origin.barangay.name,
-                            "expiry_date": str(transport_date + timedelta(days=random.randint(45, 365))),
-                            "vehicle_plate": vehicle_info['plate'],
-                            "confidence_score": round(random.uniform(0.91, 0.99), 4),
-                            "issuing_office": "Municipal Agriculture Office - Sariaya, Quezon"
-                        }
-
-                        ocr_record = OCRValidationResult.objects.create(
-                            document=sub_doc,
-                            status=ocr_status,
-                            extracted_field=extracted_metadata,
-                            remarks={
-                                "verification": "Standard template verified, official seal detected.",
-                                "legibility": "Clear, all fields extracted with high confidence."
-                            },
-                            provider="ocrspace",
-                            validated_at=ocr_time
-                        )
-
-                        if ocr_status == OCRValidationResult.ValidationStatus.OVERRIDDEN:
-                            override_time = ocr_time + timedelta(minutes=random.randint(15, 60))
-                            officer = random.choice(agri_officers)
-                            ocr_record.manually_overridden = True
-                            ocr_record.overridden_by = officer
-                            ocr_record.overridden_at = override_time
-                            ocr_record.overridden_fields = {
-                                "remarks": "Visual verification confirmed. Wet signature verified against barangay records."
-                            }
-                            ocr_record.save()
-
-                            AuditTrail.objects.create(
-                                who_performed=officer,
-                                target_user=farmer,
-                                action_type=AuditTrail.ActionType.VERIFY,
-                                what_performed=f"[OCR_MANUAL_OVERRIDE] - Document #{sub_doc.pk} ({sub_doc.get_document_type_display()}) manually approved by {officer.get_full_name()}.",
-                                ip_address="127.0.0.1",
-                                user_agent="FarmPass Seed Engine/2.0",
-                                when_performed=override_time
-                            )
-
-                # 4. OPV Validation (Quezon Provincial Veterinary Review)
-                opv_eligible = status in ['OPV_VALIDATED', 'OPV_REJECTED', 'PAYMENT_PENDING', 'RELEASED']
-                if opv_eligible:
-                    opv_time = submitted_at + timedelta(hours=random.randint(2, 18))
-                    opv_staff = random.choice(opv_staffs)
-                    opv_status = OPVValidation.Status.REJECTED if status == 'OPV_REJECTED' else OPVValidation.Status.VALIDATED
-
-                    if opv_status == OPVValidation.Status.VALIDATED:
-                        vhc_file = f"opv_docs/vhc/VHC_{app.pk}_{created_at.strftime('%Y%m%d')}.pdf"
-                        pass_file = f"opv_docs/pass/PASS_{app.pk}_{created_at.strftime('%Y%m%d')}.pdf"
-                        ensure_sample_media_file(vhc_file, "pdf")
-                        ensure_sample_media_file(pass_file, "pdf")
-                        remarks_msg = f"Veterinary Health Inspection cleared. All {total_swine_in_app} swine certified free from ASF and clinical signs of contagious diseases."
-                    else:
-                        vhc_file = None
-                        pass_file = None
-                        remarks_msg = "Disapproved: Missing updated ASF negative test certificate from source farm within the prescribed 14-day validity."
-
-                    opv_val = OPVValidation.objects.create(
-                        application=app,
-                        opv_staff=opv_staff,
-                        status=opv_status,
-                        remarks=remarks_msg,
-                        validated_at=opv_time,
-                        veterinary_health_certificate=vhc_file,
-                        transportation_pass=pass_file
+                        },
+                        remarks={"verification": "Seeded sample outcome; no OCR provider called."},
+                        manually_overridden=overridden, overridden_by=agri if overridden else None,
+                        overridden_at=submitted + datetime.timedelta(minutes=10) if overridden else None,
+                        overridden_fields={"owner_name": origin.source_farmer_name} if overridden else {},
                     )
-
-                    AuditTrail.objects.create(
-                        who_performed=opv_staff,
-                        target_user=farmer,
-                        action_type=AuditTrail.ActionType.VERIFY,
-                        what_performed=f"[OPV_REVIEW_{opv_status}] - Provincial Veterinary Officer {opv_staff.get_full_name()} marked Application #{app.pk} as {opv_status}.",
-                        ip_address="127.0.0.1",
-                        user_agent="FarmPass Seed Engine/2.0",
-                        when_performed=opv_time
+                    OCRValidationResult.objects.filter(pk=ocr.pk).update(
+                        validated_at=submitted + datetime.timedelta(minutes=5)
                     )
-
-                    Notification.objects.create(
-                        recipient=farmer,
-                        type=Notification.Type.SUCCESS if opv_status == OPVValidation.Status.VALIDATED else Notification.Type.WARNING,
-                        title=f"OPV Review: {opv_val.get_status_display()}",
-                        message=remarks_msg,
-                        sent_at=opv_time
-                    )
-
-                    SMSLog.objects.create(
-                        phone_number=farmer.phone_no,
-                        message_type=SMSLog.Type.NOTIFICATION,
-                        status_captured="success",
-                        send_at=opv_time
-                    )
-
-                    # 5. Issued Permit & Payment Records
-                    has_permit = status in ['PAYMENT_PENDING', 'RELEASED']
-                    if has_permit:
-                        issued_time = opv_time + timedelta(minutes=random.randint(10, 45))
-                        permit_number = f"LP{created_at.strftime('%y')}-{idx+1000:04d}-{random.randint(10,99)}"
-                        qr_token = str(uuid.uuid4())
-                        is_paid = (status == 'RELEASED')
-
-                        pay_method = (
-                            IssuedPermit.PaymentMethodChoices.ONLINE
-                            if random.random() < 0.60
-                            else IssuedPermit.PaymentMethodChoices.OFFLINE
-                        ) if is_paid else ""
-
-                        permit_pdf_path = f"issued_docs/permits/PERMIT_{permit_number}.pdf"
-                        aic_number = f"AIC-{issued_time.strftime('%m%d')}-{random.randint(100, 999):03d}-{issued_time.strftime('%y')}"
-                        aic_pdf_path = f"issued_docs/aic/AIC_{permit_number}.pdf"
-
-                        if is_paid:
-                            ensure_sample_media_file(permit_pdf_path, "pdf")
-                            ensure_sample_media_file(aic_pdf_path, "pdf")
-
-                        issued_permit = IssuedPermit.objects.create(
-                            permit_number=permit_number,
-                            application=app,
-                            issued_by=opv_staff,
-                            qr_token=qr_token,
-                            is_paid=is_paid,
-                            payment_method=pay_method,
-                            permit_fee=Decimal("150.00"),
-                            permit_pdf=permit_pdf_path if is_paid else None,
-                            aic_number=aic_number if is_paid else "",
-                            aic_pdf=aic_pdf_path if is_paid else None,
-                            date_issued=issued_time.date(),
-                            valid_until=issued_time.date() + timedelta(days=3)
-                        )
-
-                        # Synchronize PermitApplication AIC and issuance fields
-                        app.is_issued = is_paid
-                        app.issued_at = issued_time if is_paid else None
-                        app.aic_number = aic_number if is_paid else ""
-                        app.aic_pdf = aic_pdf_path if is_paid else None
-                        app.aic_issued_at = issued_time if is_paid else None
-                        app.save()
-
-                        AuditTrail.objects.create(
-                            who_performed=opv_staff,
-                            target_user=farmer,
-                            action_type=AuditTrail.ActionType.CREATE,
-                            what_performed=f"[PERMIT_ISSUED] - Local Transport Permit #{permit_number} prepared by OPV Staff {opv_staff.get_full_name()}.",
-                            ip_address="127.0.0.1",
-                            user_agent="FarmPass Seed Engine/2.0",
-                            when_performed=issued_time
-                        )
-
-                        # Payment History
-                        payment_time = issued_time + timedelta(minutes=random.randint(15, 120))
-                        pay_status = PaymentHistory.Status.SUCCESS if is_paid else PaymentHistory.Status.PENDING
-
-                        if pay_method == IssuedPermit.PaymentMethodChoices.ONLINE:
-                            pay_channel = random.choice(['gcash', 'paymaya', 'card', 'qrph'])
-                            confirming_officer = None
-                        else:
-                            pay_channel = 'gcash'
-                            confirming_officer = random.choice(agri_officers) if is_paid else None
-
-                        pay_history = PaymentHistory.objects.create(
-                            issued_permit=issued_permit,
-                            method=pay_channel,
-                            status=pay_status,
-                            amount=150,
-                            paymongo_payment_id=f"pay_{uuid.uuid4().hex[:20]}" if is_paid else "",
-                            paymongo_session_id=f"cs_{uuid.uuid4().hex[:20]}" if is_paid else "",
-                            paymongo_payment_intent_id=f"pi_{uuid.uuid4().hex[:20]}" if is_paid else "",
-                            confirmed_by=confirming_officer,
-                            confirmed_at=payment_time if is_paid else None,
-                            or_number=f"{random.randint(1000000, 9999999)}" if is_paid else ""
-                        )
-
-                        if is_paid:
-                            AuditTrail.objects.create(
-                                who_performed=confirming_officer or admin_user,
-                                target_user=farmer,
-                                action_type=AuditTrail.ActionType.UPDATE,
-                                what_performed=f"[PAYMENT_CONFIRMED] - Official Receipt #{pay_history.or_number} generated. Payment of PHP 150.00 confirmed for Permit #{permit_number}.",
-                                ip_address="127.0.0.1",
-                                user_agent="FarmPass Seed Engine/2.0",
-                                when_performed=payment_time
-                            )
-
-                            Notification.objects.create(
-                                recipient=farmer,
-                                type=Notification.Type.SUCCESS,
-                                title="Transport Permit Released",
-                                message=f"Payment verified (OR #{pay_history.or_number}). Permit #{permit_number} is active and valid until {issued_permit.valid_until}.",
-                                sent_at=payment_time
-                            )
-
-                            SMSLog.objects.create(
-                                phone_number=farmer.phone_no,
-                                message_type=SMSLog.Type.NOTIFICATION,
-                                status_captured="success",
-                                send_at=payment_time
-                            )
-
-                            # 6. Checkpoint Verification (Field Inspector Logs)
-                            is_past_transport = transport_date <= now.date()
-                            if is_past_transport and random.random() < 0.90:
-                                scan_hour = random.randint(6, 17)
-                                scan_min = random.randint(0, 59)
-                                scan_time = timezone.make_aware(
-                                    datetime.datetime.combine(transport_date, datetime.time(scan_hour, scan_min))
-                                )
-
-                                if "Lutucan" in dest_info['checkpoint']:
-                                    inspector = inspectors[0]
-                                elif "Castañas" in dest_info['checkpoint']:
-                                    inspector = inspectors[1]
-                                else:
-                                    inspector = inspectors[2]
-
-                                jitter_lat = random.normalvariate(0, 0.00015)
-                                jitter_lng = random.normalvariate(0, 0.00015)
-                                cp_lat = dest_info['checkpoint_coords']['lat'] + jitter_lat
-                                cp_lng = dest_info['checkpoint_coords']['long'] + jitter_lng
-
-                                inspector_log = InspectorLogs.objects.create(
-                                    inspector=inspector,
-                                    application=app,
-                                    notes=(
-                                        f"Scanned at {dest_info['checkpoint']}. Verified {total_swine_in_app} swine onboard "
-                                        f"{vehicle_info['type']} ({vehicle_info['plate']}). VHC and AIC seals intact."
-                                    ),
-                                    lat=cp_lat,
-                                    longi=cp_lng
-                                )
-                                InspectorLogs.objects.filter(pk=inspector_log.pk).update(scanned_at=scan_time)
-
-                                app.is_checked = True
-                                app.save()
-
-                                AuditTrail.objects.create(
-                                    who_performed=inspector,
-                                    target_user=farmer,
-                                    action_type=AuditTrail.ActionType.VERIFY,
-                                    what_performed=f"[CHECKPOINT_INSPECTED] - Permit #{permit_number} verified at {dest_info['checkpoint']} by Inspector {inspector.get_full_name()}.",
-                                    ip_address="127.0.0.1",
-                                    user_agent="FarmPass Seed Engine/2.0",
-                                    when_performed=scan_time
-                                )
-
-                                Notification.objects.create(
-                                    recipient=farmer,
-                                    type=Notification.Type.INFO,
-                                    title="Checkpoint Inspection Verified",
-                                    message=f"Your livestock transport passed inspection at {dest_info['checkpoint']} on {transport_date}.",
-                                    sent_at=scan_time
-                                )
-
-            # Update auto_now timestamps to match the realistic timeline
-            final_updated = created_at
-            if submitted_at:
-                final_updated = submitted_at
-                if status in ['OPV_VALIDATED', 'OPV_REJECTED', 'PAYMENT_PENDING', 'RELEASED']:
-                    final_updated = opv_time if 'opv_time' in locals() else submitted_at
-                    if status == 'RELEASED' and 'payment_time' in locals():
-                        final_updated = payment_time
-
-            PermitApplication.objects.filter(pk=app.pk).update(
-                status=status,
-                created_at=created_at,
-                updated_at=final_updated,
-                submitted_at=submitted_at
+    forwarded = status in (S.FORWARDED_TO_OPV, S.OPV_VALIDATED, S.OPV_REJECTED,
+                           S.PERMIT_ISSUED, S.PAYMENT_PENDING, S.RELEASED)
+    if forwarded:
+        changed = created + datetime.timedelta(hours=1)
+        app.aic_number = f"DEMO-AIC-{index+1:03d}"
+        app.mao_certificate_number = f"DEMO-MAO-{index+1:03d}"
+        app.aic_issued_at = app.mao_cert_issued_at = changed
+        app.aic_pdf = files.pdf("aic", "Animal Inspection Certificate",
+                                ("Synthetic certificate for demo use.",))
+        app.mao_certificate_pdf = files.pdf("mao", "MAO Health Certificate",
+                                            ("Synthetic certificate for demo use.",))
+        if status != S.FORWARDED_TO_OPV:
+            approved = status != S.OPV_REJECTED
+            validation = OPVValidation.objects.create(
+                application=app, opv_staff=opv, status="VALIDATED" if approved else "REJECTED",
+                remarks="Demo: health documents validated." if approved else "Demo: updated ASF clearance required.",
+                aic_verified=approved, aic_verified_at=changed if approved else None,
+                veterinary_health_certificate=files.pdf("vhc", "Veterinary Health Certificate") if approved else None,
+                transportation_pass=files.pdf("transport_pass", "Transportation Pass") if approved else None,
             )
+            OPVValidation.objects.filter(pk=validation.pk).update(validated_at=changed)
+        _audit(agri, f"[DEMO MAO REVIEW] {app.application_id}: forwarded with AIC and MAO certificate", changed, farmer)
+    if status in (S.PAYMENT_PENDING, S.RELEASED, S.PERMIT_ISSUED):
+        paid = status == S.RELEASED
+        issued = created + datetime.timedelta(hours=2)
+        method = "OFFLINE" if index % 2 == 0 else "ONLINE"
+        token = str(uuid.uuid5(uuid.NAMESPACE_URL, f"farmpass-demo/{index}"))
+        permit = IssuedPermit.objects.create(
+            application=app, issued_by=agri, permit_number=f"DEMO-{index+1:04d}", qr_token=token,
+            is_paid=paid, payment_method=method, permit_fee=fee,
+            valid_until=issued.date()+datetime.timedelta(days=validity_days),
+            payment_deadline=issued+datetime.timedelta(hours=24),
+            aic_number=app.aic_number, aic_pdf=app.aic_pdf,
+            mao_certificate_number=app.mao_certificate_number, mao_certificate_pdf=app.mao_certificate_pdf,
+        )
+        IssuedPermit.objects.filter(pk=permit.pk).update(date_issued=issued.date())
+        if paid:
+            permit.permit_pdf = files.pdf(
+                f"permit_{index+1:03d}", "Livestock Transport Permit",
+                (f"Application: {app.application_id}", f"Permit: {permit.permit_number}",
+                 f"Farmer: {farmer.get_full_name()}", f"Valid until: {permit.valid_until}",
+                 f"QR token: {token}"),
+                qr_url=f"{frontend}/inspector/verify/{token}",
+            )
+            permit.save(update_fields=["permit_pdf"])
+        payment = PaymentHistory.objects.create(
+            issued_permit=permit, method="gcash" if method == "OFFLINE" else "ONLINE",
+            status="SUCCESS" if paid else "FAILED" if label == "payment_failed" else "PENDING",
+            amount=int(fee), confirmed_by=agri if paid and method == "OFFLINE" else None,
+            confirmed_at=issued+datetime.timedelta(minutes=15) if paid else None,
+            or_number=f"D{index+1:06d}" if paid else "",
+            # Provider IDs stay empty: no live payment exists.
+        )
+        PaymentHistory.objects.filter(pk=payment.pk).update(created_at=issued)
+        app.is_issued = paid
+        app.issued_at = issued if paid else None
+        changed = issued + datetime.timedelta(minutes=15) if paid else issued
+        if inspected:
+            log = InspectorLogs.objects.create(
+                inspector=users["inspector_mario"], application=app,
+                notes="Demo: hog count and documents verified at Lutucan checkpoint.",
+                lat=13.9654, longi=121.5103,
+            )
+            scan_time = created+datetime.timedelta(hours=4)
+            InspectorLogs.objects.filter(pk=log.pk).update(scanned_at=scan_time)
+            app.is_checked = True
+            _audit(users["inspector_mario"], f"[DEMO INSPECTION] {app.application_id}", scan_time, farmer)
+        _audit(agri, f"[DEMO PAYMENT] {app.application_id}: {payment.status}, {method}", changed, farmer)
+        if inspected:
+            changed = scan_time
+    if status == S.PERMIT_ISSUED:
+        app.purpose += " Legacy status example, no workflow actions supported."
+    app.save()
+    PermitApplication.objects.filter(pk=app.pk).update(
+        created_at=created, submitted_at=submitted, updated_at=changed
+    )
+    if submitted:
+        notice = Notification.objects.create(
+            recipient=farmer,
+            type="WARNING" if status in (S.RESUBMISSION, S.OPV_REJECTED, S.CANCELLED) else "INFO",
+            title=f"Demo: {app.get_status_display()}", message=f"{app.application_id}: {label}",
+            is_read=index % 2 == 0,
+        )
+        Notification.objects.filter(pk=notice.pk).update(sent_at=changed)
+        sms = SMSLog.objects.create(
+            application=app, phone_number=farmer.phone_no,
+            message_type="NOTIFICATION", status_captured="demo_simulated_not_sent",
+        )
+        SMSLog.objects.filter(pk=sms.pk).update(send_at=changed)
+        if status in (S.SUBMITTED, S.OCR_VALIDATED, S.MANUAL, S.FORWARDED_TO_OPV):
+            staff_notice = Notification.objects.create(
+                recipient=opv if status == S.FORWARDED_TO_OPV else agri,
+                type="INFO", title="Demo application ready for review",
+                message=f"{app.application_id}: {label}",
+            )
+            Notification.objects.filter(pk=staff_notice.pk).update(sent_at=changed)
 
-            apps_created += 1
-            if apps_created % 25 == 0 or apps_created == total_applications:
-                print(f"  -> Generated {apps_created}/{total_applications} applications...")
 
-    # 6. Summary Report
-    print("\n" + "=" * 80)
-    print(" SEEDING COMPLETED SUCCESSFULLY!")
-    print("=" * 80)
-    print(f"  • Total Users:            {User.objects.count()} (Admin, Agri, OPV, Inspectors, Barangay, Farmers)")
-    print(f"  • Total Farmer Docs:      {FarmerDocument.objects.count()} KYC items (verified)")
-    print(f"  • Total Consent Logs:     {PrivacyConsentLog.objects.count()} DPA 2012 records")
-    print(f"  • Total Barangays:        {Barangay.objects.count()}")
-    print(f"  • Total Hog Surveys:      {HogSurvey.objects.count()} quarterly records (with contacts)")
-    print(f"  • Total Applications:     {PermitApplication.objects.count()}")
-    print(f"  • Total App Documents:    {PermitApplicationDocument.objects.count()}")
-    print(f"  • Total Submitted Docs:   {SubmittedDocument.objects.count()}")
-    print(f"  • Total OCR Results:      {OCRValidationResult.objects.count()}")
-    print(f"  • Total OPV Validations:  {OPVValidation.objects.count()}")
-    print(f"  • Total Issued Permits:   {IssuedPermit.objects.count()}")
-    print(f"  • Total Payments Logged:  {PaymentHistory.objects.count()}")
-    print(f"  • Total Inspector Logs:   {InspectorLogs.objects.count()}")
-    print(f"  • Total Notifications:    {Notification.objects.count()}")
-    print(f"  • Total SMS Logs:         {SMSLog.objects.count()}")
-    print(f"  • Total Audit Trails:     {AuditTrail.objects.count()} (with IP, action_type, user_agent)")
-    print("=" * 80)
-    print(" Ready for demonstration and test runs.")
-    print("=" * 80)
+def _print_summary(marker):
+    print(f"Demo seed completed at {marker.when_performed}. No records changed on subsequent runs.")
+    print(f"Applications: {PermitApplication.objects.count()} | Hog surveys: {HogSurvey.objects.count()}")
+    print("\nDEMO CREDENTIALS (initial passwords; reruns never reset them)")
+    print(f"{'Username':<20} {'Password':<14} {'Role':<10} {'Verification':<16} Barangay")
+    accounts = {u.username: u for u in User.objects.filter(
+        username__in=[a[0] for a in ACCOUNTS]
+    ).select_related("barangay")}
+    for username, *_ in ACCOUNTS:
+        user = accounts.get(username)
+        if user:
+            print(f"{username:<20} {PASSWORD:<14} {user.role:<10} {user.verification_status:<16} "
+                  f"{user.barangay.name if user.barangay else '-'}")
+    print("\nMAIN DEMO FARMER: farmer_lucio")
+    for app in PermitApplication.objects.filter(
+        application_id__in=[f"DEMO-{i:03d}" for i in range(1, 17)]
+    ).order_by("application_id"):
+        print(f"{app.application_id}: {app.status} | {app.purpose.split(']')[0]}]")
+    expired = list(IssuedPermit.objects.filter(
+        application__application_id__startswith="DEMO-", is_paid=True,
+        valid_until__lt=timezone.localdate(),
+    ).values_list("permit_number", flat=True))
+    print(f"Expired demo permits ({len(expired)}): {', '.join(expired) or 'none'}. "
+          "Dates are preserved on redeploy.")
 
 
-if __name__ == "__main__":
-    import django
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.base")
-    django.setup()
-    run()
+def run(*args):
+    if args:
+        raise RuntimeError("This demo seeder takes no arguments and has no reset option.")
+    if not settings.DEBUG and os.environ.get("FARMPASS_DEMO_SEED_ENABLED", "").lower() != "true":
+        print("Demo seeding disabled. Set FARMPASS_DEMO_SEED_ENABLED=true only on a demo deployment.")
+        return
+    if connection.vendor != "postgresql":
+        raise RuntimeError("The demo seed requires PostgreSQL.")
+    with transaction.atomic():
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [LOCK_ID])
+        marker = AuditTrail.objects.filter(what_performed=COMPLETION_MARKER).first()
+        if marker:
+            print("Demo already seeded; skipping.")
+        else:
+            barangays, selected, frontend = _preflight()
+            now = timezone.localtime()
+            files = DemoFiles()
+            config, _ = MunicipalConfig.objects.get_or_create(pk=1)
+            fee = sum(Decimal(str(value)) for value in (
+                config.vet_health_cert_fee, config.transport_pass_fee, config.local_transport_permit_fee,
+            ))
+            if fee != fee.to_integral_value() or fee < 0 or config.validity_days < 1:
+                raise RuntimeError("Demo requires whole-peso fees and positive permit validity.")
+            users = _create_accounts(selected, files, now)
+            _create_surveys(barangays, now, users)
+            for index, case in enumerate(_scenarios(now, config.validity_days)):
+                _create_application(index, case, users, files, frontend, fee, config.validity_days)
+            _audit(users["admin"], COMPLETION_MARKER, now)
+            marker = AuditTrail.objects.get(what_performed=COMPLETION_MARKER)
+    _print_summary(marker)

@@ -1,0 +1,14 @@
+-r base.txt
+
+# WSGI server
+gunicorn==26.0.0
+
+# Static files
+whitenoise==6.12.0
+
+# Database URL parsing (Render/Neon)
+dj-database-url==3.1.2
+
+# Media storage (Cloudinary)
+cloudinary==1.44.2
+django-cloudinary-storage==0.3.0

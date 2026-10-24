@@ -6,7 +6,7 @@ FarmPass: farm/hog livestock transport permit system for Sariaya Municipal Agric
 
 - `backend/` — Django 6.0 + DRF (Python 3.14). Apps under `backend/apps/`: `api` (custom `User`, notifications, `AuditTrail`), `permits` (core application→OPV→issue workflow), `payment` (PayMongo), `ocr`, `documents`, `dashboard`, `inspector` (QR scans), `sms`, `maps` (barangay, hog survey).
 - `frontend/` — React 19 + Vite + Tailwind v4 + daisyUI 5. No frontend test suite; lint only.
-- Root `*.MD` files are the living specs (e.g. `AUTO_AIC_OPV_SPEC.MD`, `BARANGAY_ENDORSEMENT_SPEC.md`, `RAG_Insights_Spec.MD`) — read them before touching those areas.
+- Root `*.MD` files are the living specs (e.g. `Design.MD`, `README.md`, `backend/IMPROVEMENT_SPECS.md`, `docs/security/`) — read them before touching those areas.
 
 ## Commands
 
@@ -20,7 +20,7 @@ Backend (venv: `backend\venv`, activate via `backend\venv\Scripts\Activate.ps1`;
   - Failed tests only: `python -m pytest --lf`
   - The DB is **PostgreSQL** (`backend/apps/../config/settings/base.py`), so tests need a running Postgres matching `backend/.env` — sqlite is not usable.
   - Run full suite (`python -m pytest`) ONLY when explicitly requested.
-- seed demo data: `python manage.py runscript seed_realistic_operations` (django_extensions `runscript`; scripts live in `backend/scripts/`). Seeded accounts: `TEST_CREDENTIALS.txt`, all passwords `password123`.
+- seed demo data: `python manage.py runscript seed_realistic_operations` (django_extensions `runscript`; scripts live in `backend/scripts/`). Seeded accounts come from that script (e.g. `admin`, `agri_user123`, `opv_user123`, `inspector_mario`, `brgy_lutucan`, `farmer_lucio`; all passwords `password123`). The old `TEST_CREDENTIALS.txt` was removed.
 - migrations: standard `makemigrations` / `migrate` per app.
 
 Frontend:
@@ -49,4 +49,8 @@ Frontend:
   - **UI / Frontend design & polish**: `antislop-ui`, `ui-taste`, `emil-design-eng`, `web-design-guidelines`, `antislop-layoutmobile`
   - **Browser automation & testing**: `agent-browser`
 - Always read the matching `SKILL.md` before applying changes.
+
+## Context files
+
+- [backend/apps/dashboard/AGENTS.md](backend/apps/dashboard/AGENTS.md): MAO dashboard KPIs, caching, and AI insights.
 

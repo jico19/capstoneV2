@@ -143,11 +143,11 @@ When seeded via `seed_realistic_operations`, all accounts share the password: `p
 
 | Role | Username / Identifier | Portal |
 |---|---|---|
-| **Farmer** | Demo Farmer accounts (or register new) | `/farmer` |
-| **MAO Agri Staff** | `agri_staff` | `/agri` |
-| **OPV Officer** | `opv_staff` | `/opv` |
-| **Barangay Official**| Assigned barangay official | `/barangay` |
-| **Roadside Inspector**| `inspector1` | `/inspector` |
+| **Farmer** | Demo Farmer accounts (e.g. `farmer_lucio`, `farmer_kristel`) or register new | `/farmer` |
+| **MAO Agri Staff** | `agri_user123` (e.g. `agri_officer_luis`) | `/agri` |
+| **OPV Officer** | `opv_user123` (e.g. `opv_staff_rose`) | `/opv` |
+| **Barangay Official**| Assigned barangay official (e.g. `brgy_lutucan`) | `/barangay` |
+| **Roadside Inspector**| `inspector_mario` (e.g. `inspector_clara`) | `/inspector` |
 
 ---
 

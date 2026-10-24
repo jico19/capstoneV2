@@ -54,3 +54,8 @@ Thumbs.db
 .gemini/
 .gemini_security/
 gha-creds-*.json
+
+
+# Miscellaneous
+brag-output/
+farmpass-video/

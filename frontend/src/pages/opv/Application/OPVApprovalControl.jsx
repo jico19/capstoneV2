@@ -180,13 +180,12 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit, aicNumber, onIns
                     </p>
                 </div>
 
-                <div className={`p-5 border-2 rounded-xl transition-colors ${
-                    errors.aic_verified 
-                        ? 'border-red-600 bg-red-50/70' 
-                        : watchedFiles.aic_verified 
-                            ? 'border-emerald-600 bg-emerald-50/40' 
+                <div className={`p-5 border-2 rounded-xl transition-colors ${errors.aic_verified
+                        ? 'border-red-600 bg-red-50/70'
+                        : watchedFiles.aic_verified
+                            ? 'border-emerald-600 bg-emerald-50/40'
                             : 'border-stone-200 bg-stone-50/60'
-                }`}>
+                    }`}>
                     <label className="flex items-start gap-4 cursor-pointer select-none">
                         <input
                             type="checkbox"
@@ -281,7 +280,7 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit, aicNumber, onIns
             </div>
 
             {/* 3. Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-8 border-t border-stone-200">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
                 <button
                     type="button"
                     disabled={isProcessing}
@@ -293,7 +292,7 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit, aicNumber, onIns
                     ) : (
                         <XCircle size={16} strokeWidth={2.5} />
                     )}
-                    Reject Request
+                    Permanent Reject
                 </button>
 
                 <button

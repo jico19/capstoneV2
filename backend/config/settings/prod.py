@@ -8,14 +8,20 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["capstonev2-gnmi.onrender.com"]
+# Comma-separated hostnames, without schemes or paths.
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
 
 DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://farm-pass-smoky.vercel.app",
-    "https://farmpass-ph.me",
+    origin.strip()
+    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
 ]
 
 

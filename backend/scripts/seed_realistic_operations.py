@@ -6,6 +6,7 @@ and testing purposes across all system user roles and workflow stages.
 
 Usage:
     python manage.py runscript seed_realistic_operations
+    python manage.py runscript seed_realistic_operations --script-args mode=apply accounts-only
 """
 
 import os
@@ -15,7 +16,7 @@ import datetime
 from datetime import timedelta
 from decimal import Decimal
 from django.utils import timezone
-from django.db import transaction
+from django.db import connection, transaction
 from django.conf import settings
 
 from apps.api.models import User, Notification, AuditTrail, FarmerDocument, PrivacyConsentLog
@@ -29,6 +30,8 @@ from apps.payment.models import PaymentHistory
 from apps.inspector.models import InspectorLogs
 from apps.sms.models import SMSLog
 from apps.dashboard.models import CachedInsight
+
+COMPLETION_MARKER = "[FARMPASS_REALISTIC_OPERATIONS_SEEDED_V1]"
 
 
 # ---------------------------------------------------------------------------
@@ -162,9 +165,8 @@ def ensure_sample_media_file(relative_path: str, file_type: str = "pdf") -> str:
 
 @transaction.atomic
 def run(*args, total_applications: int = 160, months: int = 12, clean: bool = False,
-        mode="preview", as_of=None, seed=42):
+        mode="apply", as_of=None, seed=42):
     import argparse
-    import json
     from apps.maps.survey_generation import generate_history, script_arguments
     from apps.maps.survey_import import preview, apply_records
     parser = argparse.ArgumentParser()
@@ -172,24 +174,64 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
     parser.add_argument("--replace", action="store_true", default=clean)
     parser.add_argument("--as-of", default=as_of)
     parser.add_argument("--seed", type=int, default=seed)
-    options = parser.parse_args(script_arguments(args))
-    barangays = list(Barangay.objects.all())
-    surveys, monthly = generate_history(barangays, options.as_of, options.seed)
-    print(json.dumps({**preview(surveys), "monthly_flows": monthly}, indent=2))
+    parser.add_argument("--accounts-only", action="store_true")
+    options = parser.parse_args(["--accounts-only" if arg == "accounts-only" else arg
+                                 for arg in script_arguments(args)])
+    if options.accounts_only and options.replace:
+        raise ValueError("accounts-only cannot be combined with replace.")
+    if options.mode == "apply":
+        if not settings.DEBUG:
+            raise RuntimeError("Seed script execution is strictly forbidden in production (DEBUG=False).")
+        # One transaction-wide lock prevents simultaneous commands from seeding twice.
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [2026102701])
+        if not options.accounts_only and not options.replace:
+            if AuditTrail.objects.filter(what_performed=COMPLETION_MARKER).exists():
+                print("Already seeded. Existing accounts, hog surveys, and operations were left unchanged.")
+                return
+            if PermitApplication.objects.exists():
+                print("Existing permit operations found. Seeding skipped to avoid duplicating data.")
+                return
+    barangays = list(Barangay.objects.order_by("pk"))
+    if not barangays and options.mode == "apply" and not options.accounts_only:
+        from scripts.barangay import run as seed_barangays
+        seed_barangays()
+        barangays = list(Barangay.objects.order_by("pk"))
+    if not barangays:
+        raise ValueError("No barangays found. Run 'python manage.py runscript barangay' first.")
+    surveys = []
+    if not options.accounts_only:
+        surveys, _ = generate_history(barangays, options.as_of, options.seed)
     if options.mode == "preview":
+        if options.accounts_only:
+            print("Account seed preview (no data changed)")
+        else:
+            report = preview(surveys)
+            print("Operations seed preview (no data changed)")
+            print(f"  Validation: {'Passed' if report['valid'] else 'Failed'}")
+            print(f"  Survey records: {report['record_count']:,}")
+            print(f"  Barangays: {len(report['classifications']):,}")
+            print(f"  Survey dates: {report['date_from']} to {report['date_to']}")
+            print(f"  Latest quarter population: {report['current_population_total']:,}")
+            for error in report['errors']:
+                print(f"  Error: {error}")
+        print("  No login accounts were created or updated.")
+        print("  To seed data: python manage.py runscript seed_realistic_operations")
         return
     clean = options.replace
-    if not settings.DEBUG:
-        raise RuntimeError("Seed script execution is strictly forbidden in production (DEBUG=False).")
+    from apps.maps.survey_generation import barangay_key
+    by_name = {barangay_key(b.name): b for b in barangays}
+    lutucan_bg = by_name.get("lutucan 1")
+    castanas_bg = by_name.get("castanas")
+    bucal_bg = by_name.get("bucal")
+    if not all((lutucan_bg, castanas_bg, bucal_bg)):
+        raise ValueError("Account seeding requires Lutucan 1, Castanas, and Bucal barangays. No account changes were saved.")
 
-    print("=" * 80)
-    print(" STARTING REALISTIC OPERATIONS SEED SCRIPT FOR SARIAYA LIVESTOCK SYSTEM")
-    print(f" Target: {total_applications} applications over past {months} months")
-    print("=" * 80)
+    # Serialize cooperating seed runs before checking or creating accounts.
+    list(Barangay.objects.select_for_update().order_by("pk"))
 
     # 1. Clean up operational data if requested
     if clean:
-        print("\n[Step 1/6] Cleaning up old operational records...")
         AuditTrail.objects.all().delete()
         PrivacyConsentLog.objects.all().delete()
         Notification.objects.all().delete()
@@ -205,33 +247,24 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
         PermitApplication.objects.all().delete()
         FarmerDocument.objects.all().delete()
         CachedInsight.objects.all().delete()
-        print("  -> Existing operational, KYC, and survey data successfully cleared.")
-
-    # 2. Check Barangays
-    barangays = list(Barangay.objects.all())
-    if not barangays:
-        print("\n[!] ERROR: No Barangays found in the database.")
-        print("    Please run 'python manage.py runscript barangay' first to seed Sariaya barangays.")
-        return
-
-    print(f"\n[Step 2/6] Found {len(barangays)} Sariaya Barangays.")
 
     # Ensure MunicipalConfig
-    MunicipalConfig.objects.update_or_create(
-        id=1,
-        defaults={
-            'vet_health_cert_fee': Decimal("50.00"),
-            'transport_pass_fee': Decimal("50.00"),
-            'local_transport_permit_fee': Decimal("50.00"),
-            'validity_days': 3,
-            'oic_name': "AMALITA C. AMORES",
-            'oic_title': "OIC - Municipal Agriculturist"
-        }
-    )
-    print("  -> Initialized official MunicipalConfig (PHP 150.00 total permit fee).")
+    if not options.accounts_only:
+        MunicipalConfig.objects.get_or_create(
+            id=1,
+            defaults={
+                'vet_health_cert_fee': Decimal("50.00"),
+                'transport_pass_fee': Decimal("50.00"),
+                'local_transport_permit_fee': Decimal("50.00"),
+                'validity_days': 3,
+                'oic_name': "AMALITA C. AMORES",
+                'oic_title': "OIC - Municipal Agriculturist"
+            }
+        )
 
     # 3. Create / Standardize Key Users Across All Roles
-    print("\n[Step 3/6] Setting up realistic user accounts with 'password123' and verified KYC...")
+
+    account_results = {"created": [], "existing": []}
 
     def get_or_create_user(username, role, first_name, last_name, barangay=None, phone_suffix="0001", is_staff_user=False, verification_status=User.VerificationStatus.VERIFIED):
         email = f"{username}@sariaya.gov.ph" if role in ['Agri', 'Opv', 'Admin', 'Barangay'] else f"{username}@gmail.com"
@@ -247,7 +280,8 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
                 'last_name': last_name,
                 'address': f"{barangay.name if barangay else 'Poblacion'}, Sariaya, Quezon",
                 'barangay': barangay,
-                'receive_sms': True,
+                'receive_sms': False,
+                'is_active': True,
                 'is_staff': is_staff_user or (role in ['Admin', 'Agri']),
                 'is_superuser': (role == 'Admin' and username == 'admin'),
                 'verification_status': verification_status,
@@ -255,13 +289,19 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
                 'verified_at': timezone.now() if verification_status == User.VerificationStatus.VERIFIED else None
             }
         )
-        if created or not user.check_password("password123"):
+        if not created:
+            # Django createsuperuser leaves our custom role at its Farmer default.
+            if username == "admin" and role == "Admin" and user.role == "Farmer" and user.is_staff and user.is_superuser:
+                user.role = "Admin"
+                user.save(update_fields=["role"])
+            if user.role != role:
+                raise ValueError(f"Existing account '{username}' has role '{user.role}', expected '{role}'. No account changes were saved.")
+            account_results["existing"].append(username)
+            return user
+        if created:
             user.set_password("password123")
-            user.verification_status = verification_status
-            user.save()
-            print(f"  + Created User: {username:<22} [{role:<10}] - {first_name} {last_name}")
-        else:
-            print(f"  = Ready User:   {username:<22} [{role:<10}] - {first_name} {last_name}")
+            user.save(update_fields=["password"])
+            account_results["created"].append(username)
 
         # Record DPA Privacy Consent
         PrivacyConsentLog.objects.get_or_create(
@@ -274,6 +314,14 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
             }
         )
         return user
+
+    def print_account_summary():
+        print(f"  Accounts created: {len(account_results['created'])}")
+        print(f"  Existing accounts preserved: {len(account_results['existing'])}")
+        if account_results['created']:
+            print(f"  New usernames: {', '.join(account_results['created'])}")
+            print("  Password for newly created accounts: password123")
+        print("  Existing passwords, roles, and activation status were preserved.")
 
     # Admin User
     admin_user = get_or_create_user("admin", "Admin", "Municipal", "Administrator", None, "0000", True)
@@ -300,10 +348,6 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
     ]
 
     # Barangay Officials
-    lutucan_bg = next((b for b in barangays if "Lutucan" in b.name), barangays[0])
-    castanas_bg = next((b for b in barangays if "Casta" in b.name or "Canda" in b.name), barangays[1])
-    bucal_bg = next((b for b in barangays if "Bucal" in b.name), barangays[2])
-
     barangay_officials = [
         get_or_create_user("brgy_lutucan", "Barangay", "Ernesto", "Vega", lutucan_bg, "4001", False),
         get_or_create_user("brgy_castanas", "Barangay", "Rodrigo", "Castillo", castanas_bg, "4002", False),
@@ -330,6 +374,9 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
     for f_idx, (uname, fname, lname, bg, pnum) in enumerate(farmer_seed_data):
         farmer_user = get_or_create_user(uname, "Farmer", fname, lname, bg, pnum, False, User.VerificationStatus.VERIFIED)
         farmers.append(farmer_user)
+
+        if options.accounts_only or uname in account_results["existing"]:
+            continue
 
         # Seed Verified Farmer KYC Documents
         hl_file = f"farmer_licenses/HL_{uname}.pdf"
@@ -373,12 +420,15 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
             }
         )
 
+    if options.accounts_only:
+        print("Account seeding completed")
+        print_account_summary()
+        return
+
     # 4. Shared deterministic quarterly census generation.
-    imported = apply_records(surveys, replace=clean)
-    print(f"  + Applied {imported} quarterly survey observations.")
+    apply_records(surveys, replace=clean)
 
     # 5. Generate Realistic Operational Applications & Lifecycle Data
-    print(f"\n[Step 5/6] Generating {total_applications} realistic Permit Applications & workflows...")
 
     now = timezone.now()
     start_time = now - timedelta(days=months * 30)
@@ -848,13 +898,21 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
             )
 
             apps_created += 1
-            if apps_created % 25 == 0 or apps_created == total_applications:
-                print(f"  -> Generated {apps_created}/{total_applications} applications...")
+
+    # The completion marker commits with the entire seed, never after a partial failure.
+    AuditTrail.objects.create(
+        who_performed=admin_user,
+        action_type=AuditTrail.ActionType.CREATE,
+        what_performed=COMPLETION_MARKER,
+        user_agent="FarmPass Seed Engine/2.0",
+        when_performed=timezone.now(),
+    )
 
     # 6. Summary Report
     print("\n" + "=" * 80)
     print(" SEEDING COMPLETED SUCCESSFULLY!")
     print("=" * 80)
+    print_account_summary()
     print(f"  • Total Users:            {User.objects.count()} (Admin, Agri, OPV, Inspectors, Barangay, Farmers)")
     print(f"  • Total Farmer Docs:      {FarmerDocument.objects.count()} KYC items (verified)")
     print(f"  • Total Consent Logs:     {PrivacyConsentLog.objects.count()} DPA 2012 records")
@@ -871,8 +929,6 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
     print(f"  • Total Notifications:    {Notification.objects.count()}")
     print(f"  • Total SMS Logs:         {SMSLog.objects.count()}")
     print(f"  • Total Audit Trails:     {AuditTrail.objects.count()} (with IP, action_type, user_agent)")
-    print("=" * 80)
-    print(" Ready for demonstration and test runs.")
     print("=" * 80)
 
 

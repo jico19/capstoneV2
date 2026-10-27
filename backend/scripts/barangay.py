@@ -67,6 +67,7 @@ def run():
         "talaan pantoc": "talaanpantoc",
     }
 
+    created_count = updated_count = skipped_count = 0
     for b_info in sariaya_barangays:
         raw_name = b_info['name']
         lookup_name = alias_map.get(raw_name.lower(), raw_name.lower())
@@ -85,8 +86,7 @@ def run():
         feature = features_by_name.get(lookup_name)
         if feature:
             geojson_name = feature["properties"]['NAME_3']
-            print(f"Mapping and seeding coordinates for: {geojson_name}")
-            Barangay.objects.update_or_create(
+            _, created = Barangay.objects.update_or_create(
                 name=geojson_name,
                 defaults={
                     'latitude': b_info['lat'],
@@ -94,9 +94,15 @@ def run():
                     'geojson': feature["geometry"]['coordinates']
                 }
             )
+            created_count += int(created)
+            updated_count += int(not created)
         else:
+            skipped_count += 1
             print(f"WARNING: No GeoJSON feature found for name: {raw_name}")
 
-    print("Done creating/updating barangay.")
+    print("Barangay seeding completed")
+    print(f"  Created: {created_count}")
+    print(f"  Updated: {updated_count}")
+    print(f"  Skipped: {skipped_count}")
 
 

@@ -14,7 +14,7 @@ export const useGetMaps = () => {
 }
 
 
-export const useGetHogSurvey = (startMonth, endMonth, season, year) => {
+export const useGetHogSurvey = (startMonth, endMonth, season, year, compareYear) => {
     // Only fetch if:
     // 1. A specific season is selected (wet/dry)
     // 2. OR both months are empty (initial full year view)
@@ -24,7 +24,7 @@ export const useGetHogSurvey = (startMonth, endMonth, season, year) => {
 
     return useQuery({
         // The array MUST include months, season and year so React Query knows to re-fetch when they change
-        queryKey: ['hog-survey', startMonth, endMonth, season, year],
+        queryKey: ['hog-survey', startMonth, endMonth, season, year, compareYear],
         queryFn: async () => {
             // Build the params dynamically
             const params = {};
@@ -32,8 +32,8 @@ export const useGetHogSurvey = (startMonth, endMonth, season, year) => {
             if (endMonth) params.end_month = endMonth;
             if (season) params.season = season;
             if (year) params.year = year;
+            if (compareYear) params.compare_year = compareYear;
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Make sure your Axios instance is pointing to the correct Django endpoint
             const res = await api.get('/hog-survey/survey_data/', { params });
@@ -95,6 +95,13 @@ export const useUploadHogSurvey = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['hog-survey'] });
             queryClient.invalidateQueries({ queryKey: ['hog-survey-years'] });
+            queryClient.invalidateQueries({ queryKey: ['barangay-census-history'] });
+            queryClient.invalidateQueries({ queryKey: ['barangay-density-data'] });
+            queryClient.invalidateQueries({ queryKey: ['agri_metrics'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard_insights'] });
+            queryClient.invalidateQueries({ queryKey: ['farmer-roster'] });
+            queryClient.invalidateQueries({ queryKey: ['barangay-hog-surveys'] });
+            queryClient.invalidateQueries({ queryKey: ['barangay-surveys-recent'] });
         },
     });
 }

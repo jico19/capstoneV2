@@ -1,7 +1,3 @@
-import csv
-import io
-from datetime import datetime
-from django.db import transaction
 from django.db.models import Sum, Q
 from apps.api.utils import parse_date_range_strings
 from apps.permits.models import PermitApplication, TransportOrigin
@@ -9,215 +5,11 @@ from .models import Barangay, HogSurvey
 from apps.api.cache_utils import get_or_set_cached_data
 
 class HogSurveyService:
-    # Returns a tuple: (number of records created, list of error messages).
     @staticmethod
     def import_csv(file_obj, barangay_restriction=None):
-        try:
-            # Reset pointer first in case it was already read
-            file_obj.seek(0)
-            # Handle Django uploaded file which might be open in binary mode; decode utf-8-sig to automatically strip BOM
-            content = file_obj.read()
-            if isinstance(content, bytes):
-                content = content.decode('utf-8-sig')
-            file_obj.seek(0)  # Reset pointer just in case
-        except Exception as e:
-            raise ValueError(f"Failed to read file: {str(e)}")
-
-        reader = csv.DictReader(io.StringIO(content))
-        if not reader.fieldnames:
-            raise ValueError("CSV file is empty or headers are missing")
-
-        COLUMN_ALIASES = {
-            'date': 'survey_date',
-            'survey date': 'survey_date',
-            'date of survey': 'survey_date',
-            'total': 'total_pigs',
-            'total pigs': 'total_pigs',
-            'total pig': 'total_pigs',
-            'farmer name': 'farmer_name',
-            'owner name': 'farmer_name',
-            'farmer': 'farmer_name',
-            'contact number': 'contact_number',
-            'contact no': 'contact_number',
-            'cellphone number': 'contact_number',
-            'phone number': 'contact_number',
-        }
-
-        # Normalize fieldnames: lowercase, stripped, aliased
-        normalized_fieldnames = []
-        for name in reader.fieldnames:
-            if not name:
-                continue
-            clean = name.strip().lower()
-            normalized_fieldnames.append(COLUMN_ALIASES.get(clean, clean))
-        reader.fieldnames = normalized_fieldnames
-
-        required_columns = [
-            'barangay', 'survey_date', 'inahin', 'barako', 
-            'fattener', 'grower', 'starter', 'bulaw', 'total_pigs'
-        ]
-        
-        if not all(col in reader.fieldnames for col in required_columns):
-            missing = [col for col in required_columns if col not in reader.fieldnames]
-            raise ValueError(f"Missing columns: {', '.join(missing)}")
-
-        records_to_create = []
-        records_to_update = []
-        errors = []
-
-        BARANGAY_ALIASES = {
-            "mamala 1": "mamala i",
-            "mamala 2": "mamala ii",
-            "santo cristo": "sampaloc santo cristo",
-            "talaan pantoc": "talaanpantoc",
-            "castanas": "castañas",
-        }
-
-        barangay_map = {}
-        for b in Barangay.objects.all():
-            norm_name = b.name.strip().lower()
-            barangay_map[norm_name] = b
-            if "casta" in norm_name:
-                barangay_map["castañas"] = b
-                barangay_map["castanas"] = b
-
-        parsed_rows = []
-        dates_in_csv = set()
-        barangays_in_csv = set()
-
-        for index, row in enumerate(reader):
-            row_num = index + 2
-            try:
-                raw_barangay_name = str(row.get('barangay', '')).strip()
-                lookup_name = raw_barangay_name.lower()
-                lookup_name = BARANGAY_ALIASES.get(lookup_name, lookup_name)
-                barangay = barangay_map.get(lookup_name)
-                if not barangay and "casta" in lookup_name:
-                    barangay = barangay_map.get("castanas") or barangay_map.get("castañas")
-                
-                if not barangay:
-                    errors.append(f"Row {row_num}: Barangay '{raw_barangay_name}' not found.")
-                    continue
-
-                if barangay_restriction and barangay != barangay_restriction:
-                    errors.append(f"Row {row_num}: Barangay '{raw_barangay_name}' is not your assigned barangay ({barangay_restriction.name}).")
-                    continue
-
-                date_str = str(row.get('survey_date', '')).strip()
-                try:
-                    # Handle full ISO timestamps (like 2024-01-01 00:00:00) by splitting, support both / and -
-                    clean_date_str = date_str.split(' ')[0].replace('/', '-')
-                    survey_date = datetime.strptime(clean_date_str, "%Y-%m-%d").date()
-                except (ValueError, TypeError):
-                    errors.append(f"Row {row_num}: Invalid date '{date_str}'.")
-                    continue
-
-                def safe_int(val):
-                    if val is None or str(val).strip() == '':
-                        return 0
-                    try:
-                        return int(float(val))  # handle float strings like "5.0"
-                    except ValueError:
-                        return 0
-
-                def get_field(row_dict, *keys):
-                    for k in keys:
-                        if k in row_dict and row_dict[k] is not None:
-                            return row_dict[k]
-                    lower_dict = {str(k).lower().strip(): v for k, v in row_dict.items() if k}
-                    for k in keys:
-                        if k.lower() in lower_dict and lower_dict[k.lower()] is not None:
-                            return lower_dict[k.lower()]
-                    return ''
-
-                farmer_name = str(get_field(row, 'farmer_name', 'farmer', 'owner_name', 'owner', 'Farmer Name', 'Farmer / Owner Name')).strip()
-                contact_number = str(get_field(row, 'contact_number', 'contact_no', 'phone_no', 'cellphone_number', 'contact', 'Cellphone Number', 'Contact Number')).strip()
-
-                values = {f: safe_int(row.get(f)) for f in HogSurvey.PIG_FIELDS}
-
-                total_pigs = safe_int(row.get('total_pigs'))
-                calculated_total = sum(values.values())
-                if total_pigs == 0 or total_pigs != calculated_total:
-                    total_pigs = calculated_total
-
-                parsed_rows.append({
-                    'barangay': barangay,
-                    'farmer_name': farmer_name,
-                    'contact_number': contact_number,
-                    'survey_date': survey_date,
-                    **values,
-                    'total_pigs': total_pigs,
-                })
-                dates_in_csv.add(survey_date)
-                barangays_in_csv.add(barangay)
-            except Exception as e:
-                errors.append(f"Row {row_num}: {str(e)}")
-
-        existing_surveys = HogSurvey.objects.filter(
-            barangay__in=list(barangays_in_csv),
-            survey_date__in=list(dates_in_csv)
-        )
-        existing_map = {
-            (s.barangay_id, s.survey_date, (s.farmer_name or "").strip().lower()): s 
-            for s in existing_surveys
-        }
-
-        for row in parsed_rows:
-            key = (row['barangay'].id, row['survey_date'], row['farmer_name'].strip().lower())
-            if key in existing_map:
-                existing = existing_map[key]
-                if row['farmer_name']:
-                    existing.inahin = row['inahin']
-                    existing.barako = row['barako']
-                    existing.fattener = row['fattener']
-                    existing.grower = row['grower']
-                    existing.starter = row['starter']
-                    existing.bulaw = row['bulaw']
-                    existing.total_pigs = row['total_pigs']
-                    if row['contact_number']:
-                        existing.contact_number = row['contact_number']
-                else:
-                    existing.inahin += row['inahin']
-                    existing.barako += row['barako']
-                    existing.fattener += row['fattener']
-                    existing.grower += row['grower']
-                    existing.starter += row['starter']
-                    existing.bulaw += row['bulaw']
-                    existing.total_pigs += row['total_pigs']
-                
-                # Only add to records_to_update if it already exists in the database with a PK
-                # Unsaved new_records remain in records_to_create with their updated values
-                if existing.pk is not None and existing not in records_to_update:
-                    records_to_update.append(existing)
-            else:
-                new_record = HogSurvey(
-                    barangay=row['barangay'],
-                    farmer_name=row['farmer_name'],
-                    contact_number=row['contact_number'],
-                    survey_date=row['survey_date'],
-                    inahin=row['inahin'],
-                    barako=row['barako'],
-                    fattener=row['fattener'],
-                    grower=row['grower'],
-                    starter=row['starter'],
-                    bulaw=row['bulaw'],
-                    total_pigs=row['total_pigs']
-                )
-                records_to_create.append(new_record)
-                existing_map[key] = new_record  # Subsequent rows in same file will consolidate onto this record
-
-        # Save to database
-        if records_to_create or records_to_update:
-            with transaction.atomic():
-                if records_to_update:
-                    HogSurvey.objects.bulk_update(
-                        records_to_update, 
-                        fields=['farmer_name', 'contact_number', 'inahin', 'barako', 'fattener', 'grower', 'starter', 'bulaw', 'total_pigs']
-                    )
-                if records_to_create:
-                    HogSurvey.objects.bulk_create(records_to_create)
-
-        return len(records_to_create) + len(records_to_update), errors
+        from .survey_import import import_surveys
+        report = import_surveys(file_obj, barangay_restriction)
+        return report["imported"], report["errors"]
 
     @staticmethod
     def _compute_transport_volume():
@@ -314,109 +106,51 @@ class HogSurveyService:
         return rows
 
     @staticmethod
-    def _compute_aggregated_survey_data(target_month, start_month, end_month, target_season, target_year):
-        """
-        Aggregates pig population per barangay for heatmap.
-        """
-        queryset = HogSurvey.objects.all()
-
-        # If no specific filters, we default to the latest year available
-        if not any([target_month, start_month, target_season, target_year]):
-            latest_survey = queryset.order_by("-survey_date").first()
-            if latest_survey:
-                target_year = latest_survey.survey_date.year
-
-        current_queryset = queryset
-
-        if target_year:
-            current_queryset = current_queryset.filter(
-                survey_date__year=int(target_year)
-            )
-
-        if target_month:
-            current_queryset = current_queryset.filter(
-                survey_date__month=int(target_month)
-            )
-        elif start_month and end_month:
-            sm, em = int(start_month), int(end_month)
-            if sm <= em:
-                current_queryset = current_queryset.filter(
-                    survey_date__month__range=(sm, em)
-                )
+    def get_aggregated_survey_data(target_month=None, start_month=None, end_month=None,
+                                   target_season=None, target_year=None, compare_year=None,
+                                   barangay_ids=None):
+        from .census import census_rows, quarter_of
+        from rest_framework.exceptions import ValidationError
+        queryset = HogSurvey.objects.filter(survey_date__isnull=False)
+        barangays = Barangay.objects.all()
+        if barangay_ids is not None:
+            barangays = barangays.filter(pk__in=barangay_ids)
+        try:
+            if target_month:
+                month = int(target_month)
+                if not 1 <= month <= 12:
+                    raise ValueError
+                queryset = queryset.filter(survey_date__month=month)
+            elif start_month or end_month:
+                sm, em = int(start_month), int(end_month)
+                if not (1 <= sm <= 12 and 1 <= em <= 12):
+                    raise ValueError
+                queryset = queryset.filter(survey_date__month__range=(sm, em)) if sm <= em else queryset.filter(
+                    Q(survey_date__month__gte=sm) | Q(survey_date__month__lte=em))
+            elif target_season in ['wet', 'dry']:
+                months = [6, 7, 8, 9, 10, 11] if target_season == 'wet' else [12, 1, 2, 3, 4, 5]
+                queryset = queryset.filter(survey_date__month__in=months)
+            elif target_season not in [None, '', 'all']:
+                raise ValueError
+            year = int(target_year) if target_year else None
+            if year is not None and not 1 <= year <= 9999:
+                raise ValueError
+            if compare_year:
+                other_year = int(compare_year)
+                if not year or not 1 <= other_year <= 9999:
+                    raise ValueError
+                quarters = set(queryset.filter(survey_date__year=year).values_list('survey_date__quarter', flat=True))
+                other = set(queryset.filter(survey_date__year=other_year).values_list('survey_date__quarter', flat=True))
+                common = quarters & other
+                period = (year, max(common)) if common else None
             else:
-                # Wrap around logic (e.g. Nov to Feb)
-                current_queryset = current_queryset.filter(
-                    Q(survey_date__month__gte=sm) | Q(survey_date__month__lte=em)
-                )
-        elif target_season:
-            season = target_season.lower()
-            if season == "wet":
-                current_queryset = current_queryset.filter(
-                    survey_date__month__in=[6, 7, 8, 9, 10, 11]
-                )
-            elif season == "dry":
-                current_queryset = current_queryset.filter(
-                    survey_date__month__in=[12, 1, 2, 3, 4, 5]
-                )
-
-        aggregated_data = current_queryset.values(
-            "barangay__name", "barangay__latitude", "barangay__longitude"
-        ).annotate(
-            total_pigs_sum=Sum("total_pigs"),
-            inahin_sum=Sum("inahin"),
-            barako_sum=Sum("barako"),
-            fattener_sum=Sum("fattener"),
-            grower_sum=Sum("grower"),
-            bulaw_sum=Sum("bulaw"),
-            starter_sum=Sum("starter"),
-        )
-
-        heatmap_payload = []
-        for entry in aggregated_data:
-            pigs = int(entry["total_pigs_sum"] or 0)
-
-            # Density Classification
-            if pigs == 0:
-                density = "None"
-            elif pigs < 100:
-                density = "Low"
-            elif pigs < 500:
-                density = "Medium"
-            elif pigs < 1500:
-                density = "High"
-            else:
-                density = "Very High"
-
-            heatmap_payload.append(
-                {
-                    "barangay": entry["barangay__name"],
-                    "latitude": entry["barangay__latitude"],
-                    "longitude": entry["barangay__longitude"],
-                    "total_pigs": pigs,
-                    "density_level": density,
-                    "breakdown": {
-                        "inahin": int(entry["inahin_sum"] or 0),
-                        "barako": int(entry["barako_sum"] or 0),
-                        "fattener": int(entry["fattener_sum"] or 0),
-                        "grower": int(entry["grower_sum"] or 0),
-                        "bulaw": int(entry["bulaw_sum"] or 0),
-                        "starter": int(entry["starter_sum"] or 0),
-                    },
-                    "trend": "stable",
-                    "is_prediction": False,
-                }
-            )
-
-        return heatmap_payload
-
-    @staticmethod
-    def get_aggregated_survey_data(target_month=None, start_month=None, end_month=None, target_season=None, target_year=None):
-        cache_key = f"maps:survey_data:{target_month}_{start_month}_{end_month}_{target_season}_{target_year}"
-        return get_or_set_cached_data(
-            cache_key,
-            lambda: HogSurveyService._compute_aggregated_survey_data(
-                target_month, start_month, end_month, target_season, target_year
-            ),
-            timeout=120,
-        )
-
+                selected = queryset.filter(survey_date__year=year) if year else queryset
+                latest = selected.order_by('-survey_date').values_list('survey_date', flat=True).first()
+                period = quarter_of(latest) if latest else None
+        except (ValueError, TypeError):
+            raise ValidationError('Invalid census calendar filters.') from None
+        # Calendar filters select a quarter. All observations in that quarter count.
+        observations = HogSurvey.objects.filter(survey_date__year=period[0], survey_date__quarter=period[1]) if period else []
+        if period and barangay_ids is not None:
+            observations = observations.filter(barangay_id__in=barangay_ids)
+        return census_rows(observations, period, barangays)

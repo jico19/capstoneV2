@@ -79,10 +79,12 @@ class TestQueryHeavyCaching:
         assert cache.get(key) is not None
         assert cache.get(key) == data_first
 
-    def test_maps_survey_data_caches_response(self):
-        key = "maps:survey_data:None_None_None_None_None"
-        assert cache.get(key) is None
-
-        data_first = HogSurveyService.get_aggregated_survey_data()
-        assert cache.get(key) is not None
-        assert cache.get(key) == data_first
+    def test_maps_survey_data_reads_fresh_census(self):
+        from apps.maps.models import Barangay, HogSurvey
+        barangay = Barangay.objects.create(name="Fresh census")
+        first = HogSurveyService.get_aggregated_survey_data()
+        assert first[0]["total_pigs"] is None
+        HogSurvey.objects.create(barangay=barangay, farmer_name="Raiser", survey_date="2026-06-30",
+                                 fattener=12, total_pigs=12)
+        second = HogSurveyService.get_aggregated_survey_data()
+        assert second[0]["total_pigs"] == 12

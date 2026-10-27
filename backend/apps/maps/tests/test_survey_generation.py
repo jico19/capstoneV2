@@ -1,6 +1,5 @@
 """Targeted simulation contracts and PostgreSQL export/import integration."""
 import copy
-import json
 import random
 from dataclasses import replace
 from datetime import date
@@ -247,23 +246,29 @@ def test_export_import_round_trip_and_default_previews(tmp_path, monkeypatch, ca
 
     with connection.execute_wrapper(reject_writes):
         generate_data.run("as-of=2020-03-31")
-    report = json.loads(capsys.readouterr().out)
-    assert report["valid"] and len(report["monthly_flows"]) == 3
+    report = capsys.readouterr().out
+    assert "CSV export preview (no files written)" in report
+    assert "Validation: Passed" in report and "Survey records: 344" in report
+    assert "monthly_flows" not in report and "{" not in report
     assert not output.exists() and not HogSurvey.objects.exists()
     generate_data.run("as-of=2020-03-31", "mode=apply")
-    capsys.readouterr()
+    exported = capsys.readouterr().out
+    assert "CSV export completed" in exported
+    assert f"CSV file: {output.relative_to(tmp_path)}" in exported
     assert output.exists() and not HogSurvey.objects.exists()
     original = output.read_bytes()
     with connection.execute_wrapper(reject_writes):
         hog_survey.run()
-    preview = json.loads(capsys.readouterr().out)
-    assert preview["valid"] and not HogSurvey.objects.exists()
+    preview = capsys.readouterr().out
+    assert "Survey import preview (no data changed)" in preview
+    assert "Validation: Passed" in preview and not HogSurvey.objects.exists()
     assert output.read_bytes() == original
     from scripts import seed_realistic_operations
     with connection.execute_wrapper(reject_writes):
-        seed_realistic_operations.run("as-of=2020-03-31")
-    seed_preview = json.loads(capsys.readouterr().out)
-    assert seed_preview["valid"] and len(seed_preview["monthly_flows"]) == 3
+        seed_realistic_operations.run("mode=preview", "as-of=2020-03-31")
+    seed_preview = capsys.readouterr().out
+    assert "Operations seed preview (no data changed)" in seed_preview
+    assert "Validation: Passed" in seed_preview and "{" not in seed_preview
     assert not HogSurvey.objects.exists()
     with output.open("rb") as source:
         applied = import_surveys(source, mode="apply")

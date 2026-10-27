@@ -80,7 +80,7 @@ const CensusStatusPanel = ({
                             Swine Census
                         </span>
                         <p className="text-lg font-black text-stone-800 font-mono mt-0.5 leading-none">
-                            {bPigs.toLocaleString()}
+                            {selectedBarangayRecord.has_observations ? bPigs.toLocaleString() : 'No data'}
                         </p>
                         <span className="text-[10px] text-stone-500 font-medium">
                             {bShare}% of municipality

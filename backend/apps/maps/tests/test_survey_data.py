@@ -22,8 +22,8 @@ class TestSurveyData:
         b = Barangay.objects.create(name="Barangay A", latitude=1.0, longitude=1.0)
         
         # Create two surveys for the same barangay in the same month/year
-        HogSurvey.objects.create(barangay=b, survey_date="2026-06-01", total_pigs=10, inahin=5)
-        HogSurvey.objects.create(barangay=b, survey_date="2026-06-15", total_pigs=20, inahin=10)
+        HogSurvey.objects.create(barangay=b, survey_date="2026-06-01", farmer_name="Farmer A", total_pigs=10, inahin=5, fattener=5)
+        HogSurvey.objects.create(barangay=b, survey_date="2026-06-15", farmer_name="Farmer B", total_pigs=20, inahin=10, fattener=10)
         
         api_client.force_authenticate(user=agri_user)
         response = api_client.get("/hog-survey/survey_data/", {"year": 2026, "month": 6})
@@ -39,8 +39,8 @@ class TestSurveyData:
         b = Barangay.objects.create(name="Barangay A", latitude=1.0, longitude=1.0)
         
         # Create surveys in different years
-        HogSurvey.objects.create(barangay=b, survey_date="2025-06-01", total_pigs=100)
-        HogSurvey.objects.create(barangay=b, survey_date="2026-06-01", total_pigs=200)
+        HogSurvey.objects.create(barangay=b, survey_date="2025-06-01", total_pigs=100, fattener=100)
+        HogSurvey.objects.create(barangay=b, survey_date="2026-06-01", total_pigs=200, fattener=200)
         
         api_client.force_authenticate(user=agri_user)
         # No filters should default to latest year (2026)

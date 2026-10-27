@@ -63,10 +63,10 @@ class TestHogSurveyUpload:
 
         assert response.status_code == 201
         assert HogSurvey.objects.count() == 2
-        pedro = HogSurvey.objects.get(farmer_name="Pedro Penduko")
+        pedro = next(s for s in HogSurvey.objects.all() if s.farmer_name == "Pedro Penduko")
         assert pedro.contact_number == "09123456789"
         assert pedro.total_pigs == 16
-        maria = HogSurvey.objects.get(farmer_name="Maria Clara")
+        maria = next(s for s in HogSurvey.objects.all() if s.farmer_name == "Maria Clara")
         assert maria.contact_number == "09987654321"
         assert maria.total_pigs == 20
 
@@ -176,7 +176,7 @@ class TestHogSurveyUpload:
         api_client.force_authenticate(user=agri_user)
         response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
         assert response.status_code == 201
-        assert HogSurvey.objects.filter(farmer_name="Excel User").exists()
+        assert any(s.farmer_name == "Excel User" for s in HogSurvey.objects.all())
 
     def test_upload_csv_with_duplicate_rows_in_file(self, api_client, agri_user):
         Barangay.objects.create(name="Antipolo")
@@ -188,10 +188,9 @@ class TestHogSurveyUpload:
         file = SimpleUploadedFile("duplicates.csv", csv_content.encode('utf-8'), content_type="text/csv")
         api_client.force_authenticate(user=agri_user)
         response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
-        assert response.status_code == 201
-        records = HogSurvey.objects.filter(farmer_name="Duplicate Farmer")
-        assert records.count() == 1
-        assert records.first().total_pigs == 8
+        assert response.status_code == 400
+        assert "Duplicate farmer/date" in response.data["error"]
+        assert HogSurvey.objects.count() == 0
 
     def test_upload_csv_from_exported_format(self, api_client, agri_user):
         Barangay.objects.create(name="Bucal")
@@ -203,7 +202,7 @@ class TestHogSurveyUpload:
         api_client.force_authenticate(user=agri_user)
         response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
         assert response.status_code == 201
-        assert HogSurvey.objects.filter(farmer_name="Exported Farmer").exists()
+        assert any(s.farmer_name == "Exported Farmer" for s in HogSurvey.objects.all())
 
     def test_upload_csv_with_barangay_aliases_and_castanas(self, api_client, agri_user):
         Barangay.objects.create(name="Mamala I")
@@ -217,7 +216,7 @@ class TestHogSurveyUpload:
         api_client.force_authenticate(user=agri_user)
         response = api_client.post("/hog-survey/upload_csv/", {"file": file}, format='multipart')
         assert response.status_code == 201
-        assert HogSurvey.objects.filter(farmer_name="Farmer One", barangay__name="Mamala I").exists()
-        assert HogSurvey.objects.filter(farmer_name="Farmer Two", barangay__name="Castañas").exists()
+        assert any(s.farmer_name == "Farmer One" for s in HogSurvey.objects.filter(barangay__name="Mamala I"))
+        assert any(s.farmer_name == "Farmer Two" for s in HogSurvey.objects.select_related("barangay") if s.barangay.name.startswith("Casta"))
 
 

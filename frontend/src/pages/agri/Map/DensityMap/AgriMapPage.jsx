@@ -32,13 +32,13 @@ const AgriMapPage = () => {
     const {
         data: survey,
         isFetching: surveyFetching
-    } = useGetHogSurvey(queryStartMonth, queryEndMonth, querySeason, filters.selectedYear);
+    } = useGetHogSurvey(queryStartMonth, queryEndMonth, querySeason, filters.selectedYear, filters.isCompareMode ? filters.baselineYear : null);
 
     // Baseline survey query (Active when Compare Mode is enabled)
     const {
         data: compareSurvey,
         isFetching: compareSurveyFetching
-    } = useGetHogSurvey(queryStartMonth, queryEndMonth, querySeason, filters.isCompareMode ? filters.baselineYear : null);
+    } = useGetHogSurvey(queryStartMonth, queryEndMonth, querySeason, filters.isCompareMode ? filters.baselineYear : null, filters.isCompareMode ? filters.selectedYear : null);
 
     const { 
         comparisonStats, 

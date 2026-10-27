@@ -197,7 +197,7 @@ def test_generated_census_across_api_surfaces_and_csv(tmp_path):
     records = generate_surveys(barangays, "2022-07-01")
     apply_records(records)
     expected_count = HogSurvey.objects.count()
-    operations_seed("as-of=2022-07-01")  # default preview must leave all data intact
+    operations_seed("mode=preview", "as-of=2022-07-01")  # Explicit preview leaves all data intact.
     assert HogSurvey.objects.count() == expected_count
     assert not get_user_model().objects.exists()
     export_generated("as-of=2022-07-01", "mode=apply", f"output={tmp_path / 'generated.csv'}")

@@ -110,7 +110,7 @@ pip install -r requirements/psql_requirements.txt
 # Run database migrations
 python manage.py migrate
 
-# (Optional) Seed realistic demo operations and accounts
+# Seed accounts, hog surveys, and operations once (repeat runs skip)
 python manage.py runscript seed_realistic_operations
 
 # Start Django development server
@@ -140,7 +140,7 @@ The frontend will run at `http://localhost:5173`, connecting directly to `http:/
 ---
 
 ## 🔑 Default Seeded Accounts
-When seeded via `seed_realistic_operations`, all accounts share the password: `password123`
+Run `python manage.py runscript seed_realistic_operations` to create accounts, hog surveys, and operations. Repeat runs skip after a successful seed. New accounts use `password123`; existing passwords are preserved. Writes require local development settings (`DEBUG=True`).
 
 | Role | Username / Identifier | Portal |
 |---|---|---|

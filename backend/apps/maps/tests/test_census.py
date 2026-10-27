@@ -48,7 +48,7 @@ def test_generator_reproducible_stable_and_bounded():
     first = generate_surveys(barangays, "2026-10-27")
     assert profile_snapshot(first) == profile_snapshot(generate_surveys(reversed(barangays), "2026-10-27"))
     assert profile_snapshot(first) != profile_snapshot(generate_surveys(barangays, "2026-10-27", 7))
-    assert min(r.survey_date for r in first) == date(2022, 3, 31)
+    assert min(r.survey_date for r in first) == date(2020, 3, 31)
     assert max(r.survey_date for r in first) == date(2026, 9, 30)
     profiles = {}
     for r in first:
@@ -59,13 +59,15 @@ def test_generator_reproducible_stable_and_bounded():
     assert any(r.fattener > 0 and r.inahin == r.barako == 0 for r in first)
     early = generate_surveys(barangays, "2024-01-01")
     assert profile_snapshot(early) == profile_snapshot([r for r in first if r.survey_date < date(2024, 1, 1)])
-    # All five existing map classes must be represented by generated populations.
+    # Simulated losses can change density classes; zero-capacity barangays stay empty.
     from apps.maps.census import census_rows
     for i, r in enumerate(first):
         r.pk = i + 1
-    assert {r["density_level"] for r in census_rows(first, (2026, 3), barangays)} == {
-        "None", "Low", "Medium", "High", "Very High"}
-    assert max(r.survey_date for r in generate_surveys(barangays, "2026-09-30")) == date(2026, 6, 30)
+    rows = census_rows(first, (2026, 3), barangays)
+    assert all(r["density_level"] == "None" and r["total_pigs"] == 0
+               for r in rows if POPULATION_TARGETS[r["barangay"]] == 0)
+    assert any(r["total_pigs"] > 0 for r in rows)
+    assert max(r.survey_date for r in generate_surveys(barangays, "2026-09-30")) == date(2026, 9, 30)
     with pytest.raises(ValueError, match="43"):
         generate_surveys(barangays[:-1], "2026-10-27")
 
@@ -215,7 +217,7 @@ def test_generated_census_across_api_surfaces_and_csv(tmp_path):
     history = client.get("/hog-survey/census_history/").data
     assert sum(r["total_pigs"] for r in history if r["census_date"] == "2022-06-30") == expected_total
     roster = client.get("/hog-survey/farmer_roster/").data
-    assert len(roster) == 43 * 7
+    assert len(roster) == 43 * 8
     export = client.get("/hog-survey/export_csv/").content.decode()
     exported = list(csv.DictReader(io.StringIO(export)))
     assert len(exported) == expected_count

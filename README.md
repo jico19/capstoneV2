@@ -29,6 +29,7 @@ FarmPass is an end-to-end digital governance and biosecurity platform for livest
 
 ### 🏘️ 4. Barangay Official Portal (`/barangay`)
 * **Hog Census Surveys:** Track backyard and commercial swine demographics (Inahin, Barako, Fattener, Grower, Starter, Bulaw).
+  Synthetic history generation, monthly herd assumptions, and CSV preview commands are documented in [the dataset guide](backend/datasets/README.md).
 * **CIS Generator:** Generate official Certificates of Inspection and Sanitization with automatic Philippine Peso number-to-words conversion.
 * **Local Audit Logs:** Track census submissions and certificates issued within the barangay.
 

@@ -7,7 +7,7 @@ from apps.maps.survey_generation import script_arguments
 
 def run(*args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("file", nargs="?", default="./datasets/naturalized_hog_survey.csv")
+    parser.add_argument("file", nargs="?", default="datasets/naturalized_hog_survey.csv")
     parser.add_argument("--mode", choices=["preview", "apply"], default="preview")
     parser.add_argument("--replace", action="store_true")
     options = parser.parse_args(script_arguments(args))

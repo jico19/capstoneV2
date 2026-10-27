@@ -180,8 +180,10 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
     if options.accounts_only and options.replace:
         raise ValueError("accounts-only cannot be combined with replace.")
     if options.mode == "apply":
-        if not settings.DEBUG:
+        if not settings.DEBUG and os.environ.get("FARMPASS_SEED_ENABLED", "").lower() != "true":
             raise RuntimeError("Seed script execution is strictly forbidden in production (DEBUG=False).")
+        if not settings.DEBUG and options.replace:
+            raise RuntimeError("Replacing existing data is forbidden in production.")
         # One transaction-wide lock prevents simultaneous commands from seeding twice.
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock(%s)", [2026102701])

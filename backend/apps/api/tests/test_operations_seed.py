@@ -16,7 +16,11 @@ def seed_environment(settings, tmp_path):
     seed.Barangay.objects.bulk_create([seed.Barangay(name=name) for name in POPULATION_TARGETS])
 
 
-def test_plain_command_seeds_everything_once(capsys, tmp_path):
+@pytest.mark.parametrize("deployment", [False, True])
+def test_plain_command_seeds_everything_once(capsys, tmp_path, settings, monkeypatch, deployment):
+    settings.DEBUG = not deployment
+    if deployment:
+        monkeypatch.setenv("FARMPASS_SEED_ENABLED", "true")
     # A Django superuser starts with the custom role's default of Farmer.
     seed.User.objects.create_superuser(username="admin", password="existing-admin-password")
     call_command("runscript", "seed_realistic_operations", verbosity=0)
@@ -50,8 +54,17 @@ def test_failed_seed_rolls_back_without_completion_marker(monkeypatch):
     assert not seed.AuditTrail.objects.exists()
 
 
-def test_plain_command_refuses_production(settings):
+def test_plain_command_refuses_production(settings, monkeypatch):
     settings.DEBUG = False
+    monkeypatch.delenv("FARMPASS_SEED_ENABLED", raising=False)
     with pytest.raises(RuntimeError, match="forbidden in production"):
         call_command("runscript", "seed_realistic_operations", verbosity=0)
+    assert not seed.User.objects.exists()
+
+
+def test_production_never_replaces_existing_data(settings, monkeypatch):
+    settings.DEBUG = False
+    monkeypatch.setenv("FARMPASS_SEED_ENABLED", "true")
+    with pytest.raises(RuntimeError, match="Replacing existing data is forbidden"):
+        seed.run("replace")
     assert not seed.User.objects.exists()

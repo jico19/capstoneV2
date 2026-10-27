@@ -3,7 +3,7 @@ services:
     name: farmpass-backend
     runtime: python
     rootDir: backend
-    buildCommand: pip install -r requirements/prod.txt && python manage.py collectstatic --noinput && python manage.py migrate --settings=config.settings.prod && python manage.py createcachetable --settings=config.settings.prod
+    buildCommand: bash build.sh
     startCommand: gunicorn config.wsgi:application --workers 2 --threads 2 --bind 0.0.0.0:$PORT
     plan: free
     envVars:

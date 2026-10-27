@@ -165,7 +165,7 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
         mode="preview", as_of=None, seed=42):
     import argparse
     import json
-    from apps.maps.survey_generation import generate_surveys, script_arguments
+    from apps.maps.survey_generation import generate_history, script_arguments
     from apps.maps.survey_import import preview, apply_records
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["preview", "apply"], default=mode)
@@ -174,8 +174,8 @@ def run(*args, total_applications: int = 160, months: int = 12, clean: bool = Fa
     parser.add_argument("--seed", type=int, default=seed)
     options = parser.parse_args(script_arguments(args))
     barangays = list(Barangay.objects.all())
-    surveys = generate_surveys(barangays, options.as_of, options.seed)
-    print(json.dumps(preview(surveys), indent=2))
+    surveys, monthly = generate_history(barangays, options.as_of, options.seed)
+    print(json.dumps({**preview(surveys), "monthly_flows": monthly}, indent=2))
     if options.mode == "preview":
         return
     clean = options.replace

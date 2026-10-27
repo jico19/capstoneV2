@@ -140,7 +140,7 @@ The frontend will run at `http://localhost:5173`, connecting directly to `http:/
 ---
 
 ## 🔑 Default Seeded Accounts
-Run `python manage.py runscript seed_realistic_operations` to create accounts, hog surveys, and operations. Repeat runs skip after a successful seed. New accounts use `password123`; existing passwords are preserved. Writes require local development settings (`DEBUG=True`).
+Run `python manage.py runscript seed_realistic_operations` to create accounts, hog surveys, and operations. Repeat runs skip after a successful seed. New accounts use `password123`; existing passwords are preserved. The build script enables guarded seeding for deployment without turning on debug mode. Production replacement remains blocked.
 
 | Role | Username / Identifier | Portal |
 |---|---|---|

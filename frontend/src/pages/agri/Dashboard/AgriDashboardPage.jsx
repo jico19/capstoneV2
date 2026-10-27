@@ -105,6 +105,9 @@ const AgriOfficerKPIDashboard = () => {
                     <div className="mb-8 border-l-4 border-green-700 pl-6">
                         <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Surveillance Density</p>
                         <h2 className="text-xl font-black text-stone-900 uppercase">Swine Count by Barangay</h2>
+                        <p className="text-xs text-stone-500 mt-2">
+                            Census: {metrics.census?.date || 'No data'}. Coverage: {metrics.census?.coverage?.observed_barangays || 0} of {metrics.census?.coverage?.total_barangays || 0} barangays.
+                        </p>
                     </div>
                     <BarChartComponent
                         data={charts.density_trend}

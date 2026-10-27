@@ -56,12 +56,6 @@ Thumbs.db
 gha-creds-*.json
 
 
-<<<<<<< HEAD
 # Miscellaneous
 brag-output/
 farmpass-video/
-=======
-# Other
-farmpass-video/
-brag-output/
->>>>>>> main

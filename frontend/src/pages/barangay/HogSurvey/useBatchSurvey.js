@@ -7,6 +7,11 @@ export const SURVEY_QUERY_KEYS = [
     'barangay-density-data',
     'barangay-surveys-recent',
     'farmer-roster',
+    'barangay-census-history',
+    'hog-survey',
+    'hog-survey-years',
+    'agri_metrics',
+    'dashboard_insights',
 ];
 
 export const invalidateSurveyQueries = (queryClient) => {

@@ -38,21 +38,26 @@ const BarangayDashboard = () => {
         queryKey: ['barangay-surveys-recent'],
         queryFn: async () => {
             const res = await api.get('/hog-survey/', {
-                params: { limit: 10 } // load a few more to construct a nice trend
+                params: { limit: 10 } // raw observation history
             });
             return res.data;
         }
     });
 
+    const { data: censusHistory = [], isLoading: isHistoryLoading } = useQuery({
+        queryKey: ['barangay-census-history', user?.barangay],
+        queryFn: async () => (await api.get('/hog-survey/census_history/')).data,
+    });
+
     const barangayStats = densityData[0] || {
-        total_pigs: 0,
-        density_level: 'None',
+        total_pigs: null,
+        density_level: 'No data',
         breakdown: { inahin: 0, barako: 0, fattener: 0, grower: 0, bulaw: 0, starter: 0 }
     };
 
     const recentSurveys = surveysData?.results || [];
 
-    const isPageLoading = isDensityLoading || isSurveysLoading;
+    const isPageLoading = isDensityLoading || isSurveysLoading || isHistoryLoading;
 
     if (isPageLoading) {
         return (
@@ -72,9 +77,9 @@ const BarangayDashboard = () => {
         { type: 'Bulaw', count: barangayStats.breakdown.bulaw },
     ];
 
-    // Chart 2: Chronological order for the historical population trend chart
-    const trendChartData = [...recentSurveys].reverse().map(s => ({
-        date: s.survey_date,
+    // One census total per quarter, with null values preserving reporting gaps.
+    const trendChartData = censusHistory.map(s => ({
+        date: s.census_date,
         count: s.total_pigs
     }));
 
@@ -98,15 +103,15 @@ const BarangayDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard 
                     title="Total Swine" 
-                    value={barangayStats.total_pigs} 
-                    subtitle="Current Headcount" 
+                    value={barangayStats.total_pigs ?? 'No data'}
+                    subtitle={barangayStats.census_date ? `Census: ${barangayStats.census_date}` : 'Awaiting census'}
                     icon={Activity} 
                     colorClass="bg-white text-stone-800 border-stone-200" 
                 />
                 <KPICard 
                     title="Density Level" 
                     value={barangayStats.density_level} 
-                    subtitle="Risk Classification" 
+                    subtitle="Population Classification"
                     icon={TrendingUp} 
                     colorClass={`${
                         barangayStats.density_level === 'Very High' || barangayStats.density_level === 'High'
@@ -156,7 +161,7 @@ const BarangayDashboard = () => {
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-stone-300 py-12">
                                 <Activity size={48} className="mb-2" />
-                                <p className="text-xs font-black uppercase tracking-wider">No survey data to display stages</p>
+                                <p className="text-xs font-black uppercase tracking-wider">{barangayStats.has_observations ? 'No pigs recorded in this census' : 'No observations in this census quarter'}</p>
                             </div>
                         )}
                     </div>
@@ -166,7 +171,7 @@ const BarangayDashboard = () => {
                 <div className="bg-white border border-stone-200 p-6 flex flex-col">
                     <div className="mb-6 border-l-4 border-green-700 pl-4">
                         <h2 className="text-[10px] font-black text-stone-800 uppercase tracking-widest">Hog Population Trend</h2>
-                        <p className="text-[10px] text-stone-400 font-medium mt-1">Chronological timeline of total counted hogs in your barangay.</p>
+                        <p className="text-[10px] text-stone-400 font-medium mt-1">Quarterly census totals, using the latest observation per raiser.</p>
                     </div>
                     <div className="flex-1 min-h-[250px] bg-white border border-stone-50 p-4">
                         {trendChartData.length > 0 ? (

@@ -160,7 +160,25 @@ def ensure_sample_media_file(relative_path: str, file_type: str = "pdf") -> str:
 # Main Seeding Routine
 # ---------------------------------------------------------------------------
 
-def run(total_applications: int = 160, months: int = 12, clean: bool = True):
+@transaction.atomic
+def run(*args, total_applications: int = 160, months: int = 12, clean: bool = False,
+        mode="preview", as_of=None, seed=42):
+    import argparse
+    import json
+    from apps.maps.survey_generation import generate_surveys, script_arguments
+    from apps.maps.survey_import import preview, apply_records
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=["preview", "apply"], default=mode)
+    parser.add_argument("--replace", action="store_true", default=clean)
+    parser.add_argument("--as-of", default=as_of)
+    parser.add_argument("--seed", type=int, default=seed)
+    options = parser.parse_args(script_arguments(args))
+    barangays = list(Barangay.objects.all())
+    surveys = generate_surveys(barangays, options.as_of, options.seed)
+    print(json.dumps(preview(surveys), indent=2))
+    if options.mode == "preview":
+        return
+    clean = options.replace
     if not settings.DEBUG:
         raise RuntimeError("Seed script execution is strictly forbidden in production (DEBUG=False).")
 
@@ -186,7 +204,6 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
         TransportOrigin.objects.all().delete()
         PermitApplication.objects.all().delete()
         FarmerDocument.objects.all().delete()
-        HogSurvey.objects.all().delete()
         CachedInsight.objects.all().delete()
         print("  -> Existing operational, KYC, and survey data successfully cleared.")
 
@@ -356,120 +373,9 @@ def run(total_applications: int = 160, months: int = 12, clean: bool = True):
             }
         )
 
-    # 4. Hog Survey Full 2022-2026 Naturalized Seasonal Time Series Generation
-    print("\n[Step 4/6] Generating naturalized 2022–2026 quarterly Hog Surveys across all density tiers...")
-
-    VERY_HIGH_BARANGAYS = ["lutucan 1", "lutucan malabag"]
-    HIGH_BARANGAYS = [
-        "lutucan bata", "guisguis-san roque", "guisguis-talon", "manggalang 1",
-        "manggalang-bantilan", "concepcion banahaw", "concepcion pinagbakuran",
-        "bignay 1", "bignay 2", "janagdong 1"
-    ]
-    NONE_BARANGAYS = ["barangay 4", "barangay 5", "barangay 6"]
-    LOW_BARANGAYS = ["barangay 1", "barangay 2", "barangay 3", "casta", "talaan", "tumbaga"]
-
-    def get_barangay_tier(name):
-        name_lower = name.lower()
-        if any(k in name_lower for k in VERY_HIGH_BARANGAYS):
-            return "VERY_HIGH"
-        elif any(k in name_lower for k in HIGH_BARANGAYS):
-            return "HIGH"
-        elif any(k in name_lower for k in NONE_BARANGAYS):
-            return "NONE"
-        elif any(k in name_lower for k in LOW_BARANGAYS):
-            return "LOW"
-        return "MEDIUM"
-
-    all_survey_dates = [
-        datetime.date(2022, 3, 31), datetime.date(2022, 6, 30), datetime.date(2022, 9, 30), datetime.date(2022, 12, 31),
-        datetime.date(2023, 3, 31), datetime.date(2023, 6, 30), datetime.date(2023, 9, 30), datetime.date(2023, 12, 31),
-        datetime.date(2024, 3, 31), datetime.date(2024, 6, 30), datetime.date(2024, 9, 30), datetime.date(2024, 12, 31),
-        datetime.date(2025, 3, 31), datetime.date(2025, 6, 30), datetime.date(2025, 9, 30), datetime.date(2025, 12, 31),
-        datetime.date(2026, 3, 31), datetime.date(2026, 6, 30),
-    ]
-
-    all_surveys_to_create = []
-    sample_raiser_names = [
-        "Mang Pedro Alcantara Backyard Piggery", "Aling Maria Santos Farm",
-        "Ka Dencio Swine Raisers", "Sariaya Commercial Hog Farm",
-        "Lutucan Valley Farm", "Lucio Valdez Commercial Piggery",
-        "Kristel Agro-Livestock", "Ernesto Vega Farm", "Rodrigo Castillo Raisers"
-    ]
-
-    for bg in barangays:
-        tier = get_barangay_tier(bg.name)
-
-        if tier == "VERY_HIGH":
-            base_inahin, base_barako = random.randint(45, 55), random.randint(4, 5)
-            base_fattener, base_grower = random.randint(140, 180), random.randint(120, 160)
-            base_starter, base_bulaw = random.randint(70, 100), random.randint(15, 25)
-        elif tier == "HIGH":
-            base_inahin, base_barako = random.randint(16, 26), random.randint(2, 3)
-            base_fattener, base_grower = random.randint(55, 90), random.randint(50, 85)
-            base_starter, base_bulaw = random.randint(30, 55), random.randint(6, 16)
-        elif tier == "MEDIUM":
-            base_inahin, base_barako = random.randint(5, 10), 1
-            base_fattener, base_grower = random.randint(15, 32), random.randint(14, 28)
-            base_starter, base_bulaw = random.randint(8, 20), random.randint(3, 8)
-        elif tier == "LOW":
-            base_inahin, base_barako = random.randint(1, 3), (1 if random.random() < 0.5 else 0)
-            base_fattener, base_grower = random.randint(4, 10), random.randint(3, 8)
-            base_starter, base_bulaw = random.randint(2, 5), random.randint(1, 3)
-        else:
-            base_inahin = base_barako = base_fattener = base_grower = base_starter = base_bulaw = 0
-
-        for s_date in all_survey_dates:
-            quarter = (s_date.month - 1) // 3 + 1
-            year = s_date.year
-
-            if year == 2022: year_mult = 0.95
-            elif year == 2023: year_mult = 1.05
-            elif year == 2024: year_mult = 0.90 if quarter in [2, 3] else 1.02
-            elif year == 2025: year_mult = 1.15
-            else: year_mult = 1.12
-
-            inahin_mult = 1.05 if quarter in [1, 4] else 1.0
-            barako_mult = 1.05 if quarter == 4 else 1.0
-            fattener_mult = 1.30 if quarter == 4 else (1.25 if quarter == 3 else 0.85)
-            grower_mult = 1.20 if quarter == 2 else 1.0
-            starter_mult = 1.20 if quarter == 1 else 1.0
-
-            noise = random.uniform(0.92, 1.08)
-
-            if tier == "NONE":
-                fattener = grower = inahin = barako = starter = bulaw = 0
-            else:
-                inahin = max(0, int(base_inahin * year_mult * inahin_mult * noise))
-                barako = max(0, int(base_barako * year_mult * barako_mult * noise))
-                fattener = max(0, int(base_fattener * year_mult * fattener_mult * noise))
-                grower = max(0, int(base_grower * year_mult * grower_mult * noise))
-                starter = max(0, int(base_starter * year_mult * starter_mult * noise))
-                bulaw = max(0, int(base_bulaw * year_mult * noise))
-
-                if inahin > 0:
-                    barako = max(barako, 1 if inahin >= 3 else 0)
-
-            total = inahin + barako + fattener + grower + starter + bulaw
-            f_name = random.choice(sample_raiser_names) if total > 0 else ""
-            c_phone = f"0917{random.randint(1000000, 9999999)}" if total > 0 else ""
-
-            all_surveys_to_create.append(HogSurvey(
-                barangay=bg,
-                farmer_name=f_name,
-                contact_number=c_phone,
-                survey_date=s_date,
-                inahin=inahin,
-                barako=barako,
-                fattener=fattener,
-                grower=grower,
-                starter=starter,
-                bulaw=bulaw,
-                total_pigs=total
-            ))
-
-    if all_surveys_to_create:
-        HogSurvey.objects.bulk_create(all_surveys_to_create)
-        print(f"  + Added {len(all_surveys_to_create)} naturalized quarterly Hog Survey records spanning 2022–2026.")
+    # 4. Shared deterministic quarterly census generation.
+    imported = apply_records(surveys, replace=clean)
+    print(f"  + Applied {imported} quarterly survey observations.")
 
     # 5. Generate Realistic Operational Applications & Lifecycle Data
     print(f"\n[Step 5/6] Generating {total_applications} realistic Permit Applications & workflows...")

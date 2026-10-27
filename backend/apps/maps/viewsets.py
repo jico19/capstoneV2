@@ -2,7 +2,6 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
-from django.db.models import Max, Count
 from datetime import timedelta
 from . import serializers
 from . import models
@@ -40,6 +39,13 @@ class BarangayViewSet(viewsets.ReadOnlyModelViewSet):
 class HogSurveyViewSet(BaseModelViewSet):
     queryset = models.HogSurvey.objects.all()
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if request.user.role not in ["Admin", "Agri", "Barangay"]:
+            raise PermissionDenied("Only survey staff can access hog surveys.")
+        if request.user.role == "Barangay" and not request.user.barangay_id:
+            raise PermissionDenied("A barangay assignment is required.")
+
     def get_queryset(self):
         user = self.request.user
         if user.role in ["Admin", "Agri"]:
@@ -55,7 +61,9 @@ class HogSurveyViewSet(BaseModelViewSet):
         date_to = self.request.query_params.get("date_to")
 
         if farmer_name:
-            queryset = queryset.filter(farmer_name__icontains=farmer_name)
+            from .census import normalize
+            matching = [s.pk for s in queryset if normalize(farmer_name) in normalize(s.farmer_name)]
+            queryset = queryset.filter(pk__in=matching)
         if date_from:
             queryset = queryset.filter(survey_date__gte=date_from)
         if date_to:
@@ -184,6 +192,8 @@ class HogSurveyViewSet(BaseModelViewSet):
 
         with transaction.atomic():
             created = models.HogSurvey.objects.bulk_create(records_to_create)
+            from .survey_import import invalidate_surveys
+            invalidate_surveys()
 
         b_name = target_barangay.name if target_barangay else "Assigned Barangay"
         AuditTrail.objects.create(
@@ -206,7 +216,7 @@ class HogSurveyViewSet(BaseModelViewSet):
         API Endpoint: GET /api/hog-survey/export_csv/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
         Exports survey data to a CSV file for official reporting with date range.
         """
-        if request.user.role not in ["Agri", "Barangay"]:
+        if request.user.role not in ["Admin", "Agri", "Barangay"]:
             return Response({"error": "Unauthorized"}, status=403)
 
         start_date_str = request.query_params.get("start_date")
@@ -254,7 +264,7 @@ class HogSurveyViewSet(BaseModelViewSet):
         Returns a list of unique years present in the survey data.
         """
         user = request.user
-        queryset = models.HogSurvey.objects.filter(survey_date__isnull=False)
+        queryset = self.get_queryset().filter(survey_date__isnull=False)
         if user.role == "Barangay":
             queryset = queryset.filter(barangay=user.barangay)
             
@@ -289,50 +299,35 @@ class HogSurveyViewSet(BaseModelViewSet):
 
         cutoff = timezone.now().date() - timedelta(days=ACTIVE_THRESHOLD_DAYS)
 
-        results = (
-            self._farmer_distinct_queryset(request)
-            .filter(farmer_name__icontains=q)
-            .values("farmer_name", "contact_number")
-            .annotate(last_survey_date=Max("survey_date"), survey_count=Count("id"))
-            .order_by("-last_survey_date")[:10]
-        )
+        results = self._roster_rows(request, cutoff)
+        from .census import normalize
+        return Response(sorted(
+            [row for row in results if normalize(q) in normalize(row["farmer_name"])],
+            key=lambda row: row["last_survey_date"] or "", reverse=True,
+        )[:10])
 
-        return Response([
-            {
-                "farmer_name":      r["farmer_name"],
-                "contact_number":   r["contact_number"],
-                "last_survey_date": str(r["last_survey_date"]) if r["last_survey_date"] else None,
-                "survey_count":     r["survey_count"],
-                "is_active":        r["last_survey_date"] is not None and r["last_survey_date"] >= cutoff,
+    def _roster_rows(self, request, cutoff):
+        from .census import normalize
+        groups = {}
+        for survey in self._farmer_distinct_queryset(request).order_by("survey_date", "pk"):
+            if not normalize(survey.farmer_name):
+                continue
+            key = (survey.barangay_id, normalize(survey.farmer_name))
+            old = groups.get(key)
+            count = old["survey_count"] + 1 if old else 1
+            groups[key] = {
+                "farmer_name": survey.farmer_name,
+                "contact_number": survey.contact_number,
+                "last_survey_date": survey.survey_date.isoformat() if survey.survey_date else None,
+                "survey_count": count,
+                "is_active": survey.survey_date is not None and survey.survey_date >= cutoff,
             }
-            for r in results
-        ])
+        return sorted(groups.values(), key=lambda row: normalize(row["farmer_name"]))
 
     @action(detail=False, methods=["get"])
     def farmer_roster(self, request):
-        """
-        API Endpoint: GET /api/hog-survey/farmer_roster/
-        Returns all distinct farmers for the barangay with active/inactive status.
-        """
         cutoff = timezone.now().date() - timedelta(days=ACTIVE_THRESHOLD_DAYS)
-
-        results = (
-            self._farmer_distinct_queryset(request)
-            .values("farmer_name", "contact_number")
-            .annotate(last_survey_date=Max("survey_date"), survey_count=Count("id"))
-            .order_by("farmer_name")
-        )
-
-        return Response([
-            {
-                "farmer_name":      r["farmer_name"],
-                "contact_number":   r["contact_number"],
-                "last_survey_date": str(r["last_survey_date"]) if r["last_survey_date"] else None,
-                "survey_count":     r["survey_count"],
-                "is_active":        r["last_survey_date"] is not None and r["last_survey_date"] >= cutoff,
-            }
-            for r in results
-        ])
+        return Response(self._roster_rows(request, cutoff))
 
     @action(detail=False, methods=["get"])
     def survey_data(self, request):
@@ -347,33 +342,29 @@ class HogSurveyViewSet(BaseModelViewSet):
         target_season = request.query_params.get("season")
         target_year = request.query_params.get("year")
 
-        heatmap_payload = HogSurveyService.get_aggregated_survey_data(
-            target_month=target_month,
-            start_month=start_month,
-            end_month=end_month,
-            target_season=target_season,
-            target_year=target_year
+        barangay_ids = [request.user.barangay_id] if request.user.role == "Barangay" else None
+        # Calendar selection is municipal so a missing local quarter stays missing.
+        payload = HogSurveyService.get_aggregated_survey_data(
+            target_month=target_month, start_month=start_month, end_month=end_month,
+            target_season=target_season, target_year=target_year,
+            compare_year=request.query_params.get("compare_year"),
+            barangay_ids=barangay_ids,
         )
-        
-        # If user is a Barangay Official, we only return data for their barangay
-        if request.user.role == "Barangay" and request.user.barangay:
-            user_b = request.user.barangay.name.lower()
-            if isinstance(heatmap_payload, dict):
-                # Filter components if it's a dict
-                if "density_data" in heatmap_payload:
-                    heatmap_payload["density_data"] = [
-                        d for d in heatmap_payload["density_data"] if d.get("barangay", "").lower() == user_b
-                    ]
-                if "historical_trends" in heatmap_payload:
-                    heatmap_payload["historical_trends"] = [
-                        t for t in heatmap_payload["historical_trends"] if t.get("barangay", "").lower() == user_b
-                    ]
-            elif isinstance(heatmap_payload, list):
-                heatmap_payload = [
-                    d for d in heatmap_payload if d.get("barangay", "").lower() == user_b
-                ]
-                
-        return Response(heatmap_payload)
+        return Response(payload)
+
+    @action(detail=False, methods=["get"])
+    def census_history(self, request):
+        from .census import census_history
+        barangays = models.Barangay.objects.all()
+        if request.user.role == "Barangay":
+            barangays = barangays.filter(pk=request.user.barangay_id)
+        elif request.query_params.get("barangay"):
+            try:
+                barangays = barangays.filter(pk=int(request.query_params["barangay"]))
+            except ValueError:
+                raise ValidationError("Invalid barangay.") from None
+        # Municipal quarters also provide explicit gaps in a barangay's history.
+        return Response(census_history(models.HogSurvey.objects.all(), barangays))
 
     @action(detail=False, methods=["post"])
     def upload_csv(self, request):
@@ -381,7 +372,7 @@ class HogSurveyViewSet(BaseModelViewSet):
         API Endpoint: POST /api/hog-survey/upload_csv/
         Uploads a CSV file and imports hog survey data.
         """
-        if request.user.role not in ["Agri", "Barangay"]:
+        if request.user.role not in ["Admin", "Agri", "Barangay"]:
             return Response({"error": "Unauthorized"}, status=403)
 
         file_obj = request.FILES.get("file")
@@ -396,7 +387,15 @@ class HogSurveyViewSet(BaseModelViewSet):
             barangay_restriction = request.user.barangay
 
         try:
-            created_count, errors = HogSurveyService.import_csv(file_obj, barangay_restriction=barangay_restriction)
+            from .survey_import import import_surveys
+            mode = request.data.get("mode", "apply")
+            replace = str(request.data.get("replace", "false")).lower() == "true"
+            if replace and request.user.role not in ["Admin", "Agri"]:
+                raise PermissionDenied("Only municipal staff can replace surveys.")
+            report = import_surveys(file_obj, barangay_restriction, mode=mode, replace=replace)
+            if mode == "preview":
+                return Response(report, status=200)
+            created_count, errors = report["imported"], report["errors"]
             
             # Audit Log on success
             if created_count > 0:
@@ -418,5 +417,7 @@ class HogSurveyViewSet(BaseModelViewSet):
                     else status.HTTP_400_BAD_REQUEST
                 ),
             )
+        except PermissionDenied:
+            raise
         except Exception as e:
             return Response({"error": str(e)}, status=400)

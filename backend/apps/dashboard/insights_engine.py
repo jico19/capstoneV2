@@ -66,11 +66,11 @@ class RoleMetricExtractor:
         awaiting_payment = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.PAYMENT_PENDING).count()
         at_opv = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
 
-        top_barangays = list(
-            maps.HogSurvey.objects.values('barangay__name')
-            .annotate(total_pigs=Sum('total_pigs'))
-            .order_by('-total_pigs')[:5]
-        )
+        from apps.maps.census import current_census
+        census = current_census()
+        top_barangays = [{"barangay__name": r["barangay"], "total_pigs": r["total_pigs"]}
+                        for r in sorted(census, key=lambda r: r["total_pigs"] or 0, reverse=True)
+                        if r["has_observations"]][:5]
 
         return {
             "role": "Agri",
@@ -177,24 +177,14 @@ class RoleMetricExtractor:
                 "is_sparse": True
             }
 
-        # Latest survey stats
-        surveys = maps.HogSurvey.objects.filter(barangay=barangay).order_by('-survey_date')
-        latest_survey = surveys.first()
-        prev_survey = surveys[1] if surveys.count() > 1 else None
-
-        cur_total_pigs = latest_survey.total_pigs if latest_survey else 0
-        pri_total_pigs = prev_survey.total_pigs if prev_survey else cur_total_pigs
-
-        breakdown = {}
-        if latest_survey:
-            breakdown = {
-                "inahin": latest_survey.inahin,
-                "barako": latest_survey.barako,
-                "fattener": latest_survey.fattener,
-                "grower": latest_survey.grower,
-                "starter": latest_survey.starter,
-                "bulaw": latest_survey.bulaw,
-            }
+        from apps.maps.census import census_history, current_census
+        # Select the municipal current quarter before restricting to this barangay.
+        current = next((row for row in current_census() if row["barangay"] == barangay.name), None)
+        history = census_history(maps.HogSurvey.objects.all(), [barangay])
+        previous = history[-2] if len(history) > 1 else None
+        cur_total_pigs = current["total_pigs"] if current else None
+        pri_total_pigs = previous["total_pigs"] if previous else None
+        breakdown = current["breakdown"] if current else {}
 
         # Permits originating from this barangay
         cur_permits = permits.PermitApplication.objects.filter(
@@ -221,7 +211,9 @@ class RoleMetricExtractor:
                 "permits_originating": pri_permits,
             },
             "census_breakdown": breakdown,
-            "last_survey_date": str(latest_survey.survey_date) if latest_survey else None,
+            "last_survey_date": current["survey_date"] if current else None,
+            "census_date": current["census_date"] if current else None,
+            "has_observations": bool(current and current["has_observations"]),
         }
 
     @classmethod
@@ -600,7 +592,11 @@ class FallbackInsightsBuilder:
 
         elif role == "Barangay":
             b_name = metrics.get("barangay_name", "Barangay")
-            pigs = cur.get("total_registered_pigs", 0)
+            if metrics.get("has_observations") is False:
+                return {"summary": f"No census observations for {b_name} in the current quarter.",
+                        "trends": [], "actions": ["Collect observations for the current census quarter."],
+                        "chart_insights": {}}
+            pigs = cur.get("total_registered_pigs") or 0
             permits_count = cur.get("permits_originating", 0)
 
             trends = [

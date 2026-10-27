@@ -47,7 +47,7 @@ const getPolygonBoundsAndCenter = (geojson) => {
 const MapDataHandler = ({ 
     mapData, 
     surveyData, 
-    activeFilters = ['Low', 'Medium', 'High', 'Very High', 'None'], 
+    activeFilters = ['Low', 'Medium', 'High', 'Very High', 'None', 'No data'],
     selectedBarangay, 
     setSelectedBarangay,
     isCompareMode = false,
@@ -122,12 +122,14 @@ const MapDataHandler = ({
                 setSelectedField({
                     id: item.id,
                     name: item.name,
-                    density: surveyRecord.density_level || 'None',
+                    density: surveyRecord.density_level || 'No data',
                     totalPigs: Number(surveyRecord.total_pigs || 0),
                     breakdown,
-                    compareDensity: compareRecord.density_level || 'None',
+                    compareDensity: compareRecord.density_level || 'No data',
                     compareTotalPigs: Number(compareRecord.total_pigs || 0),
                     compareBreakdown,
+                    diffPigs: surveyRecord.has_observations && compareRecord.has_observations
+                        ? Number(surveyRecord.total_pigs) - Number(compareRecord.total_pigs) : null,
                     transportedPigs: Number(transportRecord.total_transported || 0),
                     transportLevel: transportRecord.volume_level || 'Stable',
                     lng,
@@ -151,12 +153,12 @@ const MapDataHandler = ({
             type: 'FeatureCollection',
             features: mapData.map((item) => {
                 const surveyRecord = surveyData?.find(s => s.barangay.toLowerCase() === item.name.toLowerCase()) || {};
-                const density = surveyRecord.density_level || 'None';
+                const density = surveyRecord.density_level || 'No data';
                 const totalPigs = Number(surveyRecord.total_pigs || 0);
                 const breakdown = surveyRecord.breakdown || {};
 
                 const compareRecord = compareSurveyData?.find(s => s.barangay.toLowerCase() === item.name.toLowerCase()) || {};
-                const compareDensity = compareRecord.density_level || 'None';
+                const compareDensity = compareRecord.density_level || 'No data';
                 const compareTotalPigs = Number(compareRecord.total_pigs || 0);
                 const compareBreakdown = compareRecord.breakdown || {};
 
@@ -164,12 +166,12 @@ const MapDataHandler = ({
                 const transportedPigs = Number(transportRecord.total_transported || 0);
                 const transportLevel = transportRecord.volume_level || 'Stable';
 
-                const diff = totalPigs - compareTotalPigs;
-                let growthTier = 'stable';
+                const diff = surveyRecord.has_observations && compareRecord.has_observations ? totalPigs - compareTotalPigs : null;
+                let growthTier = diff === null ? 'no_data' : 'stable';
                 if (diff > 50) growthTier = 'growth_high';
                 else if (diff > 0) growthTier = 'growth_mod';
                 else if (diff < -50) growthTier = 'drop_high';
-                else if (diff < 0) growthTier = 'drop_mod';
+                else if (diff !== null && diff < 0) growthTier = 'drop_mod';
 
                 return {
                     type: 'Feature',
@@ -186,6 +188,7 @@ const MapDataHandler = ({
                         transportLevel,
                         growthTier,
                         diffPigs: diff,
+                        hasComparison: diff !== null,
                     },
                     geometry: {
                         type: 'Polygon',
@@ -224,6 +227,7 @@ const MapDataHandler = ({
                         'Medium', '#eab308',    // Amber
                         'High', '#f97316',      // Orange
                         'Very High', '#dc2626', // Crimson Red
+                        'No data', '#e2e8f0',
                         '#94a3b8'               // Slate / None
                     ]
                 }
@@ -266,6 +270,7 @@ const MapDataHandler = ({
             map.setPaintProperty('fields-fill', 'fill-color', [
                 'match',
                 ['get', 'growthTier'],
+                'no_data', '#e2e8f0',
                 'growth_high', '#059669', // Deep Emerald
                 'growth_mod', '#34d399',  // Mint Green
                 'stable', '#94a3b8',      // Slate Grey
@@ -291,6 +296,7 @@ const MapDataHandler = ({
                 'Medium', '#eab308',
                 'High', '#f97316',
                 'Very High', '#dc2626',
+                'No data', '#e2e8f0',
                 '#94a3b8'
             ]);
         }
@@ -355,6 +361,7 @@ const MapDataHandler = ({
                     totalPigs: Number(feature.properties.totalPigs || 0),
                     density: feature.properties.density,
                     diffPigs: Number(feature.properties.diffPigs || 0),
+                    hasComparison: feature.properties.hasComparison,
                     transportedPigs: Number(feature.properties.transportedPigs || 0),
                     x: e.point.x,
                     y: e.point.y
@@ -418,6 +425,7 @@ const MapDataHandler = ({
                         transportedPigs: Number(feature.properties.transportedPigs || 0),
                         transportLevel: feature.properties.transportLevel,
                         diffPigs: Number(feature.properties.diffPigs || 0),
+                        hasComparison: feature.properties.hasComparison,
                         lng: e.lngLat.lng,
                         lat: e.lngLat.lat
                     });
@@ -521,10 +529,10 @@ const MapDataHandler = ({
                     <span className="text-stone-500 text-xs">•</span>
                     <span className="text-xs font-mono font-bold text-green-400">
                         {activeMapLayer === 'growth' && isCompareMode
-                            ? `${hoveredFeature.diffPigs > 0 ? '+' : ''}${hoveredFeature.diffPigs} pigs`
+                            ? (hoveredFeature.hasComparison ? `${hoveredFeature.diffPigs > 0 ? '+' : ''}${hoveredFeature.diffPigs} pigs` : 'No comparison data')
                             : activeMapLayer === 'transport'
                                 ? `${hoveredFeature.transportedPigs.toLocaleString()} shipped`
-                                : `${hoveredFeature.totalPigs.toLocaleString()} pigs`
+                                : (hoveredFeature.density === 'No data' ? 'No observations' : `${hoveredFeature.totalPigs.toLocaleString()} pigs`)
                         }
                     </span>
                 </div>
@@ -566,7 +574,7 @@ const MapDataHandler = ({
                                 <div className="bg-stone-50 p-2 rounded-lg border border-stone-200">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 block">Total Swine</span>
                                     <span className="text-sm font-black text-stone-800 font-mono">
-                                        {activePopupField.totalPigs.toLocaleString()}
+                                        {activePopupField.density === 'No data' ? 'No data' : activePopupField.totalPigs.toLocaleString()}
                                     </span>
                                 </div>
                                 <div className="bg-stone-50 p-2 rounded-lg border border-stone-200">
@@ -579,7 +587,7 @@ const MapDataHandler = ({
                             </div>
 
                             {/* Compare Mode Differential */}
-                            {isCompareMode && (
+                            {isCompareMode && activePopupField.density !== 'No data' && activePopupField.compareDensity !== 'No data' && (
                                 <div className="p-2 bg-stone-50 rounded-lg border border-stone-200 flex items-center justify-between text-xs">
                                     <span className="text-[10px] font-medium text-stone-600">
                                         {compareYears.baseline} ➔ {compareYears.target}:

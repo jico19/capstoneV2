@@ -1,5 +1,4 @@
 from apps.permits import models as permits
-from apps.maps import models as maps
 from apps.inspector import models as inspector
 from apps.payment.models import PaymentHistory
 from django.db.models import Count, Sum
@@ -15,15 +14,12 @@ def _compute_agri_dashboard_data():
     awaiting_payment = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.PAYMENT_PENDING).count()
     at_opv = permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.FORWARDED_TO_OPV).count()
     
-    # Total registered pigs in the system (from survey)
-    total_pigs_registered = maps.HogSurvey.objects.aggregate(total=Sum('total_pigs'))['total'] or 0
-
-    barangay_density = (
-        maps.HogSurvey.objects.values('barangay__name')
-        .annotate(count=Sum('total_pigs'))
-        .order_by('-count')[:8]
-    )
-    density_data = [{"name": item['barangay__name'], "count": item['count']} for item in barangay_density if item['barangay__name']]
+    from apps.maps.census import current_census
+    census = current_census()
+    total_pigs_registered = sum(row['total_pigs'] or 0 for row in census)
+    density_data = [{"name": row['barangay'], "count": row['total_pigs']}
+                    for row in sorted(census, key=lambda row: row['total_pigs'] or 0, reverse=True)
+                    if row['has_observations']][:8]
 
     transport_volume = (
         permits.PermitApplication.objects.filter(status=permits.PermitApplication.Status.RELEASED)
@@ -55,6 +51,8 @@ def _compute_agri_dashboard_data():
     status_dist = list(permits.PermitApplication.objects.values('status').annotate(count=Count('id')))
 
     return {
+        "census": {"date": census[0]["census_date"] if census else None,
+                   "coverage": census[0]["coverage"] if census else {}},
         "kpis": {
             "pending_agri_review": pending_agri,
             "awaiting_payment": awaiting_payment,

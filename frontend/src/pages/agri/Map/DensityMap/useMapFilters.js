@@ -12,7 +12,7 @@ const useMapFilters = (availableYears) => {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
     const [isCompareMode, setIsCompareMode] = useState(false);
     const [baselineYear, setBaselineYear] = useState('');
-    const [activeFilters, setActiveFilters] = useState(['Low', 'Medium', 'High', 'Very High', 'None']);
+    const [activeFilters, setActiveFilters] = useState(['Low', 'Medium', 'High', 'Very High', 'None', 'No data']);
     const [selectedBarangay, setSelectedBarangay] = useState(null);
     const [activeMapLayer, setActiveMapLayer] = useState('density'); // 'density' | 'transport' | 'growth'
 
@@ -82,7 +82,7 @@ const useMapFilters = (availableYears) => {
         setSelectedBarangay(null);
         setIsCompareMode(false);
         setActiveMapLayer('density');
-        setActiveFilters(['Low', 'Medium', 'High', 'Very High', 'None']);
+        setActiveFilters(['Low', 'Medium', 'High', 'Very High', 'None', 'No data']);
     };
 
     const months = [
@@ -100,7 +100,7 @@ const useMapFilters = (availableYears) => {
         { id: '12', name: 'December', short: 'Dec' },
     ];
 
-    const hasActiveFilters = seasonMode !== 'all' || selectedBarangay !== null || isCompareMode || activeFilters.length < 5 || activeMapLayer !== 'density';
+    const hasActiveFilters = seasonMode !== 'all' || selectedBarangay !== null || isCompareMode || activeFilters.length < 6 || activeMapLayer !== 'density';
 
     return {
         seasonMode,

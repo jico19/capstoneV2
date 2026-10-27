@@ -180,3 +180,7 @@ capstoneV2/
 │   └── package.json
 └── README.md
 ```
+
+## Hog survey census
+
+See [census rules and generation usage](docs/data/hog-surveys.md) for reproducible farmer histories, preview and import commands, population targets, and quarterly aggregation rules. Generated figures are fictional assumptions, not verified MAO statistics.

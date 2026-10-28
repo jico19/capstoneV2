@@ -19,7 +19,11 @@ const AgriMapPage = () => {
 
     const { data: map } = useGetMaps();
     const { data: availableYears } = useGetHogSurveyYears();
-    const { data: transportVolume = [] } = useGetTransportVolume();
+    const {
+        data: transportVolume = [],
+        isFetching: transportLoading,
+        isError: transportError,
+    } = useGetTransportVolume();
 
     const filters = useMapFilters(availableYears);
 
@@ -31,13 +35,19 @@ const AgriMapPage = () => {
     // Primary survey query (Target Year)
     const {
         data: survey,
-        isFetching: surveyFetching
+        isFetching: surveyFetching,
+        isPending: surveyLoading,
+        isPlaceholderData: surveyPlaceholder,
+        isError: surveyError,
     } = useGetHogSurvey(queryStartMonth, queryEndMonth, querySeason, filters.selectedYear, filters.isCompareMode ? filters.baselineYear : null);
 
     // Baseline survey query (Active when Compare Mode is enabled)
     const {
         data: compareSurvey,
-        isFetching: compareSurveyFetching
+        isFetching: compareSurveyFetching,
+        isPending: comparisonLoading,
+        isPlaceholderData: comparisonPlaceholder,
+        isError: comparisonError,
     } = useGetHogSurvey(queryStartMonth, queryEndMonth, querySeason, filters.isCompareMode ? filters.baselineYear : null, filters.isCompareMode ? filters.selectedYear : null);
 
     const { 
@@ -74,9 +84,16 @@ const AgriMapPage = () => {
                 <div className="lg:col-span-4 xl:col-span-4">
                     <CensusStatusPanel
                         filters={filters}
-                        toggleFilter={filters.toggleFilter}
                         totalPigs={totalPigs}
                         isMapDataUpdating={isMapDataUpdating}
+                        surveyLoading={surveyLoading}
+                        surveyPlaceholder={surveyPlaceholder}
+                        surveyError={surveyError}
+                        comparisonLoading={comparisonLoading}
+                        comparisonPlaceholder={comparisonPlaceholder}
+                        comparisonError={comparisonError}
+                        transportLoading={transportLoading}
+                        transportError={transportError}
                         operationalTakeaway={operationalTakeaway}
                         secondaryTakeaway={secondaryTakeaway}
                         comparisonStats={comparisonStats}

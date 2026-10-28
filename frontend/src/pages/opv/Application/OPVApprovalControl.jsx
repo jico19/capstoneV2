@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, MessageSquare, UploadCloud, FileCheck2 } from 'lucide-react';
+import { CheckCircle, XCircle, MessageSquare, UploadCloud, FileCheck2, CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 /**
@@ -181,10 +181,10 @@ const OPVApprovalControls = ({ onApprove, onReject, onResubmit, aicNumber, onIns
                 </div>
 
                 <div className={`p-5 border-2 rounded-xl transition-colors ${errors.aic_verified
-                        ? 'border-red-600 bg-red-50/70'
-                        : watchedFiles.aic_verified
-                            ? 'border-emerald-600 bg-emerald-50/40'
-                            : 'border-stone-200 bg-stone-50/60'
+                    ? 'border-red-600 bg-red-50/70'
+                    : watchedFiles.aic_verified
+                        ? 'border-emerald-600 bg-emerald-50/40'
+                        : 'border-stone-200 bg-stone-50/60'
                     }`}>
                     <label className="flex items-start gap-4 cursor-pointer select-none">
                         <input

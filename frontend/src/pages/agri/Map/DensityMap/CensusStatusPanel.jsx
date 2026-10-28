@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useRef } from "react";
 import { ArrowLeft, ArrowUpRight, Truck } from "lucide-react";
 
@@ -60,9 +61,9 @@ const CensusStatusPanel = ({
                 </p>
                 {censusUpdating ? (
                     <div aria-hidden="true" className="space-y-3">
-                        <div className="h-3 w-24 rounded-md bg-stone-100" />
-                        <div className="h-10 w-36 rounded-md bg-stone-100" />
-                        <div className="h-3 w-3/4 rounded-md bg-stone-100" />
+                        <Skeleton width={96} height={12} />
+                        <Skeleton width={144} height={40} />
+                        <Skeleton width="75%" height={12} />
                     </div>
                 ) : surveyError ? (
                     <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 leading-relaxed">

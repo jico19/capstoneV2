@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
@@ -218,15 +219,6 @@ const HogSurveyPage = () => {
         downloadBlob(blob, `${user.barangay_name.replace(/\s+/g, '_')}_hog_survey_template.csv`);
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Loading surveys...</p>
-            </div>
-        );
-    }
-
     if (isError) {
         return (
             <div className="p-4 md:p-8">
@@ -301,6 +293,7 @@ const HogSurveyPage = () => {
     );
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-5 sm:space-y-6 bg-stone-50 min-h-screen font-sans">
             {/* Header & Quick Actions */}
             <div className="bg-white border border-stone-200 rounded-xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -519,6 +512,7 @@ const HogSurveyPage = () => {
                 isSubmitting={deleteMutation.isPending}
             />
         </div>
+        </LoadingLayout>
     );
 };
 

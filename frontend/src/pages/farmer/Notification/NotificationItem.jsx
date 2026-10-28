@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { getRelativeTime, getIconInfo, getSectionInfo } from './notifcationHelper';
 import { Check } from 'lucide-react';
 
@@ -5,11 +6,11 @@ import { Check } from 'lucide-react';
  * NotificationItem Component
  * Tactile notification card with type indicators, section tags, and interactive mark-read action.
  */
-const NotificationItem = ({ notif, onMarkRead }) => {
+const NotificationItem = ({ notif = {}, onMarkRead, isLoading = false }) => {
     const { icon: Icon, color, bg, border } = getIconInfo(notif.type);
     const sectionInfo = getSectionInfo(notif.section);
 
-    const isUnread = !notif.is_read;
+    const isUnread = !isLoading && !notif.is_read;
 
     return (
         <div
@@ -21,7 +22,7 @@ const NotificationItem = ({ notif, onMarkRead }) => {
         >
             {/* Type Icon Container */}
             <div className={`shrink-0 w-10 h-10 rounded-lg border ${border} ${bg} ${color} flex items-center justify-center`}>
-                <Icon size={18} strokeWidth={2.2} />
+                {isLoading ? <Skeleton width={18} height={18} /> : <Icon size={18} strokeWidth={2.2} />}
             </div>
 
             {/* Notification Body */}
@@ -30,12 +31,12 @@ const NotificationItem = ({ notif, onMarkRead }) => {
                     <div className="flex items-center gap-2 min-w-0">
                         {/* Section Chip */}
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${sectionInfo.chipStyle}`}>
-                            {sectionInfo.label}
+                            {isLoading ? <Skeleton width="6ch" /> : sectionInfo.label}
                         </span>
 
                         {/* Title */}
                         <h3 className={`text-xs font-bold tracking-tight truncate ${isUnread ? 'text-stone-900' : 'text-stone-700'}`}>
-                            {notif.title}
+                            {isLoading ? <Skeleton width="16ch" /> : notif.title}
                         </h3>
 
                         {/* Unread Ping Dot */}
@@ -46,13 +47,13 @@ const NotificationItem = ({ notif, onMarkRead }) => {
 
                     {/* Timestamp */}
                     <span className="text-[11px] font-mono text-stone-500 shrink-0">
-                        {getRelativeTime(notif.sent_at)}
+                        {isLoading ? <Skeleton width="6ch" /> : getRelativeTime(notif.sent_at)}
                     </span>
                 </div>
 
                 {/* Message Prose */}
                 <p className={`text-xs leading-relaxed ${isUnread ? 'text-stone-700' : 'text-stone-500'}`}>
-                    {notif.message}
+                    {isLoading ? <Skeleton count={2} /> : notif.message}
                 </p>
             </div>
 

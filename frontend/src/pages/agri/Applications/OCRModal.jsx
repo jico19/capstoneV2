@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useState } from 'react';
 import { X, AlertCircle, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText } from 'lucide-react';
 import { useDocument } from '../../../hooks/useApplications';
@@ -11,7 +12,8 @@ import { getAuthenticatedMediaUrl } from '../../../lib/utils';
  */
 const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
 
-    const { data: doc, isLoading, isError } = useDocument(doc_id);
+    const { data: documentData, isLoading, isError } = useDocument(doc_id);
+    const doc = documentData || {};
     const { register, handleSubmit, formState: { errors, isDirty } } = useForm();
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
@@ -25,12 +27,6 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
     };
 
 
-    if (isLoading) return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-stone-900/50 backdrop-blur-xs">
-            <span className="loading loading-spinner loading-lg text-green-700"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-300 mt-4">Opening Document...</p>
-        </div>
-    );
 
     if (isError) return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4">
@@ -67,7 +63,7 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                     <div className="space-y-1">
                         <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest leading-none">Document Review</p>
                         <h3 className="text-2xl font-black text-stone-900 tracking-tight leading-none">
-                            {doc.document_type_display}
+                            {isLoading ? <Skeleton width="20ch" /> : doc.document_type_display}
                         </h3>
                     </div>
                     <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-900 rounded-lg transition-colors">
@@ -126,7 +122,9 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                             </a>
                         </div>
                         <div className="flex-1 border border-stone-200 bg-white p-2 flex items-center justify-center overflow-auto rounded-xl shadow-xs">
-                            {isPdf ? (
+                            {isLoading ? (
+                                <div role="status" aria-label="Loading document..." className="w-full h-full min-h-[280px]"><Skeleton height="100%" containerClassName="block h-full leading-none" /></div>
+                            ) : isPdf ? (
                                 <div className="flex flex-col items-center justify-center p-6 text-center max-w-sm space-y-3">
                                     <div className="p-3 bg-stone-900 text-white">
                                         <FileText size={36} />
@@ -174,6 +172,7 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                         </div>
 
                         <form id="ocr-form" className="space-y-6">
+                            {isLoading && <div aria-hidden="true" className="space-y-6">{[0, 1, 2, 3].map(i => <div key={i}><Skeleton width="40%" height={12} /><Skeleton height={40} /></div>)}</div>}
                             {Object.keys(extracted).map((key) => {
                                 const hasError = remarks[key] || extracted[key] === null;
                                 return (
@@ -222,7 +221,7 @@ const OCRModal = ({ doc_id, onClose, onSubmit, isSubmitting }) => {
                     <button 
                         onClick={handleSubmit(onSubmit)}
                         form="ocr-form"
-                        disabled={isSubmitting || !isDirty}
+                        disabled={isLoading || isSubmitting || !isDirty}
                         className="w-full sm:w-auto bg-green-700 hover:bg-green-600 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-8 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg shadow-xs transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                     >
                         {isSubmitting ? (

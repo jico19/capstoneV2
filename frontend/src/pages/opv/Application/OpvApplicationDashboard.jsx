@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useState, useEffect } from "react";
 import { 
     FileSignature, 
@@ -40,15 +41,6 @@ const OpvApplicationDashboard = () => {
         refetchInterval: 15000 // Automatically sync validation queue every 15 seconds
     });
     const navigate = useNavigate();
-
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Validation Queue...</p>
-            </div>
-        );
-    }
 
     if (isError) {
         return (
@@ -114,6 +106,7 @@ const OpvApplicationDashboard = () => {
     ];
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 bg-white min-h-screen font-sans">
             {/* Minimalist Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-stone-100 pb-8">
@@ -168,6 +161,7 @@ const OpvApplicationDashboard = () => {
                 </button>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from '../../../hooks/useApplications';
@@ -42,16 +43,12 @@ const AgriPermitDetail = () => {
 
     const { id } = useParams();
     const navigate = useNavigate();
-    const { data: application, isLoading, isError } = useApplicationDetail(id);
+    const { data: applicationData, isLoading, isError } = useApplicationDetail(id);
+    const application = applicationData || {};
     const { mutate: updateOCR } = useOCRUpdate();
     const query = useQueryClient()
 
-    if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
-            <span className="loading loading-spinner loading-lg text-green-600"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Opening Application...</p>
-        </div>
-    );
+
 
     if (isError) return (
         <div className="max-w-4xl mx-auto p-8">
@@ -218,6 +215,7 @@ const AgriPermitDetail = () => {
 
 
     return (
+        <LoadingLayout loading={isLoading}>
         <>
             {confirmModal && (
                 <ConfirmationModal
@@ -385,6 +383,7 @@ const AgriPermitDetail = () => {
 
             </div>
         </>
+        </LoadingLayout>
     );
 };
 

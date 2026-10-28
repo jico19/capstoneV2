@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { Link } from "react-router-dom";
 import {
     Scan,
@@ -21,18 +23,7 @@ const InspectorDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetInspectorDashboard();
     const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Inspector');
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[360px] bg-white rounded-xl border border-stone-200 m-4 p-8">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4 animate-pulse">
-                    Syncing checkpoint activity...
-                </p>
-            </div>
-        );
-    }
-
-    if (isError || !metrics) {
+    if (isError || (!isLoading && !metrics)) {
         return (
             <div className="m-4 p-6 text-center bg-red-50 rounded-xl border border-red-200">
                 <p className="text-xs font-black text-red-700 uppercase tracking-widest">
@@ -45,10 +36,11 @@ const InspectorDashboard = () => {
         );
     }
 
-    const { kpis, charts } = metrics;
-    const recentActivity = metrics.recent_activity || [];
+    const { kpis = {}, charts = {} } = metrics || {};
+    const recentActivity = metrics?.recent_activity || [];
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 bg-stone-50 min-h-screen font-sans">
             {/* Header & Quick Status */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-stone-200 p-4 sm:p-6 rounded-xl shadow-xs">
@@ -189,7 +181,9 @@ const InspectorDashboard = () => {
 
                 {/* Mobile View: Cards (avoids 600px horizontal scroll leak) */}
                 <div className="block md:hidden space-y-3">
-                    {recentActivity.length > 0 ? (
+                    {isLoading ? (
+                        <div aria-hidden="true" className="space-y-3">{[0, 1, 2].map(i => <div key={i} className="border border-stone-200 p-3.5 rounded-lg bg-stone-50/50 space-y-2.5"><Skeleton width="55%" /><Skeleton /><Skeleton width="40%" height={10} /></div>)}</div>
+                    ) : recentActivity.length > 0 ? (
                         recentActivity.map((log, index) => (
                             <div
                                 key={`${log.application_id}-${index}`}
@@ -263,6 +257,7 @@ const InspectorDashboard = () => {
                 </div>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

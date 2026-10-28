@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import {
     CreditCard,
     AlertCircle,
@@ -20,16 +21,7 @@ const AgriOfficerKPIDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetAgriDashboard()
     const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('Agri');
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
-                <span className="loading loading-spinner loading-lg text-green-600"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Operations...</p>
-            </div>
-        );
-    }
-
-    if (isError || !metrics) {
+    if (isError || (!isLoading && !metrics)) {
         return (
             <div className="p-4 md:p-8">
                 <div className="bg-red-50 text-red-700 border border-red-200 p-8 rounded-xl flex flex-col items-center text-center shadow-xs">
@@ -40,9 +32,10 @@ const AgriOfficerKPIDashboard = () => {
         );
     }
 
-    const { kpis, charts } = metrics;
+    const { kpis = {}, charts = {} } = metrics || {};
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="flex-1 space-y-8 p-4 md:p-8 bg-white min-h-full">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-200 pb-8 gap-4">
@@ -106,7 +99,7 @@ const AgriOfficerKPIDashboard = () => {
                         <p className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Surveillance Density</p>
                         <h2 className="text-xl font-black text-stone-900 uppercase">Swine Count by Barangay</h2>
                         <p className="text-xs text-stone-500 mt-2">
-                            Census: {metrics.census?.date || 'No data'}. Coverage: {metrics.census?.coverage?.observed_barangays || 0} of {metrics.census?.coverage?.total_barangays || 0} barangays.
+                            Census: {metrics?.census?.date || 'No data'}. Coverage: {metrics?.census?.coverage?.observed_barangays || 0} of {metrics?.census?.coverage?.total_barangays || 0} barangays.
                         </p>
                     </div>
                     <BarChartComponent
@@ -179,6 +172,7 @@ const AgriOfficerKPIDashboard = () => {
                 </div>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

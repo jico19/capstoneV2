@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { toast } from 'sonner';
@@ -277,14 +278,6 @@ const SignatoriesSection = () => {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[200px] bg-white rounded-xl border border-stone-200">
-                <span className="loading loading-spinner loading-md text-green-700"></span>
-                <p className="text-xs font-semibold text-stone-500 mt-3">Loading signatory roster...</p>
-            </div>
-        );
-    }
 
     const active = roster.filter((s) => s.is_active);
     const retired = roster.filter((s) => !s.is_active);
@@ -319,7 +312,7 @@ const SignatoriesSection = () => {
             </div>
 
             <div className="px-6 py-5 space-y-5">
-                {active.length === 0 ? (
+                {!isLoading && active.length === 0 ? (
                     <div className="flex items-start gap-3 bg-red-50 border border-red-200 px-4 py-3 rounded-lg">
                         <Info size={15} className="text-red-600 mt-0.5 shrink-0" />
                         <p className="text-xs text-red-800 font-semibold leading-relaxed">
@@ -339,7 +332,9 @@ const SignatoriesSection = () => {
                     </div>
                 )}
 
-                <div className="space-y-3">{active.map(renderRow)}</div>
+                <div className="space-y-3">
+                    {isLoading ? <div role="status" aria-label="Loading signatories..." className="grid gap-3 items-end grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.4fr_1fr_auto]"><Skeleton height={40} /><Skeleton height={40} /><Skeleton height={40} /><Skeleton width={80} height={40} /></div> : active.map(renderRow)}
+                </div>
 
                 {retired.length > 0 && (
                     <div className="space-y-3">
@@ -399,7 +394,7 @@ const SignatoriesSection = () => {
 
                         <button
                             type="submit"
-                            disabled={isSaving}
+                            disabled={isLoading || isSaving}
                             className="h-10 px-4 bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                         >
                             <Plus size={13} /> Add

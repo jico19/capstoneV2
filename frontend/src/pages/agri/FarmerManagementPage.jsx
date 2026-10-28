@@ -1,3 +1,4 @@
+import LoadingLayout from '../../components/ui/LoadingLayout';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -163,15 +164,6 @@ const FarmerManagementPage = () => {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Syncing Farmer Directory...</p>
-            </div>
-        );
-    }
-
     if (isError) {
         return (
             <div className="p-4 md:p-8">
@@ -186,6 +178,7 @@ const FarmerManagementPage = () => {
     const count = data?.count || 0;
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 min-h-screen font-sans">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-stone-200/80 gap-4">
@@ -312,6 +305,7 @@ const FarmerManagementPage = () => {
                 />
             )}
         </div>
+        </LoadingLayout>
     );
 };
 

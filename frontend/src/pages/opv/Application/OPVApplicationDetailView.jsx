@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
@@ -22,16 +23,12 @@ const OPVApplicationDetail = () => {
     const navigate = useNavigate()
     const [selectedDocId, setSelectedDocId] = useState(null)
     const [confirmModal, setConfirmModal] = useState(null)
-    const { data: application, isLoading, isError } = useApplicationDetail(id)
+    const { data: applicationData, isLoading, isError } = useApplicationDetail(id)
+    const application = applicationData || {};
     const query = useQueryClient()
 
 
-    if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
-            <span className="loading loading-spinner loading-lg text-green-700"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Opening Application...</p>
-        </div>
-    );
+
 
     if (isError) return (
         <div className="max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white">
@@ -160,6 +157,7 @@ const OPVApplicationDetail = () => {
     }
 
     return (
+        <LoadingLayout loading={isLoading}>
         <>
             {confirmModal && (
                 <ConfirmationModal
@@ -359,6 +357,7 @@ const OPVApplicationDetail = () => {
                 </div>
             </div>
         </>
+        </LoadingLayout>
     )
 }
 

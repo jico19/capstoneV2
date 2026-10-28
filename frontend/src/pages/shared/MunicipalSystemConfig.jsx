@@ -1,3 +1,4 @@
+import LoadingField from '../../components/ui/LoadingField';
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { toast } from 'sonner';
@@ -118,17 +119,10 @@ const MunicipalSystemConfig = () => {
         setConfig(prev => ({ ...prev, [field]: value }));
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-xl border border-stone-200">
-                <div className="w-8 h-8 border-3 border-green-700 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-xs font-semibold text-stone-500 mt-3">Loading municipal parameters...</p>
-            </div>
-        );
-    }
 
     return (
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-6" aria-busy={isLoading}>
+            {isLoading && <span role="status" className="sr-only">Loading municipal settings...</span>}
             {/* Status indicator if previously saved */}
             {lastSaved && (
                 <div className="flex items-center gap-1.5 text-xs text-stone-500">
@@ -149,14 +143,14 @@ const MunicipalSystemConfig = () => {
                 >
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm font-bold select-none">₱</span>
-                        <input
+                        <LoadingField loading={isLoading}><input
                             type="number"
                             min="0"
                             step="0.01"
                             value={config.vet_health_cert_fee}
                             onChange={(e) => handleChange('vet_health_cert_fee', e.target.value)}
                             className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-semibold text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 rounded-lg shadow-2xs font-mono"
-                        />
+                        /></LoadingField>
                     </div>
                 </SettingField>
 
@@ -166,14 +160,14 @@ const MunicipalSystemConfig = () => {
                 >
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm font-bold select-none">₱</span>
-                        <input
+                        <LoadingField loading={isLoading}><input
                             type="number"
                             min="0"
                             step="0.01"
                             value={config.transport_pass_fee}
                             onChange={(e) => handleChange('transport_pass_fee', e.target.value)}
                             className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-semibold text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 rounded-lg shadow-2xs font-mono"
-                        />
+                        /></LoadingField>
                     </div>
                 </SettingField>
 
@@ -183,14 +177,14 @@ const MunicipalSystemConfig = () => {
                 >
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm font-bold select-none">₱</span>
-                        <input
+                        <LoadingField loading={isLoading}><input
                             type="number"
                             min="0"
                             step="0.01"
                             value={config.local_transport_permit_fee}
                             onChange={(e) => handleChange('local_transport_permit_fee', e.target.value)}
                             className="w-full h-10 pl-8 pr-3 bg-white border border-stone-200 text-sm font-semibold text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 rounded-lg shadow-2xs font-mono"
-                        />
+                        /></LoadingField>
                     </div>
                 </SettingField>
 
@@ -217,14 +211,14 @@ const MunicipalSystemConfig = () => {
                     description="Issued permits expire automatically after this number of days (minimum 1 day)."
                 >
                     <div className="flex items-center gap-2">
-                        <input
+                        <LoadingField loading={isLoading}><input
                             type="number"
                             min="1"
                             step="1"
                             value={config.validity_days}
                             onChange={(e) => handleChange('validity_days', e.target.value)}
                             className="w-full h-10 px-3 bg-white border border-stone-200 text-sm font-semibold text-stone-900 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/20 rounded-lg shadow-2xs text-center font-mono"
-                        />
+                        /></LoadingField>
                         <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider shrink-0">days</span>
                     </div>
                 </SettingField>
@@ -242,7 +236,7 @@ const MunicipalSystemConfig = () => {
             <div className="flex justify-end pb-8">
                 <button
                     type="submit"
-                    disabled={isSaving}
+                    disabled={isLoading || isSaving}
                     className="btn-tactile bg-green-700 hover:bg-green-600 disabled:opacity-60 text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 rounded-lg shadow-xs cursor-pointer"
                 >
                     {isSaving ? (

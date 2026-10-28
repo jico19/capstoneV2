@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from './loadingContext';
 import { MapPin, Calendar, Clipboard, User } from 'lucide-react';
 
 /**
@@ -6,6 +8,7 @@ import { MapPin, Calendar, Clipboard, User } from 'lucide-react';
  * Strictly adheres to Design.MD: green-700 primary, green-50 fills, stone neutrals, no shadows.
  */
 const ApplicationHeader = ({ data }) => {   
+    const isLoading = useContentLoading();
     return (
         <header className="relative space-y-6 sm:space-y-8">
             {/* Top Row: Identification & Status */}
@@ -14,11 +17,11 @@ const ApplicationHeader = ({ data }) => {
                     <div className="flex items-center gap-2.5">
                         <div className="w-1.5 h-6 sm:h-8 bg-green-700 shrink-0"></div>
                         <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-800 tracking-tight leading-none uppercase truncate">
-                            {data.application_id}
+                            {isLoading ? <Skeleton width="12ch" /> : data.application_id}
                         </h1>
                     </div>
                     <p className="text-stone-500 font-medium text-xs sm:text-sm pl-4 truncate">
-                        Transport Permit for <span className="text-stone-800 font-black">{data.farmer_name}</span>
+                        Transport Permit for <span className="text-stone-800 font-black">{isLoading ? <Skeleton width="12ch" /> : data.farmer_name}</span>
                     </p>
                 </div>
 
@@ -27,7 +30,7 @@ const ApplicationHeader = ({ data }) => {
                         Current Status
                     </span>
                     <div className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-md text-xs font-semibold uppercase tracking-wider">
-                        {data.status_display}
+                        {isLoading ? <Skeleton width="12ch" /> : data.status_display}
                     </div>
                 </div>
             </div>
@@ -69,16 +72,19 @@ const ApplicationHeader = ({ data }) => {
     );
 };
 
-const DetailItem = ({ label, value, sub, icon }) => (
+const DetailItem = ({ label, value, sub, icon }) => {
+    const isLoading = useContentLoading();
+    return (
     <div className="p-3 sm:p-4 md:p-5 space-y-1 min-w-0">
         <div className="flex items-center gap-1.5 text-stone-400 uppercase text-[8px] sm:text-[9px] font-black tracking-widest truncate">
             {icon} {label}
         </div>
         <div className="space-y-0.5">
-            <p className="text-xs sm:text-sm font-black text-stone-800 truncate uppercase tracking-tight">{value}</p>
+            <p className="text-xs sm:text-sm font-black text-stone-800 truncate uppercase tracking-tight">{isLoading ? <Skeleton /> : value}</p>
             {sub && <p className="text-[8px] sm:text-[9px] font-bold text-stone-400 uppercase tracking-wide truncate">{sub}</p>}
         </div>
     </div>
-);
+    );
+};
 
 export default ApplicationHeader;

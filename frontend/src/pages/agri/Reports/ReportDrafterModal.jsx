@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../../../lib/api";
 import { downloadBlob } from "../../../lib/utils";
@@ -276,11 +277,10 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
             {/* Scrollable Form Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               {loading ? (
-                <div className="py-20 flex flex-col items-center justify-center space-y-3 text-stone-500">
-                  <Loader2 size={28} className="animate-spin text-green-700" />
-                  <p className="text-xs font-semibold tracking-wide text-stone-600">
-                    Compiling municipal records and drafting official memorandum...
-                  </p>
+                <div role="status" aria-label="Loading report draft..." className="space-y-6">
+                  <div className="bg-stone-50 border border-stone-200 rounded-lg p-3.5"><Skeleton count={2} /></div>
+                  <div className="flex flex-wrap gap-2"><Skeleton width={150} height={30} /><Skeleton width={150} height={30} /></div>
+                  {[0, 1, 2, 3, 4].map(i => <div key={i} aria-hidden="true" className="space-y-1.5"><Skeleton width="35%" height={12} /><Skeleton height={40} /></div>)}
                 </div>
               ) : !draftData ? (
                 <div className="py-16 text-center text-stone-500 text-sm">
@@ -374,8 +374,10 @@ const ReportDrafterModal = ({ isOpen, onClose, report, startDate, endDate }) => 
             {/* Scrollable Document Simulation */}
             <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 flex justify-center items-start">
               {loading ? (
-                <div className="h-full flex items-center justify-center text-stone-400 text-xs">
-                  Preparing document preview...
+                <div role="status" aria-label="Loading document preview..." style={{ transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined, transformOrigin: 'top center' }} className="w-full max-w-[590px] bg-white shadow-xl border border-stone-300 rounded-sm p-6 sm:p-8 space-y-5 text-xs leading-relaxed shrink-0">
+                  <Skeleton width="70%" height={24} /><Skeleton width="55%" />
+                  <div className="border-y border-stone-300 py-4"><Skeleton count={5} /></div>
+                  <Skeleton count={8} /><Skeleton height={120} /><Skeleton count={5} />
                 </div>
               ) : (
                 <MemorandumPreview

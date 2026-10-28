@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -34,9 +35,9 @@ const ChartTakeaway = ({ takeaway, isLoading = false, className = '' }) => {
             </div>
 
             {isLoading ? (
-                <div className="space-y-1.5 py-1">
-                    <div className="h-2.5 bg-stone-200 animate-pulse w-full"></div>
-                    <div className="h-2.5 bg-stone-200 animate-pulse w-3/4"></div>
+                <div role="status" aria-label="Loading insight..." className="space-y-1.5 py-1">
+                    <Skeleton height={10} />
+                    <Skeleton width="75%" height={10} />
                 </div>
             ) : (
                 <div className="space-y-1">

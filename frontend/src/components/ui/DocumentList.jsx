@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from './loadingContext';
 import { FileText, CheckCircle, AlertTriangle, Search, Pencil, FolderOpen } from 'lucide-react';
 
 /**
@@ -11,6 +13,21 @@ import { FileText, CheckCircle, AlertTriangle, Search, Pencil, FolderOpen } from
  *   documentView — Callback function to view the full document
  */
 const DocumentList = ({ documents, fixData, documentView, viewedDocIds = [] }) => {
+
+    const isLoading = useContentLoading();
+    if (isLoading) return (
+        <div aria-hidden="true" className="space-y-3">
+            {[0, 1, 2].map(i => (
+                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-5 bg-white border border-stone-200 rounded-xl gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <Skeleton width={44} height={44} />
+                        <div className="flex-1"><Skeleton width="60%" /><Skeleton width="40%" height={12} /></div>
+                    </div>
+                    <Skeleton width={110} height={32} />
+                </div>
+            ))}
+        </div>
+    );
 
     // Empty state when no documents are provided or the list is empty
     if (!documents || documents.length === 0) {

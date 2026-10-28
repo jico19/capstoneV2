@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from '../ui/loadingContext';
 import {
     LineChart,
     Line,
@@ -20,6 +22,13 @@ const LineChartComponent = ({
     lineColor = '#16a34a', // Primary Green (green-600)
     showGrid = true
 }) => {
+    const isLoading = useContentLoading();
+    if (isLoading) return (
+        <div className="w-full min-w-0" style={{ height }} aria-hidden="true">
+            <Skeleton height={height} containerClassName="block w-full leading-none" />
+        </div>
+    );
+
 
     // Simple date formatter for the axis
     const formatDate = (dateString) => {

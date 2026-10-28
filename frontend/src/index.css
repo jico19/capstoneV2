@@ -521,17 +521,6 @@
   animation-delay: 120ms;
 }
 
-/* Skeleton shimmer pulse for tables */
-.skeleton-shimmer {
-  background: linear-gradient(90deg, #f5f5f4 25%, #e7e5e3 50%, #f5f5f4 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
 /* Accessibility: Safe fallback when users prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -547,3 +536,12 @@
   }
 }
 
+
+/* Shared loading placeholders follow the FarmPass stone palette. */
+.react-loading-skeleton {
+  --base-color: var(--color-stone-200);
+  --highlight-color: var(--color-stone-100);
+}
+@media (prefers-reduced-motion: reduce) {
+  .react-loading-skeleton::after { animation: none; }
+}

@@ -1,3 +1,4 @@
+import LoadingField from '../../components/ui/LoadingField';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -91,17 +92,10 @@ const SettingsPage = () => {
     // Only the profile tab depends on the profile request; the municipal tabs
     // should open without waiting on it.
     const renderProfileTab = () => {
-        if (isLoading) {
-            return (
-                <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl border border-stone-200">
-                    <div className="w-8 h-8 border-3 border-green-700 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-xs font-semibold text-stone-400 mt-3">Loading settings...</p>
-                </div>
-            );
-        }
 
         return (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" aria-busy={isLoading}>
+                {isLoading && <span role="status" className="sr-only">Loading profile...</span>}
                 {/* Personal Info Card */}
                 <section className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
                     <div className="px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center gap-3">
@@ -113,32 +107,32 @@ const SettingsPage = () => {
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
                             <label htmlFor="first-name-input" className="block text-xs font-semibold text-stone-600">First Name</label>
-                            <input
+                            <LoadingField loading={isLoading}><input
                                 id="first-name-input"
                                 {...register("first_name")}
                                 className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm text-stone-900 focus:outline-none focus:border-green-700"
-                            />
+                            /></LoadingField>
                         </div>
                         <div className="space-y-1.5">
                             <label htmlFor="last-name-input" className="block text-xs font-semibold text-stone-600">Last Name</label>
-                            <input
+                            <LoadingField loading={isLoading}><input
                                 id="last-name-input"
                                 {...register("last_name")}
                                 className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm text-stone-900 focus:outline-none focus:border-green-700"
-                            />
+                            /></LoadingField>
                         </div>
                         <div className="space-y-1.5 md:col-span-2">
                             <label htmlFor="phone-no-input" className="block text-xs font-semibold text-stone-600">Mobile Contact Number</label>
                             <div className="relative">
                                 <Smartphone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                                <input
+                                <LoadingField loading={isLoading}><input
                                     id="phone-no-input"
                                     {...register("phone_no", {
                                         pattern: { value: /^(?:\+639|639|09)\d{9}$/, message: "Invalid Philippine mobile number format (e.g. 09171234567)" }
                                     })}
                                     placeholder="09..."
                                     className={`w-full h-10 pl-10 pr-3 bg-white border rounded-lg shadow-2xs text-sm text-stone-900 focus:outline-none focus:border-green-700 font-mono ${errors.phone_no ? 'border-red-400' : 'border-stone-200'}`}
-                                />
+                                /></LoadingField>
                             </div>
                             {errors.phone_no && <p className="text-xs text-red-500 font-medium">{errors.phone_no.message}</p>}
                         </div>
@@ -157,22 +151,22 @@ const SettingsPage = () => {
                         <div className="p-6 space-y-5">
                             <div className="space-y-1.5">
                                 <label htmlFor="barangay-select" className="block text-xs font-semibold text-stone-600">Registered Barangay</label>
-                                <select
+                                <LoadingField loading={isLoading}><select
                                     id="barangay-select"
                                     {...register("barangay")}
                                     className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm text-stone-800 focus:outline-none focus:border-green-700 appearance-none"
                                 >
                                     <option value="">Select Barangay</option>
                                     {barangays?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                </select>
+                                </select></LoadingField>
                             </div>
                             <div className="space-y-1.5">
                                 <label htmlFor="address-input" className="block text-xs font-semibold text-stone-600">Sitio / Street / Landmark</label>
-                                <input
+                                <LoadingField loading={isLoading}><input
                                     id="address-input"
                                     {...register("address")}
                                     className="w-full h-10 px-3 bg-white border border-stone-200 rounded-lg shadow-2xs text-sm text-stone-900 focus:outline-none focus:border-green-700"
-                                />
+                                /></LoadingField>
                             </div>
                         </div>
                     </section>
@@ -192,11 +186,11 @@ const SettingsPage = () => {
                                 <p className="text-xs font-bold text-stone-800">SMS Status Alerts</p>
                                 <p className="text-xs text-stone-500 mt-0.5">Receive instant SMS alerts when permits are reviewed, approved, or verified</p>
                             </div>
-                            <input
+                            <LoadingField loading={isLoading}><input
                                 type="checkbox"
                                 {...register("receive_sms")}
                                 className="checkbox checkbox-success rounded-md border-stone-300"
-                            />
+                            /></LoadingField>
                         </div>
                     </section>
                 )}
@@ -205,7 +199,7 @@ const SettingsPage = () => {
                 <div className="flex justify-end pb-8">
                     <button
                         type="submit"
-                        disabled={isUpdating}
+                        disabled={isLoading || isUpdating}
                         className="btn-tactile bg-green-700 hover:bg-green-600 text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg shadow-xs transition-colors flex items-center gap-2 disabled:opacity-60 cursor-pointer"
                     >
                         {isUpdating ? (

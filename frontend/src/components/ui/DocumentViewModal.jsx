@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useState } from 'react';
 import { 
     X, 
@@ -24,7 +25,8 @@ import { getAuthenticatedMediaUrl } from '../../lib/utils';
  *   onClose — Callback function to close the modal
  */
 const DocumentViewModal = ({ doc_id, onClose }) => {
-    const { data: doc, isLoading, isError } = useDocument(doc_id);
+    const { data: documentData, isLoading, isError } = useDocument(doc_id);
+    const doc = documentData || {};
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
 
@@ -39,14 +41,6 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
     };
 
     // Loading State
-    if (isLoading) return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-900/50 backdrop-blur-xs">
-            <div className="bg-white p-10 flex flex-col items-center gap-4 border border-stone-200 rounded-xl shadow-xl modal-enter">
-                <Loader2 size={32} className="text-emerald-700 animate-spin" />
-                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Loading document...</p>
-            </div>
-        </div>
-    );
 
     // Error State
     if (isError) return (
@@ -95,16 +89,16 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                         <div className="flex items-center gap-2">
                             <FileText size={20} className="text-emerald-700" />
                             <h3 className="text-lg sm:text-xl font-bold text-stone-900 tracking-tight leading-none">
-                                {doc.document_type_display}
+                                {isLoading ? <Skeleton width="20ch" /> : doc.document_type_display}
                             </h3>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] font-mono text-stone-400 uppercase tracking-wider">
-                                ID: {doc.id}
+                                ID: {isLoading ? <Skeleton width="5ch" /> : doc.id}
                             </span>
                             <span className="text-stone-300">•</span>
                             <span className="text-[10px] font-medium text-stone-500">
-                                Added on {new Date(doc.uploaded_at).toLocaleDateString()}
+                                Added on {isLoading ? <Skeleton width="10ch" /> : new Date(doc.uploaded_at).toLocaleDateString()}
                             </span>
                         </div>
                     </div>
@@ -187,7 +181,9 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
 
                         {/* Visual Canvas */}
                         <div className="flex-1 w-full flex items-center justify-center overflow-auto p-4">
-                            {isPdf ? (
+                            {isLoading ? (
+                                <div role="status" aria-label="Loading document..." className="w-full h-full min-h-[280px]"><Skeleton height="100%" containerClassName="block h-full leading-none" /></div>
+                            ) : isPdf ? (
                                 <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-white border border-stone-200 rounded-xl shadow-xs space-y-4">
                                     <div className="p-3.5 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-xl">
                                         <FileText size={36} />
@@ -255,7 +251,7 @@ const DocumentViewModal = ({ doc_id, onClose }) => {
                                 </div>
                             )}
 
-                            {Object.keys(extracted).length > 0 ? (
+                            {isLoading ? <div aria-hidden="true" className="space-y-6">{[0, 1, 2, 3].map(i => <div key={i}><Skeleton width="40%" height={12} /><Skeleton height={40} /></div>)}</div> : Object.keys(extracted).length > 0 ? (
                                 Object.entries(extracted).map(([key, value]) => (
                                     <div key={key} className="space-y-1.5">
                                         <div className="flex justify-between items-center">

@@ -1,345 +1,239 @@
-import { useState } from "react";
-import { 
-    TrendingUp, 
-    TrendingDown, 
-    ShieldCheck, 
-    ChevronDown, 
-    ChevronUp, 
-    Truck, 
-    Calculator,
-    ArrowUpRight,
-    ArrowLeft
-} from "lucide-react";
+import { useRef } from "react";
+import { ArrowLeft, ArrowUpRight, Truck } from "lucide-react";
 
-/**
- * Context-Aware Status & Intelligence Panel:
- * Transitions smoothly between Municipal Intelligence Mode and
- * Single-Barangay Dossier Mode to eliminate card stacking and information overload.
- */
-const CensusStatusPanel = ({ 
-    filters, 
-    totalPigs, 
-    operationalTakeaway, 
-    secondaryTakeaway, 
-    comparisonStats, 
-    survey = [], 
-    transportVolume = [] 
+const CensusStatusPanel = ({
+    filters, totalPigs, operationalTakeaway, secondaryTakeaway, comparisonStats,
+    survey = [], transportVolume = [], isMapDataUpdating = false,
+    surveyLoading = false, surveyPlaceholder = false, surveyError = false,
+    comparisonLoading = false, comparisonPlaceholder = false, comparisonError = false,
+    transportLoading = false, transportError = false,
 }) => {
     const { isCompareMode, selectedYear, baselineYear, selectedBarangay, setSelectedBarangay } = filters;
-    const [expandedWhy, setExpandedWhy] = useState(false);
+    const headingRef = useRef(null);
+    const selectedRecord = selectedBarangay
+        ? survey.find(row => row.barangay.toLowerCase() === selectedBarangay.toLowerCase()) : null;
+    const transportRecord = selectedBarangay
+        ? transportVolume.find(row => row.barangay.toLowerCase() === selectedBarangay.toLowerCase()) : null;
+    const censusUpdating = surveyLoading || surveyPlaceholder || isMapDataUpdating
+        || (isCompareMode && (comparisonLoading || comparisonPlaceholder));
+    const hasObservations = selectedBarangay
+        ? Boolean(selectedRecord?.has_observations) : survey.some(row => row.has_observations);
+    const periodRecord = selectedRecord || survey[0];
+    const coverage = survey[0]?.coverage;
+    const pigs = selectedBarangay ? Number(selectedRecord?.total_pigs ?? 0) : totalPigs;
+    const share = totalPigs > 0 ? (pigs / totalPigs * 100).toFixed(1) : null;
+    const censusReady = !censusUpdating && !surveyError;
+    const censusDate = periodRecord?.census_date
+        ? new Date(`${periodRecord.census_date}T00:00:00`).toLocaleDateString('en-PH', {
+            month: 'short', day: 'numeric', year: 'numeric',
+        }) : null;
 
-    // Selected Barangay Dossier Data
-    const selectedBarangayRecord = selectedBarangay
-        ? survey.find(s => s.barangay.toLowerCase() === selectedBarangay.toLowerCase())
-        : null;
+    return (
+        <section aria-label={selectedBarangay ? `${selectedBarangay} census` : 'Sariaya census'}
+            className="min-w-0 rounded-xl border border-stone-200 bg-white p-4 font-sans text-sm text-stone-800 shadow-xs sm:p-5">
+            {selectedBarangay && (
+                <button type="button" onClick={() => {
+                    setSelectedBarangay(null);
+                    headingRef.current?.focus();
+                }} className="mb-4 flex min-h-10 w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
+                    <ArrowLeft size={16} aria-hidden="true" className="shrink-0" />
+                    Back to Sariaya overview
+                </button>
+            )}
 
-    const selectedTransportRecord = selectedBarangay
-        ? transportVolume.find(t => t.barangay.toLowerCase() === selectedBarangay.toLowerCase())
-        : null;
+            <header className="space-y-2 border-b border-stone-200 pb-4">
+                <p className="text-xs font-medium text-green-700">{selectedBarangay ? 'Barangay census' : 'Municipal census'}</p>
+                <h2 ref={headingRef} tabIndex={-1}
+                    className="rounded-md text-lg font-bold leading-snug tracking-tight wrap-break-word focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
+                    {selectedBarangay || 'Sariaya census'}
+                </h2>
+                <p className="text-xs leading-relaxed text-stone-600">
+                    {censusReady && periodRecord?.quarter
+                        ? `Q${periodRecord.quarter} ${periodRecord.year || selectedYear}${censusDate ? ` · Census dated ${censusDate}` : ''}`
+                        : `Selected year: ${selectedYear}`}
+                </p>
+            </header>
 
-    const bPigs = Number(selectedBarangayRecord?.total_pigs || 0);
-    const bBreakdown = selectedBarangayRecord?.breakdown || {};
-    const bTransported = Number(selectedTransportRecord?.total_transported || 0);
-    const bShare = totalPigs > 0 ? ((bPigs / totalPigs) * 100).toFixed(1) : '0.0';
-
-    // -------------------------------------------------------------------------
-    // VIEW A: SINGLE-BARANGAY FOCUSED DOSSIER (WHEN A BARANGAY IS SELECTED)
-    // -------------------------------------------------------------------------
-    if (selectedBarangay && selectedBarangayRecord) {
-        return (
-            <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-xs font-sans space-y-4">
-                {/* Back to Municipal Overview Button */}
-                <div className="flex items-center justify-between border-b border-stone-200 pb-2.5">
-                    <button
-                        type="button"
-                        onClick={() => setSelectedBarangay(null)}
-                        className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-stone-600 hover:text-green-700 transition-colors cursor-pointer"
-                    >
-                        <ArrowLeft size={14} />
-                        <span>Back to Sariaya Overview</span>
-                    </button>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-700 border border-green-600/40">
-                        {selectedBarangayRecord.density_level || 'Active'}
-                    </span>
-                </div>
-
-                {/* Barangay Header */}
-                <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 block">
-                        Inspecting Sector
-                    </span>
-                    <h2 className="text-xl font-black uppercase tracking-tight text-stone-800 leading-tight">
-                        {selectedBarangay}
-                    </h2>
-                </div>
-
-                {/* Key Metrics */}
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="p-3 bg-stone-50 rounded-lg border border-stone-200">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 block">
-                            Swine Census
-                        </span>
-                        <p className="text-lg font-black text-stone-800 font-mono mt-0.5 leading-none">
-                            {selectedBarangayRecord.has_observations ? bPigs.toLocaleString() : 'No data'}
-                        </p>
-                        <span className="text-[10px] text-stone-500 font-medium">
-                            {bShare}% of municipality
-                        </span>
+            <div aria-busy={censusUpdating} className="space-y-5 py-5">
+                <p role="status" className={censusUpdating ? 'text-xs text-stone-600' : 'sr-only'}>
+                    {censusUpdating ? (surveyLoading ? 'Loading census…' : 'Updating census…') : ''}
+                </p>
+                {censusUpdating ? (
+                    <div aria-hidden="true" className="space-y-3">
+                        <div className="h-3 w-24 rounded-md bg-stone-100" />
+                        <div className="h-10 w-36 rounded-md bg-stone-100" />
+                        <div className="h-3 w-3/4 rounded-md bg-stone-100" />
                     </div>
-
-                    <div className="p-3 bg-sky-50 rounded-lg border border-sky-200">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 block">
-                            Outbound Shipments
-                        </span>
-                        <p className="text-lg font-black text-sky-900 font-mono mt-0.5 leading-none flex items-center gap-1">
-                            <Truck size={15} />
-                            {bTransported.toLocaleString()}
-                        </p>
-                        <span className="text-[10px] text-sky-600 font-medium">
-                            Permits released
-                        </span>
+                ) : surveyError ? (
+                    <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 leading-relaxed">
+                        <p className="font-semibold">Census could not be loaded</p>
+                        <p className="mt-1 text-stone-600">Refresh the page to try again.</p>
                     </div>
-                </div>
-
-                {/* Herd Stage Breakdown */}
-                <div className="space-y-2 pt-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 block">
-                        Herd Stage Composition
-                    </span>
-                    <div className="space-y-1.5 text-xs">
-                        {[
-                            { key: 'inahin', label: 'Breeding Sows', color: 'bg-green-600' },
-                            { key: 'fattener', label: 'Market Fatteners', color: 'bg-amber-500' },
-                            { key: 'grower', label: 'Growing Stock', color: 'bg-sky-600' },
-                            { key: 'starter', label: 'Piglets / Starters', color: 'bg-purple-600' },
-                            { key: 'barako', label: 'Breeding Boars', color: 'bg-stone-500' },
-                            { key: 'bulaw', label: 'Bulaw', color: 'bg-stone-400' },
-                        ].map(stage => {
-                            const count = Number(bBreakdown[stage.key] || 0);
-                            if (count <= 0 && bPigs > 0) return null;
-                            const pct = bPigs > 0 ? Math.round((count / bPigs) * 100) : 0;
-                            return (
-                                <div key={stage.key} className="space-y-1">
-                                    <div className="flex justify-between items-center text-[11px]">
-                                        <span className="text-stone-600 font-medium">{stage.label}</span>
-                                        <span className="font-mono font-bold text-stone-800">
-                                            {count.toLocaleString()} <span className="text-[9px] text-stone-400 font-sans">({pct}%)</span>
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                        <div 
-                                            className={`h-full ${stage.color} rounded-full transition-all duration-300`}
-                                            style={{ width: `${pct}%` }}
-                                        />
-                                    </div>
+                ) : !hasObservations ? (
+                    <div className="space-y-2 leading-relaxed">
+                        <p className="font-semibold">No census observations for this period</p>
+                        <p className="text-stone-600">Try another year or date filter. Missing observations do not mean zero pigs.</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="space-y-2">
+                            <p className="text-xs font-medium text-stone-600">Recorded pigs</p>
+                            <p className="text-4xl font-semibold tracking-tight tabular-nums">{pigs.toLocaleString()}</p>
+                            {selectedBarangay ? (
+                                <div className="space-y-1 text-xs leading-relaxed text-stone-600">
+                                    {share !== null && <p>{share}% of the recorded municipal total</p>}
+                                    <p>{selectedRecord.raiser_count.toLocaleString()} reporting raisers</p>
+                                    <p>Population level: <span className="font-medium text-stone-800">{selectedRecord.density_level}</span></p>
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Sector Specific Operational Classification */}
-                {operationalTakeaway && (
-                    <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 space-y-1 text-xs">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-green-700 block">
-                            Sector Classification: {operationalTakeaway.category}
-                        </span>
-                        <p className="text-stone-700 leading-relaxed font-normal">
-                            {operationalTakeaway.insight}
-                        </p>
-                        {operationalTakeaway.action && (
-                            <div className="pt-1.5 border-t border-stone-200 text-[11px]">
-                                <span className="font-bold text-stone-800">Action: </span>
-                                <span className="text-stone-600">{operationalTakeaway.action}</span>
+                            ) : coverage && (
+                                <p className="text-xs leading-relaxed text-stone-600">
+                                    {coverage.observed_barangays} of {coverage.total_barangays} barangays reporting
+                                </p>
+                            )}
+                        </div>
+                        {selectedBarangay && (
+                            <div className="space-y-3 border-t border-stone-200 pt-4">
+                                <h3 className="text-base font-semibold">Herd breakdown</h3>
+                                <dl className="space-y-3">
+                                    {[
+                                        { key: 'inahin', label: 'Breeding sows' },
+                                        { key: 'fattener', label: 'Market fatteners' },
+                                        { key: 'grower', label: 'Growing stock' },
+                                        { key: 'starter', label: 'Piglets / starters' },
+                                        { key: 'barako', label: 'Breeding boars' },
+                                        { key: 'bulaw', label: 'Bulaw' },
+                                    ].map(stage => {
+                                        const count = Number(selectedRecord.breakdown?.[stage.key] ?? 0);
+                                        const percentage = pigs > 0 ? Math.round(count / pigs * 100) : null;
+                                        return (
+                                            <div key={stage.key} className="space-y-1.5">
+                                                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                                                    <dt className="text-stone-600">{stage.label}</dt>
+                                                    <dd className="font-medium tabular-nums">
+                                                        {count.toLocaleString()}
+                                                        {percentage !== null && <span className="ml-2 text-xs font-normal text-stone-600">{percentage}%</span>}
+                                                    </dd>
+                                                </div>
+                                                <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-stone-100">
+                                                    <div className="h-full rounded-full bg-stone-500" style={{ width: `${percentage ?? 0}%` }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </dl>
                             </div>
+                        )}
+                    </>
+                )}
+
+                {censusReady && !selectedBarangay && isCompareMode && (
+                    <div className="space-y-3 border-t border-stone-200 pt-4">
+                        <h3 className="text-base font-semibold">{baselineYear} to {selectedYear}</h3>
+                        {comparisonError ? (
+                            <p role="alert" className="text-stone-600">Comparison could not be loaded. Refresh the page to try again.</p>
+                        ) : comparisonStats ? (
+                            <>
+                                <dl className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <dt className="text-xs text-stone-600">{baselineYear} pigs</dt>
+                                        <dd className="mt-1 text-lg font-semibold tabular-nums">{comparisonStats.baseTotal.toLocaleString()}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs text-stone-600">{selectedYear} pigs</dt>
+                                        <dd className="mt-1 text-lg font-semibold tabular-nums">{comparisonStats.targetTotal.toLocaleString()}</dd>
+                                    </div>
+                                </dl>
+                                <p className={`font-semibold tabular-nums ${comparisonStats.netDiff > 0 ? 'text-green-700' : comparisonStats.netDiff < 0 ? 'text-red-700' : 'text-stone-800'}`}>
+                                    {comparisonStats.netDiff === 0
+                                        ? 'No change in recorded pigs'
+                                        : `${comparisonStats.netDiff > 0 ? '+' : '−'}${Math.abs(comparisonStats.netDiff).toLocaleString()} pigs (${comparisonStats.netDiff > 0 ? 'increase' : 'decrease'})`}
+                                    {comparisonStats.baseTotal > 0 && comparisonStats.netDiff !== 0 && ` · ${comparisonStats.netPct}%`}
+                                </p>
+                                {comparisonStats.baseTotal === 0 && <p className="text-xs text-stone-600">Percentage change unavailable because the baseline is zero.</p>}
+                                <p className="text-xs leading-relaxed text-stone-600">
+                                    Only barangays observed in both years are included. These comparison totals may differ from the municipal total above.
+                                </p>
+                                {comparisonStats.storySummary && <p className="text-xs leading-relaxed text-stone-600">{comparisonStats.storySummary}</p>}
+                            </>
+                        ) : (
+                            <p className="leading-relaxed text-stone-600">No matching quarter with observations is available for these years and filters.</p>
                         )}
                     </div>
                 )}
-            </div>
-        );
-    }
 
-    // -------------------------------------------------------------------------
-    // VIEW B: MUNICIPAL OVERVIEW MODE (DEFAULT VIEW WHEN NO BARANGAY IS SELECTED)
-    // -------------------------------------------------------------------------
-    return (
-        <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-xs font-sans space-y-4">
-            
-            {/* Header / Mode Indicator */}
-            <div className="flex items-center justify-between border-b border-stone-200 pb-2.5">
-                <div className="flex items-center gap-1.5 text-green-700">
-                    <ShieldCheck size={16} className="text-green-700 shrink-0" />
-                    <span className="text-xs font-black uppercase tracking-widest">
-                        Municipal Intelligence
-                    </span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                    {isCompareMode ? `${baselineYear} vs ${selectedYear}` : selectedYear}
-                </span>
-            </div>
-
-            {/* Compare Shifts Box (if compare mode is active) */}
-            {isCompareMode && comparisonStats && (
-                <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                            Municipal Census Shift
-                        </span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${
-                            comparisonStats.netDiff > 0 
-                                ? 'bg-green-50 text-green-700 border border-green-600/40' 
-                                : comparisonStats.netDiff < 0 
-                                    ? 'bg-red-50 text-red-700 border border-red-600/40'
-                                    : 'bg-stone-100 text-stone-700 border border-stone-200'
-                        }`}>
-                            {comparisonStats.netDiff > 0 && <TrendingUp size={12} />}
-                            {comparisonStats.netDiff < 0 && <TrendingDown size={12} />}
-                            {comparisonStats.netDiff > 0 
-                                ? `+${comparisonStats.netDiff.toLocaleString()} (+${comparisonStats.netPct}%)` 
-                                : comparisonStats.netDiff < 0 
-                                    ? `-${Math.abs(comparisonStats.netDiff).toLocaleString()} (-${comparisonStats.netPct}%)` 
-                                    : 'Stable'}
-                        </span>
+                {censusReady && hasObservations && operationalTakeaway && (
+                    <div className="space-y-3 border-t border-stone-200 pt-4">
+                        <h3 className="text-base font-semibold">{selectedBarangay ? 'Census note' : 'Census summary'}</h3>
+                        <p className="leading-relaxed text-stone-600">{operationalTakeaway.insight}</p>
+                        {operationalTakeaway.affectedBarangays?.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {operationalTakeaway.affectedBarangays.map(name => (
+                                    <button key={name} type="button" onClick={() => {
+                                        setSelectedBarangay(name);
+                                        headingRef.current?.focus();
+                                    }} className="inline-flex min-h-10 max-w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-green-50 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
+                                        <span className="min-w-0 wrap-break-word">{name}</span>
+                                        <ArrowUpRight size={14} aria-hidden="true" className="shrink-0" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {operationalTakeaway.action && (
+                            <p className="border-l-2 border-green-700 pl-3 leading-relaxed text-stone-600">
+                                <span className="block font-semibold text-stone-800">Suggested action</span>
+                                {operationalTakeaway.action}
+                            </p>
+                        )}
                     </div>
+                )}
 
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-stone-200">
-                        <div className="bg-white p-2 rounded-md border border-stone-200">
-                            <span className="text-[9px] text-stone-400 font-black uppercase tracking-widest block">{baselineYear} Base</span>
-                            <span className="font-bold text-stone-800 font-mono text-xs">
-                                {comparisonStats.baseTotal.toLocaleString()} pigs
-                            </span>
+                {censusReady && secondaryTakeaway && (
+                    <div className="space-y-2 border-t border-stone-200 pt-4">
+                        <h3 className="text-base font-semibold">{secondaryTakeaway.title}</h3>
+                        <p className="leading-relaxed text-stone-600">{secondaryTakeaway.insight}</p>
+                    </div>
+                )}
+                {censusReady && operationalTakeaway?.why && (
+                    <details key={`${selectedBarangay || 'municipal'}-${selectedYear}-${baselineYear}-${periodRecord?.census_date}`}
+                        className="border-t border-stone-200 pt-3">
+                        <summary className="min-h-10 cursor-pointer rounded-lg py-2 text-sm font-medium text-stone-600 marker:text-green-700 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
+                            How this is calculated
+                        </summary>
+                        <div className="mt-2 space-y-3 text-xs leading-relaxed text-stone-600">
+                            <p>{operationalTakeaway.why.summary}</p>
+                            {operationalTakeaway.why.formula && <p className="wrap-anywhere">{operationalTakeaway.why.formula}</p>}
+                            <dl className="space-y-2">
+                                {operationalTakeaway.why.evidence?.map((item, index) => (
+                                    <div key={index} className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+                                        <dt className="min-w-0 wrap-anywhere">{item.label}</dt>
+                                        <dd className="min-w-0 font-medium text-stone-800 tabular-nums wrap-anywhere">{item.value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
                         </div>
-                        <div className="bg-white p-2 rounded-md border border-stone-200">
-                            <span className="text-[9px] text-green-700 font-black uppercase tracking-widest block">{selectedYear} Target</span>
-                            <span className="font-bold text-stone-800 font-mono text-xs">
-                                {comparisonStats.targetTotal.toLocaleString()} pigs
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    </details>
+                )}
+            </div>
 
-            {/* Grounded Operational Takeaway Card */}
-            {operationalTakeaway && (
-                <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-600/40">
-                            {operationalTakeaway.category}
-                        </span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                            Audit-Grounded
-                        </span>
-                    </div>
-
-                    <h3 className="text-sm font-black text-stone-800 uppercase tracking-tight">
-                        {operationalTakeaway.title}
+            {selectedBarangay && (
+                <div className="space-y-2 border-t border-stone-200 pt-4">
+                    <h3 className="flex items-start gap-2 text-sm font-semibold">
+                        <Truck size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-sky-700" />
+                        Pigs on issued/released permits
                     </h3>
-
-                    <p className="text-xs text-stone-600 leading-relaxed font-normal">
-                        {operationalTakeaway.insight}
-                    </p>
-
-                    {/* Clickable Sector Links */}
-                    {operationalTakeaway.affectedBarangays?.length > 0 && (
-                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Focus Sector:</span>
-                            {operationalTakeaway.affectedBarangays.map(bName => (
-                                <button
-                                    key={bName}
-                                    type="button"
-                                    onClick={() => setSelectedBarangay(bName)}
-                                    className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-stone-100 hover:bg-green-50 text-stone-700 hover:text-green-700 rounded-md text-[10px] font-bold border border-stone-200 transition-colors cursor-pointer"
-                                    title={`Inspect ${bName}`}
-                                >
-                                    <span>{bName}</span>
-                                    <ArrowUpRight size={10} />
-                                </button>
-                            ))}
-                        </div>
+                    {transportLoading ? (
+                        <p role="status" className="text-xs text-stone-600">Loading transport figures…</p>
+                    ) : transportError ? (
+                        <p role="alert" className="text-xs leading-relaxed text-stone-600">Transport figures could not be loaded. Refresh the page to try again.</p>
+                    ) : transportRecord?.total_transported != null ? (
+                        <p className="text-xl font-semibold tabular-nums">{Number(transportRecord.total_transported).toLocaleString()} <span className="text-xs font-normal text-stone-600">pigs</span></p>
+                    ) : (
+                        <p className="text-xs text-stone-600">Transport figures unavailable for this barangay.</p>
                     )}
-
-                    {/* Priority Action */}
-                    {operationalTakeaway.action && (
-                        <div className="p-2.5 bg-green-50 rounded-lg border border-green-200 text-xs text-stone-800 space-y-0.5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-green-700 block">
-                                Priority Action:
-                            </span>
-                            <p className="leading-snug text-stone-700">{operationalTakeaway.action}</p>
-                        </div>
-                    )}
-
-                    {/* Collapsible "Why this conclusion?" Audit Drawer */}
-                    {operationalTakeaway.why && (
-                        <div className="pt-2 border-t border-stone-200">
-                            <button
-                                type="button"
-                                onClick={() => setExpandedWhy(prev => !prev)}
-                                className="flex items-center justify-between w-full py-1 text-xs font-bold text-stone-600 hover:text-stone-800 transition-colors cursor-pointer"
-                            >
-                                <span className="flex items-center gap-1.5">
-                                    <Calculator size={13} className="text-stone-400" />
-                                    Why this conclusion?
-                                </span>
-                                {expandedWhy ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            </button>
-
-                            {expandedWhy && (
-                                <div className="mt-2 p-2.5 bg-stone-50 rounded-lg border border-stone-200 space-y-2 text-[10px]">
-                                    <div className="space-y-0.5">
-                                        <span className="font-black text-stone-500 uppercase tracking-widest text-[9px] block">
-                                            Reasoning Rule:
-                                        </span>
-                                        <p className="text-stone-700 font-medium">
-                                            {operationalTakeaway.why.summary}
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-0.5">
-                                        <span className="font-black text-stone-500 uppercase tracking-widest text-[9px] block">
-                                            Trigger Formula:
-                                        </span>
-                                        <code className="bg-white p-1 rounded-md border border-stone-200 font-mono text-green-700 block text-[9px] break-all">
-                                            {operationalTakeaway.why.formula}
-                                        </code>
-                                    </div>
-
-                                    {operationalTakeaway.why.evidence?.length > 0 && (
-                                        <div className="space-y-1 pt-1 border-t border-stone-200">
-                                            <span className="font-black text-stone-500 uppercase tracking-widest text-[9px] block">
-                                                Underlying Census Data:
-                                            </span>
-                                            <div className="grid grid-cols-1 gap-1">
-                                                {operationalTakeaway.why.evidence.map((ev, i) => (
-                                                    <div key={i} className="flex justify-between items-center bg-white px-2 py-0.5 rounded-md border border-stone-200">
-                                                        <span className="text-stone-500 font-medium">{ev.label}</span>
-                                                        <span className="font-mono font-bold text-stone-800">{ev.value}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    <p className="text-xs leading-relaxed text-stone-600">All dates; independent of census filters.</p>
                 </div>
             )}
-
-            {/* Secondary Operational Note */}
-            {secondaryTakeaway && (
-                <div className="pt-2.5 border-t border-stone-200 space-y-1 text-xs">
-                    <span className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
-                        {secondaryTakeaway.category}
-                    </span>
-                    <h4 className="text-xs font-bold text-stone-800 uppercase tracking-tight">
-                        {secondaryTakeaway.title}
-                    </h4>
-                    <p className="text-stone-600 leading-snug font-normal text-[11px]">
-                        {secondaryTakeaway.insight}
-                    </p>
-                </div>
-            )}
-        </div>
+        </section>
     );
 };
 

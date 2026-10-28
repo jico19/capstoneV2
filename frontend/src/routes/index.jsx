@@ -4,10 +4,12 @@ import { lazy, Suspense } from "react";
 import ProtectedRoute from "./protectedRoute";
 import RootRedirect from "./RootRedirect";
 
-// Use a shared loading fallback
+// Route and authentication transitions use a spinner. Skeletons belong to
+// data regions inside a mounted portal page, where the layout is known.
 const PageLoader = () => (
-    <div className="flex items-center justify-center min-h-screen bg-white">
-        <span className="loading loading-spinner loading-lg text-green-700"></span>
+    <div role="status" aria-label="Loading page..." className="flex items-center justify-center min-h-[400px]">
+        <span aria-hidden="true" className="loading loading-spinner loading-lg text-green-700" />
+        <span className="sr-only">Loading page...</span>
     </div>
 );
 

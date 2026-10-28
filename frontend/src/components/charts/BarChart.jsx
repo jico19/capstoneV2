@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from '../ui/loadingContext';
 import {
     BarChart,
     Bar,
@@ -21,6 +23,13 @@ const BarChartComponent = ({
     height = 300,
     barColor = '#16a34a', // Default to Primary Green
 }) => {
+    const isLoading = useContentLoading();
+    if (isLoading) return (
+        <div className="w-full min-w-0" style={{ height }} aria-hidden="true">
+            <Skeleton height={height} containerClassName="block w-full leading-none" />
+        </div>
+    );
+
     const formatDate = (dateString) => {
         if (!dateString) return "";
         

@@ -146,14 +146,9 @@ const NotificationPage = () => {
 
             {/* Notifications Feed */}
             {isLoading ? (
-                /* Skeleton Shimmers */
-                <div className="space-y-3">
-                    {[1, 2, 3, 4].map((i) => (
-                        <div
-                            key={i}
-                            className="skeleton-shimmer h-24 rounded-xl border border-stone-200 bg-white/70"
-                        />
-                    ))}
+                /* Loading notifications */
+                <div role="status" aria-label="Loading notifications..." className="space-y-3">
+                    {[1, 2, 3, 4].map(i => <NotificationItem key={i} isLoading />)}
                 </div>
             ) : isError ? (
                 <div className="bg-red-50 text-red-700 border border-red-200 p-6 rounded-xl text-center text-xs font-medium space-y-2">

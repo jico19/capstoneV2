@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import {
     CheckCircle,
     Clock,
@@ -19,16 +20,7 @@ const OpvDashboard = () => {
     const { data: metrics, isLoading, isError } = useGetOPVDashboard();
     const { data: insightData, isLoading: isInsightLoading } = useGetDashboardInsights('OPV');
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-none">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4 animate-pulse">Syncing intelligence metrics</p>
-            </div>
-        );
-    }
-
-    if (isError || !metrics) {
+    if (isError || (!isLoading && !metrics)) {
         return (
             <div className="p-10 text-center text-red-700 bg-red-50 border border-red-200 rounded-none font-black uppercase tracking-widest text-xs max-w-3xl mx-auto mt-10">
                 Critical Error: Failed to fetch dashboard intelligence.
@@ -36,9 +28,10 @@ const OpvDashboard = () => {
         );
     }
 
-    const { kpis, charts } = metrics;
+    const { kpis = {}, charts = {} } = metrics || {};
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="mx-auto p-4 md:p-8 space-y-12 bg-white min-h-screen font-sans rounded-none">
             {/* Flat Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-stone-100 pb-10">
@@ -175,6 +168,7 @@ const OpvDashboard = () => {
                 </div>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

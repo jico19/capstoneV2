@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import MapLibreGL from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -87,15 +88,8 @@ function useMap() {
 
 function DefaultLoader() {
   return (
-    <div
-      className="bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-xs">
-      <div className="flex gap-1">
-        <span className="bg-muted-foreground/60 size-1.5 animate-pulse rounded-full" />
-        <span
-          className="bg-muted-foreground/60 size-1.5 animate-pulse rounded-full [animation-delay:150ms]" />
-        <span
-          className="bg-muted-foreground/60 size-1.5 animate-pulse rounded-full [animation-delay:300ms]" />
-      </div>
+    <div role="status" aria-label="Loading map..." className="bg-background absolute inset-0 z-10 p-4">
+      <Skeleton height="100%" containerClassName="block h-full" />
     </div>
   );
 }

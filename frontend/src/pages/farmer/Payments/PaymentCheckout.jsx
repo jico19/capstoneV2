@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft, CreditCard, Wallet, FileText, ChevronRight, AlertCircle, Download, Info, Clock, QrCode, Smartphone } from 'lucide-react';
@@ -193,7 +194,7 @@ const PaymentCheckout = () => {
         if (!qrData?.qr_image_url) return;
         const link = document.createElement('a');
         link.href = qrData.qr_image_url;
-        link.download = `FarmPass_QRPH_Payment_${totalPrice}PHP.png`;
+        link.download = `FarmPass_QRPH_Payment_${isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}PHP.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -209,14 +210,6 @@ const PaymentCheckout = () => {
         setIsLoading(false);
     };
 
-    if (isApplicationLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Loading payment details...</p>
-            </div>
-        );
-    }
 
     if (isError) {
         return (
@@ -248,8 +241,8 @@ const PaymentCheckout = () => {
                     title={paymentMode === 'online' ? "Confirm Fee Payment?" : "Generate Payment QR?"}
                     message={
                         paymentMode === 'online'
-                            ? `Are you sure you want to proceed to pay the permit fee of ₱${totalPrice}? This will open the secure PayMongo checkout gateway.`
-                            : `Generate a dynamic QR Ph code for ₱${totalPrice}? You can save this code and show it at any local store to pay in cash.`
+                            ? `Are you sure you want to proceed to pay the permit fee of ₱${isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}? This will open the secure PayMongo checkout gateway.`
+                            : `Generate a dynamic QR Ph code for ₱${isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}? You can save this code and show it at any local store to pay in cash.`
                     }
                     yesText={paymentMode === 'online' ? "Proceed to Pay" : "Generate QR"}
                     yesVariant="success"
@@ -297,11 +290,11 @@ const PaymentCheckout = () => {
                                 <div className="px-6 py-5 bg-stone-50/50 flex justify-between items-center">
                                     <div>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Total Payable</p>
-                                        <p className="text-2xl font-black text-stone-800 font-mono">₱{totalPrice}</p>
+                                        <p className="text-2xl font-black text-stone-800 font-mono">₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Permit Ref</p>
-                                        <p className="text-xs font-mono font-bold text-stone-700">#{application?.application_id}</p>
+                                        <p className="text-xs font-mono font-bold text-stone-700">#{isApplicationLoading ? <Skeleton width="10ch" /> : application?.application_id}</p>
                                     </div>
                                 </div>
 
@@ -402,7 +395,7 @@ const PaymentCheckout = () => {
                                                     Local Cash Merchant Mode
                                                 </p>
                                                 <p className="text-[9px] text-stone-500 font-medium leading-relaxed">
-                                                    Simulates the local store merchant receiving ₱{totalPrice} in cash and scanning your QR Ph payment code.
+                                                    Simulates the local store merchant receiving ₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice} in cash and scanning your QR Ph payment code.
                                                 </p>
                                             </div>
                                         )}
@@ -480,7 +473,7 @@ const PaymentCheckout = () => {
                                 <div className="bg-amber-50 border border-amber-200 p-3 flex gap-2 items-start">
                                     <Info size={14} className="text-amber-700 shrink-0 mt-0.5" />
                                     <p className="text-[9px] text-amber-800 font-medium leading-relaxed uppercase">
-                                        Simulated transaction for <strong>₱{totalPrice}</strong>. Clicking Authorize will confirm payment with the Municipal Agri Office.
+                                        Simulated transaction for <strong>₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}</strong>. Clicking Authorize will confirm payment with the Municipal Agri Office.
                                     </p>
                                 </div>
 
@@ -491,7 +484,7 @@ const PaymentCheckout = () => {
                                         onClick={handleSandboxExecutePayment}
                                         className="w-full bg-green-700 hover:bg-green-600 text-white py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors rounded-none"
                                     >
-                                        Authorize & Pay ₱{totalPrice} with {sandboxMethod.toUpperCase()}
+                                        Authorize & Pay ₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice} with {sandboxMethod.toUpperCase()}
                                     </button>
                                     <button
                                         type="button"
@@ -597,21 +590,21 @@ const PaymentCheckout = () => {
                                 <div className="p-4 sm:p-6 divide-y divide-stone-100">
                                     <div className="flex justify-between py-3 sm:py-4 first:pt-0">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Reference ID</span>
-                                        <span className="font-mono font-black text-stone-800 text-xs sm:text-sm">{application?.application_id}</span>
+                                        <span className="font-mono font-black text-stone-800 text-xs sm:text-sm">{isApplicationLoading ? <Skeleton width="10ch" /> : application?.application_id}</span>
                                     </div>
                                     <div className="flex justify-between py-3 sm:py-4">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Destination</span>
                                         <span className="font-black text-stone-800 text-xs uppercase text-right max-w-[180px] sm:max-w-[200px]">
-                                             {application?.destination}
+                                             {isApplicationLoading ? <Skeleton width="10ch" /> : application?.destination}
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-3 sm:py-4">
                                         <span className="text-xs font-black uppercase tracking-widest text-stone-800">Official Permit Fee</span>
-                                        <span className="text-xl sm:text-2xl font-black text-green-700 font-mono">₱{totalPrice}</span>
+                                        <span className="text-xl sm:text-2xl font-black text-green-700 font-mono">₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}</span>
                                     </div>
                                     <div className="flex justify-between py-3 sm:py-4 last:pb-0 border-t border-stone-100">
                                         <span className="text-xs font-black uppercase tracking-widest text-stone-800">Total Due</span>
-                                        <span className="text-xl sm:text-2xl font-black text-green-700 font-mono">₱{totalPrice}</span>
+                                        <span className="text-xl sm:text-2xl font-black text-green-700 font-mono">₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}</span>
                                     </div>
                                 </div>
                             </div>
@@ -675,7 +668,7 @@ const PaymentCheckout = () => {
                                 <div className="space-y-3 sm:space-y-4">
                                     <button
                                         onClick={() => setShowConfirm(true)}
-                                        disabled={isLoading || isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))}
+                                        disabled={isApplicationLoading || isLoading || isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))}
                                         className="bg-green-700 hover:bg-green-600 text-white w-full py-3.5 sm:py-5 rounded-md font-black text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                                     >
                                         {isLoading ? (
@@ -696,7 +689,7 @@ const PaymentCheckout = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleStartSandbox('gcash')}
-                                            disabled={isLoading || isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))}
+                                            disabled={isApplicationLoading || isLoading || isExpired || (application?.issued_permit?.payment_deadline && new Date() > new Date(application.issued_permit.payment_deadline))}
                                             className="border border-stone-300 hover:bg-stone-100 text-stone-700 w-full py-3 sm:py-3.5 rounded-md font-black text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <ShieldCheck size={14} className="text-green-700" />
@@ -769,7 +762,7 @@ const PaymentCheckout = () => {
                                             <li>Save the QR code picture to your phone using the button above.</li>
                                             <li>Go to your nearest local cash merchant that accepts GCash, Maya, or QR Ph.</li>
                                             <li>Show the saved QR code picture to the store keeper.</li>
-                                            <li>Pay the store keeper <strong>₱{totalPrice}</strong> in cash.</li>
+                                            <li>Pay the store keeper <strong>₱{isApplicationLoading ? <Skeleton width="10ch" /> : totalPrice}</strong> in cash.</li>
                                             <li>Ask the store keeper to scan the QR code using their GCash/Maya app to send the payment.</li>
                                         </ol>
                                         <p className="text-[9px] text-stone-400 font-bold leading-normal uppercase">

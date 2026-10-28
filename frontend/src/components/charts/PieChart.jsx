@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from '../ui/loadingContext';
 import {
     PieChart,
     Pie,
@@ -19,6 +21,13 @@ const PieChartComponent = ({
     valueKey = 'count',
     height = 400,
 }) => {
+    const isLoading = useContentLoading();
+    if (isLoading) return (
+        <div className="w-full min-w-0" style={{ height }} aria-hidden="true">
+            <Skeleton height={height} containerClassName="block w-full leading-none" />
+        </div>
+    );
+
     return (
         <div className="w-full" style={{ height: height || 400 }}>
             <ResponsiveContainer width="100%" height="100%">

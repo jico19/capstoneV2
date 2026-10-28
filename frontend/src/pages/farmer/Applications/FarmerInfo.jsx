@@ -1,3 +1,5 @@
+import { useContentLoading } from '../../../components/ui/loadingContext';
+import LoadingField from '../../../components/ui/LoadingField';
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetMaps } from '../../../hooks/useMaps';
 import { Navigation, Calendar, Plus, ArrowRight, ChevronRight, ChevronDown, User, Phone, MapPin } from "lucide-react";
@@ -88,7 +90,9 @@ const Stepper = ({ fieldName, watch, setValue }) => {
 };
 
 const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrigin, watch, setValue }) => {
-    const { data: map, isLoading, isError } = useGetMaps();
+    const { data: map, isLoading: mapLoading, isError } = useGetMaps();
+    const inheritedLoading = useContentLoading();
+    const isLoading = mapLoading || inheritedLoading;
     const [activeOriginId, setActiveOriginId] = useState(origins[0]?.id || null);
     const prevLength = useRef(origins.length);
 
@@ -161,7 +165,6 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
         setValue('destination', formatted, { shouldValidate: !!selectedBarangay });
     }, [selectedMuniKey, selectedBarangay, destinationStreet, setValue]);
 
-    if (isLoading) return <div className="p-12 text-center font-bold text-stone-400 uppercase tracking-widest text-xs bg-white border border-stone-200">Loading Barangay Data...</div>;
     if (isError) return <div className="p-12 text-center text-red-600 font-bold bg-red-50 border border-red-200 uppercase tracking-widest text-xs">Failed to load barangay data.</div>;
 
     const inputClass = (error) => `w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3.5 bg-white border ${error ? 'border-red-600 bg-red-50' : 'border-stone-200'} rounded-md focus:ring-0 focus:border-green-700 outline-none transition-colors text-xs sm:text-sm font-medium text-stone-800`;
@@ -227,13 +230,13 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                 <div className="p-5 border-t border-stone-200 bg-stone-50/10 space-y-5">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest mb-1 block">Barangay where the pigs are now</label>
-                                        <select 
+                                        <LoadingField loading={isLoading}><select
                                             {...register(`barangay_${origin.id}`, { required: true })} 
                                             className={selectClass(errors[`barangay_${origin.id}`])}
                                         >
                                             <option value="">-- SELECT BARANGAY --</option>
                                             {map?.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                                        </select>
+                                        </select></LoadingField>
                                         {errors[`barangay_${origin.id}`] && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Please select a starting barangay</p>}
                                     </div>
 
@@ -249,12 +252,12 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                                 </label>
                                                 <div className="relative">
                                                     <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                                                    <input
+                                                    <LoadingField loading={isLoading}><input
                                                         type="text"
                                                         {...register(`source_farmer_name_${origin.id}`)}
                                                         placeholder="e.g. Juan Dela Cruz"
                                                         className="w-full pl-9 pr-3 py-2.5 bg-stone-50/50 border border-stone-200 rounded-none focus:ring-0 focus:border-green-700 outline-none text-xs font-medium text-stone-800 placeholder:text-stone-400"
-                                                    />
+                                                    /></LoadingField>
                                                 </div>
                                                 <p className="text-[8px] text-stone-400 font-medium">Owner/grower of the pigs in this barangay</p>
                                             </div>
@@ -265,12 +268,12 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                                 </label>
                                                 <div className="relative">
                                                     <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                                                    <input
+                                                    <LoadingField loading={isLoading}><input
                                                         type="tel"
                                                         {...register(`source_phone_no_${origin.id}`)}
                                                         placeholder="09XXXXXXXXX"
                                                         className="w-full pl-9 pr-3 py-2.5 bg-stone-50/50 border border-stone-200 rounded-none focus:ring-0 focus:border-green-700 outline-none text-xs font-medium text-stone-800 placeholder:text-stone-400"
-                                                    />
+                                                    /></LoadingField>
                                                 </div>
                                                 <p className="text-[8px] text-stone-400 font-medium">Will receive SMS when pigs are verified at checkpoints</p>
                                             </div>
@@ -278,12 +281,12 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                     </div>
                                     
                                     <div className="space-y-2 pt-2">
-                                        <input
+                                        <LoadingField loading={isLoading}><input
                                             type="hidden"
                                             {...register(`pigs_total_${origin.id}`, {
                                                 validate: () => getOriginTotal(origin.id) > 0 || "At least one pig must be specified for transport"
                                             })}
-                                        />
+                                        /></LoadingField>
                                         <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">
                                             How many pigs are you transporting? <span className="text-red-500">*</span>
                                         </label>
@@ -358,7 +361,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                             <label className="text-[9px] font-black text-stone-500 uppercase tracking-widest block">
                                 Destination City / Municipality <span className="text-red-500">*</span>
                             </label>
-                            <select
+                            <LoadingField loading={isLoading}><select
                                 className={selectClass(errors.destination_municipality)}
                                 {...register('destination_municipality', { required: 'Please select municipality' })}
                             >
@@ -372,7 +375,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                         ))}
                                     </optgroup>
                                 ))}
-                            </select>
+                            </select></LoadingField>
                             {errors.destination_municipality && (
                                 <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">
                                     {errors.destination_municipality.message || 'Municipality is required'}
@@ -385,7 +388,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                             <label className="text-[9px] font-black text-stone-500 uppercase tracking-widest block">
                                 Destination Barangay <span className="text-red-500">*</span>
                             </label>
-                            <select
+                            <LoadingField loading={isLoading}><select
                                 disabled={!selectedMuniKey}
                                 className={`${selectClass(errors.destination_barangay)} disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed`}
                                 {...register('destination_barangay', { required: 'Please select barangay' })}
@@ -398,7 +401,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                         {b}
                                     </option>
                                 ))}
-                            </select>
+                            </select></LoadingField>
                             {errors.destination_barangay && (
                                 <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">
                                     {errors.destination_barangay.message || 'Barangay is required'}
@@ -414,20 +417,20 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                         </label>
                         <div className="relative">
                             <MapPin className="absolute left-3 top-3.5 text-stone-400" size={16} />
-                            <input
+                            <LoadingField loading={isLoading}><input
                                 type="text"
                                 placeholder="e.g. Purok 4, Green Valley Farm, Slaughterhouse Compound"
                                 className={inputClass(false)}
                                 {...register('destination_street')}
-                            />
+                            /></LoadingField>
                         </div>
                     </div>
 
                     {/* Hidden synchronized destination input for form submission */}
-                    <input
+                    <LoadingField loading={isLoading}><input
                         type="hidden"
                         {...register('destination', { required: 'Destination is required' })}
-                    />
+                    /></LoadingField>
 
                     {/* Destination Preview Tag */}
                     {watch('destination') && (
@@ -450,12 +453,12 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                         </div>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-4 text-stone-400" size={16} />
-                            <input 
+                            <LoadingField loading={isLoading}><input
                                 type="date" 
                                 min={minDate} 
                                 className={inputClass(errors.transport_date)} 
                                 {...register('transport_date', { required: true })} 
-                            />
+                            /></LoadingField>
                         </div>
                         {errors.transport_date && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Date is required</p>}
                     </div>
@@ -482,7 +485,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
 
                             return (
                                 <>
-                                    <select 
+                                    <LoadingField loading={isLoading}><select
                                         className={selectClass(errors.purpose)} 
                                         {...register('purpose', { required: true })} 
                                     >
@@ -493,7 +496,7 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                         <option value="Sale / Commercial">Sale to Buyer / Pagbebenta</option>
                                         <option value="Transfer / Relocation">Transfer to another Farm / Paglipat ng Bukid</option>
                                         <option value="Other">Other / Iba pa</option>
-                                    </select>
+                                    </select></LoadingField>
                                     {!isSlaughterAllowed && (
                                         <p className="text-[10px] font-bold text-amber-800 bg-amber-50 p-2.5 border border-amber-200 mt-1">
                                             Note: "Slaughter" option is unavailable because your shipment consists only of young/growing pigs (Starter, Grower, Bulaw) which are intended for raising or breeding, not immediate slaughter.
@@ -502,12 +505,12 @@ const FarmerInfo = ({ register, errors, nextStep, origins, addOrigin, removeOrig
                                     {currentPurpose === 'Other' && (
                                         <div className="mt-2">
                                             <label className="text-[10px] font-black text-stone-600 uppercase tracking-widest block mb-1">Please Specify Purpose</label>
-                                            <input 
+                                            <LoadingField loading={isLoading}><input
                                                 type="text" 
                                                 placeholder="Enter specific transport reason..." 
                                                 className={inputClass(errors.other_purpose)} 
                                                 {...register('other_purpose', { required: currentPurpose === 'Other' })} 
-                                            />
+                                            /></LoadingField>
                                             {errors.other_purpose && <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">Please specify the purpose</p>}
                                         </div>
                                     )}

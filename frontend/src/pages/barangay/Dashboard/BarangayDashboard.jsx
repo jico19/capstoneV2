@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import useAuthStore from '../../../store/authStore';
@@ -59,15 +60,7 @@ const BarangayDashboard = () => {
 
     const isPageLoading = isDensityLoading || isSurveysLoading || isHistoryLoading;
 
-    if (isPageLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-            </div>
-        );
-    }
-
-    // Chart 1: Current Stage Breakdown mapping
+// Chart 1: Current Stage Breakdown mapping
     const stageChartData = [
         { type: 'Inahin', count: barangayStats.breakdown.inahin },
         { type: 'Barako', count: barangayStats.breakdown.barako },
@@ -84,6 +77,7 @@ const BarangayDashboard = () => {
     }));
 
     return (
+        <LoadingLayout loading={isPageLoading}>
         <div className="p-4 md:p-8 space-y-8 bg-stone-50/50 min-h-full">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-200 pb-6 gap-4">
@@ -144,7 +138,7 @@ const BarangayDashboard = () => {
                         <p className="text-[10px] text-stone-400 font-medium mt-1">Current distribution of pigs by category in {user?.barangay_name}.</p>
                     </div>
                     <div className="flex-1 min-h-[250px] bg-white border border-stone-50 p-4">
-                        {barangayStats.total_pigs > 0 ? (
+                        {isPageLoading || barangayStats.total_pigs > 0 ? (
                             <>
                                 <BarChartComponent
                                     data={stageChartData}
@@ -174,7 +168,7 @@ const BarangayDashboard = () => {
                         <p className="text-[10px] text-stone-400 font-medium mt-1">Quarterly census totals, using the latest observation per raiser.</p>
                     </div>
                     <div className="flex-1 min-h-[250px] bg-white border border-stone-50 p-4">
-                        {trendChartData.length > 0 ? (
+                        {isPageLoading || trendChartData.length > 0 ? (
                             <>
                                 <LineChartComponent
                                     data={trendChartData}
@@ -279,6 +273,7 @@ const BarangayDashboard = () => {
                 </div>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

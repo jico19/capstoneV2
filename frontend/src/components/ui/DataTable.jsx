@@ -1,4 +1,6 @@
-import { Inbox, Loader2 } from "lucide-react";
+import { useContentLoading } from './loadingContext';
+import Skeleton from 'react-loading-skeleton';
+import { Inbox } from "lucide-react";
 import Pagination from "./Pagination";
 
 /**
@@ -15,7 +17,7 @@ const DataTable = ({
     columns = [],
     data = [],
     keyField = "id",
-    isLoading = false,
+    isLoading: loading = false,
     loadingMessage = "Loading records...",
     emptyState = {},
     onRowClick,
@@ -24,6 +26,8 @@ const DataTable = ({
     pagination = null,
     mobileRenderer = null,
 }) => {
+    const inheritedLoading = useContentLoading();
+    const isLoading = loading || inheritedLoading;
     const {
         icon: EmptyIcon = Inbox,
         title: emptyTitle = "No records found",
@@ -45,17 +49,18 @@ const DataTable = ({
     };
 
     return (
-        <div className={`border border-stone-200 bg-white rounded-xl overflow-hidden shadow-xs ${className}`}>
+        <div aria-busy={isLoading} className={`border border-stone-200 bg-white rounded-xl overflow-hidden shadow-xs ${className}`}>
+            {isLoading && <span role="status" className="sr-only">{loadingMessage}</span>}
             {/* Optional Mobile Card View Slot */}
             {mobileRenderer && (
                 <div className="block sm:hidden">
                     {isLoading ? (
-                        <div className="p-4 space-y-3">
+                        <div aria-hidden="true" className="p-4 space-y-3">
                             {[1, 2, 3].map((item) => (
                                 <div key={item} className="p-4 border border-stone-200 rounded-xl space-y-2.5">
-                                    <div className="skeleton-shimmer h-4 w-1/3 rounded-md" />
-                                    <div className="skeleton-shimmer h-3 w-3/4 rounded-md" />
-                                    <div className="skeleton-shimmer h-3 w-1/2 rounded-md" />
+                                    <Skeleton width="33%" height={16} />
+                                    <Skeleton width="75%" height={12} />
+                                    <Skeleton width="50%" height={12} />
                                 </div>
                             ))}
                         </div>
@@ -105,13 +110,10 @@ const DataTable = ({
                         {isLoading ? (
                             <>
                                 {[1, 2, 3, 4].map((item) => (
-                                    <tr key={item} className="animate-pulse">
+                                    <tr key={item} aria-hidden="true">
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className="px-6 py-4.5">
-                                                <div 
-                                                    className="skeleton-shimmer h-4 rounded-md" 
-                                                    style={{ width: `${Math.max(40, (colIdx * 17 + 55) % 85)}%` }}
-                                                />
+                                                <Skeleton height={16} width={`${Math.max(40, (colIdx * 17 + 55) % 85)}%`} />
                                             </td>
                                         ))}
                                     </tr>

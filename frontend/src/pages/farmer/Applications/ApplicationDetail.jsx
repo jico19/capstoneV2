@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useNavigate, useParams } from "react-router-dom"
 import { useApplicationDetail } from '../../../hooks/useApplications'
 import ApplicationHeader from "../../../components/ui/ApplicationHeader"
@@ -25,7 +26,8 @@ const ApplicationDetail = () => {
     const [selectedDocId, setSelectedDocId] = useState(null)
     const [isCancelling, setIsCancelling] = useState(false)
     const [confirmCancel, setConfirmCancel] = useState(false)
-    const { data: application, isLoading, isError } = useApplicationDetail(id)
+    const { data: applicationData, isLoading, isError } = useApplicationDetail(id)
+    const application = applicationData || {};
 
     const handleCancelRequest = async () => {
         setIsCancelling(true);
@@ -41,12 +43,7 @@ const ApplicationDetail = () => {
         }
     };
 
-    if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
-            <span className="loading loading-spinner loading-lg text-green-600"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Retrieving Application...</p>
-        </div>
-    );
+
 
     if (isError) return (
         <div className="max-w-5xl mx-auto p-4 md:p-12 min-h-full bg-white">
@@ -64,6 +61,7 @@ const ApplicationDetail = () => {
 
 
     return (
+        <LoadingLayout loading={isLoading}>
         <>
             {selectedDocId && (
                 <DocumentViewModal 
@@ -269,6 +267,7 @@ const ApplicationDetail = () => {
                 isSubmitting={isCancelling}
             />
         </>
+        </LoadingLayout>
     )
 }
 

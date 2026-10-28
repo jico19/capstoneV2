@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useParams, Link } from "react-router-dom"
 import { useGetPermit } from '../../../hooks/useApplications'
 import {
@@ -16,16 +17,6 @@ const DownloadApplication = () => {
     const { id } = useParams()
     const { data: docs, isLoading, isError } = useGetPermit(id)
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-stone-400 font-black uppercase text-[10px] tracking-widest">
-                    Preparing your documents...
-                </p>
-            </div>
-        );
-    }
 
     if (isError) {
         return (
@@ -50,6 +41,7 @@ const DownloadApplication = () => {
     }
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="min-h-screen bg-stone-50/50 p-6 lg:p-12">
             <div className="max-w-4xl mx-auto space-y-12">
                 
@@ -149,6 +141,7 @@ const DownloadApplication = () => {
                 </div>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

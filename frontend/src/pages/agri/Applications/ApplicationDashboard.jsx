@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useNavigate } from "react-router-dom";
 import { Eye, Inbox, AlertCircle, Clock, CheckCircle, Search, Filter } from "lucide-react";
 import DateFormatter from "../../../components/ui/DateFormatter";
@@ -95,15 +96,6 @@ const ApplicationDashboard = () => {
         return diffHours >= 48;
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
-                <span className="loading loading-spinner loading-lg text-green-600"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Opening Registry...</p>
-            </div>
-        );
-    }
-
     if (isError) {
         return (
             <div className="p-4 md:p-8">
@@ -170,6 +162,7 @@ const ApplicationDashboard = () => {
     ];
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="flex-1 p-4 md:p-8 space-y-8 bg-white min-h-full font-sans">
             
             {/* 1. Header Section */}
@@ -289,6 +282,7 @@ const ApplicationDashboard = () => {
                 } : null}
             />
         </div>
+        </LoadingLayout>
     );
 };
 

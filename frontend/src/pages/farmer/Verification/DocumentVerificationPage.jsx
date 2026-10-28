@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
@@ -45,7 +46,7 @@ const DocumentVerificationPage = () => {
 
 
     // Fetch existing documents from backend
-    const { data: docData } = useQuery({
+    const { data: docData, isLoading: documentsLoading, isError: documentsError, refetch: refetchDocuments } = useQuery({
         queryKey: ['farmer-documents'],
         queryFn: async () => {
             const res = await api.get('/user/documents/');
@@ -140,6 +141,13 @@ const DocumentVerificationPage = () => {
         },
     });
 
+
+    if (documentsError) return (
+        <div role="alert" className="p-6 space-y-4 text-sm text-stone-700">
+            <p>We could not load your verification documents.</p>
+            <button type="button" onClick={() => refetchDocuments()} className="px-4 py-3 rounded-lg bg-green-700 text-white">Try again</button>
+        </div>
+    );
 
     const status = docData?.verification_status || user?.verification_status || 'UNVERIFIED';
     const remarks = docData?.verification_remarks || user?.verification_remarks;
@@ -322,7 +330,7 @@ const DocumentVerificationPage = () => {
                 </div>
             )}
 
-            {status === 'UNVERIFIED' && (
+            {!documentsLoading && status === 'UNVERIFIED' && (
                 <div className="bg-stone-100 border border-stone-300 p-3.5 sm:p-5 flex items-start gap-3 sm:gap-4 rounded-md">
                     <AlertTriangle className="text-stone-700 mt-0.5 flex-shrink-0" size={22} />
                     <div className="space-y-1">
@@ -336,6 +344,7 @@ const DocumentVerificationPage = () => {
                 </div>
             )}
 
+            {documentsLoading && <span role="status" className="sr-only">Loading verification documents...</span>}
             {/* Document Upload Cards */}
             <div className="space-y-4">
                 {DOC_CONFIG.map((cfg, index) => {
@@ -349,8 +358,10 @@ const DocumentVerificationPage = () => {
                     return (
                         <div
                             key={cfg.type}
-                            className="bg-white border border-stone-200 p-3.5 sm:p-5 space-y-3 sm:space-y-4 rounded-md transition-all hover:border-stone-300"
+                            className="relative bg-white border border-stone-200 p-3.5 sm:p-5 space-y-3 sm:space-y-4 rounded-md transition-all hover:border-stone-300"
+                            inert={documentsLoading ? true : undefined}
                         >
+                            {documentsLoading && <div aria-hidden="true" className="absolute inset-0 z-10 bg-white p-3.5 sm:p-5 space-y-4 rounded-md"><Skeleton width="60%" height={24} /><Skeleton width="80%" /><Skeleton height={130} /><Skeleton height={40} /></div>}
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -517,7 +528,7 @@ const DocumentVerificationPage = () => {
 
                 <button
                     type="button"
-                    disabled={uploadMutation.isPending || Object.keys(files).length === 0}
+                    disabled={documentsLoading || uploadMutation.isPending || Object.keys(files).length === 0}
                     onClick={() => uploadMutation.mutate()}
                     className={`w-full sm:w-auto px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all ${
                         uploadMutation.isPending || Object.keys(files).length === 0

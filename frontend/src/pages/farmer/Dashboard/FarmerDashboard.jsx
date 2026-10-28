@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import {
     FileText,
     CircleCheck,
@@ -38,15 +40,7 @@ const FarmerDashboard = () => {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-            </div>
-        );
-    }
-
-    if (isError || !metrics) {
+    if (isError || (!isLoading && !metrics)) {
         return (
             <div className="p-4">
                 <div className="bg-red-50 text-red-700 border border-red-200 p-8 text-center font-black uppercase tracking-widest text-xs">
@@ -56,9 +50,10 @@ const FarmerDashboard = () => {
         );
     }
 
-    const { kpis, charts, recent_applications } = metrics;
+    const { kpis = {}, charts = {}, recent_applications = [] } = metrics || {};
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 bg-stone-50/50 min-h-full">
             {/* KYC Status Notification Banner (GCash-style) */}
             {user?.verification_status === 'UNVERIFIED' && (
@@ -249,7 +244,11 @@ const FarmerDashboard = () => {
                     </div>
 
                     <div className="divide-y divide-stone-100 flex-1 overflow-auto">
-                        {recent_applications?.length > 0 ? (
+                        {isLoading ? (
+                            <div aria-hidden="true" className="divide-y divide-stone-100">
+                                {[0, 1, 2].map(i => <div key={i} className="p-3.5 sm:p-4"><Skeleton width="55%" /><Skeleton width="35%" height={10} /></div>)}
+                            </div>
+                        ) : recent_applications?.length > 0 ? (
                             recent_applications.map(app => (
                                 <Link key={app.id} to={`/farmer/application/detail/${app.id}`} className="group p-3.5 sm:p-4 flex items-center justify-between hover:bg-stone-50/80 transition-colors duration-150">
                                     <div className="min-w-0">
@@ -285,6 +284,7 @@ const FarmerDashboard = () => {
                 </section>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

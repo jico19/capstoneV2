@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApplication } from '../../../hooks/useApplications';
@@ -67,19 +68,6 @@ const FarmerApplicationDashboard = () => {
         setSearchInput("");
         setStatusFilter("");
     };
-
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
-                <div className="flex flex-col items-center gap-4">
-                    <span className="loading loading-spinner loading-lg text-green-700"></span>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 animate-pulse">
-                        Opening your requests...
-                    </p>
-                </div>
-            </div>
-        );
-    }
 
     if (isError) {
         return (
@@ -258,6 +246,7 @@ const FarmerApplicationDashboard = () => {
     ];
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 bg-stone-50 min-h-full">
 
             {/* 1. Header Section with Quick Action */}
@@ -378,6 +367,7 @@ const FarmerApplicationDashboard = () => {
                 />
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

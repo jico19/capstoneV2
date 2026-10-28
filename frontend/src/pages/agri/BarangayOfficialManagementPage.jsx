@@ -1,3 +1,4 @@
+import LoadingLayout from '../../components/ui/LoadingLayout';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -152,15 +153,6 @@ const BarangayOfficialManagementPage = () => {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl">
-                <span className="loading loading-spinner loading-lg text-emerald-700"></span>
-                <p className="text-xs font-bold uppercase tracking-wider text-stone-400 mt-4">Syncing Official Directory...</p>
-            </div>
-        );
-    }
-
     if (isError) {
         return (
             <div className="p-4 md:p-8">
@@ -274,6 +266,7 @@ const BarangayOfficialManagementPage = () => {
     ];
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 bg-stone-50/40 min-h-screen font-sans">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-200 pb-6 gap-4">
@@ -384,6 +377,7 @@ const BarangayOfficialManagementPage = () => {
                 isSubmitting={updateMutation.isPending}
             />
         </div>
+        </LoadingLayout>
     );
 };
 

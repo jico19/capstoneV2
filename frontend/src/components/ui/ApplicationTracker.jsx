@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from './loadingContext';
 import React from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
@@ -44,6 +46,7 @@ const getStageIndex = (status) => {
 };
 
 const ApplicationTracker = ({ status }) => {
+    const isLoading = useContentLoading();
     if (status === 'CANCELLED') {
         return (
             <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center gap-3 shadow-xs">
@@ -59,7 +62,8 @@ const ApplicationTracker = ({ status }) => {
     const currentStageIndex = getStageIndex(status);
 
     return (
-        <div className="bg-white border border-stone-200 p-5 sm:p-6 space-y-4 rounded-xl shadow-xs">
+        <div className="relative bg-white border border-stone-200 p-5 sm:p-6 space-y-4 rounded-xl shadow-xs">
+            {isLoading && <div aria-hidden="true" className="absolute inset-0 z-10 bg-white p-5 sm:p-6 rounded-xl"><Skeleton height="100%" containerClassName="block h-full leading-none" /></div>}
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Application Progress</span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/80">

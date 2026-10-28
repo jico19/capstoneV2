@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from './loadingContext';
 import React from 'react';
 
 /**
@@ -6,11 +8,13 @@ import React from 'react';
  * Strictly adheres to FarmPass Design System 2.0 (stone neutrals, flat UI, sharp edges).
  */
 const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent, onClick }) => {
+    const isLoading = useContentLoading();
+    const handleClick = isLoading ? undefined : onClick;
     return (
         <div 
-            onClick={onClick}
-            role={onClick ? "button" : undefined}
-            tabIndex={onClick ? 0 : undefined}
+            onClick={handleClick}
+            role={handleClick ? "button" : undefined}
+            tabIndex={handleClick ? 0 : undefined}
             className={`group bg-white border border-stone-200 p-3.5 sm:p-5 md:p-6 flex flex-col justify-between min-h-[100px] sm:min-h-[130px] rounded-xl shadow-xs relative overflow-hidden transition-all duration-150 ${
                 onClick ? 'cursor-pointer card-interactive hover:border-green-700/50 hover:shadow-sm' : 'hover:border-stone-300'
             }`}
@@ -23,8 +27,8 @@ const KPICard = ({ title, value, subtitle, icon: Icon, colorClass, isPercent, on
                     </p>
                     <div className="flex items-baseline gap-1 mt-0.5">
                         <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-800 tracking-tight leading-none truncate">
-                            {value}
-                            {isPercent && <span className="text-sm sm:text-lg ml-0.5 text-stone-400 font-bold">%</span>}
+                            {isLoading ? <Skeleton width="3ch" /> : value}
+                            {!isLoading && isPercent && <span className="text-sm sm:text-lg ml-0.5 text-stone-400 font-bold">%</span>}
                         </h3>
                     </div>
                 </div>

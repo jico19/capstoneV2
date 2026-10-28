@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import React, { useState, useMemo } from 'react';
 import { useGetAuditTrail } from '../../../hooks/useAudit';
 import { 
@@ -220,34 +222,9 @@ const AuditTrailPage = () => {
         setSelectedDateFilter('all');
     };
 
-    if (isLoading) {
-        return (
-            <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-white min-h-screen">
-                {/* Header Skeleton */}
-                <div className="animate-pulse space-y-3 pb-6 border-b border-stone-200">
-                    <div className="h-4 w-32 bg-stone-200" />
-                    <div className="h-8 w-64 bg-stone-200" />
-                </div>
-                {/* KPI Skeleton */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-24 bg-stone-50 border border-stone-200 p-4 space-y-2">
-                            <div className="h-3 w-20 bg-stone-200" />
-                            <div className="h-6 w-12 bg-stone-200" />
-                        </div>
-                    ))}
-                </div>
-                {/* Feed Skeleton */}
-                <div className="space-y-4 animate-pulse">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-28 bg-white border border-stone-200 p-6 space-y-3" />
-                    ))}
-                </div>
-            </div>
-        );
-    }
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-stone-50/40 min-h-screen font-sans">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-stone-200 pb-6 gap-4 bg-white p-6 border">
@@ -282,7 +259,7 @@ const AuditTrailPage = () => {
                             Total Records
                         </p>
                         <p className="text-2xl font-black text-stone-900 mt-1">
-                            {stats.total.toLocaleString()}
+                            {isLoading ? <Skeleton width="5ch" /> : stats.total.toLocaleString()}
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Lifetime system traces</p>
                     </div>
@@ -297,7 +274,7 @@ const AuditTrailPage = () => {
                             Logged Today
                         </p>
                         <p className="text-2xl font-black text-emerald-700 mt-1">
-                            {stats.today.toLocaleString()}
+                            {isLoading ? <Skeleton width="5ch" /> : stats.today.toLocaleString()}
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Current 24h activity</p>
                     </div>
@@ -312,7 +289,7 @@ const AuditTrailPage = () => {
                             Active Actors
                         </p>
                         <p className="text-2xl font-black text-stone-900 mt-1">
-                            {stats.actors}
+                            {isLoading ? <Skeleton width="5ch" /> : stats.actors}
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Distinct user origins</p>
                     </div>
@@ -326,8 +303,8 @@ const AuditTrailPage = () => {
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
                             Primary Activity
                         </p>
-                        <p className="text-base font-black text-stone-900 mt-1 truncate max-w-[150px]" title={stats.topCategory}>
-                            {stats.topCategory}
+                        <p className="text-base font-black text-stone-900 mt-1 truncate max-w-[150px]" title={isLoading ? <Skeleton width="5ch" /> : stats.topCategory}>
+                            {isLoading ? <Skeleton width="5ch" /> : stats.topCategory}
                         </p>
                         <p className="text-[10px] text-stone-400 mt-0.5">Most frequent category</p>
                     </div>
@@ -412,7 +389,15 @@ const AuditTrailPage = () => {
 
             {/* Timeline Activity Feed */}
             <div className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
-                {filteredLogs.length > 0 ? (
+                {isLoading ? (
+                    <div aria-hidden="true" className="divide-y divide-stone-100">
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} className="p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <Skeleton width={120} height={36} /><div className="flex-1 w-full"><Skeleton width="60%" /><Skeleton width="80%" /></div><Skeleton width={100} />
+                            </div>
+                        ))}
+                    </div>
+                ) : filteredLogs.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                         {filteredLogs.map((log) => {
                             const cat = getCategoryInfo(log.what_performed);
@@ -522,6 +507,7 @@ const AuditTrailPage = () => {
                 categoryInfo={selectedLog ? getCategoryInfo(selectedLog.what_performed) : null}
             />
         </div>
+        </LoadingLayout>
     );
 };
 

@@ -1,3 +1,4 @@
+import LoadingLayout from '../../../components/ui/LoadingLayout';
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import FarmerInfo from "./FarmerInfo";
@@ -123,12 +124,6 @@ const ResubmitApplication = () => {
         }
     };
 
-    if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white border border-stone-200">
-            <span className="w-10 h-10 border-4 border-green-700 border-t-transparent rounded-full animate-spin"></span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4">Loading Application Details...</p>
-        </div>
-    );
 
     if (isError || (application && !["RESUBMISSION", "OPV_REJECTED"].includes(application.status))) {
         return (
@@ -220,6 +215,7 @@ const ResubmitApplication = () => {
     };
 
     return (
+        <LoadingLayout loading={isLoading}>
         <div className="flex-1 max-w-3xl mx-auto p-3 sm:p-6 md:p-10 space-y-6 sm:space-y-8 bg-white min-h-full">
             <div className="space-y-4">
                 <div className="space-y-1">
@@ -277,7 +273,7 @@ const ResubmitApplication = () => {
                 </div>
             </div>
 
-            {step === 1 && application.remarks && (
+            {step === 1 && application?.remarks && (
                 <div className="bg-amber-50 border border-amber-200 p-5 flex gap-4 items-start">
                     <div className="bg-white p-2 border border-amber-200 text-amber-700 shrink-0">
                         <AlertCircle size={16} />
@@ -285,14 +281,14 @@ const ResubmitApplication = () => {
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Reason for Return (Remarks)</p>
                         <p className="text-xs text-stone-600 leading-relaxed font-bold uppercase tracking-wide">
-                            "{application.remarks}"
+                            "{application?.remarks}"
                         </p>
                     </div>
                 </div>
             )}
 
             <div className="pt-6 border-t border-stone-200">
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form onSubmit={handleSubmit(onSubmit)} inert={isLoading ? true : undefined}>
                     {step === 1 && (
                         <FarmerInfo
                             register={register}
@@ -366,6 +362,7 @@ const ResubmitApplication = () => {
                 </form>
             </div>
         </div>
+        </LoadingLayout>
     );
 };
 

@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useInspectorLogs } from '../../../hooks/useInspectorLogs';
@@ -27,16 +28,6 @@ const InspectionHistory = () => {
     const startItem = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
     const endItem = Math.min(page * PAGE_SIZE, totalCount);
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[360px] bg-white rounded-xl border border-stone-200 m-4 p-8">
-                <span className="loading loading-spinner loading-lg text-green-700"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-4 animate-pulse">
-                    Retrieving inspection records...
-                </p>
-            </div>
-        );
-    }
 
     if (isError) {
         return (
@@ -109,7 +100,17 @@ const InspectionHistory = () => {
 
             {/* History List */}
             <div className="space-y-3">
-                {results.length > 0 ? (
+                {isLoading ? (
+                    <div role="status" aria-label="Loading inspection logs..." className="space-y-3">
+                        {[0, 1, 2].map(i => (
+                            <div key={i} aria-hidden="true" className="bg-white border border-stone-200 rounded-xl p-4 sm:p-5 space-y-3 shadow-xs">
+                                <div className="border-b border-stone-100 pb-2.5"><Skeleton width="45%" /></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs"><Skeleton count={2} /><Skeleton count={2} /></div>
+                                <Skeleton width="60%" height={12} />
+                            </div>
+                        ))}
+                    </div>
+                ) : results.length > 0 ? (
                     results.map((log) => (
                         <div
                             key={log.id}

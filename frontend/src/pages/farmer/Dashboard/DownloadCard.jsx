@@ -1,3 +1,5 @@
+import Skeleton from 'react-loading-skeleton';
+import { useContentLoading } from '../../../components/ui/loadingContext';
 import { useState } from "react";
 import { Download, ExternalLink, Eye } from "lucide-react";
 import FileViewerModal from "../../../components/ui/FileViewerModal";
@@ -14,11 +16,12 @@ import { getAuthenticatedMediaUrl } from "../../../lib/utils";
 const DownloadCard = ({ title, description, url, fileName, icon: Icon, isPrimary = false }) => {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-    if (!url) return null;
+    const isLoading = useContentLoading();
+    if (!url && !isLoading) return null;
 
     const authenticatedUrl = getAuthenticatedMediaUrl(url);
 
-    const isPdf = typeof authenticatedUrl === 'string' && (
+    const isPdf = isLoading ? fileName.toLowerCase().endsWith('.pdf') : typeof authenticatedUrl === 'string' && (
         authenticatedUrl.toLowerCase().endsWith('.pdf') || 
         authenticatedUrl.includes('application/pdf') ||
         authenticatedUrl.includes('.pdf?')
@@ -55,24 +58,27 @@ const DownloadCard = ({ title, description, url, fileName, icon: Icon, isPrimary
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto" inert={isLoading ? true : undefined}>
                     <button
                         type="button"
                         onClick={handlePreview}
-                        className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 border border-stone-200 bg-white text-stone-600 font-medium text-[10px] uppercase tracking-widest px-4 py-2 rounded-none hover:bg-stone-100 transition-colors cursor-pointer"
+                        disabled={isLoading}
+                        className="relative flex-1 md:flex-none inline-flex items-center justify-center gap-2 border border-stone-200 bg-white text-stone-600 font-medium text-[10px] uppercase tracking-widest px-4 py-2 rounded-none hover:bg-stone-100 transition-colors cursor-pointer"
                     >
+                        {isLoading && <span aria-hidden="true" className="absolute inset-0"><Skeleton height="100%" containerClassName="block h-full leading-none" /></span>}
                         {isPdf ? <ExternalLink size={14} className="text-green-700" /> : <Eye size={14} className="text-green-700" />}
                         {isPdf ? "Open PDF" : "Preview"}
                     </button>
                     <a
                         href={url}
                         download={fileName}
-                        className={`flex-1 md:flex-none inline-flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] px-6 py-2 rounded-none transition-colors ${
+                        className={`relative flex-1 md:flex-none inline-flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] px-6 py-2 rounded-none transition-colors ${
                             isPrimary 
                             ? 'bg-green-700 text-white hover:bg-green-600' 
                             : 'bg-stone-800 text-white hover:bg-stone-700'
                         }`}
                     >
+                        {isLoading && <span aria-hidden="true" className="absolute inset-0"><Skeleton height="100%" containerClassName="block h-full leading-none" /></span>}
                         <Download size={14} /> Download
                     </a>
                 </div>

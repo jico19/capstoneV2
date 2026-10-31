@@ -1,4 +1,5 @@
 import io
+from unittest.mock import patch
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -40,6 +41,47 @@ def barangay(db):
 
 @pytest.mark.django_db
 class TestPermitApplicationDocument:
+    @pytest.mark.parametrize('expired', [False, True])
+    def test_profile_ocr_reused_without_queueing_common_documents(
+        self, farmer_user, barangay, django_capture_on_commit_callbacks, expired
+    ):
+        application, origin = self._app_with_origin(farmer_user, barangay)
+        fields = {
+            'registration_number': '2025-DARFO-IV-A-003971',
+            'license_number': '2025-DARFO-IV-A-003971',
+            'name_of_applicant': 'Test Farmer', 'business_name': 'Test Transport',
+            'address': 'Sariaya', 'plate_no': 'ABC 1234',
+            'maker_brand': 'Test', 'body_type': 'Truck',
+            'date_of_issuance': 'January 1, 2020',
+            'date_of_expiration': 'January 1, 2021' if expired else 'January 1, 2099',
+        }
+        for dtype in COMMON_TYPES:
+            FarmerDocument.objects.create(
+                user=farmer_user, document_type=dtype,
+                file=make_image(f'{dtype}.png'), is_verified=True,
+                ocr_status='PROCESSED', extracted_data=fields,
+            )
+        files = {'origin_0_cis': make_image('cis.png'),
+                 'origin_0_endorsement_cert': make_image('endorsement.png')}
+        with patch('apps.permits.services.permit.extract_document_info') as task:
+            enqueue = task.enqueue
+            with django_capture_on_commit_callbacks(execute=True):
+                create_permit(files, application, farmer_user)
+            queued_ids = {call.args[0] for call in enqueue.call_args_list}
+        queued_types = set(SubmittedDocument.objects.filter(
+            id__in=queued_ids).values_list('document_type', flat=True))
+        assert enqueue.call_count == 2
+        assert queued_types == {'cis', 'endorsement_cert'}
+        for doc in origin.documents.filter(document_type__in=COMMON_TYPES):
+            assert doc.id not in queued_ids
+            assert doc.ocr.provider == 'profile_reuse'
+            assert doc.ocr.extracted_field == fields
+            assert doc.ocr.status == ('MANUAL' if expired else 'PASSED')
+            if expired:
+                assert 'expired' in doc.ocr.remarks['date_of_expiration']
+        FarmerDocument.objects.filter(user=farmer_user).update(extracted_data={})
+        assert origin.documents.get(document_type='handlers_license').ocr.extracted_field == fields
+
     def _app_with_origin(self, farmer_user, barangay):
         application = PermitApplication.objects.create(
             farmer=farmer_user,

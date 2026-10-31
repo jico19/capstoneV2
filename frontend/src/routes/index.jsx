@@ -109,6 +109,7 @@ const router = createBrowserRouter([
             { path: 'payment/success/:issued_permit_id', element: withSuspense(PaymentSuccess) },
             { path: 'payment/checkout/:id', element: withSuspense(PaymentCheckout) },
             { path: 'application/download/:id', element: withSuspense(DownloadApplication) },
+            { path: 'documents/', element: withSuspense(DocumentVerificationPage) },
             { path: 'verification/', element: withSuspense(DocumentVerificationPage) },
             { path: 'settings/', element: withSuspense(SettingsPage) }
         ]

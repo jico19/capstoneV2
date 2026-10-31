@@ -21,6 +21,8 @@ import { getAuthenticatedMediaUrl } from '../../lib/utils';
  */
 const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview", subtitle }) => {
 
+    const [imageFailed, setImageFailed] = useState(false);
+    const [imageAttempt, setImageAttempt] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -214,7 +216,12 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, title = "Document Preview",
                                 transformOrigin: 'center center',
                             }}
                         >
+                            {imageFailed && <div role="alert" className="bg-white p-6 text-stone-800"><p>{navigator.onLine ? 'The document could not be loaded.' : 'You?re offline. Check your internet connection.'}</p><button type="button" onClick={() => { setImageFailed(false); setImageAttempt(n => n + 1); }}>Try again</button></div>}
                             <img
+                                key={`${resolvedUrl}-${imageAttempt}`}
+                                onError={() => setImageFailed(true)}
+                                onLoad={() => setImageFailed(false)}
+                                hidden={imageFailed}
                                 src={resolvedUrl}
                                 alt={title}
                                 className="max-w-full max-h-[70vh] object-contain shadow-md border border-stone-300 bg-white"

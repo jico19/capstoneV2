@@ -1,3 +1,4 @@
+import { connectionMessage, isOffline } from '../lib/connection';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
@@ -14,6 +15,7 @@ const useAuthStore = create(
             login: async (credentials) => {
                 set({ isLoading: true });
                 try {
+                    if (isOffline()) throw Object.assign(new Error('Offline'), { code: 'ERR_NETWORK' });
                     const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/login/`, credentials)
                     const decoded = JSON.parse(atob(res.data.access.split('.')[1]))
                     const user = {
@@ -35,6 +37,7 @@ const useAuthStore = create(
                     });
                 } catch (error) {
                     console.error("Login failed:", error);
+                    error.userMessage = connectionMessage(error);
                     throw error
                 }
             },

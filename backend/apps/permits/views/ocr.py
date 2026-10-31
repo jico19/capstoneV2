@@ -27,10 +27,10 @@ class OCRValidationResultViewSet(BaseModelViewSet):
             return models.OCRValidationResult.objects.none()
 
         qs = models.OCRValidationResult.objects.select_related(
-            "document", "document__application", "document__application__farmer"
+            "document__origin__application__farmer"
         )
         if user.role == "Farmer":
-            return qs.filter(document__application__farmer=user)
+            return qs.filter(document__origin__application__farmer=user)
         elif user.role in ["Agri", "Admin", "Opv"]:
             return qs
         return models.OCRValidationResult.objects.none()

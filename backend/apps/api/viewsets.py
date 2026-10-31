@@ -164,6 +164,9 @@ class UserViewSet(BaseModelViewSet):
                     if file:
                         doc.file = file
                         doc.ocr_status = "PENDING"
+                        doc.extracted_data = {}
+                        doc.expiration_date = expiry
+                        doc.license_number = license_no.strip() if license_no else None
                     if expiry:
                         doc.expiration_date = expiry
                     if license_no:
@@ -194,7 +197,7 @@ class UserViewSet(BaseModelViewSet):
             try:
                 from apps.ocr.tasks import extract_farmer_document_info
                 transaction.on_commit(
-                    lambda doc_id=doc.id: extract_farmer_document_info.enqueue(doc_id)
+                    lambda doc_id=doc.id, file_name=doc.file.name: extract_farmer_document_info.enqueue(doc_id, expected_file_name=file_name)
                 )
             except Exception as e:
                 logger.error(f"Failed to enqueue OCR for FarmerDocument {doc.id}: {str(e)}")

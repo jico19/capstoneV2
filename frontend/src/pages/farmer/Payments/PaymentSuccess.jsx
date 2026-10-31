@@ -21,6 +21,7 @@ const PaymentSuccess = () => {
         if (!issued_permit_id) return;
 
         const verify = async () => {
+            if (!navigator.onLine) { timeoutRef.current = setTimeout(verify, POLL_INTERVAL); return; }
             try {
                 const res = await api.post(`/payment/${issued_permit_id}/verify_paymongo_session/`);
 
@@ -38,6 +39,7 @@ const PaymentSuccess = () => {
                 }
             } catch (err) {
                 console.error("Verification error:", err);
+                if (!err.response) { timeoutRef.current = setTimeout(verify, POLL_INTERVAL); return; }
                 attemptsRef.current++;
                 if (attemptsRef.current < MAX_RETRIES) {
                     timeoutRef.current = setTimeout(verify, POLL_INTERVAL);

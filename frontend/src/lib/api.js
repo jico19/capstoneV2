@@ -1,3 +1,4 @@
+import { connectionMessage, isOffline } from './connection';
 import axios from 'axios';
 
 export const api = axios.create({
@@ -24,6 +25,12 @@ async function refreshAccessToken() {
 // Request Interceptor: Attach the access token from sessionStorage
 api.interceptors.request.use(
     (config) => {
+        if (isOffline() && !['get', 'head', 'options'].includes(config.method?.toLowerCase())) {
+            const error = new Error('Offline');
+            error.code = 'ERR_NETWORK';
+            error.config = config;
+            return Promise.reject(error);
+        }
         try {
             const authStorage = sessionStorage.getItem('auth-context');
             if (authStorage) {
@@ -39,15 +46,16 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
+        if (error.userMessage && !error.response && error.code !== 'ERR_CANCELED') window.dispatchEvent(new CustomEvent('farmpass:connection', { detail: error.userMessage }));
         return Promise.reject(error);
     }
 );
 
 // Response Interceptor: Handle token refresh on 401 Unauthorized
 api.interceptors.response.use(
-    (response) => response,
+    (response) => { window.dispatchEvent(new CustomEvent('farmpass:connection', { detail: '' })); return response; },
     async (error) => {
-        const originalRequest = error.config;
+        const originalRequest = error.config || {};
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             if (!refreshPromise) {
@@ -58,7 +66,11 @@ api.interceptors.response.use(
                 originalRequest.headers.Authorization = `Bearer ${newAccess}`;
                 return api(originalRequest);
             } catch (refreshError) {
-                console.error("Token refresh failed, logging out", refreshError);
+                if (!refreshError.response || ![400, 401, 403].includes(refreshError.response.status)) {
+                    refreshError.userMessage = connectionMessage(refreshError) || 'Cannot refresh your session. Please try again shortly.';
+                    return Promise.reject(refreshError);
+                }
+                console.error("Token refresh rejected", refreshError);
                 sessionStorage.clear();
                 if (!window.__fp_refresh_redirected) { window.__fp_refresh_redirected = true; window.location.href = '/login'; }
             }
@@ -71,9 +83,11 @@ api.interceptors.response.use(
         }
         // Normalize network errors (no response at all)
         if (!error.response) {
-            error.userMessage = 'Unable to reach the server. Check your connection.';
+            error.userMessage = connectionMessage(error);
+            if (!['get', 'head', 'options'].includes(originalRequest.method?.toLowerCase()) && error.request && !isOffline()) error.userMessage = 'We couldn?t confirm whether this action completed. Check its status before trying again.';
         }
 
+        if (error.userMessage && !error.response && error.code !== 'ERR_CANCELED') window.dispatchEvent(new CustomEvent('farmpass:connection', { detail: error.userMessage }));
         return Promise.reject(error);
     }
 );

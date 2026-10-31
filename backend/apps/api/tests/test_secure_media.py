@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework_simplejwt.tokens import AccessToken
 from django.utils import timezone
 from apps.api.models import User
-from apps.permits.models import PermitApplication, TransportOrigin, SubmittedDocument
+from apps.permits.models import PermitApplication, TransportOrigin, SubmittedDocument, OPVValidation
 from apps.maps.models import Barangay
 
 
@@ -75,6 +75,62 @@ class SecureServeMediaTests(TestCase):
     def test_invalid_token_returns_401(self):
         response = self.client.get("/media/test_docs/doc_a.pdf?token=invalid_token_string")
         self.assertEqual(response.status_code, 401)
+
+    def test_owner_can_view_generated_certificate_and_opv_files(self):
+        # Use a distinct file so SubmittedDocument ownership cannot mask a failure.
+        path = 'test_docs/official.pdf'
+        with open(os.path.join(self.test_dir, 'official.pdf'), 'wb') as f:
+            f.write(b'%PDF-1.4 official')
+        try:
+            self.app_a.mao_certificate_pdf = path
+            self.app_a.save()
+            opv = OPVValidation.objects.create(application=self.app_a)
+            for field in ['mao_certificate_pdf', 'veterinary_health_certificate', 'transportation_pass']:
+                self.app_a.mao_certificate_pdf = path if field == 'mao_certificate_pdf' else ''
+                self.app_a.save()
+                opv.veterinary_health_certificate = path if field == 'veterinary_health_certificate' else ''
+                opv.transportation_pass = path if field == 'transportation_pass' else ''
+                opv.save()
+                for user, expected in [(self.farmer_a, 200), (self.farmer_b, 403)]:
+                    response = self.client.get('/media/' + path, {'token': str(AccessToken.for_user(user))})
+                    self.assertEqual(response.status_code, expected, field)
+                    if expected == 200:
+                        self.assertTrue(b''.join(response.streaming_content).startswith(b'%PDF-'))
+        finally:
+            os.remove(os.path.join(self.test_dir, 'official.pdf'))
+
+    def test_owner_token_takes_precedence_over_other_farmer_session(self):
+        self.client.force_login(self.farmer_b)
+        token = str(AccessToken.for_user(self.farmer_a))
+        response = self.client.get('/media/test_docs/doc_a.pdf', {'token': token})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b''.join(response.streaming_content).startswith(b'%PDF-'))
+
+    def test_other_farmer_token_cannot_use_owner_session(self):
+        self.client.force_login(self.farmer_a)
+        token = str(AccessToken.for_user(self.farmer_b))
+        response = self.client.get('/media/test_docs/doc_a.pdf', {'token': token})
+        self.assertEqual(response.status_code, 403)
+
+    def test_invalid_token_does_not_fall_back_to_staff_session(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get('/media/test_docs/doc_a.pdf', {'token': 'invalid'})
+        self.assertEqual(response.status_code, 401)
+
+    def test_session_still_works_without_token(self):
+        self.client.force_login(self.farmer_a)
+        response = self.client.get('/media/test_docs/doc_a.pdf')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b''.join(response.streaming_content).startswith(b'%PDF-'))
+
+    def test_header_takes_precedence_over_query_and_session(self):
+        self.client.force_login(self.farmer_a)
+        response = self.client.get(
+            '/media/test_docs/doc_a.pdf',
+            {'token': str(AccessToken.for_user(self.farmer_a))},
+            HTTP_AUTHORIZATION=f'Bearer {AccessToken.for_user(self.farmer_b)}',
+        )
+        self.assertEqual(response.status_code, 403)
 
 
     def test_valid_query_param_token_staff_access_success(self):

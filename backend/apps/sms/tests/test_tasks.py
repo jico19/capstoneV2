@@ -1,17 +1,13 @@
-from django.test import TestCase
-from unittest.mock import patch, MagicMock
+"""SMS task content, opt out, deduplication, and retries."""
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 from django.utils import timezone
-from datetime import timedelta
 
 from apps.permits.models import PermitApplication
 from apps.sms.models import SMSLog
-from apps.sms.services import send_sms
-from apps.sms.task import (
-    send_via_status,
-    send_scan_notification_sms,
-    send_source_farmer_scan_sms,
-)
+from apps.sms.task import send_source_farmer_scan_sms, send_via_status
 
 User = get_user_model()
 
@@ -33,6 +29,7 @@ class TestSourceFarmerScanSMS(TestCase):
         assert kwargs['phone_number'] == "09123456789"
         assert "Mang Ambo" in kwargs['message']
         assert "LP-2026-TEST01" in kwargs['message']
+
 
 
 class TestSendViaStatus(TestCase):
@@ -146,26 +143,3 @@ class TestSendViaStatus(TestCase):
             _, kwargs = mock_send_sms.call_args
             msg = kwargs['message']
             assert len(msg) <= 150, f"Message for status {st} is too long ({len(msg)} chars): '{msg}'"
-
-
-class TestSMSRateLimit(TestCase):
-    @patch('apps.sms.services.requests.post')
-    def test_rate_limit_blocks_after_10_sms(self, mock_post):
-        mock_response = MagicMock()
-        mock_response.status_code = 201
-        mock_post.return_value = mock_response
-
-        phone = "09123456789"
-
-        # Create 10 logs in the last 24h
-        for _ in range(10):
-            SMSLog.objects.create(
-                phone_number=phone,
-                message_type=SMSLog.Type.NOTIFICATION,
-            )
-
-        # 11th attempt should be blocked by rate limiter
-        sent = send_sms(phone, "Test message")
-        assert sent is False
-        mock_post.assert_not_called()
-

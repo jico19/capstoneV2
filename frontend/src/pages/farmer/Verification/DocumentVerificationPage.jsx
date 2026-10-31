@@ -1,3 +1,5 @@
+import { getAuthenticatedMediaUrl, getErrorMessage } from '../../../lib/utils';
+import { expirationLabel } from '../../../lib/licenseExpiry';
 import Skeleton from 'react-loading-skeleton';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -74,6 +76,10 @@ const DocumentVerificationPage = () => {
 
     const handleFileChange = (type, file) => {
         if (!file) return;
+        if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+            toast.error('Choose a JPG, PNG, or PDF no larger than 10 MB.');
+            return;
+        }
         setFiles((prev) => ({ ...prev, [type]: file }));
 
         // Generate preview for images
@@ -104,12 +110,12 @@ const DocumentVerificationPage = () => {
                     formData.append(type, files[type]);
                 }
             });
-            Object.keys(expirations).forEach((type) => {
+            Object.keys(files).forEach((type) => {
                 if (expirations[type]) {
                     formData.append(`${type}_expiry`, expirations[type]);
                 }
             });
-            Object.keys(licenseNumbers).forEach((type) => {
+            Object.keys(files).forEach((type) => {
                 if (licenseNumbers[type]) {
                     formData.append(`${type}_license_number`, licenseNumbers[type]);
                 }
@@ -131,12 +137,14 @@ const DocumentVerificationPage = () => {
             queryClient.setQueryData(['farmer-documents'], data);
             queryClient.invalidateQueries({ queryKey: ['farmer-documents'] });
             setFiles({});
+            setExpirations({});
+            setLicenseNumbers({});
             setPreviews({});
             fetchUserProfile();
         },
         onError: (err) => {
             console.error(err);
-            const msg = err.response?.data?.error || "Failed to submit documents. Please try again.";
+            const msg = getErrorMessage(err, "Failed to submit documents. Please try again.");
             toast.error("Submission Failed", { description: msg });
         },
     });
@@ -159,95 +167,6 @@ const DocumentVerificationPage = () => {
         });
     }
 
-    const allDocsSaved = DOC_CONFIG.every((cfg) => existingDocsMap[cfg.type]);
-    const waitingForReview = status === 'PENDING_REVIEW' && allDocsSaved;
-
-    if (waitingForReview) {
-        return (
-            <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6">
-                {/* Navigation & Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-stone-200 pb-4 sm:pb-5">
-                    <div>
-                        <Link
-                            to="/farmer"
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-stone-800 uppercase tracking-widest transition-colors mb-2"
-                        >
-                            <ArrowLeft size={14} /> Back to Dashboard
-                        </Link>
-                        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-2 sm:gap-3">
-                            <ShieldCheck className="text-green-700 shrink-0" size={26} />
-                            Account Verification
-                        </h1>
-                        <p className="text-xs text-stone-500 mt-1">
-                            Sariaya Municipal Agriculture Office (MAO) Standing Credentials
-                        </p>
-                    </div>
-                </div>
-
-                {/* Waiting for verification */}
-                <div className="bg-amber-50 border-2 border-amber-500 p-4 sm:p-8 text-center space-y-4 sm:space-y-5 rounded-md">
-                    <div className="flex justify-center">
-                        <div className="bg-amber-100 p-3 sm:p-4 rounded-full">
-                            <Clock className="text-amber-600" size={32} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-stone-900">
-                            Documents Submitted: Pending Verification
-                        </h2>
-                        <p className="text-xs sm:text-sm text-stone-700 max-w-xl mx-auto font-medium">
-                            Your two required credentials have been uploaded and are now pending
-                            review by the Sariaya Municipal Agriculture Office (MAO). You will
-                            receive an SMS notification once approved.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                        {DOC_CONFIG.map((cfg) => {
-                            const existing = existingDocsMap[cfg.type];
-                            return (
-                                <div
-                                    key={cfg.type}
-                                    className="bg-white border border-amber-200 p-3.5 sm:p-4 text-left flex items-start gap-3 rounded"
-                                >
-                                    <FileCheck size={18} className="text-green-700 mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-stone-400">
-                                            {cfg.title}
-                                        </p>
-                                        <p className="text-xs font-bold text-green-800 mt-0.5">
-                                            On File
-                                        </p>
-                                        {existing?.is_verified && (
-                                            <span className="inline-block mt-1 text-[9px] font-black uppercase bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                                                Verified
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
-                        No further action is needed from you at this time. If you need to
-                        update a document, please contact the MAO.
-                    </p>
-                </div>
-
-                <div className="flex justify-end">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/farmer')}
-                        className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-black uppercase tracking-widest transition-all bg-green-700 hover:bg-green-600 text-white rounded-md shadow-sm"
-                    >
-                        Back to Dashboard
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* Navigation & Header */}
@@ -261,7 +180,7 @@ const DocumentVerificationPage = () => {
                     </Link>
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-2 sm:gap-3">
                         <ShieldCheck className="text-green-700 shrink-0" size={26} />
-                        Account Verification
+                        My Documents
                     </h1>
                     <p className="text-xs text-stone-500 mt-1">
                         Sariaya Municipal Agriculture Office (MAO) Standing Credentials
@@ -392,6 +311,9 @@ const DocumentVerificationPage = () => {
                             </div>
 
                             <p className="text-xs text-stone-600">{cfg.description}</p>
+                            <p className="text-sm font-semibold text-amber-800">{expirationLabel(existing?.expiration_date)}</p>
+                            {existing?.file && <div className="flex gap-4"><button type="button" onClick={() => setViewerDoc({ url: existing.file, title: cfg.title })} className="text-sm font-semibold text-green-700">View saved document</button><a className="text-sm font-semibold text-green-700" href={getAuthenticatedMediaUrl(existing.file)} download target="_blank" rel="noreferrer">Download</a></div>}
+                            {existing?.ocr_status === 'FAILED' && <p role="status">Automatic extraction failed. Your document is saved for MAO review.</p>}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
                                 {/* File Upload Input */}
@@ -505,7 +427,7 @@ const DocumentVerificationPage = () => {
                                             />
                                         </div>
                                         <p className="text-[10px] text-stone-400 mt-1">
-                                            System auto-populates from document or notifies 30 days before expiration.
+                                            You can replace this document at any time, including before it expires.
                                         </p>
                                     </div>
                                 </div>
@@ -529,7 +451,7 @@ const DocumentVerificationPage = () => {
                 <button
                     type="button"
                     disabled={documentsLoading || uploadMutation.isPending || Object.keys(files).length === 0}
-                    onClick={() => uploadMutation.mutate()}
+                    onClick={() => { if (window.confirm('Your replacement document will need MAO verification. You cannot submit new applications until verification is approved. Previously submitted applications will keep their original documents. Continue?')) uploadMutation.mutate(); }}
                     className={`w-full sm:w-auto px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all ${
                         uploadMutation.isPending || Object.keys(files).length === 0
                             ? 'bg-stone-200 text-stone-400 cursor-not-allowed'

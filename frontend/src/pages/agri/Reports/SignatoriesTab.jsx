@@ -11,10 +11,10 @@ const SignatoriesTab = ({ signatories, onChange }) => {
         <UserCheck size={16} className="text-green-700 shrink-0 mt-0.5" />
         <div className="space-y-0.5">
           <p className="text-xs font-bold text-stone-800">
-            Official 3-Tier Municipal Attestation Chain
+            Report signers
           </p>
           <p className="text-xs text-stone-600 leading-relaxed">
-            Verify drafting, veterinary clearance, and executive approval signatories. All titles will be formatted onto the formal memorandum signature blocks.
+            Verifier and approver start from Settings. Edits apply only to this report.
           </p>
         </div>
       </div>

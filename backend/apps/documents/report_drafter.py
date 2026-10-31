@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.permits.models import IssuedPermit, TransportOrigin
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
+from apps.permits.services.signatory import resolve_report_signatories
 
 
 def _format_date_range(start_date, end_date):
@@ -32,9 +33,6 @@ class ReportDraftBuilder:
     """
 
     MEMO_FOR = "HON. MARCELO P. GAYETA, Municipal Mayor"
-    MEMO_THROUGH = "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist"
-    VERIFIED_BY = ("DR. RENATO C. ALPAY", "Municipal Veterinarian / Agri Officer")
-    APPROVED_BY = ("ENGR. LEONARDO R. ABUSTAN", "Municipal Agriculturist")
 
     def __init__(
         self,
@@ -58,6 +56,7 @@ class ReportDraftBuilder:
         prepared_by_title,
         copy_furnished,
     ):
+        signatories = resolve_report_signatories()
         self.payload = {
             "report_type": report_type,
             "report_title": report_title,
@@ -66,7 +65,7 @@ class ReportDraftBuilder:
             "end_date": str(end_date),
             "transmittal": {
                 "memo_for": self.MEMO_FOR,
-                "memo_through": self.MEMO_THROUGH,
+                "memo_through": f"{signatories['approved_by_name']}, {signatories['approved_by_title']}",
                 "memo_from": f"{officer_name}, {memo_from_party}",
                 "subject": subject,
                 "date": timezone.now().strftime("%B %d, %Y"),
@@ -82,10 +81,7 @@ class ReportDraftBuilder:
             "signatories": {
                 "prepared_by_name": officer_name,
                 "prepared_by_title": prepared_by_title,
-                "verified_by_name": self.VERIFIED_BY[0],
-                "verified_by_title": self.VERIFIED_BY[1],
-                "approved_by_name": self.APPROVED_BY[0],
-                "approved_by_title": self.APPROVED_BY[1],
+                **signatories,
             },
             "copy_furnished": copy_furnished,
         }

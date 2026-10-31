@@ -28,6 +28,7 @@ from apps.documents.pdf_builder import (
 from apps.inspector.models import InspectorLogs
 from apps.payment.models import PaymentHistory
 from apps.permits.models import IssuedPermit
+from apps.permits.services.signatory import resolve_report_signatories
 
 logger = logging.getLogger(__name__)
 
@@ -160,12 +161,13 @@ def generate_collection_report_pdf(start_date, end_date, requesting_user=None):
     )
     current_y = _draw_certification_box(p, current_y, text, TEXT_MAIN, ACCENT_BG)
 
-# Signatory Block, footer, and finalize
+    # The certifier follows the Settings roster; the treasurer is a separate role.
+    signatories = resolve_report_signatories()
     pdf.draw_signatories(
         prepared_by_role="Revenue Collector / Agri Staff",
         certified_label="Certified Correct By:",
-        certified_name="DR. RENATO C. ALPAY",
-        certified_role="Municipal Veterinarian / Agri Officer",
+        certified_name=signatories['verified_by_name'],
+        certified_role=signatories['verified_by_title'],
         third_label="Noted By:",
         third_name="GLORIA M. VALBUENA",
         third_role="Municipal Treasurer",
@@ -264,14 +266,15 @@ def generate_inspector_report_pdf(start_date, end_date, requesting_user=None):
     current_y = _draw_certification_box(p, current_y, text, TEXT_MAIN, ACCENT_BG)
 
     # Signatory Block, footer, and finalize
+    signatories = resolve_report_signatories()
     pdf.draw_signatories(
         prepared_by_role="Livestock Inspector / Agri Officer",
         certified_label="Verified By:",
-        certified_name="DR. RENATO C. ALPAY",
-        certified_role="Municipal Veterinarian / Agri Officer",
+        certified_name=signatories['verified_by_name'],
+        certified_role=signatories['verified_by_title'],
         third_label="Approved By:",
-        third_name="ENGR. LEONARDO R. ABUSTAN",
-        third_role="Municipal Agriculturist",
+        third_name=signatories['approved_by_name'],
+        third_role=signatories['approved_by_title'],
         sig_y=current_y,
     )
     return pdf.finalize(
@@ -333,6 +336,7 @@ def generate_formal_government_report_pdf(draft_data):
     Renders an official Philippine LGU Memorandum & Accomplishment Report PDF
     using structured, formal civil service typography and layout.
     """
+    defaults = resolve_report_signatories()
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -462,7 +466,7 @@ def generate_formal_government_report_pdf(draft_data):
 
     memo_data = [
         [Paragraph("<b>MEMORANDUM FOR:</b>", memo_label_style), Paragraph(str(trans.get("memo_for", "HON. MARCELO P. GAYETA, Municipal Mayor")), memo_val_style)],
-        [Paragraph("<b>THROUGH:</b>", memo_label_style), Paragraph(str(trans.get("memo_through", "ENGR. LEONARDO R. ABUSTAN, Municipal Agriculturist")), memo_val_style)],
+        [Paragraph("<b>THROUGH:</b>", memo_label_style), Paragraph(str(trans.get("memo_through", f"{defaults['approved_by_name']}, {defaults['approved_by_title']}")), memo_val_style)],
         [Paragraph("<b>FROM:</b>", memo_label_style), Paragraph(str(trans.get("memo_from", "Livestock Regulatory Staff")), memo_val_style)],
         [Paragraph("<b>DATE:</b>", memo_label_style), Paragraph(str(trans.get("date", timezone.now().strftime("%B %d, %Y"))), memo_val_style)],
         [Paragraph("<b>SUBJECT:</b>", memo_label_style), Paragraph(f"<b>{trans.get('subject', 'ACCOMPLISHMENT REPORT')}</b>", memo_val_style)],
@@ -552,13 +556,14 @@ def generate_formal_government_report_pdf(draft_data):
             story.append(Paragraph(f"<b>{idx}.</b> &nbsp; {str(r)}", bullet_style))
         story.append(Spacer(1, 14))
 
-    sigs = draft_data.get("signatories", {})
+    # Settings provide defaults; deliberate edits in this draft take precedence.
+    sigs = {**defaults, **(draft_data.get("signatories") or {})}
     prep_name = sigs.get("prepared_by_name", "LIVESTOCK REGULATORY STAFF")
     prep_title = sigs.get("prepared_by_title", "Livestock Inspector / Agri Officer")
-    ver_name = sigs.get("verified_by_name", "DR. RENATO C. ALPAY")
-    ver_title = sigs.get("verified_by_title", "Municipal Veterinarian / Agri Officer")
-    app_name = sigs.get("approved_by_name", "ENGR. LEONARDO R. ABUSTAN")
-    app_title = sigs.get("approved_by_title", "Municipal Agriculturist")
+    ver_name = sigs["verified_by_name"]
+    ver_title = sigs["verified_by_title"]
+    app_name = sigs["approved_by_name"]
+    app_title = sigs["approved_by_title"]
 
     sig_cell_prep = [
         Paragraph("<b>Prepared by:</b>", memo_label_style),

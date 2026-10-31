@@ -1,0 +1,496 @@
+// FarmPass application models - complete fields, excluding framework tables.
+// Includes all 24 concrete models declared in backend/apps/*/models.py.
+// Table display names omit the api_ prefix; column names, types and keys are retained.
+// Includes inherited User columns and automatic Django primary keys.
+// Excludes Django/third-party tables and automatic auth join tables.
+// User.groups and User.user_permissions are inherited Django auth relations;
+// their framework tables are intentionally excluded from this manuscript ERD.
+// Choices, application defaults, timestamps and Django on_delete are notes.
+// Conditional constraints/indexes are notes because DBML cannot fully encode them.
+// This reflects model definitions, not an inspection of the live database.
+
+Project FarmPass {
+  database_type: 'PostgreSQL'
+  Note: 'All FarmPass application models with complete database columns. Django and third-party infrastructure tables are excluded.'
+}
+
+Table audittrail {
+  Note: "Django model: api.AuditTrail."
+  id bigint [pk, not null, increment]
+  who_performed_id bigint [null, note: "Django on_delete: SET_NULL."]
+  target_user_id bigint [null, note: "Django on_delete: SET_NULL."]
+  action_type varchar(20) [not null, note: "Django default: AuditTrail.ActionType.UPDATE. Choices: 'CREATE' = Create; 'READ' = Read / View; 'UPDATE' = Update; 'DELETE' = Delete; 'EXPORT' = Export; 'VERIFY' = Field Verification."]
+  what_performed text [not null]
+  ip_address inet [null]
+  user_agent text [not null, note: "Django default: ''."]
+  when_performed "timestamp with time zone" [null]
+
+  indexes {
+    who_performed_id
+    target_user_id
+  }
+}
+
+Table farmerdocument {
+  Note: "Django model: api.FarmerDocument."
+  id bigint [pk, not null, increment]
+  user_id bigint [not null, note: "Django on_delete: CASCADE."]
+  document_type varchar(30) [not null, note: "Choices: 'handlers_license' = Handler's License; 'transport_carrier_reg' = Transport Carrier Registration."]
+  file varchar(100) [not null, note: "File reference; upload_to='farmer_licenses/'."]
+  license_number varchar(255) [null, note: "EncryptedCharField; encrypted storage."]
+  expiration_date date [null]
+  extracted_data text [not null, note: "Django default: builtins.dict(). EncryptedJSONField; encrypted storage."]
+  ocr_status varchar(20) [not null, note: "Django default: 'PENDING'. Choices: 'PENDING' = Pending; 'PROCESSED' = Processed; 'FAILED' = Failed."]
+  is_verified boolean [not null, note: "Django default: False."]
+  uploaded_at "timestamp with time zone" [not null, note: "Django auto_now."]
+
+  indexes {
+    (user_id, document_type) [unique]
+    user_id
+  }
+}
+
+Table notification {
+  Note: "Django model: api.Notification."
+  id bigint [pk, not null, increment]
+  recipient_id bigint [not null, note: "Django on_delete: CASCADE."]
+  type varchar(20) [not null, note: "Choices: 'WARNING' = Warning; 'INFO' = Info; 'SUCCESS' = Success."]
+  section varchar(30) [not null, note: "Django default: Notification.Section.APPLICATIONS. Choices: 'applications' = Applications; 'payments' = Payments; 'farmers' = Farmers; 'surveys' = Hog Surveys; 'general' = General."]
+  title varchar(200) [not null]
+  message text [not null]
+  is_read boolean [not null, note: "Django default: False."]
+  sent_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+
+  indexes {
+    recipient_id
+    section
+  }
+}
+
+Table privacyconsentlog {
+  Note: "Django model: api.PrivacyConsentLog."
+  id bigint [pk, not null, increment]
+  user_id bigint [not null, note: "Django on_delete: CASCADE."]
+  consent_version varchar(20) [not null, note: "Django default: 'v1.0-2026'."]
+  consent_scope varchar(100) [not null, note: "Django default: 'registration_kyc_transport'."]
+  ip_address inet [null]
+  user_agent text [not null, note: "Django default: ''."]
+  agreed_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+
+  indexes {
+    user_id
+  }
+}
+
+Table user {
+  Note: "Django model: api.User."
+  id bigint [pk, not null, increment]
+  password varchar(128) [not null]
+  last_login "timestamp with time zone" [null]
+  is_superuser boolean [not null, note: "Django default: False."]
+  username varchar(150) [not null, unique]
+  first_name varchar(150) [not null]
+  last_name varchar(150) [not null]
+  email varchar(254) [not null]
+  is_staff boolean [not null, note: "Django default: False."]
+  is_active boolean [not null, note: "Django default: True."]
+  date_joined "timestamp with time zone" [not null, note: "Django default: django.utils.timezone.now()."]
+  role varchar(20) [not null, note: "Django default: 'Farmer'. Choices: 'Admin' = Admin; 'Farmer' = Farmer; 'Inspector' = Inspector; 'Opv' = Opv; 'Agri' = Agri; 'Barangay' = Barangay Official."]
+  phone_no varchar(255) [null, unique, note: "EncryptedCharField; encrypted storage."]
+  address varchar(255) [not null]
+  barangay_id bigint [null, note: "Django on_delete: CASCADE."]
+  receive_sms boolean [not null, note: "Django default: True."]
+  verification_status varchar(20) [not null, note: "Django default: User.VerificationStatus.UNVERIFIED. Choices: 'UNVERIFIED' = Unverified; 'PENDING_REVIEW' = Pending Review; 'VERIFIED' = Verified; 'REJECTED' = Rejected."]
+  verification_remarks text [not null, note: "Django default: ''."]
+  verified_at "timestamp with time zone" [null]
+  verified_by_id bigint [null, note: "Django on_delete: SET_NULL."]
+
+  indexes {
+    barangay_id
+    verified_by_id
+  }
+}
+
+Table dashboard_cachedinsight {
+  Note: "Django model: dashboard.CachedInsight."
+  id bigint [pk, not null, increment]
+  user_id bigint [null, note: "Django on_delete: CASCADE."]
+  role varchar(30) [not null]
+  scope_key varchar(120) [not null]
+  summary text [not null]
+  trends jsonb [not null, note: "Django default: builtins.list()."]
+  actions jsonb [not null, note: "Django default: builtins.list()."]
+  raw_metrics_snapshot jsonb [not null, note: "Django default: builtins.dict()."]
+  generated_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  expires_at "timestamp with time zone" [not null]
+
+  indexes {
+    (role, scope_key) [name: "dashboard_c_role_34c8bc_idx"]
+    user_id
+    scope_key
+  }
+}
+
+Table inspector_inspectorlogs {
+  Note: "Django model: inspector.InspectorLogs."
+  id bigint [pk, not null, increment]
+  inspector_id bigint [null, note: "Django on_delete: SET_NULL."]
+  application_id bigint [not null, unique, note: "Django on_delete: CASCADE."]
+  notes text [not null]
+  scanned_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  lat "double precision" [not null, note: "Django default: 0."]
+  longi "double precision" [not null, note: "Django default: 0."]
+
+  indexes {
+    inspector_id
+  }
+}
+
+Table maps_barangay {
+  Note: "Django model: maps.Barangay."
+  id bigint [pk, not null, increment]
+  name varchar(100) [not null, unique]
+  latitude "numeric(9, 6)" [not null, note: "Django default: 0."]
+  longitude "numeric(9, 6)" [not null, note: "Django default: 0."]
+  geojson jsonb [null, note: "Django default: builtins.dict()."]
+}
+
+Table maps_hogsurvey {
+  Note: "Django model: maps.HogSurvey."
+  id bigint [pk, not null, increment]
+  survey_date date [null]
+  barangay_id bigint [not null, note: "Django on_delete: CASCADE."]
+  farmer_name varchar(255) [not null, note: "Django default: ''. EncryptedCharField; encrypted storage."]
+  contact_number varchar(255) [not null, note: "Django default: ''. EncryptedCharField; encrypted storage."]
+  inahin integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  barako integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  fattener integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  grower integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  bulaw integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  starter integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  total_pigs integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  uploaded_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+
+  indexes {
+    barangay_id
+  }
+}
+
+Table ocr_dailyocrusage {
+  Note: "Django model: ocr.DailyOCRUsage."
+  id bigint [pk, not null, increment]
+  date date [not null, note: "Django default: django.utils.timezone.localdate()."]
+  provider varchar(30) [not null]
+  call_count integer [not null, note: "Django default: 0. Database check: value >= 0."]
+
+  indexes {
+    (date, provider) [unique]
+    date
+    provider
+  }
+}
+
+Table payment_paymenthistory {
+  Note: "Django model: payment.PaymentHistory. Constraint: <UniqueConstraint: fields=('or_number',) name='unique_payment_or_number' condition=(AND: ('or_number__isnull', False), (NOT (AND: ('or_number', ''))))>."
+  id bigint [pk, not null, increment]
+  issued_permit_id bigint [not null, unique, note: "Django on_delete: CASCADE."]
+  method varchar(10) [not null, note: "Choices: 'paymaya' = Paymaya; 'gcash' = Gcash; 'card' = Card; 'qrph' = QR Ph (Over-the-Counter / Retail Merchant); 'ONLINE' = Online."]
+  status varchar(10) [not null, note: "Django default: PaymentHistory.Status.PENDING. Choices: 'PENDING' = Pending; 'CONFIRMED' = Confirmed; 'SUCCESS' = success; 'FAILED' = Failed."]
+  amount integer [not null, note: "Database check: value >= 0."]
+  paymongo_payment_id varchar(100) [not null]
+  paymongo_session_id varchar(100) [not null]
+  paymongo_payment_intent_id varchar(100) [not null, note: "Django default: ''."]
+  expires_at "timestamp with time zone" [null]
+  confirmed_by_id bigint [null, note: "Django on_delete: SET_NULL."]
+  confirmed_at "timestamp with time zone" [null]
+  or_number varchar(20) [null, note: "Django default: ''."]
+  created_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+
+  indexes {
+    confirmed_by_id
+  }
+}
+
+Table permits_aicnumbercounter {
+  Note: "Django model: permits.AicNumberCounter."
+  id bigint [pk, not null, increment]
+  date date [not null, unique]
+  last_number integer [not null, note: "Django default: 0. Database check: value >= 0."]
+}
+
+Table permits_applicationsignatory {
+  Note: "Django model: permits.ApplicationSignatory."
+  id bigint [pk, not null, increment]
+  application_id bigint [not null, note: "Django on_delete: CASCADE."]
+  document_type varchar(20) [not null, note: "Choices: 'AIC' = Animal Inspection Certificate; 'MAO_CERTIFICATE' = MAO Health & ASF-Free Certification; 'PERMIT' = Transport Permit."]
+  signatory_id bigint [not null, note: "Django on_delete: PROTECT."]
+  assigned_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  assigned_by_id bigint [null, note: "Django on_delete: SET_NULL."]
+
+  indexes {
+    (application_id, document_type) [unique, name: "unique_signatory_per_application_document"]
+    application_id
+    signatory_id
+    assigned_by_id
+  }
+}
+
+Table permits_issuedpermit {
+  Note: "Django model: permits.IssuedPermit."
+  id bigint [pk, not null, increment]
+  permit_number varchar(13) [not null, unique]
+  application_id bigint [not null, unique, note: "Django on_delete: CASCADE."]
+  issued_by_id bigint [null, note: "Django on_delete: SET_NULL."]
+  qr_token varchar(36) [not null, unique]
+  is_paid boolean [not null, note: "Django default: False."]
+  payment_method varchar(100) [not null, note: "Django default: ''. Choices: 'ONLINE' = Online; 'OFFLINE' = Offline."]
+  permit_fee "numeric(10, 2)" [not null, note: "Django default: 150.0."]
+  permit_pdf varchar(100) [null, note: "File reference; upload_to='issued_docs/permits/'."]
+  aic_number varchar(20) [not null, note: "Django default: ''."]
+  aic_pdf varchar(100) [null, note: "File reference; upload_to='issued_docs/aic/'."]
+  mao_certificate_number varchar(50) [not null, note: "Django default: ''."]
+  mao_certificate_pdf varchar(100) [null, note: "File reference; upload_to='issued_docs/mao_cert/'."]
+  date_issued date [not null, note: "Django auto_now_add."]
+  valid_until date [null]
+  payment_deadline "timestamp with time zone" [null]
+
+  indexes {
+    issued_by_id
+  }
+}
+
+Table permits_maocertnumbercounter {
+  Note: "Django model: permits.MaoCertNumberCounter."
+  id bigint [pk, not null, increment]
+  date date [not null, unique]
+  last_number integer [not null, note: "Django default: 0. Database check: value >= 0."]
+}
+
+Table permits_municipalconfig {
+  Note: "Django model: permits.MunicipalConfig."
+  id bigint [pk, not null, increment]
+  vet_health_cert_fee "numeric(10, 2)" [not null, note: "Django default: 50.0."]
+  transport_pass_fee "numeric(10, 2)" [not null, note: "Django default: 50.0."]
+  local_transport_permit_fee "numeric(10, 2)" [not null, note: "Django default: 50.0."]
+  validity_days integer [not null, note: "Django default: 3. Database check: value >= 0."]
+  oic_name varchar(100) [not null, note: "Django default: 'AMALITA C. AMORES'."]
+  oic_title varchar(100) [not null, note: "Django default: 'OIC - Municipal Agriculturist'."]
+  updated_at "timestamp with time zone" [not null, note: "Django auto_now."]
+}
+
+Table permits_ocrvalidationresult {
+  Note: "Django model: permits.OCRValidationResult."
+  id bigint [pk, not null, increment]
+  document_id bigint [not null, unique, note: "Django on_delete: CASCADE."]
+  status varchar(20) [not null, note: "Choices: 'PASSED' = Passed; 'MANUAL' = Needs Manual Review; 'OVERRIDDEN' = Overridden."]
+  extracted_field jsonb [not null, note: "Django default: builtins.dict()."]
+  remarks jsonb [not null, note: "Django default: builtins.dict()."]
+  validated_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  manually_overridden boolean [not null, note: "Django default: False."]
+  overridden_by_id bigint [null, note: "Django on_delete: SET_NULL."]
+  overridden_at "timestamp with time zone" [null]
+  overridden_fields jsonb [not null, note: "Django default: builtins.dict()."]
+  provider varchar(30) [not null, note: "Django default: 'ocrspace'."]
+
+  indexes {
+    overridden_by_id
+  }
+}
+
+Table permits_opvvalidation {
+  Note: "Django model: permits.OPVValidation."
+  id bigint [pk, not null, increment]
+  application_id bigint [not null, unique, note: "Django on_delete: CASCADE."]
+  opv_staff_id bigint [null, note: "Django on_delete: SET_NULL."]
+  status varchar(20) [not null, note: "Django default: OPVValidation.Status.PENDING. Choices: 'PENDING' = Pending; 'VALIDATED' = Validated; 'REJECTED' = Rejected."]
+  remarks text [not null]
+  validated_at "timestamp with time zone" [null, note: "Django auto_now_add."]
+  aic_verified boolean [not null, note: "Django default: False."]
+  aic_verified_at "timestamp with time zone" [null]
+  veterinary_health_certificate varchar(100) [null, note: "File reference; upload_to='opv_docs/vhc/'."]
+  transportation_pass varchar(100) [null, note: "File reference; upload_to='opv_docs/pass/'."]
+
+  indexes {
+    opv_staff_id
+  }
+}
+
+Table permits_permitapplication {
+  Note: "Django model: permits.PermitApplication."
+  id bigint [pk, not null, increment]
+  application_id varchar(32) [not null, unique, note: "Django default: apps.permits.models.document_id()."]
+  farmer_id bigint [not null, note: "Django on_delete: CASCADE."]
+  status varchar(50) [not null, note: "Django default: PermitApplication.Status.DRAFT. Choices: 'DRAFT' = Draft; 'SUBMITTED' = Submitted; 'RESUBMISSION' = Resubmission; 'OCR_VALIDATED' = OCR Validated; 'MANUAL' = Waiting for Manual Review; 'FORWARDED_TO_OPV' = Forwarded to OPV; 'OPV_VALIDATED' = OPV Validated; 'OPV_REJECTED' = OPV Rejected; 'PERMIT_ISSUED' = Permit issued; 'PAYMENT_PENDING' = Payment pending; 'RELEASED' = Released; 'CANCELLED' = Cancelled."]
+  destination varchar(255) [not null]
+  transport_date date [not null]
+  purpose text [not null]
+  is_issued boolean [not null, note: "Django default: False."]
+  issued_at "timestamp with time zone" [null]
+  is_checked boolean [not null, note: "Django default: False."]
+  aic_number varchar(20) [not null, note: "Django default: ''."]
+  aic_pdf varchar(100) [null, note: "File reference; upload_to='issued_docs/aic/'."]
+  aic_issued_at "timestamp with time zone" [null]
+  mao_certificate_number varchar(50) [not null, note: "Django default: ''."]
+  mao_certificate_pdf varchar(100) [null, note: "File reference; upload_to='issued_docs/mao_cert/'."]
+  mao_cert_issued_at "timestamp with time zone" [null]
+  created_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  updated_at "timestamp with time zone" [not null, note: "Django auto_now."]
+  submitted_at "timestamp with time zone" [null, note: "Django auto_now_add."]
+
+  indexes {
+    farmer_id
+  }
+}
+
+Table permits_permitapplicationdocument {
+  Note: "Django model: permits.PermitApplicationDocument."
+  id bigint [pk, not null, increment]
+  application_id bigint [not null, note: "Django on_delete: CASCADE."]
+  document_type varchar(30) [not null, note: "Choices: 'traders_pass' = Trader's Pass; 'handlers_license' = Handler's License; 'transport_carrier_reg' = Transport Carrier Registration."]
+  file varchar(100) [not null, note: "File reference; upload_to='submitted_docs/'."]
+  uploaded_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+
+  indexes {
+    (application_id, document_type) [unique]
+    application_id
+  }
+}
+
+Table permits_signatory {
+  Note: "Django model: permits.Signatory. Constraint: <UniqueConstraint: fields=('position',) name='unique_default_signatory_per_position' condition=(AND: ('is_default', True))>."
+  id bigint [pk, not null, increment]
+  name varchar(100) [not null]
+  title varchar(100) [not null]
+  position varchar(40) [not null, note: "Choices: 'MUNICIPAL_AGRICULTURIST' = Municipal Agriculturist; 'MUNICIPAL_VETERINARIAN' = Municipal Veterinarian; 'OIC' = Officer-in-Charge."]
+  is_active boolean [not null, note: "Django default: True."]
+  is_default boolean [not null, note: "Django default: False."]
+  created_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  updated_at "timestamp with time zone" [not null, note: "Django auto_now."]
+}
+
+Table permits_submitteddocument {
+  Note: "Django model: permits.SubmittedDocument."
+  id bigint [pk, not null, increment]
+  origin_id bigint [not null, note: "Django on_delete: CASCADE."]
+  document_type varchar(30) [not null, note: "Choices: 'traders_pass' = Trader's Pass; 'handlers_license' = Handler's License; 'transport_carrier_reg' = Transport Carrier Registration; 'cis' = CIS (Barangay-issued); 'endorsement_cert' = Endorsement Certificate."]
+  file varchar(100) [not null, note: "File reference; upload_to='submitted_docs/'."]
+  uploaded_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+
+  indexes {
+    (origin_id, document_type) [unique]
+    origin_id
+  }
+}
+
+Table permits_transportorigin {
+  Note: "Django model: permits.TransportOrigin."
+  id bigint [pk, not null, increment]
+  application_id bigint [not null, note: "Django on_delete: CASCADE."]
+  barangay_id bigint [not null, note: "Django on_delete: CASCADE."]
+  source_farmer_name varchar(255) [not null, note: "Django default: ''. EncryptedCharField; encrypted storage."]
+  source_phone_no varchar(255) [not null, note: "Django default: ''. EncryptedCharField; encrypted storage."]
+  number_of_pigs integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  inahin integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  barako integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  fattener integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  grower integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  bulaw integer [not null, note: "Django default: 0. Database check: value >= 0."]
+  starter integer [not null, note: "Django default: 0. Database check: value >= 0."]
+
+  indexes {
+    application_id
+    barangay_id
+  }
+}
+
+Table sms_smslog {
+  Note: "Django model: sms.SMSLog."
+  id bigint [pk, not null, increment]
+  application_id bigint [null, note: "Django on_delete: SET_NULL."]
+  phone_number varchar(20) [not null]
+  send_at "timestamp with time zone" [not null, note: "Django auto_now_add."]
+  message_type varchar(50) [not null, note: "Choices: 'OTP' = Otp; 'NOTIFICATION' = Notification."]
+  status_captured varchar(100) [null]
+
+  indexes {
+    application_id
+  }
+}
+
+// Relationships. For one-to-one references, the second column is the FK.
+Ref: audittrail.who_performed_id > user.id
+Ref: audittrail.target_user_id > user.id
+Ref: farmerdocument.user_id > user.id
+Ref: notification.recipient_id > user.id
+Ref: privacyconsentlog.user_id > user.id
+Ref: user.barangay_id > maps_barangay.id
+Ref: user.verified_by_id > user.id
+Ref: dashboard_cachedinsight.user_id > user.id
+Ref: inspector_inspectorlogs.inspector_id > user.id
+Ref: permits_permitapplication.id - inspector_inspectorlogs.application_id
+Ref: maps_hogsurvey.barangay_id > maps_barangay.id
+Ref: permits_issuedpermit.id - payment_paymenthistory.issued_permit_id
+Ref: payment_paymenthistory.confirmed_by_id > user.id
+Ref: permits_applicationsignatory.application_id > permits_permitapplication.id
+Ref: permits_applicationsignatory.signatory_id > permits_signatory.id
+Ref: permits_applicationsignatory.assigned_by_id > user.id
+Ref: permits_permitapplication.id - permits_issuedpermit.application_id
+Ref: permits_issuedpermit.issued_by_id > user.id
+Ref: permits_submitteddocument.id - permits_ocrvalidationresult.document_id
+Ref: permits_ocrvalidationresult.overridden_by_id > user.id
+Ref: permits_permitapplication.id - permits_opvvalidation.application_id
+Ref: permits_opvvalidation.opv_staff_id > user.id
+Ref: permits_permitapplication.farmer_id > user.id
+Ref: permits_permitapplicationdocument.application_id > permits_permitapplication.id
+Ref: permits_submitteddocument.origin_id > permits_transportorigin.id
+Ref: permits_transportorigin.application_id > permits_permitapplication.id
+Ref: permits_transportorigin.barangay_id > maps_barangay.id
+Ref: sms_smslog.application_id > permits_permitapplication.id
+
+TableGroup api {
+  audittrail
+  farmerdocument
+  notification
+  privacyconsentlog
+  user
+}
+
+TableGroup dashboard {
+  dashboard_cachedinsight
+}
+
+TableGroup inspector {
+  inspector_inspectorlogs
+}
+
+TableGroup maps {
+  maps_barangay
+  maps_hogsurvey
+}
+
+TableGroup ocr {
+  ocr_dailyocrusage
+}
+
+TableGroup payment {
+  payment_paymenthistory
+}
+
+TableGroup permits {
+  permits_aicnumbercounter
+  permits_applicationsignatory
+  permits_issuedpermit
+  permits_maocertnumbercounter
+  permits_municipalconfig
+  permits_ocrvalidationresult
+  permits_opvvalidation
+  permits_permitapplication
+  permits_permitapplicationdocument
+  permits_signatory
+  permits_submitteddocument
+  permits_transportorigin
+}
+
+TableGroup sms {
+  sms_smslog
+}

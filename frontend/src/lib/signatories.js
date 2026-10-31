@@ -16,6 +16,8 @@ export const SIGNATORY_DOCUMENTS = [
     { id: 'AIC', label: 'Animal Inspection Certificate', position: 'MUNICIPAL_VETERINARIAN' },
     { id: 'MAO_CERTIFICATE', label: 'MAO Health & ASF-Free Certification', position: 'MUNICIPAL_AGRICULTURIST' },
     { id: 'PERMIT', label: 'Transport Permit', position: 'MUNICIPAL_AGRICULTURIST' },
+    { id: 'REPORT_VERIFIED', label: 'Reports: Certified Correct', position: 'MUNICIPAL_VETERINARIAN' },
+    { id: 'REPORT_APPROVED', label: 'Reports: Approved By', position: 'MUNICIPAL_AGRICULTURIST' },
 ];
 
 /** Document types whose roster default comes from this position. */

@@ -37,6 +37,7 @@ Frontend:
 - Every app's viewsets are registered in `backend/config/router.py` (DRF `DefaultRouter`) — add new resources there.
 - JWT: SimpleJWT with custom serializers that embed `role`/`barangay` into the access token; frontend `atob()`-decodes it to branch on role. Access 5 min, refresh 1 day with rotation. Frontend auto-refreshes via interceptor in `frontend/src/lib/api.js`, which reads tokens from **sessionStorage** key `auth-context` (zustand persist — don't switch to localStorage).
 - UI portals are keyed by role under `frontend/src/pages/`: `farmer`, `agri`, `opv`, `inspector`, `barangay`, `auth`, `landing-page` (public), `shared`. Routing in `frontend/src/routes/`.
+- Signatories: `backend/apps/permits/services/signatory.py` resolves active Settings defaults for permit PDFs and report certifiers/approvers. New report drafts also use the configured agriculturist for `memo_through`; explicit edits in a report draft take precedence when exported. Missing defaults fall back to municipal configuration.
 - Workflow actions (approve/reject/validate) follow a fixed pattern — see `backend/apps/permits/services/opv.py`: check `staff.role`, guard current status, wrap in `transaction.atomic()`, then create a formal `AuditTrail` entry.
 - DRF defaults: `LimitOffsetPagination` with `PAGE_SIZE=10`; throttling `anon 10/min`, `user 100/min` — heavy bulk seeding or load testing can trip the limits.
 

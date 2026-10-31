@@ -10,6 +10,9 @@ marked as default for a position signs every future document for that
 position's document type. Changing the default there changes every PDF
 generated after the change.
 
+Report drafts use these same defaults for their certifier and approver.
+Names explicitly edited in a report draft are kept when that draft is exported.
+
 Resolution precedence when rendering a document:
 
 1. the signatory pinned on this application (historical documents issued
@@ -51,6 +54,21 @@ def default_signatory(document_type):
     return models.Signatory.objects.filter(
         position=position, is_default=True, is_active=True
     ).first()
+
+
+def resolve_report_signatories():
+    """Default report certifier and approver from the same roster as permits."""
+    veterinarian = default_signatory(DocumentType.AIC)
+    agriculturist = default_signatory(DocumentType.MAO_CERTIFICATE)
+    fallback = _global_fallback() if not veterinarian or not agriculturist else None
+    vet_name, vet_title = (veterinarian.name, veterinarian.title) if veterinarian else fallback
+    agri_name, agri_title = (agriculturist.name, agriculturist.title) if agriculturist else fallback
+    return {
+        'verified_by_name': vet_name,
+        'verified_by_title': vet_title,
+        'approved_by_name': agri_name,
+        'approved_by_title': agri_title,
+    }
 
 
 def resolve_signatory(application, document_type):

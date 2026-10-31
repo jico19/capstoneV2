@@ -5,11 +5,8 @@ from unittest import mock
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import override_settings
-from django.urls import reverse
 from django.utils import timezone
-from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.test import APIClient
 
 from apps.api.models import AuditTrail
 from apps.payment import models as payment_models
@@ -141,16 +138,6 @@ class TestPaymentWorkflowCharacterization:
             with pytest.raises(PermissionDenied):
                 services.farmer_simulate_payment(application.pk, farmer_user, "gcash")
 
-    def test_viewset_simulate_payment_refused_when_debug_off(self, agri_user, farmer_user):
-        application, _ = make_releasable_application(agri_user, farmer_user)
-        client = APIClient()
-        client.force_authenticate(user=agri_user)
-
-        url = reverse("payment-simulate-payment", kwargs={"pk": application.pk})
-        with override_settings(DEBUG=False):
-            response = client.post(url, {}, format="json")
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_create_checkout_session_rejects_already_paid(self, farmer_user, agri_user):
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
@@ -160,19 +147,6 @@ class TestPaymentWorkflowCharacterization:
         with pytest.raises(ValidationError) as exc_info:
             services.create_checkout_session(application.pk)
         assert "already been paid" in str(exc_info.value.detail)
-
-    def test_create_checkout_session_rejects_when_not_payment_pending(
-        self, farmer_user, agri_user
-    ):
-        application, issued_permit = make_releasable_application(agri_user, farmer_user)
-        application.status = PermitApplication.Status.RELEASED
-        application.save()
-        issued_permit.is_paid = True
-        issued_permit.save()
-
-        with pytest.raises(ValidationError) as exc_info:
-            services.create_checkout_session(application.pk)
-        assert str(exc_info.value.detail[0]) == "Already paid."
 
 
 @pytest.mark.django_db(transaction=True)

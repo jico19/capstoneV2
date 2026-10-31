@@ -10,12 +10,15 @@ import {
     ShieldCheck
 } from "lucide-react"
 import DownloadCard from "./DownloadCard"
+import { documentAccessNotice } from '../../../lib/documentAccess';
+import { getErrorMessage } from '../../../lib/utils';
 
 // Page for downloading issued permits and related health documents.
 // Only accessible after the permit has been released and paid for.
 const DownloadApplication = () => {
     const { id } = useParams()
-    const { data: docs, isLoading, isError } = useGetPermit(id)
+    const { data: docs, isLoading, isError, error } = useGetPermit(id)
+    const notice = documentAccessNotice(error);
 
 
     if (isError) {
@@ -24,9 +27,9 @@ const DownloadApplication = () => {
                 <div className="bg-red-50 border border-red-200 p-8 flex flex-col items-center text-center gap-4 rounded-none">
                     <AlertCircle size={32} className="text-red-600" />
                     <div>
-                        <h2 className="font-black uppercase text-sm tracking-widest text-red-700 mb-2">Something went wrong</h2>
-                        <p className="text-sm text-red-600 font-medium max-w-sm">
-                            We couldn't find your documents. Please make sure the permit is released and your payment is confirmed.
+                        <h2 className="font-black uppercase text-sm tracking-widest text-red-700 mb-2">{notice?.title || 'Could not load documents'}</h2>
+                        <p role="alert" className="text-sm text-red-600 font-medium max-w-sm">
+                            {notice?.message || getErrorMessage(error, 'Could not load your documents. Please try again.')}
                         </p>
                     </div>
                     <Link 

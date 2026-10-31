@@ -3,7 +3,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from apps.api.models import Notification, AuditTrail
 from .. import models, serializers
-from .permit import resubmit_permit
+from .permit import resubmit_permit, _complete_submitted_application
 
 _ST = models.PermitApplication.Status
 
@@ -295,6 +295,8 @@ def resubmit_application(application, user, serializer_data, files):
             handle_application_status_change(application, models.PermitApplication.Status.FORWARDED_TO_OPV)
         else:
             handle_application_status_change(application, models.PermitApplication.Status.SUBMITTED)
+
+        transaction.on_commit(lambda: _complete_submitted_application(application.id))
 
         # --- Formal Audit Entry ---
         AuditTrail.objects.create(

@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../lib/utils';
 import { useQueryClient, useMutation, useQuery, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "../lib/api";
@@ -53,8 +54,8 @@ export const useOCRUpdate = () => {
         }, onSuccess: () => {
             toast.success('Successfully Updated.')
             query.invalidateQueries({ queryKey: ['application'] })
-        }, onError: () => {
-            toast.error("There is something wrong...")
+        }, onError: (error) => {
+            toast.error(getErrorMessage(error, "Could not complete this action."))
         }
     })
 }
@@ -71,8 +72,8 @@ export const useCreateApplication = () => {
             query.invalidateQueries({ queryKey: ['application'] })
             query.invalidateQueries({ queryKey: ['farmer_metrics'] })
             query.invalidateQueries({ queryKey: ['agri_metrics'] })
-        }, onError: () => {
-            toast.error("There is something wrong...")
+        }, onError: (error) => {
+            toast.error(getErrorMessage(error, "Could not complete this action."))
         }
     })
 }

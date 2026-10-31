@@ -28,6 +28,42 @@ class SubmittedDocumentViewSet(BaseModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         pk = self.kwargs.get("pk")
+        if str(pk).startswith("mao-cert-"):
+            app_id = str(pk).removeprefix("mao-cert-")
+            if not app_id.isdecimal():
+                return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                app = models.PermitApplication.objects.select_related('farmer').get(pk=app_id)
+            except models.PermitApplication.DoesNotExist:
+                return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+            user = request.user
+            if user.role not in ['Agri', 'Admin', 'Opv', 'Inspector', 'Farmer'] or (
+                user.role == 'Farmer' and app.farmer_id != user.pk
+            ):
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+            if not app.mao_certificate_pdf:
+                return Response({'error': 'MAO certificate not generated'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                'id': f'mao-cert-{app.pk}',
+                'document_type': 'mao_certificate',
+                'document_type_display': 'MAO Health & ASF-Free Certification',
+                'file': request.build_absolute_uri(app.mao_certificate_pdf.url),
+                'ocr': {
+                    'status': 'completed',
+                    'extracted_field': {
+                        'Certificate Number': app.mao_certificate_number,
+                        'Application ID': str(app.application_id),
+                        'Origin Barangay': ', '.join(
+                            app.origins.values_list('barangay__name', flat=True)
+                        ) or 'N/A',
+                        'Status': 'NO REPORTED ASF / SWINE DISEASE',
+                        'Issue Date': app.mao_cert_issued_at.strftime('%Y-%m-%d %H:%M') if app.mao_cert_issued_at else 'N/A',
+                    },
+                    'remarks': {},
+                },
+                'uploaded_at': app.mao_cert_issued_at or app.updated_at,
+                'is_generated': True,
+            })
         if str(pk).startswith("aic-"):
             app_id = str(pk).replace("aic-", "")
             try:

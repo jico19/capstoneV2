@@ -87,11 +87,7 @@ const CreateApplication = () => {
                     });
                 });
                 
-                mutate(formData);
-                reset();
-                setStep(1);
-                setConfirmModal(null);
-                navigate('/farmer/');
+                mutate(formData, { onSuccess: () => { reset(); setStep(1); setConfirmModal(null); navigate('/farmer/'); } });
             },
             onClose: () => {
                 setConfirmModal(null);

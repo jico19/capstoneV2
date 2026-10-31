@@ -66,13 +66,10 @@ def health_check(request):
 def _authenticate_media_user(request):
     """
     Authenticates a media request from:
-    1. Active session (request.user)
-    2. Authorization: Bearer <token> header
-    3. ?token=<token> query parameter (for browser previews, downloads, img tags)
+    1. Authorization: Bearer <token> header
+    2. ?token=<token> query parameter (for browser previews, downloads, img tags)
+    3. Active session (request.user), only when no token was supplied
     """
-    if getattr(request, "user", None) and request.user.is_authenticated:
-        return request.user
-
     raw_token = None
     auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION")
     if auth_header and auth_header.startswith("Bearer "):
@@ -91,6 +88,9 @@ def _authenticate_media_user(request):
             return jwt_auth.get_user(validated_token)
         except (InvalidToken, TokenError, Exception):
             return None
+
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        return request.user
 
     return None
 
@@ -151,7 +151,7 @@ def secure_serve_media(request, path):
 
     # Farmers can access files attached to their own applications or user profile
     if getattr(user, "role", None) == "Farmer":
-        from apps.permits.models import SubmittedDocument, PermitApplicationDocument, IssuedPermit, PermitApplication
+        from apps.permits.models import SubmittedDocument, PermitApplicationDocument, IssuedPermit, PermitApplication, OPVValidation
         from apps.api.models import FarmerDocument
 
         is_owner = (
@@ -160,6 +160,10 @@ def secure_serve_media(request, path):
             or IssuedPermit.objects.filter(application__farmer=user, permit_pdf__icontains=normalized_path).exists()
             or IssuedPermit.objects.filter(application__farmer=user, aic_pdf__icontains=normalized_path).exists()
             or PermitApplication.objects.filter(farmer=user, aic_pdf__icontains=normalized_path).exists()
+            or IssuedPermit.objects.filter(application__farmer=user, mao_certificate_pdf=normalized_path).exists()
+            or PermitApplication.objects.filter(farmer=user, mao_certificate_pdf=normalized_path).exists()
+            or OPVValidation.objects.filter(application__farmer=user, veterinary_health_certificate=normalized_path).exists()
+            or OPVValidation.objects.filter(application__farmer=user, transportation_pass=normalized_path).exists()
             or FarmerDocument.objects.filter(user=user, file__icontains=normalized_path).exists()
         )
         if is_owner:

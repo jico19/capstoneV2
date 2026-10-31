@@ -234,7 +234,7 @@ def extract_document_info(document_id: int, attempt=3):
 
 
 @task()
-def extract_farmer_document_info(farmer_doc_id: int):
+def extract_farmer_document_info(farmer_doc_id: int, expected_file_name=None):
     """Background task: run OCR on a FarmerDocument (KYC standing license).
 
     Auto-populates license_number, expiration_date, and extracted_data.
@@ -245,6 +245,10 @@ def extract_farmer_document_info(farmer_doc_id: int):
         logger.error(f"FarmerDocument {farmer_doc_id} not found.")
         return
 
+    file_name = doc.file.name
+    uploaded_at = doc.uploaded_at
+    if expected_file_name is not None and file_name != expected_file_name:
+        return
     extracted = {}
     ocr_failed = False
     try:
@@ -288,7 +292,11 @@ def extract_farmer_document_info(farmer_doc_id: int):
             doc.expiration_date = parsed_exp.date()
             update_fields.append('expiration_date')
 
-        doc.save(update_fields=update_fields)
+        updated = api_models.FarmerDocument.objects.filter(
+            pk=doc.pk, file=file_name, uploaded_at=uploaded_at,
+        ).update(**{field: getattr(doc, field) for field in update_fields})
+        if not updated:
+            return
         logger.info(
             f"FarmerDocument {farmer_doc_id} OCR processed. "
             f"Lic: {lic_no}, Exp: {doc.expiration_date}"
@@ -297,5 +305,5 @@ def extract_farmer_document_info(farmer_doc_id: int):
     except Exception as e:
         logger.error(f"Error processing OCR for FarmerDocument {farmer_doc_id}: {str(e)}")
         doc.ocr_status = "FAILED"
-        doc.save(update_fields=["ocr_status"])
+        api_models.FarmerDocument.objects.filter(pk=doc.pk, file=file_name, uploaded_at=uploaded_at).update(ocr_status="FAILED")
 

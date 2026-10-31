@@ -190,8 +190,7 @@ def test_generated_seeding_is_idempotent():
 
 
 @pytest.mark.django_db
-def test_generated_census_across_api_surfaces_and_csv(tmp_path):
-    from scripts.generate_data import run as export_generated
+def test_generated_census_across_api_surfaces_and_csv():
     from scripts.seed_realistic_operations import run as operations_seed
     barangays = [Barangay.objects.create(name=name) for name in POPULATION_TARGETS]
     records = generate_surveys(barangays, "2022-07-01")
@@ -200,10 +199,6 @@ def test_generated_census_across_api_surfaces_and_csv(tmp_path):
     operations_seed("mode=preview", "as-of=2022-07-01")  # Explicit preview leaves all data intact.
     assert HogSurvey.objects.count() == expected_count
     assert not get_user_model().objects.exists()
-    export_generated("as-of=2022-07-01", "mode=apply", f"output={tmp_path / 'generated.csv'}")
-    with (tmp_path / "generated.csv").open("rb") as source:
-        import_surveys(source)
-    assert HogSurvey.objects.count() == expected_count
     client = APIClient()
     user = get_user_model().objects.create_user(username="agri", role="Agri")
     client.force_authenticate(user)

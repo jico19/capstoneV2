@@ -76,7 +76,7 @@ const LoginPage = () => {
                     description: throttleMsg,
                 });
             } else {
-                const errDetail = err.response?.data?.detail || err.response?.data?.error || "Incorrect username or password. Please try again.";
+                const errDetail = err.userMessage || err.response?.data?.detail || err.response?.data?.error || "Incorrect username or password. Please try again.";
                 setApiError(errDetail);
                 toast.error("Log In Failed", {
                     description: errDetail,

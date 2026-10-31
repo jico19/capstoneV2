@@ -147,6 +147,39 @@ class KYCVerificationTests(APITestCase):
             phone_no="09197654321",
         )
 
+    def test_replace_only_one_document_clears_stale_metadata(self):
+        from datetime import date
+        for dtype in ['handlers_license', 'transport_carrier_reg']:
+            FarmerDocument.objects.create(user=self.farmer, document_type=dtype,
+                file=f'farmer_licenses/{dtype}.jpg', is_verified=True,
+                license_number='OLD', expiration_date=date(2026, 1, 1),
+                extracted_data={'license_number': 'OLD'}, ocr_status='PROCESSED')
+        self.client.force_authenticate(user=self.farmer)
+        response = self.client.post(reverse('user-documents'), {
+            'handlers_license': SimpleUploadedFile('replacement.jpg', b'new', content_type='image/jpeg'),
+        }, format='multipart')
+        self.assertEqual(response.status_code, 200)
+        replaced = self.farmer.farmer_documents.get(document_type='handlers_license')
+        untouched = self.farmer.farmer_documents.get(document_type='transport_carrier_reg')
+        self.assertFalse(replaced.is_verified)
+        self.assertEqual(replaced.extracted_data, {})
+        self.assertIsNone(replaced.license_number)
+        self.assertIsNone(replaced.expiration_date)
+        self.assertEqual(replaced.ocr_status, 'PENDING')
+        self.assertTrue(untouched.is_verified)
+        self.assertEqual(untouched.license_number, 'OLD')
+
+    def test_stale_profile_ocr_job_does_not_process_replacement(self):
+        from unittest.mock import patch
+        from apps.ocr.tasks import extract_farmer_document_info
+        doc = FarmerDocument.objects.create(user=self.farmer,
+            document_type='handlers_license', file='farmer_licenses/new.jpg')
+        with patch('apps.ocr.tasks._call_ocr_chain') as provider:
+            extract_farmer_document_info.func(doc.pk, expected_file_name='farmer_licenses/old.jpg')
+        provider.assert_not_called()
+        doc.refresh_from_db()
+        self.assertEqual(doc.ocr_status, 'PENDING')
+
     def test_new_farmer_is_unverified(self):
         self.assertEqual(self.farmer.verification_status, User.VerificationStatus.UNVERIFIED)
 

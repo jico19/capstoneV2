@@ -123,6 +123,8 @@ python manage.py runserver 8000
 > python -m pytest -k "test_full_workflow"
 > ```
 
+See the [backend test guide](backend/tests/README.md) for test locations, targeted commands, and cleanup decisions.
+
 ### 2. Frontend Setup
 ```powershell
 # From the project root:

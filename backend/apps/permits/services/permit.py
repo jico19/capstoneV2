@@ -6,9 +6,36 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from apps.api.models import Notification, AuditTrail, User
 from apps.ocr.tasks import extract_document_info
+from apps.ocr.validators import validate_handlers_license, validate_transport_carrier, check_all_documents_complete
+from copy import deepcopy
 from .. import models, serializers
 
 logger = logging.getLogger(__name__)
+
+
+def _reuse_profile_ocr(doc, profile_doc):
+    """Snapshot extraction from the verified file being attached, without provider calls."""
+    fields = profile_doc.extracted_data
+    if not (profile_doc.is_verified and profile_doc.ocr_status == 'PROCESSED'
+            and isinstance(fields, dict) and any(fields.values())):
+        return False
+    validator = (validate_handlers_license if doc.document_type == 'handlers_license'
+                 else validate_transport_carrier)
+    fields = deepcopy(fields)
+    errors = validator(fields)
+    models.OCRValidationResult.objects.update_or_create(
+        document=doc,
+        defaults={'extracted_field': fields, 'status': 'MANUAL' if errors else 'PASSED',
+                  'remarks': errors or {'general': 'Reused verified profile extraction.'},
+                  'provider': 'profile_reuse'},
+    )
+    return True
+
+
+def _complete_submitted_application(application_id):
+    # Do not move an application backwards after cancellation or OPV forwarding.
+    if models.PermitApplication.objects.filter(pk=application_id, status='SUBMITTED').exists():
+        check_all_documents_complete(application_id)
 
 def create_permit(files, application, user):
     origins = list(application.origins.all())
@@ -78,7 +105,8 @@ def create_permit(files, application, user):
                 document_type=doc_type,
                 file=file_field
             )
-            document_ids.append(doc.id)
+            if not _reuse_profile_ocr(doc, user_farmer_docs[doc_type]):
+                document_ids.append(doc.id)
 
         models.PermitApplicationDocument.objects.update_or_create(
             application=application,
@@ -105,6 +133,8 @@ def create_permit(files, application, user):
 
     for d_id in document_ids:
         transaction.on_commit(lambda d_id=d_id: extract_document_info.enqueue(d_id))
+
+    transaction.on_commit(lambda: _complete_submitted_application(application.id))
 
 def resubmit_permit(files, application, user):
     """

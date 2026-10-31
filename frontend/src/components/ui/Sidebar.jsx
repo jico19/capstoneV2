@@ -81,6 +81,7 @@ const NAVIGATION_CONFIG = {
             title: "Permit Services",
             items: [
                 { icon: FilePlus2, label: "Apply for Permit", to: "/farmer/application/create/" },
+                { icon: FilesIcon, label: "My Documents", to: "/farmer/documents/" },
                 { icon: FilesIcon, label: "My Applications", to: "/farmer/application", badgeKey: "applications" },
             ],
         },

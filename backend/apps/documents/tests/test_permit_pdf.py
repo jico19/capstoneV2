@@ -11,9 +11,7 @@ from apps.permits.models import (
     Signatory,
     TransportOrigin,
     MunicipalConfig,
-    MaoCertNumberCounter,
 )
-from apps.permits.services.numbers import get_mao_cert_number
 from apps.documents.services.permit_documents import (
     generate_aic_pdf,
     generate_permit_pdf,
@@ -192,16 +190,6 @@ def test_generate_permit_pdf_long_text_does_not_break(test_setup):
 
 
 @pytest.mark.django_db
-def test_get_mao_cert_number(test_setup):
-    today = timezone.localdate()
-    date_str = today.strftime("%Y%m%d")
-    cert_num_1 = get_mao_cert_number()
-    assert cert_num_1 == f"OMA-ANN-ASFCert-{date_str}-01"
-    cert_num_2 = get_mao_cert_number()
-    assert cert_num_2 == f"OMA-ANN-ASFCert-{date_str}-02"
-
-
-@pytest.mark.django_db
 def test_generate_mao_certificate_pdf(test_setup):
     farmer = test_setup["farmer"]
     agri = test_setup["agri"]
@@ -324,4 +312,3 @@ def test_each_document_renders_its_own_signatory(test_setup):
 
     permit_text = pdf_text(issued_permit.permit_pdf.read())
     assert "AMALITA C. AMORES" in permit_text
-

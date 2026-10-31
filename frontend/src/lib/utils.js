@@ -1,3 +1,4 @@
+import { connectionMessage } from './connection';
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge"
 
@@ -26,6 +27,7 @@ export const stopAllMediaTracks = () => {
 };
 
 export const parseValidationError = (err, fallback = "Action failed.") => {
+    if (connectionMessage(err)) return connectionMessage(err);
     if (err.response?.data) {
         const data = err.response.data;
         if (typeof data === 'object') {

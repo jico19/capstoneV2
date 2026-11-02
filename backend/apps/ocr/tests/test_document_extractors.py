@@ -1,3 +1,6 @@
+from datetime import datetime
+from unittest.mock import patch
+
 from apps.ocr.services import (
     normalize_text,
     extract_handlers_license,
@@ -135,7 +138,9 @@ def test_extract_handlers_license_from_sample():
 
 def test_validate_handlers_license_passes():
     extracted = extract_handlers_license(HANDLERS_REG_SAMPLE_TEXT)
-    errors = validate_handlers_license(extracted)
+    with patch('apps.ocr.validators.datetime') as clock:
+        clock.today.return_value = datetime(2026, 10, 27)
+        errors = validate_handlers_license(extracted)
     assert errors == {}
 
 
@@ -154,7 +159,9 @@ def test_extract_transport_carrier_from_sample():
 
 def test_validate_transport_carrier_passes():
     extracted = extract_transport_carrier(TRANSPORT_CARRIER_SAMPLE_TEXT)
-    errors = validate_transport_carrier(extracted)
+    with patch('apps.ocr.validators.datetime') as clock:
+        clock.today.return_value = datetime(2026, 10, 27)
+        errors = validate_transport_carrier(extracted)
     assert errors == {}
 
 

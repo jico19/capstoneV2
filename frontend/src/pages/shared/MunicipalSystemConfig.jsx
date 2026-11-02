@@ -228,7 +228,7 @@ const MunicipalSystemConfig = () => {
             <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 px-5 py-4 rounded-xl">
                 <Info size={16} className="text-stone-400 mt-0.5 shrink-0" />
                 <p className="text-xs text-stone-600 leading-relaxed">
-                    Changes take immediate effect across newly created permit applications. Authorized officers may still adjust or waive fees during individual permit reviews under statutory guidelines.
+                    Fees are applied when a permit is issued. Officers cannot change fees during issuance. Changes here apply to future issuances and do not alter fees on permits already issued.
                 </p>
             </div>
 

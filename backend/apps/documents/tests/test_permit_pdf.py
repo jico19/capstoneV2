@@ -312,3 +312,93 @@ def test_each_document_renders_its_own_signatory(test_setup):
 
     permit_text = pdf_text(issued_permit.permit_pdf.read())
     assert "AMALITA C. AMORES" in permit_text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("origin_count", [1, 12, 45])
+def test_aic_long_animal_details_stay_inside_cells_and_pages(
+    test_setup, monkeypatch, settings, tmp_path, origin_count,
+):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    from reportlab.pdfgen.canvas import Canvas
+    from reportlab.platypus import Paragraph, Table
+
+    settings.MEDIA_ROOT = tmp_path
+    farmer = test_setup["farmer"]
+    farmer.first_name = "Juan Miguel Alejandro & Maria <Farm>"
+    farmer.last_name = "Dela Cruz Santos Villanueva San Buenaventura Jr."
+    farmer.save()
+    barangay = test_setup["barangays"][0]
+    barangay.name = "Manggalang Concepcion Banahaw San Roque"
+    barangay.save()
+    app = PermitApplication.objects.create(
+        farmer=farmer,
+        status=PermitApplication.Status.FORWARDED_TO_OPV,
+        destination="Lucena City",
+        transport_date=timezone.now().date(),
+        purpose="Slaughter",
+    )
+    for _ in range(origin_count):
+        TransportOrigin.objects.create(
+            application=app, barangay=barangay,
+            inahin=2, barako=2, fattener=2, grower=2, bulaw=2, starter=2,
+        )
+
+    animal_pages = []
+    signature_positions = []
+    draw_table = Table.drawOn
+    draw_centered = Canvas.drawCentredString
+
+    def checked_draw_table(table, canv, x, y, *args, **kwargs):
+        result = draw_table(table, canv, x, y, *args, **kwargs)
+        assert x >= cm
+        assert x + table._width <= A4[0] - cm
+        assert y >= cm, "Certificate tables must not run below the page border"
+        assert y + table._height <= A4[1] - cm
+        if len(table._colWidths) != 5:
+            return result
+        animal_pages.append(canv.getPageNumber())
+        for row_index, row in enumerate(table._cellvalues):
+            for col_index, cell in enumerate(row):
+                cell_style = table._cellStyles[row_index][col_index]
+                available = (
+                    table._colWidths[col_index]
+                    - cell_style.leftPadding - cell_style.rightPadding
+                )
+                if isinstance(cell, str):
+                    assert stringWidth(cell, cell_style.fontname, cell_style.fontsize) <= available
+                    continue
+                for paragraph in cell if isinstance(cell, (tuple, list)) else [cell]:
+                    if not isinstance(paragraph, Paragraph):
+                        continue
+                    # ReportLab reports unused width for every rendered line.
+                    # Negative space means text extends outside its cell.
+                    for line in paragraph.blPara.lines:
+                        unused = line[0] if isinstance(line, tuple) else line.extraSpace
+                        assert unused >= -0.01, "Animal detail text overflows its column"
+        return result
+
+    def checked_signature(canv, x, y, text, *args, **kwargs):
+        if text.startswith("Date Signed:"):
+            signature_positions.append((canv.getPageNumber(), y))
+        return draw_centered(canv, x, y, text, *args, **kwargs)
+
+    monkeypatch.setattr(Table, "drawOn", checked_draw_table)
+    monkeypatch.setattr(Canvas, "drawCentredString", checked_signature)
+    result = generate_aic_pdf.func(app.pk, current_attempt=3)
+    assert "AIC PDF Generated" in result
+    app.refresh_from_db()
+    content = app.aic_pdf.read()
+    assert content.startswith(b"%PDF-")
+    text = pdf_text(content)
+    for label in ["BREEDER", "FATTENER", "GROWER", "BULAW", "STARTER", "NOTHING FOLLOWS"]:
+        assert label in text
+    assert animal_pages
+    assert len(signature_positions) == 1
+    assert signature_positions[0][1] >= 1.5 * cm
+    if origin_count == 1:
+        assert signature_positions[0][0] == 1
+    else:
+        assert len(set(animal_pages)) > 1

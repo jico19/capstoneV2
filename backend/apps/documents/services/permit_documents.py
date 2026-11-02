@@ -729,6 +729,35 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
 
             current_y = height - 7.0 * cm
 
+            def start_continuation_page():
+                p.showPage()
+                p.setStrokeColor(BORDER_COLOR)
+                p.setLineWidth(1)
+                p.rect(1.0 * cm, 1.0 * cm, width - 2.0 * cm, height - 2.0 * cm)
+                p.setFillColor(PRIMARY_GREEN)
+                p.setFont("Helvetica-Bold", 10)
+                p.drawString(1.5 * cm, height - 1.8 * cm, "ANIMAL INSPECTION CERTIFICATE (CONTINUED)")
+                p.setFillColor(TEXT_MUTED)
+                p.setFont("Helvetica", 8)
+                p.drawString(1.5 * cm, height - 2.3 * cm, f"AIC No. {application.aic_number}")
+                return height - 3.0 * cm
+
+            def draw_paginated_table(table, top):
+                # Canvas tables need explicit pagination, including rows whose
+                # wrapped contents are taller than the remaining page space.
+                while True:
+                    available_height = top - 1.5 * cm
+                    _, table_height = table.wrapOn(p, width - 3.0 * cm, available_height)
+                    if table_height <= available_height:
+                        table.drawOn(p, 1.5 * cm, top - table_height)
+                        return top - table_height
+                    parts = table.splitOn(p, width - 3.0 * cm, available_height)
+                    if parts:
+                        first, table = parts
+                        _, part_height = first.wrapOn(p, width - 3.0 * cm, available_height)
+                        first.drawOn(p, 1.5 * cm, top - part_height)
+                    top = start_continuation_page()
+
             in_words_str = f"{format_heads_in_words(total_pigs)} HEADS ONLY"
             
             details_data = [
@@ -762,7 +791,7 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
                 ]
             ]
 
-            table_details = Table(details_data, colWidths=[9.0 * cm, 9.0 * cm])
+            table_details = Table(details_data, colWidths=[9.0 * cm, 9.0 * cm], splitInRow=1)
             table_details.setStyle(TableStyle([
                 ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -772,10 +801,11 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
                 ('RIGHTPADDING', (0, 0), (-1, -1), 6),
             ]))
             
-            tw, th = table_details.wrapOn(p, width - 3.0 * cm, 10 * cm)
-            current_y -= th
-            table_details.drawOn(p, 1.5 * cm, current_y)
+            current_y = draw_paginated_table(table_details, current_y)
             current_y -= 0.6 * cm
+
+            if current_y < 3.0 * cm:
+                current_y = start_continuation_page()
 
             # Animal Breakdown Table Title
             p.setFont("Helvetica-Bold", 10)
@@ -785,7 +815,18 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
 
             # Table for Animals
             table_headers = ["SPECIE", "NAME OF OWNER", "BARANGAY", "NO. OF ANIMALS", "REMARKS"]
-            table_rows = [table_headers]
+            animal_cell_style = ParagraphStyle(
+                'AICAnimalCell', fontName='Helvetica', fontSize=8, leading=10,
+                alignment=1, textColor=TEXT_MAIN, splitLongWords=True,
+            )
+            animal_header_style = ParagraphStyle(
+                'AICAnimalHeader', parent=animal_cell_style,
+                fontName='Helvetica-Bold', fontSize=8.5, textColor=colors.white,
+            )
+            animal_end_style = ParagraphStyle(
+                'AICAnimalEnd', parent=animal_cell_style, fontName='Helvetica-Bold',
+            )
+            table_rows = [[Paragraph(label, animal_header_style) for label in table_headers]]
             for o in origins:
                 breakdown = []
                 if o.inahin: breakdown.append(f"{o.inahin} Breeder(Sow)")
@@ -796,16 +837,22 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
                 if o.starter: breakdown.append(f"{o.starter} Starter")
                 remarks_str = ", ".join(breakdown) if breakdown else "FATTENER"
                 
-                table_rows.append([
+                values = [
                     "SWINE",
                     (application.farmer.get_full_name() or application.farmer.username).upper(),
                     o.barangay.name.upper(),
                     str(o.number_of_pigs),
                     remarks_str.upper()
+                ]
+                table_rows.append([
+                    Paragraph(html.escape(value), animal_cell_style) for value in values
                 ])
-            table_rows.append(["NOTHING FOLLOWS", "", "", "", ""])
+            table_rows.append([Paragraph("NOTHING FOLLOWS", animal_end_style), "", "", "", ""])
 
-            table_animals = Table(table_rows, colWidths=[3.0 * cm, 4.0 * cm, 3.5 * cm, 3.0 * cm, 4.5 * cm])
+            table_animals = Table(
+                table_rows, colWidths=[3.0 * cm, 4.0 * cm, 3.5 * cm, 3.0 * cm, 4.5 * cm],
+                repeatRows=1, splitInRow=1,
+            )
             table_animals.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_GREEN),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -822,10 +869,11 @@ def generate_aic_pdf(permit_application_id, current_attempt=1, issued_by_user_id
                 ('FONTNAME', (0, -1), (0, -1), 'Helvetica-Bold'),
             ]))
             
-            tw_a, th_a = table_animals.wrapOn(p, width - 3.0 * cm, 8 * cm)
-            current_y -= th_a
-            table_animals.drawOn(p, 1.5 * cm, current_y)
+            current_y = draw_paginated_table(table_animals, current_y)
             current_y -= 0.6 * cm
+            # Reserve space for the issuance line and the entire signature block.
+            if current_y - 4.7 * cm < 1.5 * cm:
+                current_y = start_continuation_page()
 
             # Issuance Text
             p.setFillColor(TEXT_MAIN)

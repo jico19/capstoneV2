@@ -4,13 +4,13 @@ import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApplicationDetail, useOCRUpdate } from '../../../hooks/useApplications';
 import DocumentList from "../../../components/ui/DocumentList";
 import OCRModal from "./OCRModal";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ApprovalControls from "./AGRIApprovalControls";
 import { api } from "../../../lib/api";
 import DocumentViewModal from "../../../components/ui/DocumentViewModal";
 import ApplicationHeader from "../../../components/ui/ApplicationHeader";
 import ApplicationTracker from "../../../components/ui/ApplicationTracker";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
@@ -25,21 +25,6 @@ const AgriPermitDetail = () => {
     const [viewedDocIds, setViewedDocIds] = useState([])
     const [isIssuingPermit, setIsIssuingPermit] = useState(false)
     const [confirmModal, setConfirmModal] = useState(null)
-    const [permitFeeInput, setPermitFeeInput] = useState(150.00)
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                const res = await api.get('/municipal-config/');
-                if (res.data && res.data.permit_fee) {
-                    setPermitFeeInput(res.data.permit_fee);
-                }
-            } catch (err) {
-                console.error("Failed to load default permit fee", err);
-            }
-        };
-        fetchConfig();
-    }, []);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -47,6 +32,20 @@ const AgriPermitDetail = () => {
     const application = applicationData || {};
     const { mutate: updateOCR } = useOCRUpdate();
     const query = useQueryClient()
+    const {
+        data: feeConfig,
+        isFetching: isLoadingFees,
+        isError: isFeeError,
+        refetch: refetchFees,
+    } = useQuery({
+        queryKey: ['municipal-config'],
+        queryFn: async () => {
+            const res = await api.get('/municipal-config/');
+            return res.data;
+        },
+        enabled: application.status === 'OPV_VALIDATED',
+        retry: false,
+    });
 
 
 
@@ -176,12 +175,11 @@ const AgriPermitDetail = () => {
     };
 
     const handleIssuePermit = (id) => {
-        const fee = parseFloat(permitFeeInput);
-        const finalFee = isNaN(fee) ? 150.00 : fee;
+        if (!feeConfig || isLoadingFees || isFeeError) return;
 
         setConfirmModal({
             title: "Issue Official Permit?",
-            message: `Are you sure you want to issue the official transport permit with a fee of ₱${finalFee.toFixed(2)}? This will notify the farmer and make it ready for payment.`,
+            message: `Issue this permit with the configured municipal fee of ₱${Number(feeConfig.permit_fee).toFixed(2)}? This will notify the farmer and make it ready for payment.`,
             yesText: "Yes, Issue Permit",
             yesVariant: "success",
             type: "success",
@@ -190,13 +188,12 @@ const AgriPermitDetail = () => {
                 try {
                     await api.post('/issued-permit/', {
                         application_id: id,
-                        permit_fee: finalFee
                     });
                     query.invalidateQueries({ queryKey: ['application'] });
                     query.invalidateQueries({ queryKey: ['agri_metrics'] });
                     query.invalidateQueries({ queryKey: ['farmer_metrics'] });
                     toast.success("Permit Issued", {
-                        description: `Permit fee set to ₱${finalFee.toFixed(2)}.`
+                        description: "The farmer can now pay the configured municipal fee."
                     });
                 } catch (error) {
                     toast.error("Issuance Failed", {
@@ -337,35 +334,47 @@ const AgriPermitDetail = () => {
                         <div className="pt-8 border-t border-stone-200">
                              <div className="bg-white border border-stone-200 p-6 sm:p-8 rounded-xl shadow-xs flex flex-col items-center gap-6">
                                 <div className="text-center space-y-1.5">
-                                    <h2 className="text-lg font-bold text-stone-900 tracking-tight">Everything Looks Good</h2>
-                                    <p className="text-xs sm:text-sm text-stone-500 font-normal">Health validation is complete. You can set the permit price and issue the final permit.</p>
+                                    <h2 className="text-lg font-bold text-stone-900 tracking-tight">Issue Permit</h2>
+                                    <p className="text-xs sm:text-sm text-stone-500 font-normal">Health validation is complete. Issue the permit using the configured municipal fees below.</p>
                                 </div>
                                 
-                                {/* Price Control Input Field directly on the page */}
-                                <div className="w-full max-w-xs space-y-2">
-                                    <label className="text-[10px] font-bold text-stone-600 uppercase tracking-wider block text-center">
-                                        Permit Fee Amount (₱)
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            value={permitFeeInput}
-                                            onChange={(e) => setPermitFeeInput(e.target.value)}
-                                            className="w-full text-center px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 outline-none text-base font-bold font-mono text-stone-900 transition-all"
-                                            placeholder="150.00"
-                                        />
-                                    </div>
-                                    <p className="text-[11px] text-stone-400 font-normal text-center leading-normal">
-                                        Standard regulatory fee is ₱150.00. You can edit this.
-                                    </p>
+                                <div className="w-full max-w-md space-y-3" aria-busy={isLoadingFees}>
+                                    {isLoadingFees ? (
+                                        <p role="status" className="text-sm text-stone-500 text-center">Loading municipal fees...</p>
+                                    ) : isFeeError ? (
+                                        <div role="alert" className="text-sm text-center space-y-2">
+                                            <p className="text-red-600">Could not load municipal fees. Try again before issuing.</p>
+                                            <button type="button" onClick={() => refetchFees()} className="text-emerald-700 font-semibold underline rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+                                                Retry loading fees
+                                            </button>
+                                        </div>
+                                    ) : feeConfig ? (
+                                        <>
+                                            <dl className="bg-stone-50 border border-stone-200 rounded-lg px-4 divide-y divide-stone-200 text-sm">
+                                                {[
+                                                    ['Veterinary Health Certificate', feeConfig.vet_health_cert_fee],
+                                                    ['Transport Pass', feeConfig.transport_pass_fee],
+                                                    ['Local Transport Permit', feeConfig.local_transport_permit_fee],
+                                                ].map(([label, amount]) => (
+                                                    <div key={label} className="flex items-center justify-between gap-4 py-3">
+                                                        <dt className="text-stone-600">{label}</dt>
+                                                        <dd className="font-mono font-semibold text-stone-900 shrink-0">₱{Number(amount).toFixed(2)}</dd>
+                                                    </div>
+                                                ))}
+                                                <div className="flex items-center justify-between gap-4 py-3 font-bold">
+                                                    <dt className="text-stone-900">Total Permit Fee</dt>
+                                                    <dd className="font-mono text-emerald-700 shrink-0">₱{Number(feeConfig.permit_fee).toFixed(2)}</dd>
+                                                </div>
+                                            </dl>
+                                            <p className="text-xs text-stone-500 text-center">Fees are set in municipal settings and cannot be changed during issuance.</p>
+                                        </>
+                                    ) : null}
                                 </div>
 
                                 <button
                                     type="button"
                                     className="btn-tactile w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white px-8 py-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={isIssuingPermit}
+                                    disabled={isIssuingPermit || isLoadingFees || isFeeError || !feeConfig}
                                     onClick={() => handleIssuePermit(application.id)}
                                 >
                                     {isIssuingPermit ? (
@@ -373,7 +382,7 @@ const AgriPermitDetail = () => {
                                     ) : (
                                         <CheckCircle size={15} />
                                     )}
-                                    Issue Official Permit
+                                    Issue Permit
                                 </button>
                              </div>
                         </div>

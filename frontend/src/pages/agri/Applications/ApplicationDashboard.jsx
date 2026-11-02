@@ -195,7 +195,7 @@ const ApplicationDashboard = () => {
                 <KPICard
                     title="OPV Approved"
                     value={summary.opvApproved}
-                    subtitle="Click to set fee & issue permit"
+                    subtitle="Click to review fees & issue permit"
                     icon={CheckCircle}
                     colorClass={`bg-amber-50 text-amber-700 ${activeFilter === 'OPV_APPROVED' ? 'ring-2 ring-amber-600' : ''}`}
                     onClick={() => setActiveFilter(activeFilter === 'OPV_APPROVED' ? 'ALL' : 'OPV_APPROVED')}

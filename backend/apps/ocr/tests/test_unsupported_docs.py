@@ -1,3 +1,6 @@
+from datetime import datetime
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -99,8 +102,6 @@ def test_mixed_documents_with_unsupported_doc_results_in_manual_application(test
     assert application.status == PermitApplication.Status.MANUAL
 
 
-from unittest.mock import patch
-
 def test_smart_hybrid_gemini_rescue_passes_when_ocr_fails(test_setup):
     """
     Test Tier 1 (OCR.space) failure triggering Tier 2 (Gemini Vision rescue).
@@ -129,7 +130,9 @@ def test_smart_hybrid_gemini_rescue_passes_when_ocr_fails(test_setup):
                 'date_of_expiration': 'October 28, 2026'
             }
 
-            extract_document_info.func(doc.id)
+            with patch('apps.ocr.validators.datetime') as clock:
+                clock.today.return_value = datetime(2026, 10, 27)
+                extract_document_info.func(doc.id)
 
     ocr_res = OCRValidationResult.objects.get(document=doc)
     assert ocr_res.status == OCRValidationResult.ValidationStatus.PASSED

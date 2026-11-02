@@ -120,11 +120,7 @@ class TestDPASecurityAndEncryption:
         client = APIClient()
         client.force_authenticate(user=self.farmer_a)
         resp = client.get("/hog-survey/")
-        assert resp.status_code == 200
-        # Farmer must receive an empty list
-        data = resp.json()
-        results = data.get("results", data)
-        assert len(results) == 0
+        assert resp.status_code == 403
 
         # Agri officer can see all
         client.force_authenticate(user=self.agri_user)

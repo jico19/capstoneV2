@@ -22,7 +22,7 @@ Keep tests for scripts that coordinate several apps in `tests/scripts/`.
 | `apps/payment/tests/` | Offline confirmation, staff simulation, payment services, security, expiration |
 | `apps/permits/tests/` | Application documents, OCR corrections, workflow, permissions, reports, signatories, numbering, application query counts |
 | `apps/sms/tests/` | Task messages, opt out, deduplication, retries, gateway rate limits |
-| `tests/scripts/` | Operations and account seeding, rollback, repeat execution, production guards |
+| `tests/scripts/` | Account seeding, rollback, repeat execution, production guards |
 
 Fixtures shared within an app belong in that app's `tests/conftest.py`.
 Fixtures specific to a test module stay in that module. Avoid importing fixtures
@@ -66,8 +66,11 @@ protect against extra database queries as list sizes grow.
 * Remove `api/tests/test_demo_seed.py`, which targeted a replaced seeder with
   `ACCOUNTS`, `OPERATIONAL_MODELS`, a fixed 100-record dataset, Cloudinary upload
   helpers, and `FARMPASS_DEMO_SEED_ENABLED`. The current script uses a different
-  implementation and `FARMPASS_SEED_ENABLED`. Retain its current operations
-  and account tests under `tests/scripts/`.
+  implementation and `FARMPASS_SEED_ENABLED`. Account tests remain under
+  `tests/scripts/`.
+* Remove the operations seeder command tests and the combined seeder preview and
+  generated CSV round trip test. Census importer and CSV API behavior remain
+  covered in `apps/maps/tests/test_census.py` and `test_hog_survey_upload.py`.
 * Remove calls to the absent `scripts.generate_data` exporter from census and
   history tests. Retain generated data, CSV importer preview, import round trip,
   repeated import, census API, and API CSV export assertions. Construct the

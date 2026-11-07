@@ -982,22 +982,34 @@ def generate_mao_certificate_pdf(permit_application_id, current_attempt=1, issue
                 or opv_validation.status != opv_validation.Status.VALIDATED
                 or not opv_validation.veterinary_health_certificate
                 or not opv_validation.transportation_pass
+                or not application.mao_confirmed_at
+                or not application.mao_confirmed_by_id
+                or not application.mao_confirmation_reference
             ):
                 logger.info(
-                    "Skipped MAO Certificate PDF for application %s: OPV approval and both documents are required.",
+                    "Skipped MAO Certificate PDF for application %s: MAO confirmation, OPV approval and both documents are required.",
                     permit_application_id,
                 )
-                return "Skipped MAO Certificate PDF: OPV approval and both documents are required."
+                return "Skipped MAO Certificate PDF: MAO confirmation, OPV approval and both documents are required."
 
-            # Ensure MAO Certificate number and issue timestamp on application
-            if not application.mao_certificate_number:
-                from apps.permits.services.numbers import get_mao_cert_number
-                application.mao_certificate_number = get_mao_cert_number(application)
-                application.mao_cert_issued_at = timezone.now()
-                application.save(update_fields=["mao_certificate_number", "mao_cert_issued_at"])
-            elif not application.mao_cert_issued_at:
-                application.mao_cert_issued_at = timezone.now()
-                application.save(update_fields=["mao_cert_issued_at"])
+            # Only confirmation assigns metadata. Delayed jobs use the recorded officer.
+            issued_by_user_id = application.mao_confirmed_by_id
+            if not application.mao_certificate_number or not application.mao_cert_issued_at:
+                return "Skipped MAO Certificate PDF: confirmation metadata is incomplete."
+
+            # Retain existing files, including certificates created before deployment.
+            existing_pdf = application.mao_certificate_pdf or (issued_permit.mao_certificate_pdf if issued_permit else None)
+            if existing_pdf:
+                if not application.mao_certificate_pdf:
+                    application.mao_certificate_pdf = existing_pdf.name
+                    application.save(update_fields=["mao_certificate_pdf"])
+                if issued_permit:
+                    if not issued_permit.mao_certificate_number:
+                        issued_permit.mao_certificate_number = application.mao_certificate_number
+                    if not issued_permit.mao_certificate_pdf:
+                        issued_permit.mao_certificate_pdf = existing_pdf.name
+                    issued_permit.save(update_fields=["mao_certificate_number", "mao_certificate_pdf"])
+                return "MAO Certificate PDF already generated."
 
             if issued_permit and not issued_permit.mao_certificate_number:
                 issued_permit.mao_certificate_number = application.mao_certificate_number

@@ -66,7 +66,7 @@ class PermitApplicationViewSet(BaseModelViewSet):
             qs = models.PermitApplication.objects.none()
 
         return qs.select_related(
-            "farmer", "farmer__barangay", "issued_permit", "opv_validation"
+            "farmer", "farmer__barangay", "issued_permit", "opv_validation", "mao_confirmed_by"
         ).prefetch_related(
             "origins__barangay",
             "origins__documents__ocr",
@@ -172,6 +172,19 @@ class PermitApplicationViewSet(BaseModelViewSet):
             {"msg": "Application approved and forwarded to OPV"},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=["post"], url_path="confirm-mao-certificate")
+    def confirm_mao_certificate(self, request, pk=None):
+        from ..services.mao import confirm_mao_certificate
+        if request.user.role != "Agri":
+            raise PermissionDenied("Only Agri officers can confirm MAO Certificates.")
+        application = confirm_mao_certificate(
+            self.get_object(), request.user,
+            confirmed=request.data.get("confirmed"), reference=request.data.get("reference"),
+        )
+        return Response(serializers.PermitApplicationDetailSerializer(
+            application, context=self.get_serializer_context(),
+        ).data)
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):

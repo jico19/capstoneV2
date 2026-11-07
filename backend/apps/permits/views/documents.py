@@ -56,7 +56,6 @@ class SubmittedDocumentViewSet(BaseModelViewSet):
                         'Origin Barangay': ', '.join(
                             app.origins.values_list('barangay__name', flat=True)
                         ) or 'N/A',
-                        'Status': 'NO REPORTED ASF / SWINE DISEASE',
                         'Issue Date': app.mao_cert_issued_at.strftime('%Y-%m-%d %H:%M') if app.mao_cert_issued_at else 'N/A',
                     },
                     'remarks': {},

@@ -29,6 +29,8 @@ def make_releasable_application(agri_user, farmer_user, fee=150.00):
     application = PermitApplication.objects.create(
         farmer=farmer_user,
         status=PermitApplication.Status.PAYMENT_PENDING,
+        mao_confirmed_by=agri_user, mao_confirmed_at=timezone.now(),
+        mao_confirmation_reference="Reviewed official records", mao_certificate_number="OMA-TEST-PAY",
         destination="Lucena",
         transport_date=timezone.now().date(),
         purpose="Slaughter",

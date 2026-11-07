@@ -102,6 +102,9 @@ def add_opv_documents(application, staff):
         veterinary_health_certificate=SimpleUploadedFile("vhc.pdf", b"%PDF-1.4 test"),
         transportation_pass=SimpleUploadedFile("pass.pdf", b"%PDF-1.4 test"),
     )
+    from apps.permits.services.mao import confirm_mao_certificate
+    confirm_mao_certificate(application, get_user_model().objects.filter(role="Agri").first(),
+                            confirmed=True, reference="Official records reviewed")
 
 
 @pytest.mark.django_db

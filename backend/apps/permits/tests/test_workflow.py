@@ -179,6 +179,13 @@ class TestPermitWorkflow:
         assert application.opv_validation.aic_verified_at is not None
         assert application.opv_validation.veterinary_health_certificate
         assert application.opv_validation.transportation_pass
+        assert not application.mao_certificate_number
+        api_client.force_authenticate(user=agri_user)
+        response = api_client.post(reverse('permitapplication-confirm-mao-certificate', args=[app_id]), {
+            'confirmed': True, 'reference': 'Official records reviewed, ref 123',
+        }, format='json')
+        assert response.status_code == 200
+        application.refresh_from_db()
         assert application.mao_certificate_number != ""
         assert application.mao_cert_issued_at is not None
         generate_mao_certificate_pdf.func(application.pk)
@@ -204,6 +211,8 @@ class TestPermitWorkflow:
         application = PermitApplication.objects.create(
             farmer=farmer_user,
             status=PermitApplication.Status.PAYMENT_PENDING,
+            mao_confirmed_by=agri_user, mao_confirmed_at=timezone.now(),
+            mao_confirmation_reference='Reviewed',
             destination='Lucena',
             transport_date=timezone.now().date(),
             purpose='Slaughter',
@@ -228,7 +237,7 @@ class TestPermitWorkflow:
         issued_permit.refresh_from_db()
         assert issued_permit.is_paid is False
 
-    def test_hog_survey_deduction_and_restoration(self, farmer_user, barangay):
+    def test_hog_survey_deduction_and_restoration(self, farmer_user, barangay, agri_user):
         from apps.maps.models import HogSurvey
         from apps.permits.models import TransportOrigin
         from django.utils import timezone
@@ -276,6 +285,10 @@ class TestPermitWorkflow:
         assert survey.total_pigs == 300
 
         # 5. Walk the legal transition chain to RELEASED and verify deduction occurs
+        app.mao_confirmed_by = agri_user
+        app.mao_confirmed_at = timezone.now()
+        app.mao_confirmation_reference = 'Official records reviewed'
+        app.save()
         for status in [
             PermitApplication.Status.SUBMITTED,
             PermitApplication.Status.OCR_VALIDATED,
@@ -344,8 +357,13 @@ class TestStatusTransitionGuard:
             purpose='Slaughter',
         )
 
-    def test_happy_path_chain_allows_every_legal_edge(self, farmer_user):
+    def test_happy_path_chain_allows_every_legal_edge(self, farmer_user, agri_user):
         app = self._app(farmer_user)
+        from django.utils import timezone
+        app.mao_confirmed_by = agri_user
+        app.mao_confirmed_at = timezone.now()
+        app.mao_confirmation_reference = 'Official records reviewed'
+        app.save()
         chain = [
             PermitApplication.Status.SUBMITTED,
             PermitApplication.Status.OCR_VALIDATED,

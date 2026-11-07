@@ -329,6 +329,10 @@ class PaymentViewSet(BaseModelViewSet):
 
         with transaction.atomic():
             payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
+            issued_permit = Permits.IssuedPermit.objects.select_for_update().get(pk=issued_permit.pk)
+            application = Permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
+            from apps.permits.services.mao import require_mao_confirmation
+            require_mao_confirmation(application)
             payment_history.status = models.PaymentHistory.Status.SUCCESS
             payment_history.save()
 

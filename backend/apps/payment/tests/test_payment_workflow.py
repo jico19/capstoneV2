@@ -155,17 +155,20 @@ class TestReleasePdfQueuingTiming:
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
 
         with mock.patch("apps.payment.services.generate_permit_pdf") as permit_task, \
-                mock.patch("apps.payment.services.generate_aic_pdf") as aic_task:
+                mock.patch("apps.payment.services.generate_aic_pdf") as aic_task, \
+                mock.patch("apps.payment.services.generate_mao_certificate_pdf") as mao_task:
             services.confirm_offline_payment(application.pk, agri_user, "OR-TIMING1")
 
             permit_task.enqueue.assert_called_once_with(permit_application_id=application.pk)
             aic_task.enqueue.assert_called_once_with(permit_application_id=application.pk)
+            mao_task.enqueue.assert_called_once_with(permit_application_id=application.pk)
 
     def test_release_pdfs_never_queued_when_transaction_rolls_back(self, farmer_user, agri_user):
         application, issued_permit = make_releasable_application(agri_user, farmer_user)
 
         with mock.patch("apps.payment.services.generate_permit_pdf") as permit_task, \
                 mock.patch("apps.payment.services.generate_aic_pdf") as aic_task, \
+                mock.patch("apps.payment.services.generate_mao_certificate_pdf") as mao_task, \
                 mock.patch(
                     "apps.permits.services.permit.deduct_hog_survey_for_application",
                     side_effect=RuntimeError("survey crash"),
@@ -179,6 +182,7 @@ class TestReleasePdfQueuingTiming:
         assert issued_permit.is_paid is False
         permit_task.enqueue.assert_not_called()
         aic_task.enqueue.assert_not_called()
+        mao_task.enqueue.assert_not_called()
 
 
 @pytest.mark.django_db

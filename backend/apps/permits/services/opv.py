@@ -60,10 +60,11 @@ def approve_opv_validation(application, staff, data, files):
     if staff.role != "Opv":
         raise PermissionDenied("Not Authorized")
 
-    if application.status != models.PermitApplication.Status.FORWARDED_TO_OPV:
-        raise ValidationError(f"Cannot approve application with status '{application.status}'. It must be FORWARDED_TO_OPV.")
-
     with transaction.atomic():
+        application = models.PermitApplication.objects.select_for_update().get(pk=application.pk)
+        if application.status != models.PermitApplication.Status.FORWARDED_TO_OPV:
+            raise ValidationError(f"Cannot approve application with status '{application.status}'. It must be FORWARDED_TO_OPV.")
+
         create_approve_opv_validation(
             application_id=application.pk, files=files, data=data, staff=staff
         )
@@ -74,10 +75,27 @@ def approve_opv_validation(application, staff, data, files):
             reason=data.get('remarks')
         )
 
+        # Certification follows successful OPV approval and both saved documents.
+        if not application.mao_certificate_number:
+            from .numbers import get_mao_cert_number
+            application.mao_certificate_number = get_mao_cert_number(application)
+            application.mao_cert_issued_at = timezone.now()
+            application.save(update_fields=["mao_certificate_number", "mao_cert_issued_at"])
+        elif not application.mao_cert_issued_at:
+            application.mao_cert_issued_at = timezone.now()
+            application.save(update_fields=["mao_cert_issued_at"])
+
+        from apps.documents.services import generate_mao_certificate_pdf
+        transaction.on_commit(
+            lambda application_id=application.pk: generate_mao_certificate_pdf.enqueue(
+                permit_application_id=application_id,
+            )
+        )
+
         # --- Formal Audit Entry ---
         AuditTrail.objects.create(
             who_performed=staff,
-            what_performed=f"[PROVINCIAL VETERINARY REVIEW] - Health requirements validated for Application #{application.application_id}. Status updated to OPV_VALIDATED.",
+            what_performed=f"[PROVINCIAL VETERINARY REVIEW] - Health requirements validated for Application #{application.application_id}. Status updated to OPV_VALIDATED. MAO Certificate PDF generation queued after commit.",
             when_performed=timezone.now(),
         )
 

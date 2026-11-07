@@ -29,6 +29,7 @@ from apps.documents.pdf_builder import (
 )
 
 from apps.permits.models import (
+    IssuedPermit,
     PermitApplication,
     SubmittedDocument,
     ApplicationSignatory,
@@ -960,12 +961,33 @@ def generate_mao_certificate_pdf(permit_application_id, current_attempt=1, issue
     """
     try:
         with transaction.atomic():
+            # Match payment release's lock order: issued permit before application.
+            # A permit created later will receive its PDF on payment release.
+            issued_permit = IssuedPermit.objects.select_for_update().filter(
+                application_id=permit_application_id,
+            ).first()
             application = (
-                PermitApplication.objects.select_related("farmer")
+                PermitApplication.objects.select_for_update(of=("self",)).select_related("farmer")
                 .prefetch_related("origins__barangay")
                 .get(pk=permit_application_id)
             )
-            issued_permit = getattr(application, "issued_permit", None)
+            opv_validation = getattr(application, "opv_validation", None)
+            if (
+                application.status not in {
+                    PermitApplication.Status.OPV_VALIDATED,
+                    PermitApplication.Status.PAYMENT_PENDING,
+                    PermitApplication.Status.RELEASED,
+                }
+                or not opv_validation
+                or opv_validation.status != opv_validation.Status.VALIDATED
+                or not opv_validation.veterinary_health_certificate
+                or not opv_validation.transportation_pass
+            ):
+                logger.info(
+                    "Skipped MAO Certificate PDF for application %s: OPV approval and both documents are required.",
+                    permit_application_id,
+                )
+                return "Skipped MAO Certificate PDF: OPV approval and both documents are required."
 
             # Ensure MAO Certificate number and issue timestamp on application
             if not application.mao_certificate_number:

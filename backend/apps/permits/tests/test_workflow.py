@@ -103,16 +103,16 @@ class TestPermitWorkflow:
         assert application.status == PermitApplication.Status.FORWARDED_TO_OPV
         assert application.aic_number != ""
         assert application.aic_issued_at is not None
-        assert application.mao_certificate_number != ""
-        assert application.mao_cert_issued_at is not None
+        assert application.mao_certificate_number == ""
+        assert application.mao_cert_issued_at is None
+        assert not application.mao_certificate_pdf
 
-        # Verify AIC and MAO Certificate PDF generation and download endpoint
+        # Only the AIC is generated before provincial validation.
         from apps.documents.services import generate_aic_pdf, generate_mao_certificate_pdf
         generate_aic_pdf.func(application.pk)
-        generate_mao_certificate_pdf.func(application.pk)
         application.refresh_from_db()
         assert bool(application.aic_pdf) is True
-        assert bool(application.mao_certificate_pdf) is True
+        assert not application.mao_certificate_pdf
 
         aic_url = reverse('permitapplication-aic', kwargs={'pk': app_id})
         aic_resp = api_client.get(aic_url)
@@ -127,6 +127,8 @@ class TestPermitWorkflow:
         assert response.status_code == 200
         application.refresh_from_db()
         assert application.status == PermitApplication.Status.OPV_REJECTED
+        assert application.mao_certificate_number == ""
+        assert not application.mao_certificate_pdf
 
         # 4. Farmer Resubmit
         api_client.force_authenticate(user=farmer_user)
@@ -144,6 +146,8 @@ class TestPermitWorkflow:
         application.refresh_from_db()
         # Should go back to OPV (Forwarded)
         assert application.status == PermitApplication.Status.FORWARDED_TO_OPV
+        assert application.mao_certificate_number == ""
+        assert not application.mao_certificate_pdf
 
         # 5. OPV Approve (Final Validation)
         api_client.force_authenticate(user=opv_user)
@@ -152,8 +156,8 @@ class TestPermitWorkflow:
         # 5a. OPV Approve without AIC verification should fail
         fail_data = {
             'remarks': 'All good',
-            'veterinary_health_certificate': dummy_image,
-            'transportation_pass': dummy_image,
+            'veterinary_health_certificate': get_fresh_file(),
+            'transportation_pass': get_fresh_file(),
         }
         fail_resp = api_client.post(url, fail_data, format='multipart')
         assert fail_resp.status_code == 400
@@ -164,8 +168,8 @@ class TestPermitWorkflow:
         data = {
             'remarks': 'All good',
             'aic_verified': 'true',
-            'veterinary_health_certificate': dummy_image,
-            'transportation_pass': dummy_image,
+            'veterinary_health_certificate': get_fresh_file(),
+            'transportation_pass': get_fresh_file(),
         }
         response = api_client.post(url, data, format='multipart')
         assert response.status_code == 200
@@ -173,6 +177,13 @@ class TestPermitWorkflow:
         assert application.status == PermitApplication.Status.OPV_VALIDATED
         assert application.opv_validation.aic_verified is True
         assert application.opv_validation.aic_verified_at is not None
+        assert application.opv_validation.veterinary_health_certificate
+        assert application.opv_validation.transportation_pass
+        assert application.mao_certificate_number != ""
+        assert application.mao_cert_issued_at is not None
+        generate_mao_certificate_pdf.func(application.pk)
+        application.refresh_from_db()
+        assert application.mao_certificate_pdf.read().startswith(b"%PDF-")
 
         # 6. Agri Issue Permit
         api_client.force_authenticate(user=agri_user)

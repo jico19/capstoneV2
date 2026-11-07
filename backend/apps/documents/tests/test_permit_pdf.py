@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from apps.maps.models import Barangay
 from apps.permits.models import (
@@ -11,6 +12,7 @@ from apps.permits.models import (
     Signatory,
     TransportOrigin,
     MunicipalConfig,
+    OPVValidation,
 )
 from apps.documents.services.permit_documents import (
     generate_aic_pdf,
@@ -52,7 +54,8 @@ User = get_user_model()
 
 
 @pytest.fixture
-def test_setup(db):
+def test_setup(db, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
     farmer = User.objects.create_user(
         username="pdf_farmer",
         first_name="Juan Miguel",
@@ -68,6 +71,7 @@ def test_setup(db):
         password="password123",
         role="Agri",
     )
+    opv = User.objects.create_user(username="pdf_opv", role="Opv")
     b1 = Barangay.objects.create(name="Manggalang 1")
     b2 = Barangay.objects.create(name="Guisguis San Roque")
     b3 = Barangay.objects.create(name="Castañas")
@@ -85,9 +89,19 @@ def test_setup(db):
     return {
         "farmer": farmer,
         "agri": agri,
+        "opv": opv,
         "barangays": [b1, b2, b3, b4, b5],
         "config": config,
     }
+
+
+def add_opv_documents(application, staff):
+    OPVValidation.objects.create(
+        application=application, opv_staff=staff,
+        status=OPVValidation.Status.VALIDATED, aic_verified=True,
+        veterinary_health_certificate=SimpleUploadedFile("vhc.pdf", b"%PDF-1.4 test"),
+        transportation_pass=SimpleUploadedFile("pass.pdf", b"%PDF-1.4 test"),
+    )
 
 
 @pytest.mark.django_db
@@ -197,7 +211,7 @@ def test_generate_mao_certificate_pdf(test_setup):
 
     app = PermitApplication.objects.create(
         farmer=farmer,
-        status=PermitApplication.Status.FORWARDED_TO_OPV,
+        status=PermitApplication.Status.OPV_VALIDATED,
         destination="Lucena City",
         transport_date=timezone.now().date(),
         purpose="Slaughter",
@@ -216,6 +230,7 @@ def test_generate_mao_certificate_pdf(test_setup):
         permit_fee=Decimal("150.00"),
     )
 
+    add_opv_documents(app, test_setup["opv"])
     result = generate_mao_certificate_pdf.func(app.pk, issued_by_user_id=agri.pk)
     assert "MAO Certificate PDF Generated" in result
 
@@ -295,6 +310,7 @@ def test_each_document_renders_its_own_signatory(test_setup):
         application=app, document_type=DocumentType.PERMIT, signatory=oic
     )
 
+    add_opv_documents(app, test_setup["opv"])
     generate_aic_pdf.func(app.pk)
     generate_mao_certificate_pdf.func(app.pk, issued_by_user_id=agri.pk)
     generate_permit_pdf.func(app.pk)

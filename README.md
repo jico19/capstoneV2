@@ -49,10 +49,10 @@ FarmPass is an end-to-end digital governance and biosecurity platform for livest
 2. Document Pre-Check & OCR (Automated text extraction & validation)
        │
        ▼
-3. MAO Review & Verification (Staff checklist gate)
+3. MAO Review & Verification (Staff checklist gate; AIC queued for generation)
        │
        ▼
-4. OPV Review & Approval (Provincial vet approval; documents locked)
+4. OPV Review & Approval (VHC and Transportation Pass returned; MAO Certificate queued for worker generation)
        │
        ▼
 5. Payment Processing (PayMongo online or MAO walk-in with countdown timer)
@@ -116,6 +116,18 @@ python manage.py runscript seed_realistic_operations
 # Start Django development server
 python manage.py runserver 8000
 ```
+
+Run the background worker in a separate terminal from `backend/`, using the
+same environment and database as the web server:
+
+```powershell
+.\venv\Scripts\python.exe manage.py db_worker
+```
+
+The MAO Certificate is queued only after OPV approval saves both the Veterinary
+Health Certificate and Transportation Pass. The approval response does not wait
+for PDF rendering. If the worker is stopped, the task stays queued until it runs.
+Restart both the web server and worker after deploying workflow changes.
 
 > **Targeted Testing:** To run specific test suites (do not run full suite by default):
 > ```powershell

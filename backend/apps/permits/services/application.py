@@ -181,28 +181,12 @@ def approve_application(application, user, remarks):
             app_locked.aic_issued_at = timezone.now()
             app_locked.save(update_fields=["aic_issued_at"])
 
-        # Ensure MAO Certificate number and issue timestamp on application
-        if not app_locked.mao_certificate_number:
-            from .numbers import get_mao_cert_number
-            app_locked.mao_certificate_number = get_mao_cert_number(app_locked)
-            app_locked.mao_cert_issued_at = timezone.now()
-            app_locked.save(update_fields=["mao_certificate_number", "mao_cert_issued_at"])
-        elif not app_locked.mao_cert_issued_at:
-            app_locked.mao_cert_issued_at = timezone.now()
-            app_locked.save(update_fields=["mao_cert_issued_at"])
-
         handle_application_status_change(app_locked, models.PermitApplication.Status.FORWARDED_TO_OPV)
 
-        # Trigger AIC and MAO Certificate PDF generation
-        from apps.documents.services import generate_aic_pdf, generate_mao_certificate_pdf
+        # The AIC accompanies the application sent to OPV.
+        from apps.documents.services import generate_aic_pdf
         transaction.on_commit(
             lambda: generate_aic_pdf.enqueue(
-                permit_application_id=application.pk,
-                issued_by_user_id=user.pk
-            )
-        )
-        transaction.on_commit(
-            lambda: generate_mao_certificate_pdf.enqueue(
                 permit_application_id=application.pk,
                 issued_by_user_id=user.pk
             )

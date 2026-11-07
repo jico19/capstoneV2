@@ -57,10 +57,16 @@ class PermitApplication(models.Model):
     aic_pdf = models.FileField(upload_to='issued_docs/aic/', null=True, blank=True, validators=[validate_file_size])
     aic_issued_at = models.DateTimeField(null=True, blank=True)
 
-    # MAO Health / ASF-Free Certification generated after OPV approves with both documents
+    # MAO certification requires an explicit municipal records review after OPV approval.
     mao_certificate_number = models.CharField(max_length=50, default="", blank=True)
     mao_certificate_pdf = models.FileField(upload_to='issued_docs/mao_cert/', null=True, blank=True, validators=[validate_file_size])
     mao_cert_issued_at = models.DateTimeField(null=True, blank=True)
+    mao_confirmed_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='mao_confirmed_applications',
+    )
+    mao_confirmed_at = models.DateTimeField(null=True, blank=True)
+    mao_confirmation_reference = models.CharField(max_length=1000, blank=True, default="")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -75,27 +75,10 @@ def approve_opv_validation(application, staff, data, files):
             reason=data.get('remarks')
         )
 
-        # Certification follows successful OPV approval and both saved documents.
-        if not application.mao_certificate_number:
-            from .numbers import get_mao_cert_number
-            application.mao_certificate_number = get_mao_cert_number(application)
-            application.mao_cert_issued_at = timezone.now()
-            application.save(update_fields=["mao_certificate_number", "mao_cert_issued_at"])
-        elif not application.mao_cert_issued_at:
-            application.mao_cert_issued_at = timezone.now()
-            application.save(update_fields=["mao_cert_issued_at"])
-
-        from apps.documents.services import generate_mao_certificate_pdf
-        transaction.on_commit(
-            lambda application_id=application.pk: generate_mao_certificate_pdf.enqueue(
-                permit_application_id=application_id,
-            )
-        )
-
         # --- Formal Audit Entry ---
         AuditTrail.objects.create(
             who_performed=staff,
-            what_performed=f"[PROVINCIAL VETERINARY REVIEW] - Health requirements validated for Application #{application.application_id}. Status updated to OPV_VALIDATED. MAO Certificate PDF generation queued after commit.",
+            what_performed=f"[PROVINCIAL VETERINARY REVIEW] - Health requirements validated for Application #{application.application_id}. Status updated to OPV_VALIDATED. Awaiting MAO Certificate confirmation.",
             when_performed=timezone.now(),
         )
 

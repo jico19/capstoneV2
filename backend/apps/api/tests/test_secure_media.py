@@ -83,6 +83,7 @@ class SecureServeMediaTests(TestCase):
             f.write(b'%PDF-1.4 official')
         try:
             self.app_a.mao_certificate_pdf = path
+            self.app_a.status = PermitApplication.Status.RELEASED
             self.app_a.save()
             opv = OPVValidation.objects.create(application=self.app_a)
             for field in ['mao_certificate_pdf', 'veterinary_health_certificate', 'transportation_pass']:

@@ -173,6 +173,7 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
     mao_certificate_pdf = serializers.SerializerMethodField()
     opv_validation = serializers.SerializerMethodField()
     issued_permit = serializers.SerializerMethodField()
+    mao_confirmed_by = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitApplication
@@ -201,7 +202,25 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
             "mao_cert_issued_at",
             "opv_validation",
             "issued_permit",
+            "mao_confirmed_by",
+            "mao_confirmed_at",
+            "mao_confirmation_reference",
         ]
+        read_only_fields = ["mao_confirmed_by", "mao_confirmed_at", "mao_confirmation_reference"]
+
+    def get_mao_confirmed_by(self, obj):
+        if obj.mao_confirmed_by:
+            return {"id": obj.mao_confirmed_by_id,
+                    "name": obj.mao_confirmed_by.get_full_name() or obj.mao_confirmed_by.username}
+        return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if not request or request.user.role not in {"Agri", "Admin"}:
+            for field in ("mao_confirmed_by", "mao_confirmed_at", "mao_confirmation_reference"):
+                data.pop(field, None)
+        return data
 
     def get_aic_pdf(self, obj):
         if not obj.aic_pdf:
@@ -280,7 +299,6 @@ class PermitApplicationDetailSerializer(serializers.ModelSerializer):
                         "Certificate Number": obj.mao_certificate_number or f"OMA-ANN-ASFCert-{str(obj.id)[:8].upper()}",
                         "Application ID": str(obj.application_id or obj.id),
                         "Origin Barangay": origin_brgy,
-                        "Status": "NO REPORTED ASF / SWINE DISEASE",
                         "Issue Date": obj.mao_cert_issued_at.strftime("%Y-%m-%d %H:%M") if obj.mao_cert_issued_at else "N/A",
                     },
                     "remarks": {}

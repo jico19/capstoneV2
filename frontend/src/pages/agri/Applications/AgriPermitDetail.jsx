@@ -13,6 +13,7 @@ import ApplicationTracker from "../../../components/ui/ApplicationTracker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import MAOCertificatePanel from './MAOCertificatePanel';
 
 /**
  * Agri Permit Detail View
@@ -28,7 +29,9 @@ const AgriPermitDetail = () => {
 
     const { id } = useParams();
     const navigate = useNavigate();
-    const { data: applicationData, isLoading, isError } = useApplicationDetail(id);
+    const { data: applicationData, isLoading, isError } = useApplicationDetail(id, {
+        refetchInterval: (query) => query.state.data?.mao_confirmed_at && !query.state.data?.mao_certificate_pdf ? 5000 : false,
+    });
     const application = applicationData || {};
     const { mutate: updateOCR } = useOCRUpdate();
     const query = useQueryClient()
@@ -175,7 +178,7 @@ const AgriPermitDetail = () => {
     };
 
     const handleIssuePermit = (id) => {
-        if (!feeConfig || isLoadingFees || isFeeError) return;
+        if (!application.mao_confirmed_at || !feeConfig || isLoadingFees || isFeeError) return;
 
         setConfirmModal({
             title: "Issue Official Permit?",
@@ -330,12 +333,14 @@ const AgriPermitDetail = () => {
                         />
                     ) : null}
 
+                    <MAOCertificatePanel application={application} />
+
                     {application.status === 'OPV_VALIDATED' ? (
                         <div className="pt-8 border-t border-stone-200">
                              <div className="bg-white border border-stone-200 p-6 sm:p-8 rounded-xl shadow-xs flex flex-col items-center gap-6">
                                 <div className="text-center space-y-1.5">
                                     <h2 className="text-lg font-bold text-stone-900 tracking-tight">Issue Permit</h2>
-                                    <p className="text-xs sm:text-sm text-stone-500 font-normal">Health validation is complete. Issue the permit using the configured municipal fees below.</p>
+                                    <p className="text-xs sm:text-sm text-stone-500 font-normal">{application.mao_confirmed_at ? 'MAO confirmation is complete. Issue the permit using the configured municipal fees below.' : 'Confirm the MAO Certificate before issuing this permit.'}</p>
                                 </div>
                                 
                                 <div className="w-full max-w-md space-y-3" aria-busy={isLoadingFees}>
@@ -374,7 +379,7 @@ const AgriPermitDetail = () => {
                                 <button
                                     type="button"
                                     className="btn-tactile w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white px-8 py-3 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={isIssuingPermit || isLoadingFees || isFeeError || !feeConfig}
+                                    disabled={!application.mao_confirmed_at || isIssuingPermit || isLoadingFees || isFeeError || !feeConfig}
                                     onClick={() => handleIssuePermit(application.id)}
                                 >
                                     {isIssuingPermit ? (

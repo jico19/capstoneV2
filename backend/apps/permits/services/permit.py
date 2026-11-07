@@ -299,6 +299,8 @@ def issue_permit(application, user, permit_fee=None):
             )
         if models.IssuedPermit.objects.filter(application=app_locked).exists():
             raise ValidationError("A permit has already been issued for this application.")
+        from .mao import require_mao_confirmation
+        require_mao_confirmation(app_locked)
 
         issued_permit = models.IssuedPermit.objects.create(
             permit_number=uuid.uuid4().hex[:13].upper(),
@@ -342,6 +344,9 @@ def get_issued_permit_details(application, user):
         )
 
     # Guard: Only allow retrieval if paid
+    if application.status != models.PermitApplication.Status.RELEASED:
+        from .mao import require_mao_confirmation
+        require_mao_confirmation(application)
     if not issued_permit_instance.is_paid:
         raise PermissionDenied("This permit has not been paid for yet.")
 

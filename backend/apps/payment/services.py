@@ -17,14 +17,24 @@ from apps.api.models import AuditTrail
 
 logger = logging.getLogger(__name__)
 
-def _release_permit_and_queue_pdfs(application):
+def _release_permit_and_queue_pdfs(application, *, queue_mao=True):
     """Advance application to RELEASED status; queue PDF tasks after commit."""
     from apps.permits.services import handle_application_status_change
-    handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
+    # Re-read under lock: legacy callbacks must preserve payment without releasing.
+    with transaction.atomic():
+        permits.IssuedPermit.objects.select_for_update().get(application_id=application.pk)
+        application = permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
+        if application.status == application.Status.RELEASED:
+            return False
+        if not application.mao_confirmed_at or not application.mao_confirmed_by_id or not application.mao_confirmation_reference:
+            return False
+        handle_application_status_change(application, permits.PermitApplication.Status.RELEASED)
     p_app_pk = application.pk
     transaction.on_commit(lambda f=generate_permit_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
     transaction.on_commit(lambda f=generate_aic_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
-    transaction.on_commit(lambda f=generate_mao_certificate_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+    if queue_mao:
+        transaction.on_commit(lambda f=generate_mao_certificate_pdf, k=p_app_pk: f.enqueue(permit_application_id=k))
+    return True
 
 
 def ensure_aic_number(issued_permit):
@@ -37,11 +47,9 @@ def ensure_aic_number(issued_permit):
 def ensure_mao_cert_number(issued_permit):
     """Assign a unique MAO Cert number if none is set yet. Caller persists."""
     if not issued_permit.mao_certificate_number:
-        from apps.permits.services.numbers import get_mao_cert_number
-        if issued_permit.application and issued_permit.application.mao_certificate_number:
-            issued_permit.mao_certificate_number = issued_permit.application.mao_certificate_number
-        else:
-            issued_permit.mao_certificate_number = get_mao_cert_number(issued_permit)
+        app = permits.PermitApplication.objects.get(pk=issued_permit.application_id)
+        if app.mao_confirmed_at and app.mao_confirmed_by_id:
+            issued_permit.mao_certificate_number = app.mao_certificate_number
     return issued_permit.mao_certificate_number
 
 
@@ -66,6 +74,8 @@ def get_auth_header():
 
 def create_checkout_session(application_pk: int):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
+    from apps.permits.services.mao import require_mao_confirmation
+    require_mao_confirmation(application)
     issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
     fee_pesos = int(issued_permit_instance.permit_fee)
 
@@ -130,6 +140,8 @@ def create_checkout_session(application_pk: int):
 
 def create_qrph_payment(application_pk: int):
     application = get_object_or_404(permits.PermitApplication, pk=application_pk)
+    from apps.permits.services.mao import require_mao_confirmation
+    require_mao_confirmation(application)
     issued_permit_instance = get_object_or_404(permits.IssuedPermit, application=application)
     fee_pesos = int(issued_permit_instance.permit_fee)
 
@@ -324,6 +336,8 @@ def verify_paymongo_session(application_pk: int, user):
         with transaction.atomic():
             # Re-fetch payment history with a lock to prevent concurrent update issues
             payment_history = models.PaymentHistory.objects.select_for_update().get(pk=payment_history.pk)
+            issued_permit = permits.IssuedPermit.objects.select_for_update().get(pk=issued_permit.pk)
+            application = permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
             
             if payment_history.status == models.PaymentHistory.Status.SUCCESS:
                 return True, payment_history
@@ -413,6 +427,9 @@ def farmer_simulate_payment(application_pk: int, user, payment_method: str):
         ).first()
         issued_permit = permits.IssuedPermit.objects.select_for_update().get(pk=issued_permit.pk)
         application = permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
+
+        from apps.permits.services.mao import require_mao_confirmation
+        require_mao_confirmation(application)
 
         if issued_permit.is_paid:
             raise ValidationError("This permit has already been paid.")
@@ -514,6 +531,9 @@ def confirm_offline_payment(application_pk: int, user, or_number: str):
         ).first()
         issued_permit = permits.IssuedPermit.objects.select_for_update().get(pk=issued_permit.pk)
         application = permits.PermitApplication.objects.select_for_update().get(pk=application.pk)
+
+        from apps.permits.services.mao import require_mao_confirmation
+        require_mao_confirmation(application)
 
         if issued_permit.is_paid:
             raise ValidationError("This permit has already been paid.")

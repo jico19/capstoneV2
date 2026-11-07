@@ -121,6 +121,20 @@ def secure_serve_media(request, path):
         from django.conf import settings
         return serve(request, normalized_path, document_root=settings.MEDIA_ROOT)
 
+    # Retained legacy files do not authorize release of unfinished applications.
+    if getattr(user, "role", None) in ["Farmer", "Inspector"]:
+        from django.db.models import Q
+        from apps.permits.models import PermitApplication
+        withheld = PermitApplication.objects.exclude(status=PermitApplication.Status.RELEASED).filter(
+            Q(mao_confirmed_at__isnull=True) | Q(mao_confirmed_by__isnull=True) | Q(mao_confirmation_reference=""),
+        ).filter(
+            Q(mao_certificate_pdf=normalized_path)
+            | Q(issued_permit__mao_certificate_pdf=normalized_path)
+            | Q(issued_permit__permit_pdf=normalized_path),
+        ).exists()
+        if withheld:
+            return JsonResponse({"detail": "MAO Certificate confirmation is required before release."}, status=403)
+
     # Inspectors can view issued permits, AICs, and OPV clearance docs for verification
     if getattr(user, "role", None) == "Inspector":
         if (

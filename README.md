@@ -52,13 +52,13 @@ FarmPass is an end-to-end digital governance and biosecurity platform for livest
 3. MAO Review & Verification (Staff checklist gate; AIC queued for generation)
        │
        ▼
-4. OPV Review & Approval (VHC and Transportation Pass returned; MAO Certificate queued for worker generation)
+4. OPV Review & Approval (VHC and Transportation Pass returned)
        │
        ▼
-5. Payment Processing (PayMongo online or MAO walk-in with countdown timer)
+5. MAO confirms its records review and reference; worker generates the MAO Certificate
        │
        ▼
-6. Official Permit Issuance (ReportLab PDF generated with cryptographic QR)
+6. MAO issues the permit; payment and release (ReportLab PDFs with cryptographic QR)
        │
        ▼
 7. Roadside Verification (Inspectors scan QR at quarantine checkpoints)
@@ -124,10 +124,18 @@ same environment and database as the web server:
 .\venv\Scripts\python.exe manage.py db_worker
 ```
 
-The MAO Certificate is queued only after OPV approval saves both the Veterinary
-Health Certificate and Transportation Pass. The approval response does not wait
-for PDF rendering. If the worker is stopped, the task stays queued until it runs.
-Restart both the web server and worker after deploying workflow changes.
+After OPV approval saves both the Veterinary Health Certificate and Transportation
+Pass, an Agri officer must select **Generate MAO Certificate**, confirm the official
+records review, and provide a document reference / review note (up to 1,000
+characters). This confirmation queues the PDF after commit and enables permit
+issuance while rendering continues. Cancel records nothing. If the worker is
+stopped, generation remains queued until it runs.
+
+Deploy the permits migration, then restart both the web server and worker.
+Existing unfinished applications require this confirmation even when a certificate
+file or number already exists. Successful legacy payments remain recorded, with
+release held until confirmation; confirming an already-paid application resumes
+release. Released historical documents remain accessible.
 
 > **Targeted Testing:** To run specific test suites (do not run full suite by default):
 > ```powershell

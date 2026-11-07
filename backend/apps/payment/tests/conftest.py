@@ -63,6 +63,8 @@ def payment_pending_application(db, farmer, agri):
         transport_date=timezone.now().date() + timedelta(days=3),
         purpose="Slaughter",
         status=PermitApplication.Status.PAYMENT_PENDING,
+        mao_confirmed_by=agri, mao_confirmed_at=timezone.now(),
+        mao_confirmation_reference="Reviewed official records", mao_certificate_number="OMA-TEST-PAY",
     )
     issued = IssuedPermit.objects.create(
         permit_number=uuid.uuid4().hex[:13].upper(),

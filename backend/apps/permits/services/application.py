@@ -67,6 +67,10 @@ def handle_application_status_change(application, new_status, reason=None):
             f"Allowed transitions from '{application.status}': {sorted(allowed)}"
         )
 
+    if new_status in {models.PermitApplication.Status.PAYMENT_PENDING, models.PermitApplication.Status.RELEASED}:
+        from .mao import require_mao_confirmation
+        require_mao_confirmation(application)
+
     application.status = new_status
     application.save()
 
